@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Motion Atlas</title>
+  <style>
+    .b{transform-box:fill-box;transform-origin:50% 100%;animation:k 1.6s cubic-bezier(.22,1,.36,1) infinite}
+    .b2{animation-delay:.15s}.b3{animation-delay:.3s}
+    @keyframes k{0%,100%{transform:scaleY(.35)}40%{transform:scaleY(1)}}
+    @media (prefers-reduced-motion:reduce){.b{animation:none}}
+  </style>
+  <rect width="512" height="512" rx="136" fill="#151515"/>
+  <g fill="#ff5a36">
+    <rect class="b" x="105.6" y="120" width="70.4" height="272" rx="30"/>
+    <rect class="b b2" x="220.8" y="120" width="70.4" height="272" rx="30"/>
+    <rect class="b b3" x="336" y="120" width="70.4" height="272" rx="30"/>
+  </g>
+</svg>
