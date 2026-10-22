@@ -48,6 +48,8 @@ export const CATEGORIES: Category[] = [
   { id: 'meteor', sec: 'object', code: 'METEOR', zh: '隕石', tagline: '隨機、對稱、熔岩、冰晶' },
   { id: 'cube', sec: 'object', code: 'CUBE', zh: '魔術方塊', tagline: '塑膠、金屬、花色、單色' },
   { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '星空、光速、星系、行星' },
+  { id: 'aerial', sec: 'object', code: 'AERIAL', zh: '俯瞰', tagline: '城市、河流、山川、草原牛馬' },
+  { id: 'vehicle', sec: 'object', code: 'VEHICLE', zh: '交通工具', tagline: '飛機、太空船、汽車、馬車' },
   { id: 'diagram', sec: 'explain', code: 'DIAGRAM', zh: '工法剖面', tagline: '建材、管線、結構，一張剖面講清楚' },
 ];
 

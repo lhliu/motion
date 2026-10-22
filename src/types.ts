@@ -20,7 +20,9 @@ export type CatId =
   | 'diagram'
   | 'meteor'
   | 'cube'
-  | 'cosmos';
+  | 'cosmos'
+  | 'aerial'
+  | 'vehicle';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';
@@ -64,7 +66,7 @@ export interface Fx {
   kw?: string[];
 }
 
-/** 網站的三個工作區：文字特效、圖片運鏡、地圖區位 */
+/** 網站的工作區：文字特效、圖片運鏡、地圖區位、物件特效、圖解動畫 */
 export type SecId = 'text' | 'photo' | 'map' | 'object' | 'explain';
 
 export interface Section {
