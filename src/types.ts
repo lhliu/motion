@@ -40,6 +40,8 @@ export interface Fx {
   html: (w: string[]) => string;
   /** 需要 JS 的特效；必須自給自足（不可引用外部變數），因為匯出時會用 toString() */
   run?: (root: HTMLElement, w: string[]) => (() => void) | void;
+  /** 匯出時要先定義的全域程式碼（例如共用繪製引擎） */
+  globals?: string;
   /** 建議字數 */
   hint?: string;
   /** 加入時間，用於「最新」排序 */

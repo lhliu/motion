@@ -5,6 +5,7 @@ import { buildPrompt, exportHtml, PROMPT_MODES, type PromptMode, type Ratio } fr
 import type { CatId, Fx, Palette, Tone } from './types';
 import { esc } from './util';
 import { initCombos } from './combo-ui';
+import { initStudio } from './drop-studio';
 
 /* ───────── 小工具 ───────── */
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -551,6 +552,7 @@ const renderDetail = () => {
   $('#dHint').textContent = fx.hint ? `建議：${fx.hint}` : '';
   $('#dTags').innerHTML = `<span class="cat-pill">${c.code}</span>${fx.tags.map((t) => `<span>#${esc(t)}</span>`).join('')}${fx.run ? '<span>JS 驅動</span>' : '<span>純 CSS</span>'}`;
   $('#dFav').setAttribute('aria-pressed', String(state.favs.has(fx.id)));
+  $('#dStudio').hidden = fx.cat !== 'liquid';
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
   syncSegs();
   renderStage();
@@ -714,13 +716,13 @@ const toast = (msg: string) => {
   const host = topLayer();
   if (t.parentElement !== host) host.appendChild(t);
 };
-const topLayer = (): HTMLElement => (detail.open ? detail : document.querySelector<HTMLDialogElement>('#combos[open]') ?? document.body);
+const topLayer = (): HTMLElement => (detail.open ? detail : document.querySelector<HTMLDialogElement>('#studio[open]') ?? document.querySelector<HTMLDialogElement>('#combos[open]') ?? document.body);
 
 /* ───────── 鍵盤 ───────── */
 document.addEventListener('keydown', (e) => {
   const tgt = e.target as HTMLElement;
   const typing = tgt.matches('input, textarea, select');
-  if (e.key === '/' && !typing && !detail.open && !combos.isOpen()) {
+  if (e.key === '/' && !typing && !document.querySelector('dialog[open]')) {
     e.preventDefault();
     qEl.focus();
     qEl.select();
@@ -761,6 +763,14 @@ const combos = initCombos({
 $('#dAddCombo').addEventListener('click', () => {
   const same = d.words.join('\n') === d.fx.sample.join('\n');
   combos.addScene({ effect: d.fx.id, ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}) });
+});
+
+const studio = initStudio({ toast, copy, addScene: (sc) => combos.addScene(sc), store });
+$('#dropBtn').addEventListener('click', () => studio.open());
+$('#dStudio').addEventListener('click', () => {
+  const words = d.fx.id === 'crisp-drop' ? d.words : ['好好', '~just savor', '生活'];
+  closeDetail();
+  studio.load(words);
 });
 
 /* ───────── 啟動 ───────── */

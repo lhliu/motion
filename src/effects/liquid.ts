@@ -1,5 +1,6 @@
 import type { Fx } from '../types';
 import { blobPath, esc, lobes, pick, rand, rep } from '../util';
+import { DROP_GLOBALS } from '../drop';
 
 /** 水的基準色：以藍為主，混入少量主色，換配色時會帶一點色偏 */
 const AQ = `.S{--aq:color-mix(in srgb,#6fb3e4 90%,var(--ac));--aq2:color-mix(in srgb,#3f7fbf 92%,var(--ac))}`;
@@ -8,6 +9,39 @@ const AQ = `.S{--aq:color-mix(in srgb,#6fb3e4 90%,var(--ac));--aq2:color-mix(in 
 const GLASS = `.S .gb{border-radius:50%;background:radial-gradient(circle at 32% 28%,#fffe 0 5%,#fff6 11%,transparent 34%),radial-gradient(circle at 68% 80%,#fff8,transparent 30%),radial-gradient(circle,transparent 58%,#ffffff55 74%,#ffffffcc 99%),color-mix(in srgb,var(--aq) 22%,transparent);box-shadow:inset 0 -.6cqw 1.4cqw #ffffff55,0 1cqw 2.4cqw #0a3a6a26}`;
 
 export const liquid: Fx[] = [
+  {
+    id: 'crisp-drop',
+    cat: 'liquid',
+    zh: '銳利水滴',
+    en: 'Crisp Drop',
+    desc: '邊緣零模糊的水滴標題，可調形狀、顏色、光澤與文字位置',
+    tags: ['品牌', 'Shorts', '可疊影片'],
+    tone: 'paper',
+    sample: ['好好', '~just savor', '生活', '@sats=3'],
+    hint: '一行一句；~ 開頭為英文小字；@ 開頭為設定，例如 @shape=circle;color=#bfe3f7;pos=beside',
+    motion: '一顆半透明水滴以彈性放大登場並緩慢呼吸變形，水滴由上淺下深的兩色填色、右下硬邊暗面、左上硬邊月牙高光與小圓點高光、白色實線外框組成，全程不使用任何模糊、陰影或光暈，邊緣保持銳利；文字逐行由下淡入，可放在水滴內、上下方，或在文字周圍點綴小水滴。',
+    motionEn: 'A translucent droplet springs in and slowly breathes, built from a two-tone light-to-deep fill, a hard-edged darker lower-right shade, a hard-edged crescent highlight and small dot highlights at top left, and a solid white outline — with no blur, shadow or glow anywhere so every edge stays crisp; text fades up line by line and can sit inside the drop, above or below it, or be decorated with small droplets around it.',
+    css: `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`,
+    html: () => `<canvas></canvas>`,
+    globals: DROP_GLOBALS,
+    run: (root, w) => {
+      const D = (globalThis as unknown as { MA_DROP: { draw: (...a: unknown[]) => void; parse: (w: string[]) => { o: Record<string, unknown>; lines: string[] } } }).MA_DROP;
+      const cv = root.querySelector('canvas')!;
+      const ctx = cv.getContext('2d')!;
+      const { o, lines } = D.parse(w);
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
+      const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
+      const t0 = performance.now();
+      let raf = 0;
+      const f = (now: number) => {
+        raf = requestAnimationFrame(f);
+        D.draw(ctx, W, H, o, lines, (now - t0) / 1000);
+      };
+      raf = requestAnimationFrame(f);
+      return () => cancelAnimationFrame(raf);
+    },
+  },
   {
     id: 'glass-blob-title',
     cat: 'liquid',

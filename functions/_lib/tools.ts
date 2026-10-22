@@ -283,6 +283,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是 ${EFFECTS
 2. 用 search_effects 依每段的目的挑特效，留意 word_hint 的文字格式。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
+銳利水滴（crisp-drop）可在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

@@ -162,6 +162,7 @@ ${css}
 ${templates}
 <script>
 const SCENES=${data.replace(/</g, '\\u003c')};
+${[...new Set(used.map((f) => f.globals).filter(Boolean))].join('\n')}
 const RUNS={${runs}};
 const TRANSITION=${JSON.stringify(t)};
 const LOOP=${opts.loop === false ? 'false' : 'true'};

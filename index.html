@@ -44,6 +44,9 @@
         <kbd>/</kbd>
       </label>
       <div class="top-actions">
+        <button class="ic drop-btn" id="dropBtn" title="水滴工作室" aria-label="打開水滴工作室">
+          <svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /><path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2.5" /></svg>
+        </button>
         <button class="combo-btn" id="comboBtn" title="Combo 庫與草稿" aria-label="打開 Combo">
           <svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5" /><rect x="14" y="4" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M17.5 14v7M14 17.5h7" /></svg>
           <span>Combo</span><b id="draftN" hidden>0</b>
@@ -210,6 +213,7 @@
               <pre id="dPrompt" tabindex="0"></pre>
               <div class="d-actions">
                 <button class="ma-btn" id="dCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg><span>複製提示詞</span></button>
+                <button class="btn-ghost" id="dStudio" hidden><svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /></svg>在水滴工作室調整</button>
                 <button class="btn-ghost" id="dAddCombo"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>加入 Combo</button>
                 <button class="btn-ghost" id="dDownload"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>下載 HTML</button>
               </div>
@@ -323,6 +327,42 @@
             </table>
             <p class="mcp-note">另有公開 API：<code>/api/effects</code>（特效目錄）、<code>/api/combos</code>（Combo 庫）、<code>/c/&lt;id&gt;</code>（Combo 全螢幕播放頁）。</p>
           </section>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="studio" class="detail st" aria-labelledby="stTitle">
+      <div class="d-inner">
+        <header class="d-head">
+          <div class="d-title">
+            <span class="ma-num cb-badge">💧</span>
+            <div>
+              <h2 id="stTitle" tabindex="-1" autofocus>水滴工作室</h2>
+              <p>邊緣零模糊、可輸出透明背景，直接疊進影片</p>
+            </div>
+          </div>
+          <div class="d-nav"><button class="ic" id="stClose" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg></button></div>
+        </header>
+        <div class="st-body">
+          <div class="st-left">
+            <div class="st-stage" id="stStage" data-ratio="9:16"><canvas id="stCanvas"></canvas></div>
+            <div class="d-controls">
+              <div class="seg" id="stRatio" role="radiogroup" aria-label="比例"><button data-v="9:16">9:16 手機</button><button data-v="16:9">16:9</button><button data-v="1:1">1:1</button></div>
+              <button class="btn-ghost" id="stReplay"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5" /></svg>重播</button>
+              <button class="btn-ghost" id="stPause">暫停</button>
+            </div>
+            <label class="d-text"><span>文字（一行一句；~ 開頭為英文小字）</span><textarea id="stLines" rows="3"></textarea></label>
+            <div class="st-out">
+              <button class="ma-btn" id="stPng"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>透明 PNG</button>
+              <button class="btn-ghost" id="stWebm">透明 WebM 影片</button>
+              <button class="btn-ghost" id="stSeq">PNG 序列（ZIP）</button>
+              <button class="btn-ghost" id="stCombo">加入 Combo</button>
+              <button class="btn-ghost" id="stCopyWords">複製設定</button>
+            </div>
+            <p class="st-status" id="stStatus" hidden></p>
+            <p class="st-note">疊進影片：剪映、Premiere、Final Cut 都能匯入「PNG 序列」並保留透明；WebM 透明影片需用 Chrome 錄製，部分剪輯軟體不支援透明 WebM。</p>
+          </div>
+          <div class="st-panel" id="stPanel"></div>
         </div>
       </div>
     </dialog>
