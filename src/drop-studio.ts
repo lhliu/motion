@@ -1,5 +1,5 @@
 import { drawDrop, dropToWords, parseDrop, type DropOpts } from './drop';
-import { preloadFonts } from './fonts';
+import { FONT_PACKS, preloadFonts } from './fonts';
 import { esc } from './util';
 import { presetBar } from './preset-bar';
 import type { Preset } from './presets';
@@ -8,7 +8,7 @@ import { zip } from './export-kit';
 export interface StudioDeps {
   toast: (msg: string) => void;
   copy: (text: string, msg: string) => Promise<void>;
-  addScene: (s: { effect: string; words: string[]; seconds?: number; ratio?: DropOpts['ratio'] }) => void;
+  addScene: (s: { effect: string; words: string[]; seconds?: number; font?: string; ratio?: DropOpts['ratio'] }) => void;
   store: { get<T>(k: string, d: T): T; set(k: string, v: unknown): void };
 }
 
@@ -46,6 +46,7 @@ const GROUPS: { title: string; ctls: Ctl[] }[] = [
     ctls: [
       { k: 'textColor', label: '文字顏色', type: 'color' },
       { k: 'textSize', label: '字級', type: 'range', min: 40, max: 320, step: 2 },
+      { k: 'font', label: '字型', type: 'seg', options: [['', '預設'], ...FONT_PACKS.filter((f) => f.id !== 'sharp').map((f): [string, string] => [f.id, f.zh])] },
       { k: 'weight', label: '粗細', type: 'seg', options: [['400', '標準'], ['500', '中'], ['700', '粗'], ['900', '特粗']] },
       { k: 'stroke', label: '描邊顏色', type: 'color' },
       { k: 'strokeWidth', label: '描邊粗細', type: 'range', min: 0, max: 24, step: 1 },
@@ -193,6 +194,7 @@ export const initStudio = (deps: StudioDeps) => {
         const { o: preset } = parseDrop([`@pos=${v}`]);
         o = { ...o, layout: preset.layout, size: preset.size, x: preset.x, y: preset.y, tx: preset.tx, ty: preset.ty, sats: preset.sats, satSize: preset.satSize, satSpread: preset.satSpread };
       } else rec[k] = typeof rec[k] === 'number' ? Number(v) : v;
+      if (k === 'font') preloadFonts(lines.join(''), v || undefined).then(() => changed(false));
     } else return;
     changed(true);
   });
@@ -257,7 +259,7 @@ export const initStudio = (deps: StudioDeps) => {
   /* ───────── 輸出 ───────── */
   const fontsReady = async () => {
     try {
-      await preloadFonts(lines.join(''));
+      await preloadFonts(lines.join(''), o.font || undefined);
     } catch {
       /* 字體載入失敗時用系統字 */
     }
@@ -338,7 +340,7 @@ export const initStudio = (deps: StudioDeps) => {
   });
 
   dlg.querySelector('#stCopyWords')!.addEventListener('click', () => deps.copy(dropToWords(o, lines).join('\n'), '已複製設定，可貼到特效文字或給 AI'));
-  dlg.querySelector('#stCombo')!.addEventListener('click', () => deps.addScene({ effect: 'crisp-drop', words: dropToWords(o, lines), seconds: o.loop, ratio: o.ratio }));
+  dlg.querySelector('#stCombo')!.addEventListener('click', () => deps.addScene({ effect: 'crisp-drop', words: dropToWords(o, lines), seconds: o.loop, ratio: o.ratio, ...(o.font ? { font: o.font } : {}) }));
 
   /* ───────── 預設（與 AI 來回修改） ───────── */
   const bar = presetBar(dlg.querySelector<HTMLElement>('#stPreset')!, {

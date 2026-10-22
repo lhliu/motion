@@ -4,6 +4,7 @@ import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, toneVars, vars
 import type { Ratio } from './prompts';
 import type { Fx, Palette, Tone } from './types';
 import { esc } from './util';
+import { FONT_IDS, fontPack } from './fonts';
 import { isPhotoFx, MODULE_INFO, type PScene } from './photokit';
 
 export type Transition = 'cut' | 'fade' | 'slide' | 'zoom';
@@ -16,6 +17,8 @@ export interface ComboScene {
   words?: string[];
   seconds?: number;
   tone?: Tone;
+  /** 字型組合代碼，省略＝跟著 Combo 的 font */
+  font?: string;
   note?: string;
 }
 
@@ -29,6 +32,8 @@ export interface Combo {
   accent?: string;
   ratio?: Ratio;
   transition?: Transition;
+  /** 整支的字型組合，省略＝俐落黑體 */
+  font?: string;
   scenes: ComboScene[];
   source?: string;
   created_at?: string;
@@ -59,11 +64,14 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     const words = Array.isArray(r.words) ? r.words.map((w) => str(w, max)).filter(Boolean).slice(0, 12) : typeof r.words === 'string' ? (long ? [str(r.words, max)] : str(r.words, 200).split(/\s*\/\s*|\n/).filter(Boolean)) : undefined;
     const sec = Number(r.seconds);
     const tone = TONES.includes(r.tone as Tone) ? (r.tone as Tone) : undefined;
+    if (r.font !== undefined && r.font !== '' && !FONT_IDS.includes(r.font as never)) errors.push(`scenes[${i}].font「${String(r.font)}」不存在，可用：${FONT_IDS.join('｜')}`);
+    const font = FONT_IDS.includes(r.font as never) ? (r.font as string) : undefined;
     return {
       effect: fx?.id ?? str(r.effect, 40),
       ...(words?.length ? { words } : {}),
       ...(Number.isFinite(sec) && sec > 0 ? { seconds: Math.min(20, Math.max(0.8, Math.round(sec * 10) / 10)) } : {}),
       ...(tone ? { tone } : {}),
+      ...(font ? { font } : {}),
       ...(str(r.note, 200) ? { note: str(r.note, 200) } : {}),
     };
   });
@@ -75,6 +83,8 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     ratio: RATIOS.includes(o.ratio as Ratio) ? (o.ratio as Ratio) : '16:9',
     transition: TRANSITIONS.includes(o.transition as Transition) ? (o.transition as Transition) : 'fade',
   };
+  if (o.font !== undefined && o.font !== '' && !FONT_IDS.includes(o.font as never)) errors.push(`font「${String(o.font)}」不存在，可用：${FONT_IDS.join('｜')}`);
+  if (FONT_IDS.includes(o.font as never) && o.font !== 'sharp') combo.font = o.font as string;
   if (str(o.brief, 1000)) combo.brief = str(o.brief, 1000);
   if (str(o.notes, 2000)) combo.notes = str(o.notes, 2000);
   if (isHex(o.accent)) combo.accent = o.accent.toLowerCase();
@@ -139,7 +149,7 @@ export const comboOutline = (c: Combo): string =>
     .map((s, i) => {
       const fx = findEffect(s.effect);
       const w = sceneSummary(s.effect, s.words ?? fx?.sample ?? []);
-      return `${i + 1}. ${fx ? `#${String(NUM.get(fx.id)).padStart(2, '0')} ${fx.zh}（${fx.id}）` : s.effect}｜${sceneSeconds(s)} 秒｜${w}${s.note ? `｜${s.note}` : ''}`;
+      return `${i + 1}. ${fx ? `#${String(NUM.get(fx.id)).padStart(2, '0')} ${fx.zh}（${fx.id}）` : s.effect}｜${sceneSeconds(s)} 秒${s.font ? `｜字型：${fontPack(s.font).zh}` : ''}｜${w}${s.note ? `｜${s.note}` : ''}`;
     })
     .join('\n');
 
@@ -163,7 +173,7 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean } = {}
       const fx = findEffect(s.effect);
       if (!fx) return null;
       const words = s.words?.length ? s.words : fx.sample;
-      return { fx, words, ms: Math.round(sceneSeconds(s) * 1000), vars: varsCss(toneVars(pal, s.tone ?? fx.tone)) };
+      return { fx, words, ms: Math.round(sceneSeconds(s) * 1000), vars: varsCss(toneVars(pal, s.tone ?? fx.tone, s.font ?? c.font)) };
     })
     .filter((s): s is NonNullable<typeof s> => !!s);
   const templates = scenes.map((s, i) => `<template id="t${i}">${s.fx.html(s.words)}</template>`).join('\n');
@@ -243,11 +253,11 @@ export const comboPrompt = (c: Combo): string => {
     const fx = findEffect(s.effect);
     if (!fx) return '';
     const w = sceneSummary(fx.id, s.words?.length ? s.words : fx.sample, true);
-    return `${i + 1}.【${fx.zh} ${fx.en}】約 ${sceneSeconds(s)} 秒｜文字：${w}\n   動態：${fx.motion}${s.note ? `\n   備註：${s.note}` : ''}`;
+    return `${i + 1}.【${fx.zh} ${fx.en}】約 ${sceneSeconds(s)} 秒｜文字：${w}${s.font && s.font !== (c.font ?? 'sharp') ? `\n   字體：${fontPack(s.font).promptZh}` : ''}\n   動態：${fx.motion}${s.note ? `\n   備註：${s.note}` : ''}`;
   });
   return `請用 HTML + CSS（必要時加少量原生 JavaScript）做一段連續播放的文字動態影片「${c.title}」，比例 ${c.ratio ?? '16:9'}，總長約 ${totalSeconds(c)} 秒，播完後循環。
 ${c.brief ? `\n【需求】${c.brief}\n` : ''}
-【配色】深色 ${pal.ink}、淺色 ${pal.paper}、主色 ${pal.accent}、輔色 ${pal.accent2}；字體：標題與內文用昭源黑體 Chiron Hei HK 900（Google Fonts），數字用 Anton
+【配色】深色 ${pal.ink}、淺色 ${pal.paper}、主色 ${pal.accent}、輔色 ${pal.accent2}；字體：${fontPack(c.font).promptZh}
 【段落轉場】${{ cut: '直接硬切', fade: '0.45 秒交叉淡入淡出', slide: '0.55 秒由右往左推移', zoom: '0.5 秒放大穿越' }[c.transition ?? 'fade']}
 
 【分鏡】

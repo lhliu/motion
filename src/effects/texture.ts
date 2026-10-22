@@ -29,7 +29,7 @@ export const texture: Fx[] = [
       off.height = H;
       const oc = off.getContext('2d', { willReadFrequently: true })!;
       const len = Array.from(w[0]).length || 1;
-      oc.font = `900 ${Math.min(H * 0.55, (W * 0.8) / len)}px "MA Num", "Chiron Hei HK", "Noto Sans TC", sans-serif`;
+      oc.font = `900 ${Math.min(H * 0.55, (W * 0.8) / len)}px ${getComputedStyle(root).getPropertyValue('--sans').trim() || 'sans-serif'}`;
       oc.textAlign = 'center';
       oc.textBaseline = 'middle';
       oc.fillStyle = '#fff';
@@ -93,7 +93,7 @@ export const texture: Fx[] = [
       const len = Array.from(w[0]).length || 1;
       sc.fillStyle = bg;
       sc.fillRect(0, 0, W, H);
-      sc.font = `900 ${Math.min(H * 0.4, (W * 1.5) / len)}px "MA Num", "Chiron Hei HK", "Noto Sans TC", sans-serif`;
+      sc.font = `900 ${Math.min(H * 0.4, (W * 1.5) / len)}px ${getComputedStyle(root).getPropertyValue('--sans').trim() || 'sans-serif'}`;
       sc.textAlign = 'center';
       sc.textBaseline = 'middle';
       sc.fillStyle = '#111';

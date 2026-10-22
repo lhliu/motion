@@ -1,9 +1,10 @@
 import type { Fx } from '../types';
 import { esc } from '../util';
 import { fnSource } from '../engine';
+import { FONTS_GLOBALS } from '../fonts';
 import { MODULE_INFO, photoRenderer, photoSceneFromWords, type PModule } from '../photokit';
 
-export const PHOTO_GLOBALS = `window.MA_PHOTO=${fnSource(photoRenderer)}();`;
+export const PHOTO_GLOBALS = `${FONTS_GLOBALS}window.MA_PHOTO=${fnSource(photoRenderer)}();`;
 
 const CSS = `.S{background:#151515}
 .S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
@@ -30,12 +31,13 @@ const run: Fx['run'] = (root) => {
   const dpr = Math.min(2, devicePixelRatio || 1);
   const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
   const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
+  const FS = getComputedStyle(root).getPropertyValue('--sans').trim();
   const t0 = performance.now();
   const loop = Math.max(1.5, sc.loop || 6) + 1;
   let raf = 0;
   const f = (now: number) => {
     raf = requestAnimationFrame(f);
-    R.drawPhoto(ctx, W, H, sc, ((now - t0) / 1000) % loop, imgs);
+    R.drawPhoto(ctx, W, H, sc, ((now - t0) / 1000) % loop, imgs, FS);
   };
   raf = requestAnimationFrame(f);
   return () => cancelAnimationFrame(raf);

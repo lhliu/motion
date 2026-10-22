@@ -41,6 +41,8 @@ export interface PScene {
   images: string[];
   params: Record<string, number | string>;
   caption?: PCaption;
+  /** 字型組合代碼，省略＝跟著 Combo 或預設 */
+  font?: string;
 }
 
 export interface ModuleInfo {
@@ -309,7 +311,7 @@ export const normalizePhotoScene = (raw: Partial<PScene>, fallback: PModule = 'k
       }
     : base.caption;
   const bg = typeof raw.bg === 'string' && /^(transparent|#[0-9a-f]{3,8}(,\s*#[0-9a-f]{3,8})?)$/i.test(raw.bg.trim()) ? raw.bg.trim() : base.bg;
-  return { ratio, loop, module, bg, images, params, caption };
+  return { ratio, loop, module, bg, images, params, caption, ...(typeof raw.font === 'string' && /^[a-z]{2,12}$/.test(raw.font) ? { font: raw.font } : {}) };
 };
 
 /** words 裡以 { 開頭的字串視為場景 JSON；否則第一行當字幕 */
@@ -355,6 +357,8 @@ export const photoRenderer = () => {
   const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
   const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : Number.isFinite(parseFloat(String(v))) ? parseFloat(String(v)) : d);
   const FONT = '"MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif';
+  /** 目前使用的字型；drawPhoto 每次依場景或呼叫端設定 */
+  let F = FONT;
 
   /** 佔位圖：0＝完工街景、1＝施工前空地；角落標示插槽編號，讓沒放圖時也看得出構圖 */
   const holders = new Map<string, HTMLCanvasElement>();
@@ -735,7 +739,7 @@ export const photoRenderer = () => {
     const y = c.y * H + (1 - ease(p)) * 30 * u;
     ctx.save();
     ctx.globalAlpha *= ease(p);
-    ctx.font = `900 ${fs}px ${FONT}`;
+    ctx.font = `900 ${fs}px ${F}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const lines = c.text.split('\n');
@@ -766,7 +770,8 @@ export const photoRenderer = () => {
   };
 
   /** 畫一格；回傳可拖曳的把手位置（畫面像素） */
-  const drawPhoto = (ctx: CanvasRenderingContext2D, W: number, H: number, sc: PScene, t: number, imgs: (Img | undefined)[]): Record<string, number[]> => {
+  const drawPhoto = (ctx: CanvasRenderingContext2D, W: number, H: number, sc: PScene, t: number, imgs: (Img | undefined)[], font?: string): Record<string, number[]> => {
+    F = ((globalThis as unknown as { MA_FONTS?: Record<string, string> }).MA_FONTS ?? {})[sc.font ?? ''] || font || FONT;
     const S = Math.min(W, H);
     const u = S / 1080;
     const P = sc.params || {};
@@ -792,7 +797,7 @@ export const photoRenderer = () => {
     const pill = (text: string, x: number, y: number, fs: number, align: 'left' | 'center' | 'right' = 'center', fill = '#1c1c1cdd', ink = '#ffffff') => {
       if (!text) return;
       ctx.save();
-      ctx.font = `900 ${fs}px ${FONT}`;
+      ctx.font = `900 ${fs}px ${F}`;
       const w = ctx.measureText(text).width + fs * 1.2;
       const h = fs * 1.6;
       const x0 = align === 'left' ? x : align === 'right' ? x - w : x - w / 2;
@@ -926,7 +931,7 @@ export const photoRenderer = () => {
       const tag = (text: string, x: number, y: number, align: 'left' | 'right') => {
         if (!text) return;
         const fs = 36 * u;
-        ctx.font = `900 ${fs}px ${FONT}`;
+        ctx.font = `900 ${fs}px ${F}`;
         const w = ctx.measureText(text).width + fs * 1.2;
         const h = fs * 1.6;
         const x0 = align === 'left' ? x : x - w;
@@ -1039,7 +1044,7 @@ export const photoRenderer = () => {
           });
           if (P.title) {
             ctx.fillStyle = isLight(barColor) ? '#2b2b2b' : '#ffffff';
-            ctx.font = `800 ${26 * u}px ${FONT}`;
+            ctx.font = `800 ${26 * u}px ${F}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(String(P.title), 0, -ch / 2 + bar / 2);
@@ -1086,7 +1091,7 @@ export const photoRenderer = () => {
         ctx.save();
         ctx.globalAlpha *= q;
         ctx.fillStyle = String(P.titleColor ?? '#ffffff');
-        ctx.font = `900 ${fs}px ${FONT}`;
+        ctx.font = `900 ${fs}px ${F}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const lines = title.split('\n');

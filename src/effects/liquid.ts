@@ -37,7 +37,7 @@ export const liquid: Fx[] = [
       let raf = 0;
       const f = (now: number) => {
         raf = requestAnimationFrame(f);
-        D.draw(ctx, W, H, o, lines, (now - t0) / 1000);
+        D.draw(ctx, W, H, o, lines, (now - t0) / 1000, getComputedStyle(root).getPropertyValue('--sans').trim());
       };
       raf = requestAnimationFrame(f);
       return () => cancelAnimationFrame(raf);

@@ -1,8 +1,8 @@
 import type { Fx, Palette, Tone } from './types';
-import { FONT_STACK, NUM_FONT_CSS } from './fonts';
+import { FONT_FAMILIES_QS, fontStack, NUM_FONT_CSS } from './fonts';
 
 export const FONT_LINK =
-  'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chiron+Hei+HK:wght@300;400;500;700;800;900&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@500;900&display=swap';
+  `https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&${FONT_FAMILIES_QS}&display=swap`;
 
 /** 每個特效根節點共用的基礎樣式 */
 export const BASE_FX_CSS = `${NUM_FONT_CSS}
@@ -18,16 +18,18 @@ export interface Vars {
   fg: string;
   ac: string;
   ac2: string;
+  /** 字型組合代碼，省略＝俐落黑體 */
+  font?: string;
 }
 
-export const toneVars = (p: Palette, tone: Tone): Vars => {
-  if (tone === 'ink') return { bg: p.ink, fg: p.paper, ac: p.accent, ac2: p.accent2 };
-  if (tone === 'paper') return { bg: p.paper, fg: p.ink, ac: p.accent, ac2: p.accent2 };
-  return { bg: p.accent, fg: p.ink, ac: p.paper, ac2: p.accent2 };
+export const toneVars = (p: Palette, tone: Tone, font?: string): Vars => {
+  if (tone === 'ink') return { bg: p.ink, fg: p.paper, ac: p.accent, ac2: p.accent2, font };
+  if (tone === 'paper') return { bg: p.paper, fg: p.ink, ac: p.accent, ac2: p.accent2, font };
+  return { bg: p.accent, fg: p.ink, ac: p.paper, ac2: p.accent2, font };
 };
 
 export const varsCss = (v: Vars): string =>
-  `--bg:${v.bg};--fg:${v.fg};--ac:${v.ac};--ac2:${v.ac2};--hl:${v.ac2};--mu:color-mix(in srgb,${v.fg} 30%,transparent);--sans:${FONT_STACK};--serif:"Noto Serif TC",serif;--mono:"JetBrains Mono",ui-monospace,monospace`;
+  `--bg:${v.bg};--fg:${v.fg};--ac:${v.ac};--ac2:${v.ac2};--hl:${v.ac2};--mu:color-mix(in srgb,${v.fg} 30%,transparent);--sans:${fontStack(v.font)};--serif:"Noto Serif TC",serif;--mono:"JetBrains Mono",ui-monospace,monospace`;
 
 const injected = new Set<string>();
 

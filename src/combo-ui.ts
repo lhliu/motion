@@ -4,6 +4,7 @@ import type { Ratio } from './prompts';
 import type { Tone } from './types';
 import { esc } from './util';
 import { isPhotoFx } from './photokit';
+import { FONT_PACKS } from './fonts';
 
 export interface ComboDeps {
   toast: (msg: string) => void;
@@ -65,6 +66,7 @@ export const initCombos = (deps: ComboDeps) => {
       <div class="dr-s-body">
         ${long ? `<label><span>內容</span><input value="${esc(sceneSummary(s.effect, s.words ?? fx?.sample ?? []))}" readonly title="這段的內容請在工作室編輯後重新加入"></label>` : `<label><span>文字（/ 分隔）</span><input data-k="words" value="${esc(words)}" placeholder="${esc(fx?.hint ?? '')}"></label>`}
         <label class="sm"><span>秒數</span><input data-k="seconds" type="number" min="0.8" max="20" step="0.1" value="${sceneSeconds(s)}"></label>
+        <label class="sm"><span>字型</span><select data-k="font"><option value="">跟整支</option>${FONT_PACKS.map((f) => `<option value="${f.id}"${s.font === f.id ? ' selected' : ''}>${f.zh}</option>`).join('')}</select></label>
         <label class="sm"><span>底色</span><select data-k="tone"><option value="">預設</option>${(['ink', 'paper', 'accent'] as Tone[]).map((t) => `<option value="${t}"${s.tone === t ? ' selected' : ''}>${{ ink: '深', paper: '淺', accent: '主色' }[t]}</option>`).join('')}</select></label>
       </div>
     </li>`;
@@ -88,12 +90,21 @@ export const initCombos = (deps: ComboDeps) => {
     $<HTMLInputElement>('#drTags').value = (draft.tags ?? []).join(' ');
     $('#drRatio').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === (draft.ratio ?? '16:9'))));
     $('#drTrans').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === (draft.transition ?? 'fade'))));
+    $<HTMLSelectElement>('#drFont').value = draft.font ?? 'sharp';
     $('#drScenes').innerHTML = draft.scenes.map(sceneRow).join('');
     $('#drEmpty').hidden = draft.scenes.length > 0;
     $('#drKeyState').textContent = deps.store.get('key', '') ? '已設定' : '未設定';
     renderPreview();
   };
 
+  const drFont = $<HTMLSelectElement>('#drFont');
+  drFont.innerHTML = FONT_PACKS.map((f) => `<option value="${f.id}">整支字型：${f.zh}</option>`).join('');
+  drFont.addEventListener('change', () => {
+    if (drFont.value === 'sharp') delete draft.font;
+    else draft.font = drFont.value;
+    saveDraft();
+    renderPreview();
+  });
   $('#drTitle').addEventListener('input', (e) => {
     draft.title = (e.target as HTMLInputElement).value;
     saveDraft();
@@ -149,6 +160,9 @@ export const initCombos = (deps: ComboDeps) => {
     } else if (el.dataset.k === 'tone') {
       if (el.value) s.tone = el.value as Tone;
       else delete s.tone;
+    } else if (el.dataset.k === 'font') {
+      if (el.value) s.font = el.value;
+      else delete s.font;
     }
     saveDraft();
     renderPreview();

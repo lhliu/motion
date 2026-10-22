@@ -47,6 +47,8 @@ export interface MScene {
   bgUrl?: string;
   /** 太空降落開場的秒數（0 或省略＝不用）；元件會在降落結束後才開始登場 */
   descend?: number;
+  /** 字型組合代碼（sharp｜round｜serif｜hand｜cute｜classic），省略＝跟著 Combo 或預設 */
+  font?: string;
 }
 
 /** 場景總長度＝降落開場＋元件動畫 */
@@ -110,6 +112,8 @@ export const syncRoutes = (el: MEl) => {
 /** 繪製引擎工廠：內部完全自給自足，匯出 HTML 時以 toString() 內嵌 */
 export const mapRenderer = () => {
   const FONT = '"MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif';
+  /** 目前使用的字型；drawScene 每次依場景或呼叫端設定 */
+  let F = FONT;
   const YELLOW = '#f2c14e';
   const clamp = (p: number) => Math.max(0, Math.min(1, p));
   const ease = (p: number) => 1 - Math.pow(1 - clamp(p), 3);
@@ -120,7 +124,7 @@ export const mapRenderer = () => {
 
   /* ───────── 繪製工具 ───────── */
   const pill = (ctx: CanvasRenderingContext2D, cx: number, cy: number, text: string, fs: number, bg: string, fg: string, bgAlpha = 1, padX = 0.6, dot?: string) => {
-    ctx.font = `900 ${fs}px ${FONT}`;
+    ctx.font = `900 ${fs}px ${F}`;
     const tw = ctx.measureText(text).width;
     const dotW = dot ? fs * 0.95 : 0;
     const w = tw + fs * padX * 2 + dotW;
@@ -172,7 +176,7 @@ export const mapRenderer = () => {
         ctx.globalAlpha *= ease(p);
         ctx.translate((1 - ease(p)) * -40 * u, 0);
         const fs = 46 * u;
-        ctx.font = `900 ${fs}px ${FONT}`;
+        ctx.font = `900 ${fs}px ${F}`;
         const w = ctx.measureText(el.text ?? '').width + fs * 2.15;
         const [, h] = pill(ctx, X + w / 2, Y, el.text ?? '', fs, el.color ?? '#1c1c1c', el.fg ?? '#fff', el.alpha ?? 0.88, 0.6, YELLOW);
         box = [X, Y - h / 2, X + w, Y + h / 2];
@@ -253,7 +257,7 @@ export const mapRenderer = () => {
       case 'info': {
         const lines = el.lines ?? [];
         const fs = 64 * u;
-        ctx.font = `900 ${fs}px ${FONT}`;
+        ctx.font = `900 ${fs}px ${F}`;
         const tw = Math.max(...lines.map((l) => ctx.measureText(l.replace(/^\*/, '')).width), 100);
         const w = tw + fs * 1.6;
         const h = lines.length * fs * 1.32 + fs * 0.9;
@@ -300,33 +304,33 @@ export const mapRenderer = () => {
         const left = X - w / 2 + 48 * u;
         ctx.textBaseline = 'alphabetic';
         ctx.textAlign = 'left';
-        ctx.font = `900 ${76 * u}px ${FONT}`;
+        ctx.font = `900 ${76 * u}px ${F}`;
         ctx.fillStyle = '#ffffff';
         const title = el.text ?? '';
         ctx.fillText(title, left, Y - h / 2 + 108 * u);
         const ttw = ctx.measureText(title).width;
         ctx.fillStyle = el.color ?? YELLOW;
         ctx.fillRect(left, Y - h / 2 + 122 * u, ttw * ease((lt - 0.3) / 0.5), 7 * u);
-        ctx.font = `700 ${40 * u}px ${FONT}`;
+        ctx.font = `700 ${40 * u}px ${F}`;
         ctx.fillStyle = '#8fa7c4';
         ctx.fillText(el.fg ?? '', left + ttw + 36 * u, Y - h / 2 + 104 * u);
         const colW = (w - 96 * u) / n;
         items.forEach(([label, value, unit, note], i) => {
           const cx = left + colW * i;
           const ip = clamp((lt - 0.35 - i * 0.12) / 1);
-          ctx.font = `700 ${38 * u}px ${FONT}`;
+          ctx.font = `700 ${38 * u}px ${F}`;
           ctx.fillStyle = '#8fa7c4';
           ctx.fillText(label ?? '', cx, Y - h / 2 + 205 * u);
-          ctx.font = `900 ${100 * u}px ${FONT}`;
+          ctx.font = `900 ${100 * u}px ${F}`;
           ctx.fillStyle = el.color ?? YELLOW;
           const v = countText(value ?? '', ip);
           ctx.fillText(v, cx, Y - h / 2 + 310 * u);
           const vw = ctx.measureText(v).width;
-          ctx.font = `700 ${40 * u}px ${FONT}`;
+          ctx.font = `700 ${40 * u}px ${F}`;
           ctx.fillStyle = '#ffffff';
           ctx.fillText(unit ?? '', cx + vw + 8 * u, Y - h / 2 + 310 * u);
           if (note) {
-            ctx.font = `700 ${34 * u}px ${FONT}`;
+            ctx.font = `700 ${34 * u}px ${F}`;
             ctx.fillStyle = '#8fa7c4';
             ctx.fillText(note, cx, Y - h / 2 + 352 * u);
           }
@@ -357,7 +361,7 @@ export const mapRenderer = () => {
         ctx.lineTo(-r * 0.24, 0);
         ctx.fill();
         ctx.rotate(-0.6);
-        ctx.font = `900 ${30 * u}px ${FONT}`;
+        ctx.font = `900 ${30 * u}px ${F}`;
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -381,10 +385,10 @@ export const mapRenderer = () => {
         ctx.fill();
         const txt = el.text ?? '';
         let fs = 40 * u;
-        ctx.font = `900 ${fs}px ${FONT}`;
+        ctx.font = `900 ${fs}px ${F}`;
         const tw = ctx.measureText(txt).width;
         if (tw > r * 1.6) fs *= (r * 1.6) / tw;
-        ctx.font = `900 ${fs}px ${FONT}`;
+        ctx.font = `900 ${fs}px ${F}`;
         ctx.fillStyle = el.fg ?? '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -421,10 +425,10 @@ export const mapRenderer = () => {
           ctx.globalAlpha *= ce;
           const txt = c.replace(/^\*/, '');
           let fs = 54 * u;
-          ctx.font = `900 ${fs}px ${FONT}`;
+          ctx.font = `900 ${fs}px ${F}`;
           const tw = ctx.measureText(txt).width;
           if (tw > cw * 0.86) fs *= (cw * 0.86) / tw;
-          ctx.font = `900 ${fs}px ${FONT}`;
+          ctx.font = `900 ${fs}px ${F}`;
           ctx.fillStyle = c.startsWith('*') ? (el.color ?? '#f07a3f') : '#ffffff';
           ctx.fillText(txt, cx, Y + (1 - ce) * 10 * u + fs * 0.04);
           ctx.restore();
@@ -527,7 +531,7 @@ export const mapRenderer = () => {
           if (lp > 0 && it[0]) {
             const sc2 = back(lp / 0.4);
             const fs = 46 * u;
-            ctx.font = `900 ${fs}px ${FONT}`;
+            ctx.font = `900 ${fs}px ${F}`;
             const w = ctx.measureText(it[0]).width + fs * 1.2;
             const h = fs * 1.62;
             const ux = Math.cos(ang);
@@ -583,7 +587,7 @@ export const mapRenderer = () => {
       case 'text': {
         const fs = 56 * u;
         ctx.globalAlpha *= ease(p);
-        ctx.font = `900 ${fs}px ${FONT}`;
+        ctx.font = `900 ${fs}px ${F}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const lines = (el.text ?? '').split('\n');
@@ -730,7 +734,9 @@ export const mapRenderer = () => {
     }
   };
 
-  const drawScene = (ctx: CanvasRenderingContext2D, W: number, H: number, sc: MScene, t: number, bg?: CanvasImageSource & { width: number; height: number }): Map<string, number[]> => {
+  const drawScene = (ctx: CanvasRenderingContext2D, W: number, H: number, sc: MScene, t: number, bg?: CanvasImageSource & { width: number; height: number }, font?: string): Map<string, number[]> => {
+    // 場景指定的字型組合優先，其次是呼叫端（特效根節點的 --sans）
+    F = ((globalThis as unknown as { MA_FONTS?: Record<string, string> }).MA_FONTS ?? {})[sc.font ?? ''] || font || FONT;
     ctx.clearRect(0, 0, W, H);
     const D = sc.descend || 0;
     if (D > 0 && t < D) drawDescend(ctx, W, H, sc, t / D, bg);

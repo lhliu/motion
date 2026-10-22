@@ -18,14 +18,14 @@ import {
   type PScene,
 } from './photokit';
 import { esc } from './util';
-import { preloadFonts } from './fonts';
+import { FONT_PACKS, preloadFonts } from './fonts';
 import { presetBar } from './preset-bar';
 import type { Preset } from './presets';
 
 export interface PhotoStudioDeps {
   toast: (msg: string) => void;
   copy: (text: string, msg: string) => Promise<void>;
-  addScene: (s: { effect: string; words: string[]; seconds?: number; ratio?: PScene['ratio'] }) => void;
+  addScene: (s: { effect: string; words: string[]; seconds?: number; font?: string; ratio?: PScene['ratio'] }) => void;
   store: { get<T>(k: string, d: T): T; set(k: string, v: unknown): void };
 }
 
@@ -417,6 +417,15 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   onField(capEl, () => sc.caption as unknown as Record<string, unknown>, () => renderCaption());
 
   /* ───────── 背景、比例、長度 ───────── */
+  const fontSel = $<HTMLSelectElement>('#psFont');
+  fontSel.innerHTML = FONT_PACKS.map((f) => `<option value="${f.id}">${f.zh}　${esc(f.use)}</option>`).join('');
+  fontSel.addEventListener('change', async () => {
+    if (fontSel.value === 'sharp') delete sc.font;
+    else sc.font = fontSel.value;
+    persist();
+    await preloadFonts(`${sc.caption?.text ?? ''}${sc.params.title ?? ''}${sc.params.labels ?? ''}`, fontSel.value);
+    redraw();
+  });
   const bgC = $<HTMLInputElement>('#psBgC');
   const trans = $<HTMLInputElement>('#psTrans');
   const syncBg = () => {
@@ -465,7 +474,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   };
   const fonts = async () => {
     try {
-      await preloadFonts(`${sc.caption?.text ?? ''}${sc.params.labelA ?? ''}${sc.params.labelB ?? ''}${sc.params.title ?? ''}${sc.params.labels ?? ''}${sc.params.label ?? ''}圖片`);
+      await preloadFonts(`${sc.caption?.text ?? ''}${sc.params.labelA ?? ''}${sc.params.labelB ?? ''}${sc.params.title ?? ''}${sc.params.labels ?? ''}${sc.params.label ?? ''}圖片`, sc.font);
     } catch {
       /* ignore */
     }
@@ -507,7 +516,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   const keepImg = $<HTMLInputElement>('#psKeepImg');
   $('#psCombo').addEventListener('click', () => {
     const out = sceneOut(true);
-    deps.addScene({ effect: photoFxId(out.module), words: [JSON.stringify(out)], seconds: out.loop + 1, ratio: out.ratio });
+    deps.addScene({ effect: photoFxId(out.module), words: [JSON.stringify(out)], seconds: out.loop + 1, ratio: out.ratio, ...(out.font ? { font: out.font } : {}) });
   });
   $('#psJson').addEventListener('click', () => {
     deps.copy(JSON.stringify(sceneOut(false)), '已複製設定 JSON（不含圖片），可貼給 AI 修改或套用到自己的照片');
@@ -540,6 +549,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     syncMod();
     syncRatio();
     syncBg();
+    fontSel.value = sc.font ?? 'sharp';
     loopEl.value = String(sc.loop);
     $('#psLoopV').textContent = `${sc.loop}s`;
     timeEl.max = String(sc.loop);

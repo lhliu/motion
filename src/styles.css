@@ -459,7 +459,8 @@ h1 {
   font-size: 13px;
 }
 .wb-pal,
-.wb-play {
+.wb-play,
+.wb-font {
   display: flex;
   align-items: center;
   gap: 12px;

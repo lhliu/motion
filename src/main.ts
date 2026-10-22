@@ -4,7 +4,7 @@ import { mount, setSpeed, toneVars, type Mounted } from './engine';
 import { buildPrompt, exportHtml, PROMPT_MODES, type PromptMode, type Ratio } from './prompts';
 import type { Fx, Palette, SecId, Tone } from './types';
 import { KITS, MOOD_PREVIEW, PICKS, TEXT_TAGS, USES } from './uses';
-import { NUM_FONT_CSS, preloadFonts } from './fonts';
+import { FONT_IDS, FONT_PACKS, NUM_FONT_CSS, preloadFonts } from './fonts';
 
 // 數字字型（Anton）在任何特效掛載前就先註冊，工作室的畫布才用得到
 document.head.insertAdjacentHTML('beforeend', `<style id="ma-num-font">${NUM_FONT_CSS}</style>`);
@@ -57,6 +57,10 @@ const state = {
   sort: 'num' as 'num' | 'no' | 'name' | 'shuffle',
   text: store.get('text', ''),
   pal: store.get('pal', 'leicht'),
+  font: (() => {
+    const f = store.get('font', 'sharp');
+    return FONT_IDS.includes(f as never) ? f : 'sharp';
+  })(),
   custom: store.get<string | null>('custom', null),
   play: store.get<PlayMode>('play', reduced ? 'hover' : 'auto'),
   favs: new Set<string>(store.get<string[]>('favs', [])),
@@ -170,7 +174,7 @@ const renderSlot = (s: Slot) => {
   s.m?.stop();
   s.m = undefined;
   if (!s.visible) return;
-  const vars = toneVars(palette(), s.fx.tone);
+  const vars = toneVars(palette(), s.fx.tone, state.font);
   s.m = mount(s.host, s.fx, wordsFor(s.fx), vars);
   if (state.play === 'hover' && !s.hovered) {
     const m = s.m;
@@ -576,6 +580,18 @@ const onPaletteChange = () => {
   if (detail.open) renderDetail();
 };
 
+/* 字型組合：全部卡片即時套用，加入 Combo 時一起帶入 */
+const fontEl = $<HTMLSelectElement>('#fontSel');
+fontEl.innerHTML = FONT_PACKS.map((f) => `<option value="${f.id}" title="${esc(f.use)}">${f.zh}</option>`).join('');
+fontEl.value = state.font;
+fontEl.addEventListener('change', async () => {
+  state.font = fontEl.value;
+  store.set('font', state.font);
+  await preloadFonts(undefined, state.font);
+  refreshAll();
+  heroShow(heroIdx, false);
+  if (detail.open) renderDetail();
+});
 const playEl = $('#playMode');
 const renderPlay = () => playEl.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === state.play)));
 playEl.addEventListener('click', (e) => {
@@ -651,7 +667,7 @@ const heroShow = (i: number, advance = true) => {
   heroIdx = (i + list.length) % list.length;
   const fx = EFFECTS.find((f) => f.id === list[heroIdx])!;
   heroM?.stop();
-  heroM = mount(heroStage, fx, wordsFor(fx), toneVars(palette(), fx.tone));
+  heroM = mount(heroStage, fx, wordsFor(fx), toneVars(palette(), fx.tone, state.font));
   heroLabel.textContent = `${pad(NUM.get(fx.id)!)} ${fx.zh} ${fx.en}`;
   heroLabel.dataset.id = fx.id;
   if (!advance) return;
@@ -695,7 +711,7 @@ const d = {
   rel: [] as Mounted[],
 };
 
-const dVars = () => toneVars(palette(), d.tone || d.fx.tone);
+const dVars = () => toneVars(palette(), d.tone || d.fx.tone, state.font);
 
 const renderStage = () => {
   d.m?.stop();
@@ -726,7 +742,7 @@ const renderRelated = () => {
     .join('');
   rel.querySelectorAll<HTMLElement>('button').forEach((b, k) => {
     const f = pick[k];
-    requestAnimationFrame(() => d.rel.push(mount(b.querySelector<HTMLElement>('.stage')!, f, wordsFor(f), toneVars(palette(), f.tone))));
+    requestAnimationFrame(() => d.rel.push(mount(b.querySelector<HTMLElement>('.stage')!, f, wordsFor(f), toneVars(palette(), f.tone, state.font))));
   });
 };
 
@@ -968,7 +984,7 @@ const combos = initCombos({
 });
 $('#dAddCombo').addEventListener('click', () => {
   const same = d.words.join('\n') === d.fx.sample.join('\n');
-  combos.addScene({ effect: d.fx.id, ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}) });
+  combos.addScene({ effect: d.fx.id, ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}), ...(state.font !== 'sharp' ? { font: state.font } : {}) });
 });
 
 const studio = initStudio({ toast, copy, addScene: (sc) => combos.addScene(sc), store });

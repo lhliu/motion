@@ -94,6 +94,10 @@ npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 
 標題與內文用昭源黑體（Chiron Hei HK，Google Fonts），數字用 Anton。Anton 只取數字與 `% + , - . :`，以 data URL 內嵌在 `src/fonts.ts`（字型名 `MA Num`），排在字型順序最前面，其他字元自動落回昭源黑體。特效 CSS 用 `var(--sans)`、畫布用 `"MA Num", "Chiron Hei HK", "Noto Sans TC"`；本機渲染載入 `/r/fonts.css`。兩者皆為 SIL Open Font License，可商用。
 
+### 字型組合
+
+`src/fonts.ts` 定義 6 組：sharp 俐落黑體（預設，昭源黑體＋Anton 數字）、round 親切圓體（昭源圓體）、serif 質感宋體（思源宋體）、hand 手寫楷書（霞鶩文楷）、cute 可愛粉圓（jf 粉圓）、classic 標準思源。網站「字型」選單即時套用；Combo 可設整支的 `font` 與每段的 `scenes[].font`；地圖、圖片、水滴場景的 JSON 也可帶 `font`。畫布特效透過內嵌的 `MA_FONTS` 查字型。MCP 說明會請 AI 依段落情緒挑選、一支影片以 2–3 組為限。
+
 ## 新增一個特效
 
 在對應分類檔加一筆 `Fx`：

@@ -6,6 +6,9 @@ import type { Fx } from '../../src/types';
 import { buildMapScene, sceneLength, type MapSceneInput } from '../../src/mapkit';
 import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
 import { KITS, USES } from '../../src/uses';
+import { FONT_IDS, FONT_PACKS } from '../../src/fonts';
+
+const FONT_HELP = `字型組合：${FONT_PACKS.map((f) => `${f.id}＝${f.zh}（${f.use}）`).join('；')}。省略＝sharp`;
 import { MODULE_INFO, normalizePhotoScene, PARAMS, photoFxId, PHOTO_MODULES, type PModule, type PScene } from '../../src/photokit';
 import type { Env } from './env';
 import { deleteCombo, getCombo, getPreset, listCombos, listPresets, saveCombo, savePreset } from './store';
@@ -114,6 +117,7 @@ const comboInput = {
         words: { type: 'array', items: { type: 'string' }, description: '這段的文字；多個詞代表輪播或分行，格式依特效的 word_hint' },
         seconds: { type: 'number', description: '這段播放秒數，預設依特效循環長度（2.4–6 秒）' },
         tone: { type: 'string', enum: ['ink', 'paper', 'accent'], description: '底色：深、淺、主色；省略用特效預設' },
+        font: { type: 'string', enum: FONT_IDS, description: '這段的字型組合，省略＝跟整支的 font；依段落情緒挑選' },
         note: { type: 'string', description: '這段的用意或剪輯備註' },
       },
     },
@@ -122,6 +126,7 @@ const comboInput = {
   accent: { type: 'string', description: '自訂主色 #RRGGBB，會覆蓋配色組的主色' },
   ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'], description: '影片比例，Shorts 用 9:16' },
   transition: { type: 'string', enum: ['cut', 'fade', 'slide', 'zoom'], description: '段落轉場，預設 fade' },
+  font: { type: 'string', enum: FONT_IDS, description: `整支的字型組合。${FONT_HELP}` },
   tags: { type: 'array', items: { type: 'string' }, description: '分類標籤，例如 片頭、建案、Shorts' },
   notes: { type: 'string', description: '給未來參考的備註' },
 };
@@ -140,7 +145,7 @@ const resolvePresets = async (a: Args, env: Env): Promise<string[]> => {
         return sc;
       }
       const base = presetToScene(p, Array.isArray(sc.images) ? { images: (sc.images as unknown[]).map(String) } : {});
-      return { ...base, ...(sc.seconds ? { seconds: sc.seconds } : {}), ...(sc.note ? { note: sc.note } : { note: base.note }) };
+      return { ...base, ...(sc.seconds ? { seconds: sc.seconds } : {}), ...(FONT_IDS.includes(sc.font as never) ? { font: sc.font as string } : {}), ...(sc.note ? { note: sc.note } : { note: base.note }) };
     }),
   );
   return errors;
@@ -156,6 +161,7 @@ export const TOOLS: ToolDef[] = [
     run: async () => ({
       total_effects: EFFECTS.length,
       sections: SECTIONS.map((x) => ({ ...x, count: EFFECTS.filter((f) => secOf(f) === x.id).length, categories: CATEGORIES.filter((c) => c.sec === x.id).map((c) => c.id) })),
+      font_packs: FONT_PACKS.map((f) => ({ id: f.id, name: f.zh, use: f.use })),
       text_uses: USES.map((u) => ({ ...u, count: EFFECTS.filter((f) => f.use === u.id).length })),
       categories: CATEGORIES.map((c) => ({ ...c, count: EFFECTS.filter((f) => f.cat === c.id).length })),
       kits: KITS.map((k) => ({ id: k.id, name: k.zh, flow: k.desc, ratio: k.combo.ratio, scenes: k.combo.scenes })),
@@ -210,6 +216,7 @@ export const TOOLS: ToolDef[] = [
         palette: { type: 'string', enum: PALETTES.map((p) => p.id) },
         accent: { type: 'string', description: '#RRGGBB' },
         tone: { type: 'string', enum: ['ink', 'paper', 'accent'] },
+        font: { type: 'string', enum: FONT_IDS, description: FONT_HELP },
         ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'] },
         format: { type: 'string', enum: ['web', 'en', 'video', 'code'], description: 'web 中文網頁提示詞、en 英文、video AI 影片提示詞、code HTML 原始碼；預設 web' },
       },
@@ -230,7 +237,7 @@ export const TOOLS: ToolDef[] = [
         motion_en: fx.motionEn,
         page_url: `${ctx.origin}/?fx=${fx.id}`,
         format,
-        output: buildPrompt(fx, format, words, toneVars(pal, tone), ratio),
+        output: buildPrompt(fx, format, words, toneVars(pal, tone, FONT_IDS.includes(a.font as never) ? String(a.font) : undefined), ratio),
       };
     },
   },
@@ -289,13 +296,15 @@ export const TOOLS: ToolDef[] = [
           },
         },
         elements: { type: 'array', items: { type: 'object' }, description: '進階：額外元件 {type: tag|road|site|label|pin|info|stat|compass|text|routes, x, y, text, lines, color, fg, size, delay, pts}' },
+        font: { type: 'string', enum: FONT_IDS, description: FONT_HELP },
         title: { type: 'string', description: '預覽用名稱' },
       },
     },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
       const sc = buildMapScene(a as MapSceneInput);
-      const scene = { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sceneLength(sc) + 1 };
+      if (FONT_IDS.includes(a.font as never) && a.font !== 'sharp') sc.font = String(a.font);
+      const scene = { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sceneLength(sc) + 1, ...(sc.font ? { font: sc.font } : {}) };
       const { combo } = normalizeCombo({ title: String(a.title ?? '地圖場景預覽'), ratio: sc.ratio, transition: 'cut', scenes: [scene] });
       return {
         combo_scene: scene,
@@ -341,6 +350,7 @@ export const TOOLS: ToolDef[] = [
         sat_spread: { type: 'number' },
         bg: { type: 'string', description: 'transparent（預設）、#hex，或 #hex,#hex 漸層' },
         duration: { type: 'number', description: '秒數，預設 6' },
+        font: { type: 'string', enum: FONT_IDS, description: FONT_HELP },
         title: { type: 'string' },
       },
     },
@@ -348,11 +358,11 @@ export const TOOLS: ToolDef[] = [
     run: async (a, ctx) => {
       const lines = Array.isArray(a.lines) ? a.lines.map(String).filter(Boolean).slice(0, 6) : ['水滴'];
       const { o } = parseDrop(a.layout ? [`@pos=${String(a.layout)}`] : []);
-      const map: Record<string, keyof DropOpts> = { shape: 'shape', seed: 'seed', size: 'size', color: 'color', color2: 'color2', alpha: 'alpha', gloss: 'gloss', gloss_style: 'glossStyle', rim: 'rim', rim_width: 'rimWidth', text_color: 'textColor', text_size: 'textSize', stroke: 'stroke', stroke_width: 'strokeWidth', x: 'x', y: 'y', tx: 'tx', ty: 'ty', sats: 'sats', sat_size: 'satSize', sat_spread: 'satSpread', bg: 'bg', duration: 'loop' };
+      const map: Record<string, keyof DropOpts> = { shape: 'shape', seed: 'seed', size: 'size', color: 'color', color2: 'color2', alpha: 'alpha', gloss: 'gloss', gloss_style: 'glossStyle', rim: 'rim', rim_width: 'rimWidth', text_color: 'textColor', text_size: 'textSize', stroke: 'stroke', stroke_width: 'strokeWidth', x: 'x', y: 'y', tx: 'tx', ty: 'ty', sats: 'sats', sat_size: 'satSize', sat_spread: 'satSpread', bg: 'bg', duration: 'loop', font: 'font' };
       const rec = o as unknown as Record<string, unknown>;
       for (const [k, key] of Object.entries(map)) if (a[k] !== undefined && a[k] !== null) rec[key] = typeof rec[key] === 'number' ? Number(a[k]) : String(a[k]);
       const words = dropToWords(o, lines);
-      const scene = { effect: 'crisp-drop', words, seconds: o.loop };
+      const scene = { effect: 'crisp-drop', words, seconds: o.loop, ...(o.font ? { font: o.font } : {}) };
       const { combo } = normalizeCombo({ title: String(a.title ?? '水滴預覽'), ratio: '9:16', transition: 'cut', scenes: [scene] });
       return { combo_scene: scene, ratio: '9:16', preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`, edit_url: editUrl(ctx.origin, { kind: 'drop', data: { words } }), next: '把 combo_scene 放進 compose_combo 或 save_combo 的 scenes；水滴以短邊為基準，9:16、16:9 都能用。' };
     },
@@ -383,6 +393,7 @@ export const TOOLS: ToolDef[] = [
           },
         },
         bg: { type: 'string', description: 'transparent、#hex 或 #hex,#hex 漸層；預設 #151515' },
+        font: { type: 'string', enum: FONT_IDS, description: FONT_HELP },
         title: { type: 'string' },
       },
     },
@@ -398,8 +409,9 @@ export const TOOLS: ToolDef[] = [
         params: (a.params ?? {}) as PScene['params'],
         caption: a.caption as PScene['caption'],
         bg: a.bg as string,
+        ...(FONT_IDS.includes(a.font as never) && a.font !== 'sharp' ? { font: String(a.font) } : {}),
       });
-      const scene = { effect: photoFxId(module), words: [JSON.stringify(sc)], seconds: sc.loop + 1 };
+      const scene = { effect: photoFxId(module), words: [JSON.stringify(sc)], seconds: sc.loop + 1, ...(sc.font ? { font: sc.font } : {}) };
       const { combo } = normalizeCombo({ title: String(a.title ?? `${MODULE_INFO[module].zh}預覽`), ratio: sc.ratio, transition: 'cut', scenes: [scene] });
       return {
         combo_scene: scene,
@@ -562,6 +574,6 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
 地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡（推拉、甩入、3D 卡片、前後對比、放大鏡）請用 build_photo_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
-手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
+字型：Combo 的 font（整支）與 scenes[].font（單段）可選字型組合，依段落情緒挑：數據、資訊、標題用 sharp（預設）；開箱、生活、通勤用 round；質感建案、片頭大標用 serif；旁白金句、心得用 hand；俏皮吐槽用 cute。一支影片以 2–3 組為限，同類段落維持同一組，避免每段都換。\n手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

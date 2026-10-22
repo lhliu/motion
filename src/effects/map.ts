@@ -1,9 +1,10 @@
 import type { Fx } from '../types';
 import { blobPath, esc, lobes, pick, rand, range, rep } from '../util';
 import { fnSource } from '../engine';
+import { FONTS_GLOBALS } from '../fonts';
 import { buildMapScene, mapRenderer, type MScene } from '../mapkit';
 
-export const MAP_GLOBALS = `window.MA_MAP=${fnSource(mapRenderer)}();`;
+export const MAP_GLOBALS = `${FONTS_GLOBALS}window.MA_MAP=${fnSource(mapRenderer)}();`;
 
 /** words 裡第一個以 { 開頭的字串視為場景 JSON；沒有就用鳥瞰範本 */
 export const sceneFromWords = (w: string[]): MScene => {
@@ -119,12 +120,13 @@ export const map: Fx[] = [
       const dpr = Math.min(2, devicePixelRatio || 1);
       const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
       const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
+      const FS = getComputedStyle(root).getPropertyValue('--sans').trim();
       const t0 = performance.now();
       const loop = Math.max(2, sc.loop || 6) + ((sc as { descend?: number }).descend || 0) + 1.5;
       let raf = 0;
       const f = (now: number) => {
         raf = requestAnimationFrame(f);
-        R.drawScene(ctx, W, H, sc, ((now - t0) / 1000) % loop, img);
+        R.drawScene(ctx, W, H, sc, ((now - t0) / 1000) % loop, img, FS);
       };
       raf = requestAnimationFrame(f);
       return () => cancelAnimationFrame(raf);
@@ -188,12 +190,13 @@ export const map: Fx[] = [
       const dpr = Math.min(2, devicePixelRatio || 1);
       const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
       const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
+      const FS = getComputedStyle(root).getPropertyValue('--sans').trim();
       const t0 = performance.now();
       const loop = Math.max(2, sc.loop || 6) + ((sc as { descend?: number }).descend || 0) + 1.5;
       let raf = 0;
       const f = (now: number) => {
         raf = requestAnimationFrame(f);
-        R.drawScene(ctx, W, H, sc, ((now - t0) / 1000) % loop, img);
+        R.drawScene(ctx, W, H, sc, ((now - t0) / 1000) % loop, img, FS);
       };
       raf = requestAnimationFrame(f);
       return () => cancelAnimationFrame(raf);

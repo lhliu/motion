@@ -1,6 +1,7 @@
 // 銳利水滴繪製引擎：完全不使用模糊、陰影或光暈，邊緣只有 1px 抗鋸齒，適合疊進影片。
 // drawDrop 與 parseDrop 必須自給自足（不引用模組變數），因為匯出 HTML 時會用 toString() 內嵌。
 import { fnSource } from './engine';
+import { FONTS_GLOBALS } from './fonts';
 
 export type DropShape = 'circle' | 'cloud' | 'flower' | 'pebble' | 'random';
 export type DropLayout = 'inside' | 'beside' | 'above' | 'below';
@@ -40,9 +41,12 @@ export interface DropOpts {
   satSpread: number;
   entrance: 'pop' | 'fade' | 'none';
   loop: number;
+  /** 字型組合代碼，空字串＝跟著 Combo 或預設 */
+  font: string;
 }
 
-export const drawDrop = (ctx: CanvasRenderingContext2D, W: number, H: number, o: DropOpts, lines: string[], t: number) => {
+export const drawDrop = (ctx: CanvasRenderingContext2D, W: number, H: number, o: DropOpts, lines: string[], t: number, font?: string) => {
+  const FS = ((globalThis as unknown as { MA_FONTS?: Record<string, string> }).MA_FONTS ?? {})[o.font] || font || '"MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif';
   const S = Math.min(W, H);
   const u = S / 1080;
   const rnd = (n: number) => {
@@ -181,7 +185,7 @@ export const drawDrop = (ctx: CanvasRenderingContext2D, W: number, H: number, o:
   let tw = 0;
   let th = 0;
   for (const li of lineInfo) {
-    ctx.font = `${o.weight} ${li.size}px "MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif`;
+    ctx.font = `${o.weight} ${li.size}px ${FS}`;
     if ('letterSpacing' in ctx) (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = li.sub ? `${li.size * 0.5}px` : `${li.size * 0.06}px`;
     tw = Math.max(tw, ctx.measureText(li.text).width);
     th += li.size * (li.sub ? 1.9 : 1.12);
@@ -228,7 +232,7 @@ export const drawDrop = (ctx: CanvasRenderingContext2D, W: number, H: number, o:
     const h = li.size * (li.sub ? 1.9 : 1.12);
     const p = ease((T - 0.45 - i * 0.28) / 0.5);
     const e = o.entrance === 'none' ? 1 : p;
-    ctx.font = `${li.sub ? Math.min(o.weight, 500) : o.weight} ${li.size}px "MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif`;
+    ctx.font = `${li.sub ? Math.min(o.weight, 500) : o.weight} ${li.size}px ${FS}`;
     if ('letterSpacing' in ctx) (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = li.sub ? `${li.size * 0.5}px` : `${li.size * 0.06}px`;
     ctx.globalAlpha = e * out;
     const yy = y + h / 2 + (1 - e) * li.size * 0.25;
@@ -281,6 +285,7 @@ export const parseDrop = (words: string[]): { o: DropOpts; lines: string[] } => 
     satSpread: 0.6,
     entrance: 'pop',
     loop: 6,
+    font: '',
   };
   const presets: Record<string, Partial<DropOpts>> = {
     inside: { layout: 'inside', size: 0.62, sats: 3, satSize: 0.06, satSpread: 0.25 },
@@ -329,7 +334,7 @@ export const dropToWords = (o: DropOpts, lines: string[]): string[] => {
 };
 
 /** 匯出 HTML 時要先定義的全域函式 */
-export const DROP_GLOBALS = `window.MA_DROP={draw:${fnSource(drawDrop)},parse:${fnSource(parseDrop)}};`;
+export const DROP_GLOBALS = `${FONTS_GLOBALS}window.MA_DROP={draw:${fnSource(drawDrop)},parse:${fnSource(parseDrop)}};`;
 
 // 讓特效的 run 透過全域取得（run 本身必須自給自足）
 (globalThis as unknown as { MA_DROP: unknown }).MA_DROP = { draw: drawDrop, parse: parseDrop };

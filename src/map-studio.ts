@@ -1,14 +1,14 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
 import { drawScene, makeEl, RATIO_PX, sceneLength, syncRoutes, TEMPLATES, TYPE_NAME, type MEl, type MScene, type MType } from './mapkit';
 import { esc } from './util';
-import { preloadFonts } from './fonts';
+import { FONT_PACKS, preloadFonts } from './fonts';
 import { presetBar } from './preset-bar';
 import type { Preset } from './presets';
 
 export interface MapStudioDeps {
   toast: (msg: string) => void;
   copy: (text: string, msg: string) => Promise<void>;
-  addScene: (s: { effect: string; words: string[]; seconds?: number; ratio?: MScene['ratio'] }) => void;
+  addScene: (s: { effect: string; words: string[]; seconds?: number; font?: string; ratio?: MScene['ratio'] }) => void;
   store: { get<T>(k: string, d: T): T; set(k: string, v: unknown): void };
 }
 
@@ -353,6 +353,15 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     bgCtl.querySelectorAll<HTMLInputElement>('input[data-bg]').forEach((i) => {
       i.value = String(sc[i.dataset.bg as 'bgZoom'] ?? 0);
     });
+  const fontSel = $<HTMLSelectElement>('#msFont');
+  fontSel.innerHTML = FONT_PACKS.map((f) => `<option value="${f.id}">${f.zh}　${esc(f.use)}</option>`).join('');
+  fontSel.addEventListener('change', async () => {
+    if (fontSel.value === 'sharp') delete sc.font;
+    else sc.font = fontSel.value;
+    persist();
+    await preloadFonts(sc.els.map((e) => (e.text ?? '') + (e.lines ?? []).join('')).join(''), fontSel.value);
+    redraw();
+  });
   const syncDescend = () => ($('#msDescendV').textContent = `${sc.descend ?? 0}s`);
   bgCtl.addEventListener('input', (e) => {
     const i = e.target as HTMLInputElement;
@@ -383,7 +392,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
   };
   const fonts = async () => {
     try {
-      await preloadFonts(sc.els.map((e) => (e.text ?? '') + (e.lines ?? []).join('') + (e.fg ?? '')).join(''));
+      await preloadFonts(sc.els.map((e) => (e.text ?? '') + (e.lines ?? []).join('') + (e.fg ?? '')).join(''), sc.font);
     } catch {
       /* ignore */
     }
@@ -431,7 +440,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
   };
   $('#msCombo').addEventListener('click', () => {
     const out = sceneForExport();
-    deps.addScene({ effect: 'map-overlay', words: [JSON.stringify(out)], seconds: sceneLength(out) + 1, ratio: out.ratio });
+    deps.addScene({ effect: 'map-overlay', words: [JSON.stringify(out)], seconds: sceneLength(out) + 1, ratio: out.ratio, ...(out.font ? { font: out.font } : {}) });
     if (bg && !withBg) deps.toast('已加入 Combo（未含底圖，勾選「輸出包含底圖」可一起帶入）');
   });
   $('#msJson').addEventListener('click', () => {
@@ -472,6 +481,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     syncRatio();
     syncBgCtl();
     syncDescend();
+    fontSel.value = sc.font ?? 'sharp';
     $<HTMLInputElement>('#msLoop').value = String(sc.loop);
     $('#msLoopV').textContent = `${sc.loop}s`;
     renderList();

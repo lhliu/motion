@@ -25,6 +25,7 @@ export interface SceneLike {
   effect: string;
   words: string[];
   seconds?: number;
+  font?: string;
   note?: string;
 }
 
@@ -33,14 +34,15 @@ export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, 
   const note = p.id ? `預設 ${p.id}${p.name ? `「${p.name}」` : ''}` : undefined;
   if (p.kind === 'map') {
     const sc = p.data as MScene;
-    return { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sceneLength(sc) + 1, note };
+    return { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sceneLength(sc) + 1, ...(sc.font ? { font: sc.font } : {}), note };
   }
   if (p.kind === 'photo') {
     const sc = normalizePhotoScene({ ...(p.data as PScene), ...(o.images ? { images: o.images } : {}) });
-    return { effect: photoFxId(sc.module), words: [JSON.stringify(sc)], seconds: sc.loop + 1, note };
+    return { effect: photoFxId(sc.module), words: [JSON.stringify(sc)], seconds: sc.loop + 1, ...(sc.font ? { font: sc.font } : {}), note };
   }
   const words = (p.data as { words: string[] }).words ?? [];
-  return { effect: 'crisp-drop', words, seconds: parseDrop(words).o.loop, note };
+  const d = parseDrop(words).o;
+  return { effect: 'crisp-drop', words, seconds: d.loop, ...(d.font ? { font: d.font } : {}), note };
 };
 
 /** Combo 段落 → 預設資料（反向，用於從 Combo 打開工作室） */

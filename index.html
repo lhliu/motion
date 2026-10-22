@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chiron+Hei+HK:wght@300;400;500;700;800;900&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@500;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chiron+Hei+HK:wght@300;400;500;700;800;900&family=Chiron+GoRound+TC:wght@400;500;700;900&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@500;700;900&family=LXGW+WenKai+TC:wght@400;700&family=Huninn&display=swap"
       rel="stylesheet"
     />
     <script>
@@ -105,6 +105,10 @@
           <label class="sw custom" title="自訂主色">
             <input type="color" id="customColor" value="#ff5a36" aria-label="自訂主色" />
           </label>
+        </div>
+        <div class="wb-font">
+          <span class="wb-l">字型</span>
+          <select id="fontSel" aria-label="字型組合"></select>
         </div>
         <div class="wb-play">
           <span class="wb-l">播放</span>
@@ -264,6 +268,7 @@
                 <div class="dr-row">
                   <div class="seg" id="drRatio" role="radiogroup" aria-label="比例"><button data-v="16:9">16:9</button><button data-v="9:16">9:16</button><button data-v="1:1">1:1</button></div>
                   <div class="seg" id="drTrans" role="radiogroup" aria-label="轉場"><button data-v="cut">硬切</button><button data-v="fade">淡入</button><button data-v="slide">推移</button><button data-v="zoom">放大</button></div>
+                  <select id="drFont" aria-label="整支的字型"></select>
                 </div>
                 <label class="dr-field"><span>標籤（用空白分隔）</span><input id="drTags" type="text" placeholder="片頭 建案" /></label>
                 <ol class="dr-scenes" id="drScenes"></ol>
@@ -411,6 +416,7 @@
               <label class="st-row"><span>左右</span><input type="range" data-bg="bgX" min="0" max="1" step="0.01" /></label>
               <label class="st-row"><span>上下</span><input type="range" data-bg="bgY" min="0" max="1" step="0.01" /></label>
               <label class="st-row"><span>調暗</span><input type="range" data-bg="bgDim" min="0" max="0.7" step="0.01" /></label>
+              <label class="st-row"><span>字型</span><select id="msFont" class="st-select"></select></label>
               <label class="st-row"><span>太空降落開場（秒，0＝關）</span><input type="range" data-bg="descend" min="0" max="5" step="0.1" /><output id="msDescendV"></output></label>
               <label class="st-row"><span>輸出包含底圖</span><input type="checkbox" id="msWithBg" checked /></label>
             </fieldset>
@@ -467,6 +473,7 @@
             <fieldset><legend>背景</legend>
               <label class="st-row"><span>底色</span><input type="color" id="psBgC" value="#151515" /></label>
               <label class="st-row"><span>透明</span><input type="checkbox" id="psTrans" /></label>
+              <label class="st-row"><span>字型</span><select id="psFont" class="st-select"></select></label>
             </fieldset>
           </div>
         </div>
