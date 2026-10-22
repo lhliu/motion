@@ -354,7 +354,7 @@ export const photoRenderer = () => {
   };
   const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
   const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : Number.isFinite(parseFloat(String(v))) ? parseFloat(String(v)) : d);
-  const FONT = '"Noto Sans TC", "PingFang TC", sans-serif';
+  const FONT = '"MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif';
 
   /** 佔位圖：0＝完工街景、1＝施工前空地；角落標示插槽編號，讓沒放圖時也看得出構圖 */
   const holders = new Map<string, HTMLCanvasElement>();

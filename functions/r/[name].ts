@@ -3,6 +3,7 @@ import { PHOTO_GLOBALS } from '../../src/effects/photo';
 import { MAP_GLOBALS } from '../../src/effects/map';
 import { DROP_GLOBALS } from '../../src/drop';
 import type { Ctx } from '../_lib/env';
+import { NUM_FONT_CSS } from '../../src/fonts';
 
 const ENGINES: Record<string, { usage: string; code: string }> = {
   'photo.js': {
@@ -14,9 +15,14 @@ const ENGINES: Record<string, { usage: string; code: string }> = {
 };
 
 export const onRequestGet = async ({ params }: Ctx) => {
+  // 字型：昭源黑體（Google Fonts）＋只含數字的 Anton；本機渲染頁面用 <link rel="stylesheet" href=".../r/fonts.css"> 載入
+  if (String(params.name) === 'fonts.css')
+    return new Response(`@import url("https://fonts.googleapis.com/css2?family=Chiron+Hei+HK:wght@300;400;500;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=block");\n${NUM_FONT_CSS}\n`, {
+      headers: { 'content-type': 'text/css; charset=utf-8', 'access-control-allow-origin': '*', 'cache-control': 'public, max-age=3600' },
+    });
   const e = ENGINES[String(params.name)];
-  if (!e) return new Response('// 可用：photo.js、map.js、drop.js', { status: 404, headers: { 'content-type': 'text/javascript; charset=utf-8' } });
-  return new Response(`// Motion Atlas 繪製引擎\n// 用法：${e.usage}\n// 逐格渲染：t 從 0 開始，每格加 1/fps；畫布尺寸建議 1080×1920（9:16）\n${e.code}\n`, {
+  if (!e) return new Response('// 可用：photo.js、map.js、drop.js、fonts.css', { status: 404, headers: { 'content-type': 'text/javascript; charset=utf-8' } });
+  return new Response(`// Motion Atlas 繪製引擎\n// 用法：${e.usage}\n// 逐格渲染：t 從 0 開始，每格加 1/fps；畫布尺寸建議 1080×1920（9:16）\n// 字型：頁面先載入 /r/fonts.css，並在畫第一格前 await document.fonts.load（Chiron Hei HK 與 MA Num 兩種字型）\n${e.code}\n`, {
     headers: { 'content-type': 'text/javascript; charset=utf-8', 'access-control-allow-origin': '*', 'cache-control': 'public, max-age=300' },
   });
 };

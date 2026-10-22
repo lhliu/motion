@@ -181,7 +181,7 @@ export const drawDrop = (ctx: CanvasRenderingContext2D, W: number, H: number, o:
   let tw = 0;
   let th = 0;
   for (const li of lineInfo) {
-    ctx.font = `${o.weight} ${li.size}px "Noto Sans TC", "PingFang TC", sans-serif`;
+    ctx.font = `${o.weight} ${li.size}px "MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif`;
     if ('letterSpacing' in ctx) (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = li.sub ? `${li.size * 0.5}px` : `${li.size * 0.06}px`;
     tw = Math.max(tw, ctx.measureText(li.text).width);
     th += li.size * (li.sub ? 1.9 : 1.12);
@@ -228,7 +228,7 @@ export const drawDrop = (ctx: CanvasRenderingContext2D, W: number, H: number, o:
     const h = li.size * (li.sub ? 1.9 : 1.12);
     const p = ease((T - 0.45 - i * 0.28) / 0.5);
     const e = o.entrance === 'none' ? 1 : p;
-    ctx.font = `${li.sub ? Math.min(o.weight, 500) : o.weight} ${li.size}px "Noto Sans TC", "PingFang TC", sans-serif`;
+    ctx.font = `${li.sub ? Math.min(o.weight, 500) : o.weight} ${li.size}px "MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif`;
     if ('letterSpacing' in ctx) (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = li.sub ? `${li.size * 0.5}px` : `${li.size * 0.06}px`;
     ctx.globalAlpha = e * out;
     const yy = y + h / 2 + (1 - e) * li.size * 0.25;

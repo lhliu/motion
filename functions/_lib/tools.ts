@@ -407,7 +407,7 @@ export const TOOLS: ToolDef[] = [
         params_doc: PARAMS[module].map((f) => ({ key: f.k, label: f.label, ...(f.type === 'range' ? { min: f.min, max: f.max } : f.type === 'seg' ? { options: f.opts.map(([v, l]) => `${v}＝${l}`) } : { type: f.type }), value: sc.params[f.k] })),
         preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`,
         edit_url: editUrl(ctx.origin, { kind: 'photo', data: sc }),
-        local_render: `本機逐格渲染（畫面與網站一致）：在 HTML 載入 ${ctx.origin}/r/photo.js，用 <img> 載入本機照片，建立 ${sc.ratio === '16:9' ? '1920×1080' : sc.ratio === '1:1' ? '1080×1080' : '1080×1920'} 的 canvas，對每一格呼叫 MA_PHOTO.drawPhoto(ctx, W, H, scene, i / fps, [img1, img2])，再用 Playwright 截圖或 canvas.toBlob 存成 PNG 序列、ffmpeg 合成。scene 用這裡回傳的 scene（或 get_preset 的 data），images 欄位可忽略。`,
+        local_render: `本機逐格渲染（畫面與網站一致）：在 HTML 載入 ${ctx.origin}/r/fonts.css（昭源黑體＋Anton 數字）與 ${ctx.origin}/r/photo.js，先等字型載入完成，用 <img> 載入本機照片，建立 ${sc.ratio === '16:9' ? '1920×1080' : sc.ratio === '1:1' ? '1080×1080' : '1080×1920'} 的 canvas，對每一格呼叫 MA_PHOTO.drawPhoto(ctx, W, H, scene, i / fps, [img1, img2])，再用 Playwright 截圖或 canvas.toBlob 存成 PNG 序列、ffmpeg 合成。scene 用這裡回傳的 scene（或 get_preset 的 data），images 欄位可忽略。`,
         next: `把 combo_scene 放進 compose_combo / save_combo（ratio 設 ${sc.ratio}）。要讓使用者手動調整，給 edit_url；使用者存成預設後，之後在 scenes 寫 { "preset": 代碼, "images": [...] } 即可換圖沿用同一套運鏡。`,
       };
     },

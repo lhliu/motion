@@ -38,7 +38,7 @@ export const diagram: Fx[] = [
       const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
       const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
       const AC = getComputedStyle(root).getPropertyValue('--ac').trim() || '#e8833a';
-      const FONT = '"Noto Sans TC", "PingFang TC", sans-serif';
+      const FONT = '"MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif';
       const clamp = (p: number) => Math.max(0, Math.min(1, p));
       const ease = (p: number) => 1 - Math.pow(1 - clamp(p), 3);
       const back = (p: number) => {
@@ -245,7 +245,7 @@ export const diagram: Fx[] = [
       const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
       const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
       const AC = getComputedStyle(root).getPropertyValue('--ac').trim() || '#e8833a';
-      const FONT = '"Noto Sans TC", "PingFang TC", sans-serif';
+      const FONT = '"MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif';
       const clamp = (p: number) => Math.max(0, Math.min(1, p));
       const ease = (p: number) => 1 - Math.pow(1 - clamp(p), 3);
       const back = (p: number) => {

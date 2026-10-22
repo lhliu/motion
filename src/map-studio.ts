@@ -1,6 +1,7 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
 import { drawScene, makeEl, RATIO_PX, sceneLength, syncRoutes, TEMPLATES, TYPE_NAME, type MEl, type MScene, type MType } from './mapkit';
 import { esc } from './util';
+import { preloadFonts } from './fonts';
 import { presetBar } from './preset-bar';
 import type { Preset } from './presets';
 
@@ -382,8 +383,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
   };
   const fonts = async () => {
     try {
-      await document.fonts.load('900 100px "Noto Sans TC"', sc.els.map((e) => (e.text ?? '') + (e.lines ?? []).join('') + (e.fg ?? '')).join(''));
-      await document.fonts.load('700 100px "Noto Sans TC"');
+      await preloadFonts(sc.els.map((e) => (e.text ?? '') + (e.lines ?? []).join('') + (e.fg ?? '')).join(''));
     } catch {
       /* ignore */
     }

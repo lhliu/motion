@@ -18,6 +18,7 @@ import {
   type PScene,
 } from './photokit';
 import { esc } from './util';
+import { preloadFonts } from './fonts';
 import { presetBar } from './preset-bar';
 import type { Preset } from './presets';
 
@@ -126,7 +127,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
       ctx.strokeRect(r[0], r[1], r[2], r[3]);
       ctx.fillStyle = col;
       for (const [x, y] of [[r[0], r[1]], [r[0] + r[2], r[1]], [r[0], r[1] + r[3]], [r[0] + r[2], r[1] + r[3]]]) ctx.fillRect(x - 6 * u, y - 6 * u, 12 * u, 12 * u);
-      ctx.font = `900 ${14 * u}px "Noto Sans TC", sans-serif`;
+      ctx.font = `900 ${14 * u}px "MA Num", "Chiron Hei HK", "Noto Sans TC", sans-serif`;
       const w = ctx.measureText(label).width + 14 * u;
       ctx.fillRect(r[0], r[1] - 24 * u, w, 22 * u);
       ctx.fillStyle = '#fff';
@@ -147,7 +148,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     if (t !== undefined || playing) return;
     const u = k();
     ctx.save();
-    ctx.font = `800 ${12 * u}px "Noto Sans TC", sans-serif`;
+    ctx.font = `800 ${12 * u}px "MA Num", "Chiron Hei HK", "Noto Sans TC", sans-serif`;
     ctx.textBaseline = 'middle';
     for (const [name, [x, y]] of Object.entries(handles)) {
       ctx.fillStyle = '#ffffff';
@@ -464,7 +465,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   };
   const fonts = async () => {
     try {
-      await document.fonts.load('900 100px "Noto Sans TC"', `${sc.caption?.text ?? ''}${sc.params.labelA ?? ''}${sc.params.labelB ?? ''}圖片`);
+      await preloadFonts(`${sc.caption?.text ?? ''}${sc.params.labelA ?? ''}${sc.params.labelB ?? ''}${sc.params.title ?? ''}${sc.params.labels ?? ''}${sc.params.label ?? ''}圖片`);
     } catch {
       /* ignore */
     }

@@ -180,7 +180,7 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean } = {}
 <link href="${FONT_LINK}" rel="stylesheet">
 <style>
 /* Motion Atlas Combo：${esc(c.title)}｜${scenes.length} 段｜約 ${totalSeconds(c)} 秒 */
-html,body{margin:0;height:100%;background:#0b0b0b;display:grid;place-items:center;overflow:hidden;font-family:"Noto Sans TC",system-ui,sans-serif}
+html,body{margin:0;height:100%;background:#0b0b0b;display:grid;place-items:center;overflow:hidden;font-family:"Chiron Hei HK","Noto Sans TC",system-ui,sans-serif}
 .stage{position:relative;${ratioCss[c.ratio ?? '16:9']};container-type:size;overflow:hidden;background:${pal.ink}}
 .stage>.fx{will-change:opacity,transform}
 .in-fade{animation:cIn .45s ease both}.out-fade{animation:cOut .45s ease both}
@@ -247,7 +247,7 @@ export const comboPrompt = (c: Combo): string => {
   });
   return `請用 HTML + CSS（必要時加少量原生 JavaScript）做一段連續播放的文字動態影片「${c.title}」，比例 ${c.ratio ?? '16:9'}，總長約 ${totalSeconds(c)} 秒，播完後循環。
 ${c.brief ? `\n【需求】${c.brief}\n` : ''}
-【配色】深色 ${pal.ink}、淺色 ${pal.paper}、主色 ${pal.accent}、輔色 ${pal.accent2}；字體 Noto Sans TC 900
+【配色】深色 ${pal.ink}、淺色 ${pal.paper}、主色 ${pal.accent}、輔色 ${pal.accent2}；字體：標題與內文用昭源黑體 Chiron Hei HK 900（Google Fonts），數字用 Anton
 【段落轉場】${{ cut: '直接硬切', fade: '0.45 秒交叉淡入淡出', slide: '0.55 秒由右往左推移', zoom: '0.5 秒放大穿越' }[c.transition ?? 'fade']}
 
 【分鏡】

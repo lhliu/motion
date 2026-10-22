@@ -25,7 +25,7 @@ export const buildPrompt = (fx: Fx, mode: PromptMode, words: string[], v: Vars, 
 【畫面】
 - 比例：${ratioZh[ratio]}，畫面置中、滿版，可以直接螢幕錄影使用
 - 文字內容：${quoteWords(words)}
-- 字體：Noto Sans TC 粗體 900（Google Fonts）
+- 字體：中文用昭源黑體 Chiron Hei HK 粗體 900，數字（0–9 與 % , . : + -）用 Anton（皆為 Google Fonts）
 - 配色：背景 ${v.bg}、文字 ${v.fg}、強調色 ${v.ac}
 
 【動態】
@@ -45,7 +45,7 @@ ${fx.motion}
 SCENE
 - Aspect ratio: ${ratioEn[ratio]}, full-bleed and centered, ready for screen recording
 - Text: ${quoteWordsEn(words)}
-- Typeface: Noto Sans TC, weight 900 (Google Fonts) — the text may be Traditional Chinese
+- Typeface: Chiron Hei HK weight 900 for Chinese and Latin text, with digits (0–9 and % , . : + -) in Anton (both Google Fonts) — the text may be Traditional Chinese
 - Colors: background ${v.bg}, text ${v.fg}, accent ${v.ac}
 
 MOTION

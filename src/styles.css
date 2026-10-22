@@ -15,7 +15,7 @@
   --shadow: 0 1px 2px #0000000d, 0 8px 24px -12px #0000002e;
   --shadow-lg: 0 30px 80px -20px #00000059;
   --radius: 14px;
-  --sans: 'Noto Sans TC', system-ui, -apple-system, 'PingFang TC', sans-serif;
+  --sans: 'Chiron Hei HK', 'Noto Sans TC', system-ui, -apple-system, 'PingFang TC', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   color-scheme: light;
@@ -2613,4 +2613,11 @@ pre.code {
   .kit {
     flex: none;
   }
+}
+
+/* 數字用 Anton（MA Num 只含數字，其他字自動落回昭源黑體） */
+.h-big em b,
+.stats b,
+.ma-num {
+  font-family: 'MA Num', var(--sans);
 }

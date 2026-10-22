@@ -109,7 +109,7 @@ export const syncRoutes = (el: MEl) => {
 
 /** 繪製引擎工廠：內部完全自給自足，匯出 HTML 時以 toString() 內嵌 */
 export const mapRenderer = () => {
-  const FONT = '"Noto Sans TC", "PingFang TC", sans-serif';
+  const FONT = '"MA Num", "Chiron Hei HK", "Noto Sans TC", "PingFang TC", sans-serif';
   const YELLOW = '#f2c14e';
   const clamp = (p: number) => Math.max(0, Math.min(1, p));
   const ease = (p: number) => 1 - Math.pow(1 - clamp(p), 3);

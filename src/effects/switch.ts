@@ -252,9 +252,9 @@ export const switching: Fx[] = [
       const off = document.createElement('canvas');
       const oc = off.getContext('2d', { willReadFrequently: true })!;
       off.height = rows;
-      oc.font = `900 ${rows - 2}px "Noto Sans TC", sans-serif`;
+      oc.font = `900 ${rows - 2}px "MA Num", "Chiron Hei HK", "Noto Sans TC", sans-serif`;
       off.width = Math.ceil(oc.measureText(text).width) + 2;
-      oc.font = `900 ${rows - 2}px "Noto Sans TC", sans-serif`;
+      oc.font = `900 ${rows - 2}px "MA Num", "Chiron Hei HK", "Noto Sans TC", sans-serif`;
       oc.fillStyle = '#fff';
       oc.textBaseline = 'middle';
       oc.fillText(text, 0, rows / 2 + 1);

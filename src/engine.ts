@@ -1,10 +1,12 @@
 import type { Fx, Palette, Tone } from './types';
+import { FONT_STACK, NUM_FONT_CSS } from './fonts';
 
 export const FONT_LINK =
-  'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@500;900&display=swap';
+  'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chiron+Hei+HK:wght@300;400;500;700;800;900&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@500;900&display=swap';
 
 /** 每個特效根節點共用的基礎樣式 */
-export const BASE_FX_CSS = `.fx{position:absolute;inset:0;overflow:hidden;display:grid;place-items:center;background:var(--bg);color:var(--fg);font-family:var(--sans);font-weight:900;line-height:1;--u:min(1cqw,1.7778cqh);-webkit-font-smoothing:antialiased}
+export const BASE_FX_CSS = `${NUM_FONT_CSS}
+.fx{position:absolute;inset:0;overflow:hidden;display:grid;place-items:center;background:var(--bg);color:var(--fg);font-family:var(--sans);font-weight:900;line-height:1;--u:min(1cqw,1.7778cqh);-webkit-font-smoothing:antialiased}
 .fx .c{display:inline-block;white-space:pre}
 .fx *{box-sizing:border-box}`;
 
@@ -25,7 +27,7 @@ export const toneVars = (p: Palette, tone: Tone): Vars => {
 };
 
 export const varsCss = (v: Vars): string =>
-  `--bg:${v.bg};--fg:${v.fg};--ac:${v.ac};--ac2:${v.ac2};--hl:${v.ac2};--mu:color-mix(in srgb,${v.fg} 30%,transparent);--sans:"Noto Sans TC",system-ui,sans-serif;--serif:"Noto Serif TC",serif;--mono:"JetBrains Mono",ui-monospace,monospace`;
+  `--bg:${v.bg};--fg:${v.fg};--ac:${v.ac};--ac2:${v.ac2};--hl:${v.ac2};--mu:color-mix(in srgb,${v.fg} 30%,transparent);--sans:${FONT_STACK};--serif:"Noto Serif TC",serif;--mono:"JetBrains Mono",ui-monospace,monospace`;
 
 const injected = new Set<string>();
 

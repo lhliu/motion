@@ -90,6 +90,10 @@ npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 | `functions/api/`、`functions/c/` | REST API 與 Combo 播放頁 |
 | `src/styles.css` | 網站樣式（站內 class 一律以 `ma-` 或具體前綴命名，避免滲入特效） |
 
+## 字型
+
+標題與內文用昭源黑體（Chiron Hei HK，Google Fonts），數字用 Anton。Anton 只取數字與 `% + , - . :`，以 data URL 內嵌在 `src/fonts.ts`（字型名 `MA Num`），排在字型順序最前面，其他字元自動落回昭源黑體。特效 CSS 用 `var(--sans)`、畫布用 `"MA Num", "Chiron Hei HK", "Noto Sans TC"`；本機渲染載入 `/r/fonts.css`。兩者皆為 SIL Open Font License，可商用。
+
 ## 新增一個特效
 
 在對應分類檔加一筆 `Fx`：

@@ -4,6 +4,11 @@ import { mount, setSpeed, toneVars, type Mounted } from './engine';
 import { buildPrompt, exportHtml, PROMPT_MODES, type PromptMode, type Ratio } from './prompts';
 import type { Fx, Palette, SecId, Tone } from './types';
 import { KITS, MOOD_PREVIEW, PICKS, TEXT_TAGS, USES } from './uses';
+import { NUM_FONT_CSS, preloadFonts } from './fonts';
+
+// 數字字型（Anton）在任何特效掛載前就先註冊，工作室的畫布才用得到
+document.head.insertAdjacentHTML('beforeend', `<style id="ma-num-font">${NUM_FONT_CSS}</style>`);
+preloadFonts();
 import { esc } from './util';
 import { initCombos } from './combo-ui';
 import { initStudio } from './drop-studio';

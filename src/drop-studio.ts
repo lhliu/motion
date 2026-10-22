@@ -1,4 +1,5 @@
 import { drawDrop, dropToWords, parseDrop, type DropOpts } from './drop';
+import { preloadFonts } from './fonts';
 import { esc } from './util';
 import { presetBar } from './preset-bar';
 import type { Preset } from './presets';
@@ -256,7 +257,7 @@ export const initStudio = (deps: StudioDeps) => {
   /* ───────── 輸出 ───────── */
   const fontsReady = async () => {
     try {
-      await Promise.all([400, 500, 700, 900].map((w) => document.fonts.load(`${w} 100px "Noto Sans TC"`, lines.join(''))));
+      await preloadFonts(lines.join(''));
     } catch {
       /* 字體載入失敗時用系統字 */
     }
