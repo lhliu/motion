@@ -2525,3 +2525,83 @@ pre.code {
     justify-content: center;
   }
 }
+
+/* ───────── 文字區：常用、套組、收合 ───────── */
+.sec-picks .sec-h code {
+  background: var(--ink);
+  color: var(--page);
+}
+.kits {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+.kits-l {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-right: 6px;
+  font-weight: 900;
+  font-size: 15px;
+}
+.kits-l small {
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.kit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line));
+  background: color-mix(in srgb, var(--brand) 8%, var(--panel));
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.kit b {
+  font-size: 14px;
+}
+.kit small {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.kit:hover {
+  border-color: var(--brand);
+}
+.sec-more {
+  display: block;
+  margin: 18px auto 0;
+  height: 40px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+.sec-more:hover {
+  border-color: var(--ink);
+}
+@media (max-width: 720px) {
+  .kits {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-right: -16px;
+    padding-right: 16px;
+    scrollbar-width: none;
+  }
+  .kits-l {
+    display: none;
+  }
+  .kit {
+    flex: none;
+  }
+}

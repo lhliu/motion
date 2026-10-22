@@ -14,6 +14,7 @@ import { retro } from './effects/retro';
 import { map } from './effects/map';
 import { liquid } from './effects/liquid';
 import { photo } from './effects/photo';
+import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
   { id: 'text', code: 'TEXT', zh: '文字特效', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字、水滴標題', studio: 'drop' },
@@ -60,6 +61,19 @@ export const EFFECTS: Fx[] = [
   ...liquid,
   ...photo,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
+
+// 文字特效：指定用途、標籤收斂成固定詞彙，並依用途重新排序（編號跟著用途走）
+const secIdx = (f: Fx) => ['text', 'photo', 'map'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
+const useIdx = (f: Fx) => USES.findIndex((u) => u.id === f.use);
+// 同一用途內依 uses.ts 列出的順序（常用的在前）
+const useRank = new Map(Object.keys(USE_OF).map((id, i) => [id, i]));
+EFFECTS.forEach((f) => {
+  if (secIdx(f) !== 0) return;
+  f.use = USE_OF[f.id] ?? 'mood';
+  f.kw = f.tags;
+  f.tags = canonTags(f.tags);
+});
+EFFECTS.sort((a, b) => secIdx(a) - secIdx(b) || (secIdx(a) === 0 ? useIdx(a) - useIdx(b) || useRank.get(a.id)! - useRank.get(b.id)! : 0) || order.indexOf(a.cat) - order.indexOf(b.cat));
 
 export const secOf = (f: Fx): SecId => CATEGORIES.find((c) => c.id === f.cat)!.sec;
 

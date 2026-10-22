@@ -79,7 +79,8 @@ export const card: Fx[] = [
         const f = (now: number) => {
           if (!alive) return;
           const p = Math.min(1, (now - start) / 1200);
-          el.textContent = fmt(to * (1 - Math.pow(1 - p, 3)));
+          // 不是數字（例如還沒填的 ○）就直接顯示原字，不跑計數
+          el.textContent = /^[\d,.]+$/.test(raw.trim()) ? fmt(to * (1 - Math.pow(1 - p, 3))) : raw;
           if (p < 1) raf = requestAnimationFrame(f);
           else {
             el.textContent = raw;

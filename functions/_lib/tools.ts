@@ -5,6 +5,7 @@ import { buildPrompt, type PromptMode, type Ratio } from '../../src/prompts';
 import type { Fx } from '../../src/types';
 import { buildMapScene, type MapSceneInput } from '../../src/mapkit';
 import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
+import { KITS, USES } from '../../src/uses';
 import { MODULE_INFO, normalizePhotoScene, PARAMS, photoFxId, PHOTO_MODULES, type PModule, type PScene } from '../../src/photokit';
 import type { Env } from './env';
 import { deleteCombo, getCombo, getPreset, listCombos, listPresets, saveCombo, savePreset } from './store';
@@ -33,6 +34,7 @@ const summary = (f: Fx) => ({
   zh: f.zh,
   en: f.en,
   section: secOf(f),
+  use: f.use ?? null,
   category: f.cat,
   description: f.desc,
   tags: f.tags,
@@ -51,6 +53,7 @@ const score = (f: Fx, terms: string[]) => {
     [f.en, 5],
     [f.id, 5],
     [f.tags.join(' '), 4],
+    [(f.kw ?? []).join(' '), 3],
     [f.desc, 3],
     [`${cat.zh} ${cat.code} ${cat.tagline}`, 2],
     [f.motion, 1],
@@ -153,7 +156,9 @@ export const TOOLS: ToolDef[] = [
     run: async () => ({
       total_effects: EFFECTS.length,
       sections: SECTIONS.map((x) => ({ ...x, count: EFFECTS.filter((f) => secOf(f) === x.id).length, categories: CATEGORIES.filter((c) => c.sec === x.id).map((c) => c.id) })),
+      text_uses: USES.map((u) => ({ ...u, count: EFFECTS.filter((f) => f.use === u.id).length })),
       categories: CATEGORIES.map((c) => ({ ...c, count: EFFECTS.filter((f) => f.cat === c.id).length })),
+      kits: KITS.map((k) => ({ id: k.id, name: k.zh, flow: k.desc, ratio: k.combo.ratio, scenes: k.combo.scenes })),
       tags: ALL_TAGS,
       palettes: PALETTES,
       tones: { ink: '深色底', paper: '淺色底', accent: '主色底' },
@@ -169,7 +174,8 @@ export const TOOLS: ToolDef[] = [
       properties: {
         query: { type: 'string', description: '關鍵字，空白分隔多個詞' },
         section: { type: 'string', enum: SECTIONS.map((x) => x.id), description: 'text＝文字特效、photo＝圖片運鏡、map＝地圖區位' },
-        category: { type: 'string', enum: CATEGORIES.map((c) => c.id) },
+        use: { type: 'string', enum: USES.map((u) => u.id), description: `文字特效的用途：${USES.map((u) => `${u.id}＝${u.zh}`).join('、')}` },
+        category: { type: 'string', enum: CATEGORIES.map((c) => c.id), description: '技法分類（文字區的「風格」）' },
         tag: { type: 'string', description: '情境標籤，例如 轉場、片頭、數據' },
         limit: { type: 'number', description: '最多回傳幾筆，預設 20' },
       },
@@ -179,7 +185,7 @@ export const TOOLS: ToolDef[] = [
       const terms = norm(String(a.query ?? ''))
         .split(/\s+/)
         .filter(Boolean);
-      let list = EFFECTS.filter((f) => (!a.section || secOf(f) === a.section) && (!a.category || f.cat === a.category) && (!a.tag || f.tags.includes(String(a.tag).replace(/^#/, ''))));
+      let list = EFFECTS.filter((f) => (!a.section || secOf(f) === a.section) && (!a.use || f.use === a.use) && (!a.category || f.cat === a.category) && (!a.tag || f.tags.includes(String(a.tag).replace(/^#/, ''))));
       if (terms.length)
         list = list
           .map((f) => ({ f, s: score(f, terms) }))
@@ -529,7 +535,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 
 組 Combo 的建議流程：
 1. 先釐清用途、比例（YouTube 16:9、Shorts 9:16）、總長度與要出現的文字。
-2. 用 search_effects 依每段的目的挑特效，留意 word_hint 的文字格式。
+2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
 地圖片段請用 build_map_scene、水滴請用 build_drop_scene、照片運鏡（推拉、甩入、3D 卡片、前後對比、放大鏡）請用 build_photo_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。

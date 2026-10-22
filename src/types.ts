@@ -49,6 +49,10 @@ export interface Fx {
   hint?: string;
   /** 加入時間，用於「最新」排序 */
   added?: string;
+  /** 文字特效的用途分類（data.ts 依 uses.ts 指定） */
+  use?: import('./uses').UseId;
+  /** 原始的細標籤，只用於搜尋 */
+  kw?: string[];
 }
 
 /** 網站的三個工作區：文字特效、圖片運鏡、地圖區位 */

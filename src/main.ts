@@ -2,7 +2,8 @@ import './styles.css';
 import { CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from './data';
 import { mount, setSpeed, toneVars, type Mounted } from './engine';
 import { buildPrompt, exportHtml, PROMPT_MODES, type PromptMode, type Ratio } from './prompts';
-import type { CatId, Fx, Palette, SecId, Tone } from './types';
+import type { Fx, Palette, SecId, Tone } from './types';
+import { KITS, MOOD_PREVIEW, PICKS, TEXT_TAGS, USES } from './uses';
 import { esc } from './util';
 import { initCombos } from './combo-ui';
 import { initStudio } from './drop-studio';
@@ -41,7 +42,11 @@ const urlSec = new URLSearchParams(location.search).get('ws') as SecId | null;
 const state = {
   sec: (urlSec && SEC_IDS.includes(urlSec) ? urlSec : store.get<SecId>('sec', 'text')) as SecId,
   q: '',
-  cat: 'all' as CatId | 'all',
+  /** 第一層分組：文字區為用途，其他區為分類 */
+  cat: 'all' as string,
+  /** 文字區的第二層「風格」（原技法分類） */
+  style: '',
+  moodOpen: false,
   tag: '' as string,
   favOnly: false,
   sort: 'num' as 'num' | 'name' | 'shuffle',
@@ -84,7 +89,8 @@ const catOf = new Map(CATEGORIES.map((c) => [c.id, c]));
 const haystack = new Map(
   EFFECTS.map((f) => {
     const c = catOf.get(f.cat)!;
-    return [f.id, norm([f.zh, f.en, f.id, f.desc, f.tags.join(' '), c.zh, c.code, f.motion, f.sample.join(' ')].join(' '))];
+    const u = USES.find((x) => x.id === f.use);
+    return [f.id, norm([f.zh, f.en, f.id, f.desc, f.tags.join(' '), (f.kw ?? []).join(' '), c.zh, c.code, u?.zh ?? '', f.motion, f.sample.join(' ')].join(' '))];
   }),
 );
 
@@ -98,7 +104,8 @@ const filtered = (): Fx[] => {
   const terms = norm(state.q).split(' ').filter(Boolean);
   let list = EFFECTS.filter((f) => {
     if (secOf(f) !== state.sec) return false;
-    if (state.cat !== 'all' && f.cat !== state.cat) return false;
+    if (state.cat !== 'all' && !groups().find((g) => g.id === state.cat)?.has(f)) return false;
+    if (state.style && f.cat !== state.style) return false;
     if (state.tag && !f.tags.includes(state.tag)) return false;
     if (state.favOnly && !state.favs.has(f.id)) return false;
     if (!terms.length) return true;
@@ -284,6 +291,7 @@ const setSec = (id: SecId, push = true) => {
   if (!changed) return;
   state.cat = 'all';
   state.tag = '';
+  state.style = '';
   renderWs();
   renderHeroCopy();
   renderCats();
@@ -301,23 +309,46 @@ wsEl.addEventListener('click', (e) => {
 /* ───────── 篩選列 ───────── */
 const catsEl = $('#cats');
 const tagsEl = $('#tags');
+interface Group {
+  id: string;
+  code: string;
+  zh: string;
+  tagline: string;
+  has: (f: Fx) => boolean;
+}
+/** 文字區依用途分組，圖片與地圖依分類 */
+const groups = (): Group[] =>
+  state.sec === 'text'
+    ? USES.map((u) => ({ ...u, has: (f: Fx) => f.use === u.id }))
+    : CATEGORIES.filter((c) => c.sec === state.sec).map((c) => ({ ...c, has: (f: Fx) => f.cat === c.id }));
+const styleEl = $<HTMLSelectElement>('#styleSel');
 const renderCats = () => {
-  const counts = new Map<string, number>();
-  EFFECTS.forEach((f) => counts.set(f.cat, (counts.get(f.cat) ?? 0) + 1));
-  const cats = CATEGORIES.filter((c) => c.sec === state.sec);
+  const all = secFx();
   catsEl.innerHTML =
-    `<button class="cat" data-cat="all" aria-pressed="${state.cat === 'all'}">全部 <small>${secFx().length}</small></button>` +
-    cats.map(
-      (c) =>
-        `<button class="cat" data-cat="${c.id}" aria-pressed="${state.cat === c.id}"><code>${c.code}</code>${c.zh} <small>${counts.get(c.id) ?? 0}</small></button>`,
-    ).join('');
+    `<button class="cat" data-cat="all" aria-pressed="${state.cat === 'all'}">全部 <small>${all.length}</small></button>` +
+    groups()
+      .map((g) => `<button class="cat" data-cat="${g.id}" aria-pressed="${state.cat === g.id}" title="${esc(g.tagline)}"><code>${g.code}</code>${g.zh} <small>${all.filter(g.has).length}</small></button>`)
+      .join('');
+  // 第二層風格：只在文字區出現
+  styleEl.hidden = state.sec !== 'text';
+  if (state.sec === 'text')
+    styleEl.innerHTML =
+      `<option value="">所有風格</option>` +
+      CATEGORIES.filter((c) => c.sec === 'text')
+        .map((c) => `<option value="${c.id}"${state.style === c.id ? ' selected' : ''}>${c.zh}（${all.filter((f) => f.cat === c.id).length}）</option>`)
+        .join('');
 };
+styleEl.addEventListener('change', () => {
+  state.style = styleEl.value;
+  renderGrid();
+  scrollToGrid();
+});
 const renderTags = () => {
   const m = new Map<string, number>();
   secFx().forEach((f) => f.tags.forEach((t) => m.set(t, (m.get(t) ?? 0) + 1)));
-  tagsEl.innerHTML = [...m.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([t]) => t)
+  // 文字區用固定詞彙的順序，其他區依出現次數
+  const list = state.sec === 'text' ? TEXT_TAGS.filter((t) => m.has(t)) : [...m.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t);
+  tagsEl.innerHTML = list
     .slice(0, 22)
     .map((t) => `<button class="ma-tag" data-tag="${esc(t)}" aria-pressed="${state.tag === t}">#${esc(t)}</button>`)
     .join('');
@@ -325,7 +356,7 @@ const renderTags = () => {
 catsEl.addEventListener('click', (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cat]');
   if (!b) return;
-  state.cat = b.dataset.cat as CatId | 'all';
+  state.cat = b.dataset.cat!;
   renderCats();
   renderGrid();
   b.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
@@ -376,12 +407,22 @@ const renderGrid = () => {
   }
   let html = '';
   if (state.sort === 'num') {
-    for (const c of CATEGORIES) {
-      const items = currentList.filter((f) => f.cat === c.id);
+    // 文字區首頁（沒有任何篩選）：最上方放建案片常用與套組，風格氛圍先收合
+    const browsing = state.sec === 'text' && state.cat === 'all' && !state.q && !state.tag && !state.style && !state.favOnly;
+    if (browsing) {
+      const picks = PICKS.map((id) => EFFECTS.find((f) => f.id === id)!).filter(Boolean);
+      html += `<section class="sec sec-picks" id="cat-picks"><div class="sec-h"><code>PICKS</code><h2>建案片常用</h2><p>每週剪片最常用的 ${picks.length} 招</p></div>
+<div class="kits"><span class="kits-l">套組<small>一鍵帶進 Combo 草稿，換字就能用</small></span>${KITS.map((k) => `<button type="button" class="kit" data-kit="${k.id}"><b>${esc(k.zh)}</b><small>${esc(k.desc)}</small></button>`).join('')}</div>
+<div class="grid">${picks.map(cardHtml).join('')}</div></section>`;
+    }
+    for (const g of groups()) {
+      const items = currentList.filter(g.has);
       if (!items.length) continue;
       const first = NUM.get(items[0].id)!;
       const last = NUM.get(items[items.length - 1].id)!;
-      html += `<section class="sec" id="cat-${c.id}"><div class="sec-h"><code>${c.code}</code><h2>${c.zh}</h2><p>${c.tagline}</p><span>${pad(first)}–${pad(last)}</span></div><div class="grid">${items.map(cardHtml).join('')}</div></section>`;
+      const fold = browsing && g.id === 'mood' && !state.moodOpen && items.length > MOOD_PREVIEW;
+      const shown = fold ? items.slice(0, MOOD_PREVIEW) : items;
+      html += `<section class="sec" id="cat-${g.id}"><div class="sec-h"><code>${g.code}</code><h2>${g.zh}</h2><p>${g.tagline}</p><span>${pad(first)}–${pad(last)}</span></div><div class="grid">${shown.map(cardHtml).join('')}</div>${fold ? `<button type="button" class="sec-more" data-more>看更多${g.zh}（還有 ${items.length - shown.length} 招）</button>` : ''}</section>`;
     }
   } else {
     html = `<section class="sec"><div class="grid">${currentList.map(cardHtml).join('')}</div></section>`;
@@ -403,6 +444,17 @@ const renderGrid = () => {
 
 gridEl.addEventListener('click', (e) => {
   const t = e.target as HTMLElement;
+  if (t.closest('[data-more]')) {
+    state.moodOpen = true;
+    renderGrid();
+    return;
+  }
+  const kit = t.closest<HTMLElement>('[data-kit]');
+  if (kit) {
+    const k = KITS.find((x) => x.id === kit.dataset.kit);
+    if (k) combos.loadDraft(structuredClone(k.combo));
+    return;
+  }
   const fav = t.closest<HTMLButtonElement>('[data-fav]');
   if (fav) {
     e.stopPropagation();
@@ -660,7 +712,8 @@ const renderDetail = () => {
   const c = catOf.get(fx.cat)!;
   $('#dNum').textContent = pad(NUM.get(fx.id)!);
   $('#dTitle').textContent = fx.zh;
-  $('#dEn').textContent = `${fx.en} · ${c.code} ${c.zh}`;
+  const u = USES.find((x) => x.id === fx.use);
+  $('#dEn').textContent = u ? `${fx.en} · ${u.zh}／${c.zh}` : `${fx.en} · ${c.code} ${c.zh}`;
   $('#dDesc').textContent = fx.desc;
   $('#dMotion').textContent = fx.motion;
   $('#dHint').textContent = fx.hint ? `建議：${fx.hint}` : '';

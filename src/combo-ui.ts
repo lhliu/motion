@@ -392,5 +392,14 @@ export const initCombos = (deps: ComboDeps) => {
   else if (view === 'draft') show('draft');
   else if (view === 'mcp') show('mcp');
 
-  return { addScene, isOpen: () => dlg.open, encode: encodeCombo };
+  /** 套組：換掉目前草稿（草稿有內容時先確認）並打開草稿頁 */
+  const loadDraft = (c: Combo) => {
+    if (draft.scenes.length && !confirm(`目前草稿有 ${draft.scenes.length} 段，要換成「${c.title}」嗎？`)) return;
+    draft = c;
+    editingId = undefined;
+    saveDraft();
+    show('draft');
+    deps.toast(`已帶入套組「${c.title}」，把文字換成自己的內容`);
+  };
+  return { addScene, loadDraft, isOpen: () => dlg.open, encode: encodeCombo };
 };
