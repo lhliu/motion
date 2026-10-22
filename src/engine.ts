@@ -1,0 +1,99 @@
+import type { Fx, Palette, Tone } from './types';
+
+export const FONT_LINK =
+  'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@500;900&display=swap';
+
+/** 每個特效根節點共用的基礎樣式 */
+export const BASE_FX_CSS = `.fx{position:absolute;inset:0;overflow:hidden;display:grid;place-items:center;background:var(--bg);color:var(--fg);font-family:var(--sans);font-weight:900;line-height:1;--u:min(1cqw,1.7778cqh);-webkit-font-smoothing:antialiased}
+.fx .c{display:inline-block;white-space:pre}
+.fx *{box-sizing:border-box}`;
+
+export const scopeCss = (fx: Fx): string =>
+  fx.css.replace(/\.S\b/g, `.fx-${fx.id}`).replace(/\bK_/g, `k_${fx.id.replace(/-/g, '_')}_`);
+
+export interface Vars {
+  bg: string;
+  fg: string;
+  ac: string;
+  ac2: string;
+}
+
+export const toneVars = (p: Palette, tone: Tone): Vars => {
+  if (tone === 'ink') return { bg: p.ink, fg: p.paper, ac: p.accent, ac2: p.accent2 };
+  if (tone === 'paper') return { bg: p.paper, fg: p.ink, ac: p.accent, ac2: p.accent2 };
+  return { bg: p.accent, fg: p.ink, ac: p.paper, ac2: p.accent2 };
+};
+
+export const varsCss = (v: Vars): string =>
+  `--bg:${v.bg};--fg:${v.fg};--ac:${v.ac};--ac2:${v.ac2};--hl:${v.ac2};--mu:color-mix(in srgb,${v.fg} 30%,transparent);--sans:"Noto Sans TC",system-ui,sans-serif;--serif:"Noto Serif TC",serif;--mono:"JetBrains Mono",ui-monospace,monospace`;
+
+const injected = new Set<string>();
+
+const ensureCss = (fx: Fx) => {
+  if (!injected.size) {
+    const base = document.createElement('style');
+    base.dataset.fx = 'base';
+    base.textContent = BASE_FX_CSS;
+    document.head.appendChild(base);
+  }
+  if (injected.has(fx.id)) return;
+  injected.add(fx.id);
+  const el = document.createElement('style');
+  el.dataset.fx = fx.id;
+  el.textContent = scopeCss(fx);
+  document.head.appendChild(el);
+};
+
+export interface Mounted {
+  root: HTMLElement;
+  stop: () => void;
+}
+
+/** 把特效掛到容器上；回傳停止函式 */
+export const mount = (host: HTMLElement, fx: Fx, words: string[], vars: Vars, speed = 1): Mounted => {
+  ensureCss(fx);
+  host.replaceChildren();
+  const root = document.createElement('div');
+  root.className = `fx fx-${fx.id}`;
+  root.setAttribute('style', varsCss(vars));
+  root.innerHTML = fx.html(words);
+  host.appendChild(root);
+  let cleanup: (() => void) | void;
+  // 等一個 frame 讓尺寸就緒（canvas 特效需要）
+  const raf = requestAnimationFrame(() => {
+    if (!root.isConnected) return;
+    try {
+      cleanup = fx.run?.(root, words);
+    } catch (e) {
+      console.error(fx.id, e);
+    }
+    setSpeed(root, speed);
+  });
+  setSpeed(root, speed);
+  return {
+    root,
+    stop: () => {
+      cancelAnimationFrame(raf);
+      if (typeof cleanup === 'function') cleanup();
+      root.remove();
+    },
+  };
+};
+
+export const setSpeed = (root: HTMLElement, speed: number) => {
+  root.getAnimations({ subtree: true }).forEach((a) => (a.playbackRate = speed));
+  root.querySelectorAll('svg').forEach((s) => {
+    try {
+      if (speed === 0) s.pauseAnimations();
+      else s.unpauseAnimations();
+    } catch {
+      /* 非 SVG 根節點 */
+    }
+  });
+};
+
+/** 從 CSS 抓出主要循環秒數 */
+export const loopSeconds = (fx: Fx): number => {
+  const m = fx.css.match(/animation:[^;]*?(\d+(?:\.\d+)?)s/);
+  return m ? parseFloat(m[1]) : fx.run ? 4 : 4;
+};
