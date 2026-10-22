@@ -1964,9 +1964,6 @@ pre.code {
 }
 
 /* ───────── 水滴工作室 ───────── */
-.drop-btn svg {
-  color: #3f8fd6;
-}
 .st-body {
   flex: 1;
   min-height: 0;
@@ -2127,9 +2124,6 @@ pre.code {
 }
 
 /* ───────── 地圖工作室 ───────── */
-.map-btn svg {
-  color: #e2673f;
-}
 .ms-stage canvas {
   cursor: grab;
   touch-action: none;
@@ -2301,9 +2295,6 @@ pre.code {
 }
 
 /* ───────── 圖片工作室 ───────── */
-.photo-btn svg {
-  color: #3b82f6;
-}
 .ps-mod h5 {
   margin: 6px 0 6px;
   font-size: 12px;
@@ -2505,9 +2496,6 @@ pre.code {
 }
 /* 窄螢幕：工作室改由各工作區的按鈕進入，站頂只留必要按鈕 */
 @media (max-width: 1100px) {
-  .map-btn,
-  .photo-btn,
-  .drop-btn,
   #randomBtn,
   .brand-t small,
   .ws button small {

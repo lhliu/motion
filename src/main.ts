@@ -896,15 +896,12 @@ $('#dAddCombo').addEventListener('click', () => {
 });
 
 const studio = initStudio({ toast, copy, addScene: (sc) => combos.addScene(sc), store });
-$('#dropBtn').addEventListener('click', () => studio.open());
 const mapStudio = initMapStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc) });
-$('#mapBtn').addEventListener('click', () => mapStudio.open());
 $('#dMapStudio').addEventListener('click', () => {
   closeDetail();
   mapStudio.open();
 });
 const photoStudio = initPhotoStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc) });
-$('#photoBtn').addEventListener('click', () => photoStudio.open());
 $('#dPhotoStudio').addEventListener('click', () => {
   const m = d.fx.id.slice(6) as PModule;
   closeDetail();
