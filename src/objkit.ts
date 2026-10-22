@@ -29,7 +29,7 @@ export interface OScene {
 export const OBJ_INFO: Record<OModule, { zh: string; en: string; desc: string }> = {
   meteor: { zh: '隕石', en: 'Meteor', desc: '漂浮或墜落的隕石，形狀可隨機、對稱、圓潤或碎片，材質有岩石、冰晶、熔岩、金屬' },
   cube: { zh: '魔術方塊', en: 'Rubik Cube', desc: '立體魔術方塊緩慢旋轉並轉動層，材質有塑膠、金屬、花色、單色' },
-  cosmos: { zh: '星空宇宙', en: 'Cosmos', desc: '閃爍星空、光速穿越、旋轉星系、行星光環，可加流星' },
+  cosmos: { zh: '星空宇宙', en: 'Cosmos', desc: '閃爍星空、光速穿越、旋轉星系、行星光環、太陽、月球、地球，可加流星' },
   aerial: { zh: '俯瞰', en: 'Aerial View', desc: '從正上方往下看的城市、河流、山川、草原牛馬、農田、海岸、森林、交流道，鏡頭緩慢平移推近' },
   vehicle: { zh: '交通工具', en: 'Vehicles', desc: '飛機、太空船、汽車、馬車、火車、輪船、熱氣球，側面行進、背景捲動' },
 };
@@ -81,7 +81,7 @@ export const OBJ_PARAMS: Record<OModule, PField[]> = {
     { k: 'speed', label: '轉動速度', type: 'range', min: 0.3, max: 3, step: 0.1 },
   ],
   cosmos: [
-    { k: 'mode', label: '畫面', type: 'seg', opts: [['stars', '閃爍星空'], ['warp', '光速穿越'], ['galaxy', '旋轉星系'], ['planet', '行星光環']] },
+    { k: 'mode', label: '畫面', type: 'seg', opts: [['stars', '閃爍星空'], ['warp', '光速穿越'], ['galaxy', '旋轉星系'], ['planet', '行星光環'], ['sun', '太陽'], ['moon', '月球'], ['earth', '地球']] },
     { k: 'density', label: '星星數量', type: 'range', min: 0.2, max: 3, step: 0.1 },
     { k: 'speed', label: '速度', type: 'range', min: 0, max: 3, step: 0.05 },
     { k: 'color', label: '主色', type: 'color' },
@@ -89,7 +89,7 @@ export const OBJ_PARAMS: Record<OModule, PField[]> = {
     { k: 'planet', label: '行星顏色', type: 'color' },
     { k: 'ring', label: '行星光環', type: 'seg', opts: [['1', '有'], ['0', '無']] },
     { k: 'shoot', label: '流星', type: 'seg', opts: [['1', '有'], ['0', '無']] },
-    { k: 'size', label: '星系／行星大小', type: 'range', min: 0.1, max: 0.6, step: 0.01 },
+    { k: 'size', label: '星系／星球大小', type: 'range', min: 0.1, max: 0.6, step: 0.01 },
   ],
   aerial: [
     { k: 'mode', label: '地景', type: 'seg', opts: [['city', '城市'], ['river', '河流'], ['mountain', '山川'], ['grass', '草原牛馬'], ['farm', '農田'], ['coast', '海岸'], ['forest', '森林'], ['highway', '交流道']] },
@@ -146,6 +146,10 @@ export const normalizeObjScene = (raw: Partial<OScene>, fallback: OModule = 'met
   }
   if (module === 'meteor' && raw.params?.material && raw.params.color === undefined) [params.color, params.color2] = METEOR_COLORS[String(params.material)] ?? METEOR_COLORS.rock;
   if (module === 'cosmos' && params.mode === 'galaxy' && raw.params?.size === undefined) params.size = 0.62;
+  if (module === 'cosmos' && ['sun', 'moon', 'earth'].includes(String(params.mode))) {
+    if (raw.params?.size === undefined) params.size = params.mode === 'sun' ? 0.34 : 0.46;
+    if (raw.params?.y === undefined) params.y = 0.36;
+  }
   for (const k of ['x', 'y']) if (Number.isFinite(Number(raw.params?.[k]))) params[k] = Math.max(0, Math.min(1, Number(raw.params![k])));
   const t = raw.text ?? base.text;
   const text: OText = {
@@ -760,6 +764,150 @@ export const objRenderer = () => {
         ring(true);
         ctx.restore();
       }
+      if (mode === 'sun' || mode === 'moon' || mode === 'earth') {
+        const pe = back(t / 0.8);
+        ctx.save();
+        ctx.translate(X, Y);
+        ctx.scale(pe, pe);
+        // 正射投影：經緯度 → 球面上的點（z<0 在背面，壓到邊緣）
+        const proj = (lon: number, lat: number, rot: number) => {
+          const cl = Math.cos(lat);
+          let x = R * cl * Math.sin(lon + rot);
+          const y = -R * Math.sin(lat);
+          const z = cl * Math.cos(lon + rot);
+          if (z < 0) x = Math.sign(x || 1) * Math.sqrt(Math.max(0, R * R - y * y));
+          return [x, y, z];
+        };
+        // 球面上的不規則色塊（陸地、坑洞、雲），整塊轉到背面就不畫
+        const patch = (list: number[][], rot: number, col: string, seed: number, wob: number) => {
+          list.forEach(([lo, la, rr], i) => {
+            const r = rng(seed + i * 7);
+            const pts: number[][] = [];
+            let vis = false;
+            for (let k = 0; k < 18; k++) {
+              const a = (k / 18) * Math.PI * 2;
+              const kk = rr * (1 - wob / 2 + r() * wob);
+              const p = proj(lo + (Math.cos(a) * kk) / Math.max(0.3, Math.cos(la)), la + Math.sin(a) * kk * 0.8, rot);
+              if (p[2] > 0) vis = true;
+              pts.push(p);
+            }
+            if (!vis) return;
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            pts.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+            ctx.closePath();
+            ctx.fill();
+          });
+        };
+        const shade = (a: number) => {
+          ctx.fillStyle = `rgba(0,0,12,${a})`;
+          ctx.beginPath();
+          ctx.arc(R * 0.42, R * 0.32, R * 1.08, 0, Math.PI * 2);
+          ctx.arc(-R * 0.12, -R * 0.1, R * 0.96, 0, Math.PI * 2, true);
+          ctx.fill('evenodd');
+        };
+        if (mode === 'sun') {
+          // 光芒：長短交錯的實色三角形，兩層反向慢轉
+          const rot = t * 0.15 * sp;
+          ([[16, 1.75, '#ff8a1f', 1], [16, 1.45, '#ffb52e', -1]] as [number, number, string, number][]).forEach(([n, L, c, d], j) => {
+            ctx.fillStyle = c;
+            for (let k = 0; k < n; k++) {
+              const a = ((k + j * 0.5) / n) * Math.PI * 2 + rot * d;
+              const len = R * (L + (k % 2 ? -0.18 : 0) + 0.06 * Math.sin(t * 3 + k));
+              ctx.beginPath();
+              ctx.moveTo(Math.cos(a - 0.11) * R * 0.9, Math.sin(a - 0.11) * R * 0.9);
+              ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len);
+              ctx.lineTo(Math.cos(a + 0.11) * R * 0.9, Math.sin(a + 0.11) * R * 0.9);
+              ctx.closePath();
+              ctx.fill();
+            }
+          });
+          // 日冕：跳動的鋸齒圈
+          ctx.fillStyle = '#ffc93c';
+          ctx.beginPath();
+          for (let k = 0; k <= 48; k++) {
+            const a = (k / 48) * Math.PI * 2 - rot * 0.6;
+            const rr = R * (1.12 + (k % 2 ? 0.07 : 0) + 0.03 * Math.sin(t * 4 + k * 1.7));
+            if (k) ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+            else ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+          }
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(0, 0, R, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffd84a';
+          ctx.fill();
+          ctx.save();
+          ctx.clip();
+          ctx.fillStyle = '#ffe98a';
+          ctx.beginPath();
+          ctx.arc(-R * 0.18, -R * 0.2, R * 0.68, 0, Math.PI * 2);
+          ctx.fill();
+          patch([[0.3, 0.2, 0.16], [2.1, -0.35, 0.12], [3.6, 0.45, 0.1], [4.8, -0.1, 0.18], [5.7, 0.6, 0.08], [1.3, -0.7, 0.1]], t * 0.25 * sp, '#ffb52e', 31, 0.5);
+          ctx.restore();
+        }
+        if (mode === 'moon') {
+          const rot = t * 0.12 * sp;
+          ctx.beginPath();
+          ctx.arc(0, 0, R, 0, Math.PI * 2);
+          ctx.fillStyle = '#d9d8d2';
+          ctx.fill();
+          ctx.save();
+          ctx.clip();
+          // 月海
+          patch([[0.4, 0.35, 0.42], [-0.5, 0.1, 0.32], [1.6, -0.25, 0.36], [3.2, 0.3, 0.4], [4.6, -0.4, 0.3]], rot, '#b9b8b0', 41, 0.5);
+          // 坑洞：亮邊＋深色底
+          const cr = [[0.1, -0.5, 0.12], [0.9, 0.6, 0.1], [-0.8, -0.3, 0.14], [2.3, 0.1, 0.12], [2.9, -0.6, 0.09], [3.9, 0.5, 0.13], [5.1, 0, 0.11], [5.6, -0.5, 0.08], [1.2, 0.05, 0.07], [-0.2, 0.75, 0.07]];
+          patch(cr.map(([a, b, c]) => [a + 0.02, b + 0.02, c]), rot, '#efeee9', 51, 0.1);
+          patch(cr, rot, '#a3a29a', 51, 0.1);
+          shade(0.42);
+          ctx.restore();
+        }
+        if (mode === 'earth') {
+          const rot = t * 0.18 * sp;
+          // 繞行的小月亮（後半圈在地球後面）
+          const ma = t * 0.5 * sp + 1;
+          const moon = (front: boolean) => {
+            if (front !== Math.sin(ma) > 0) return;
+            const mx = Math.cos(ma) * R * 1.75;
+            const my = Math.sin(ma) * R * 0.35 - Math.cos(ma) * R * 0.25;
+            ctx.fillStyle = '#d9d8d2';
+            ctx.beginPath();
+            ctx.arc(mx, my, R * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#a3a29a';
+            ctx.beginPath();
+            ctx.arc(mx - R * 0.05, my - R * 0.04, R * 0.05, 0, Math.PI * 2);
+            ctx.arc(mx + R * 0.07, my + R * 0.06, R * 0.035, 0, Math.PI * 2);
+            ctx.fill();
+          };
+          moon(false);
+          // 大氣層：一圈實色細邊
+          ctx.beginPath();
+          ctx.arc(0, 0, R * 1.07, 0, Math.PI * 2);
+          ctx.fillStyle = '#8fd0ff';
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(0, 0, R, 0, Math.PI * 2);
+          ctx.fillStyle = '#2f7fd8';
+          ctx.fill();
+          ctx.save();
+          ctx.clip();
+          ctx.fillStyle = '#3b92e6';
+          ctx.beginPath();
+          ctx.arc(-R * 0.2, -R * 0.2, R * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+          // 陸地、冰帽、雲（雲轉得比較快）
+          const land = [[0.2, 0.75, 0.42], [0.55, 0.3, 0.38], [0.35, -0.25, 0.42], [2.0, 0.55, 0.5], [2.4, 0.15, 0.32], [2.9, -0.45, 0.34], [4.4, 0.6, 0.38], [4.6, 0.1, 0.25], [4.9, -0.4, 0.42], [5.8, 0.35, 0.2]];
+          patch(land, rot, '#5fb35a', 61, 0.55);
+          patch(land.filter((_, i) => i % 3 === 0).map(([a, b, c]) => [a + 0.06, b - 0.05, c * 0.5]), rot, '#8fc85e', 71, 0.5);
+          patch([[0, 1.45, 0.3], [3, 1.45, 0.3], [0, -1.45, 0.3], [3, -1.45, 0.3]], rot, '#f2f6fa', 81, 0.3);
+          patch([[0.9, 0.45, 0.22], [1.7, -0.1, 0.18], [3.4, 0.35, 0.2], [4.2, -0.55, 0.16], [5.4, 0.1, 0.22], [0.1, -0.6, 0.15]], t * 0.3 * sp, '#ffffff', 91, 0.7);
+          shade(0.4);
+          ctx.restore();
+          moon(true);
+        }
+        ctx.restore();
+      }
     }
     // 流星：固定節奏從右上斜劃過
     if (g('shoot', 1) && mode !== 'warp') {
@@ -788,7 +936,7 @@ export const objRenderer = () => {
       }
     }
     ctx.restore();
-    return { cx: X, cy: Y, r: mode === 'planet' || mode === 'galaxy' ? R : S * 0.1 };
+    return { cx: X, cy: Y, r: mode === 'stars' || mode === 'warp' ? S * 0.1 : mode === 'sun' ? R * 1.7 : mode === 'earth' ? R * 1.15 : R };
   };
 
   /* ───────── 俯瞰（正上方往下看，鏡頭緩慢平移推近） ───────── */
