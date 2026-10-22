@@ -242,7 +242,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        template: { type: 'string', enum: ['aerial', 'street', 'blank'], description: '預設 aerial' },
+        template: { type: 'string', enum: ['aerial', 'street', 'routes', 'blank'], description: '預設 aerial；routes＝放射路線（從一個起點拉箭頭到多個目的地）' },
         ratio: { type: 'string', enum: ['9:16', '16:9', '1:1'], description: '預設 9:16' },
         duration: { type: 'number', description: '整段秒數，預設 6' },
         tag: { type: 'string', description: '左上標題籤，例如「區域｜案名」；空字串＝移除' },
@@ -265,7 +265,25 @@ export const TOOLS: ToolDef[] = [
         handle: { type: 'string', description: '頻道署名；空字串＝移除' },
         bg_url: { type: 'string', description: '底圖圖片網址（選填）；沒有時預覽會用風格化底圖，正式使用建議在網站地圖工作室上傳自己的底圖' },
         bg_dim: { type: 'number', description: '底圖調暗 0–0.7' },
-        elements: { type: 'array', items: { type: 'object' }, description: '進階：額外元件 {type: tag|road|site|label|pin|info|stat|compass|text, x, y, text, lines, color, fg, size, delay, pts}' },
+        routes: {
+          type: 'object',
+          description: '放射路線：從一個起點拉出多條帶箭頭的路線到不同目的地，例如「從這裡開車到南港、內湖、北車都很方便」。可搭配任何範本，routes 範本已排好位置',
+          required: ['destinations'],
+          properties: {
+            origin: { type: 'string', description: '起點名稱，例如案名；空字串＝只有圓點' },
+            x: { type: 'number', description: '起點位置 0–1' },
+            y: { type: 'number' },
+            destinations: {
+              type: 'array',
+              maxItems: 6,
+              items: { type: 'object', required: ['name'], properties: { name: { type: 'string' }, note: { type: 'string', description: '附註，例如「開車約 15 分鐘」；時間請用使用者提供或實測的數字' }, color: { type: 'string', description: '#RRGGBB，省略則自動配色' }, x: { type: 'number' }, y: { type: 'number' } } },
+            },
+            curve: { type: 'number', description: '彎曲程度 -0.5～0.5，預設 0.15' },
+            dash: { type: 'boolean', description: '虛線並往前流動' },
+            single_color: { type: 'string', description: '所有路線用同一個顏色 #RRGGBB' },
+          },
+        },
+        elements: { type: 'array', items: { type: 'object' }, description: '進階：額外元件 {type: tag|road|site|label|pin|info|stat|compass|text|routes, x, y, text, lines, color, fg, size, delay, pts}' },
         title: { type: 'string', description: '預覽用名稱' },
       },
     },
@@ -538,7 +556,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
-地圖片段請用 build_map_scene、水滴請用 build_drop_scene、照片運鏡（推拉、甩入、3D 卡片、前後對比、放大鏡）請用 build_photo_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+地圖片段請用 build_map_scene（要表達「從這裡到 A、B、C 都方便」時用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡（推拉、甩入、3D 卡片、前後對比、放大鏡）請用 build_photo_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

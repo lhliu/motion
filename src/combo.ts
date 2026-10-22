@@ -95,10 +95,10 @@ export const sceneSummary = (effect: string, words: string[], quote = false): st
     const j = words.find((x) => x.trim().startsWith('{'));
     try {
       const sc = JSON.parse(j ?? '') as { els?: { type: string; text?: string; lines?: string[]; fg?: string }[]; bgUrl?: string };
-      const name: Record<string, string> = { tag: '標題', label: '基地標籤', road: '道路', info: '資訊卡', stat: '數據卡', text: '文字' };
+      const name: Record<string, string> = { tag: '標題', label: '基地標籤', road: '道路', info: '資訊卡', stat: '數據卡', text: '文字', routes: '路線' };
       const parts = (sc.els ?? [])
         .filter((e) => name[e.type])
-        .map((e) => `${name[e.type]}${q(e.type === 'info' || e.type === 'stat' ? [e.text, ...(e.lines ?? [])].filter(Boolean).join(' ').replace(/[*|]/g, ' ').replace(/\s+/g, ' ').trim() : (e.text ?? ''))}`);
+        .map((e) => `${name[e.type]}${q(e.type === 'routes' ? [e.text, (e.lines ?? []).map((l) => l.split('|')[0]).join('、')].filter(Boolean).join(' → ') : e.type === 'info' || e.type === 'stat' ? [e.text, ...(e.lines ?? [])].filter(Boolean).join(' ').replace(/[*|]/g, ' ').replace(/\s+/g, ' ').trim() : (e.text ?? ''))}`);
       return `地圖場景（${sc.els?.length ?? 0} 個元件${sc.bgUrl ? '、含底圖' : '、無底圖'}）：${parts.join('、')}`;
     } catch {
       return '地圖場景（預設範本）';

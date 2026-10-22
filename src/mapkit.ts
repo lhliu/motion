@@ -1,7 +1,7 @@
 // 地圖疊加元件：照「持家男子KC」地圖片段的樣式設計，全部硬邊、不使用陰影或模糊。
 // 座標用 0–1 的畫面比例，尺寸以短邊 1080 為基準。
 
-export type MType = 'tag' | 'road' | 'site' | 'label' | 'pin' | 'info' | 'stat' | 'compass' | 'text';
+export type MType = 'tag' | 'road' | 'site' | 'label' | 'pin' | 'info' | 'stat' | 'compass' | 'text' | 'routes';
 
 export interface MEl {
   id: string;
@@ -25,8 +25,14 @@ export interface MEl {
   variant?: 'dark' | 'light';
   /** site：四個角（0–1） */
   pts?: number[][];
-  /** info：每行一句，* 開頭用強調色；stat：「標籤|數字|單位|附註」 */
+  /** info：每行一句，* 開頭用強調色；stat：「標籤|數字|單位|附註」；routes：「目的地|附註|#色碼」 */
   lines?: string[];
+  /** routes：路線彎曲程度（-0.5～0.5，0＝直線） */
+  curve?: number;
+  /** routes：虛線並往前流動 */
+  dash?: boolean;
+  /** routes：每條路線不同顏色（false＝全部用 color） */
+  multi?: boolean;
 }
 
 export interface MScene {
@@ -53,6 +59,7 @@ export const TYPE_NAME: Record<MType, string> = {
   stat: '數據卡',
   compass: '指北針',
   text: '文字',
+  routes: '放射路線',
 };
 
 const YELLOW = '#f2c14e';
@@ -71,8 +78,23 @@ export const makeEl = (type: MType, at: Partial<MEl> = {}): MEl => {
     stat: { x: 0.5, y: 0.67, size: 1, color: YELLOW, alpha: 0.95, text: '案名', fg: '路名 × 路名', lines: ['地上|27|層|', '全案|283|戶|', '每層|11–12|戶|4 部電梯'] },
     compass: { x: 0.9, y: 0.12, size: 1 },
     text: { x: 0.5, y: 0.84, size: 1, text: '字幕文字', color: '#ffffff', fg: '#111111', vertical: true },
+    routes: { x: 0.5, y: 0.6, size: 1, text: '某某建案', color: '#ff5a36', multi: true, curve: 0.15, dash: false, lines: ['南港|開車約 ○ 分鐘', '內湖|開車約 ○ 分鐘', '台北車站|開車約 ○ 分鐘'] },
   };
-  return { id: newId(), type, x: 0.5, y: 0.5, size: 1, delay: 0, ...base[type], ...at } as MEl;
+  const el = { id: newId(), type, x: 0.5, y: 0.5, size: 1, delay: 0, ...base[type], ...at } as MEl;
+  if (type === 'routes') syncRoutes(el);
+  return el;
+};
+
+/** 放射路線：讓目的地座標數量跟著目的地清單（新增的目的地自動排成扇形） */
+export const syncRoutes = (el: MEl) => {
+  const n = (el.lines ?? []).length;
+  const pts = (el.pts ?? []).slice(0, n);
+  for (let i = pts.length; i < n; i++) {
+    const a = -Math.PI * (0.85 - (0.7 * i) / Math.max(1, n - 1 || 1));
+    pts.push([Math.max(0.12, Math.min(0.88, el.x + Math.cos(a) * 0.3)), Math.max(0.1, Math.min(0.9, el.y + Math.sin(a) * 0.22))]);
+  }
+  el.pts = pts;
+  return el;
 };
 
 
@@ -334,6 +356,154 @@ export const mapRenderer = () => {
         box = [X - r, Y - r * 1.4, X + r * 1.4, Y + r];
         break;
       }
+      case 'routes': {
+        const PAL = ['#ff5a36', '#f2c14e', '#3fa9f5', '#34c38f', '#a78bfa', '#f472b6'];
+        const isLight = (hex: string) => {
+          const h = hex.replace('#', '');
+          if (h.length < 6) return true;
+          const [r, g, b] = [0, 2, 4].map((k) => parseInt(h.slice(k, k + 2), 16));
+          return r * 0.299 + g * 0.587 + b * 0.114 > 165;
+        };
+        const items = (el.lines ?? []).map((l) => l.split('|').map((x) => x.trim()));
+        const pts = el.pts ?? [];
+        const base = el.color ?? '#ff5a36';
+        const r0 = 22 * u;
+        const lw = 11 * u;
+        const xs = [X];
+        const ys = [Y];
+        items.forEach((it, i) => {
+          const d = pts[i];
+          if (!d) return;
+          const DX = d[0] * W;
+          const DY = d[1] * H;
+          xs.push(DX);
+          ys.push(DY);
+          const st = lt - 0.35 - i * 0.35;
+          if (st <= 0) return;
+          const col = it[2] || (el.multi === false ? base : PAL[i % PAL.length]);
+          // 二次貝茲曲線：控制點往垂直方向偏移
+          const vx = DX - X;
+          const vy = DY - Y;
+          const k = el.curve ?? 0.15;
+          const cx = (X + DX) / 2 - vy * k;
+          const cy = (Y + DY) / 2 + vx * k;
+          const pt: number[][] = [];
+          for (let j = 0; j <= 60; j++) {
+            const q = j / 60;
+            const a = (1 - q) * (1 - q);
+            const b = 2 * (1 - q) * q;
+            const c = q * q;
+            const px = a * X + b * cx + c * DX;
+            const py = a * Y + b * cy + c * DY;
+            if (Math.hypot(px - X, py - Y) > r0 * 1.6) pt.push([px, py]);
+          }
+          if (pt.length < 2) return;
+          const seg = pt.slice(1).map((q, j) => Math.hypot(q[0] - pt[j][0], q[1] - pt[j][1]));
+          const total = seg.reduce((s2, v) => s2 + v, 0);
+          const pr = ease(st / 0.8);
+          let left = total * pr;
+          const path = [pt[0]];
+          for (let j = 0; j < seg.length && left > 0; j++) {
+            const f = Math.min(1, left / Math.max(0.001, seg[j]));
+            path.push([pt[j][0] + (pt[j + 1][0] - pt[j][0]) * f, pt[j][1] + (pt[j + 1][1] - pt[j][1]) * f]);
+            left -= seg[j];
+          }
+          const tip = path[path.length - 1];
+          const prev = path.length > 1 ? path[path.length - 2] : pt[0];
+          const ang = Math.atan2(tip[1] - prev[1], tip[0] - prev[0]);
+          // 線：白色外框＋路線色（虛線會往前流動）
+          ctx.save();
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          if (el.dash) {
+            ctx.setLineDash([lw * 1.8, lw * 1.5]);
+            ctx.lineDashOffset = -lt * 60 * u;
+          }
+          const stroke = (w: number, c: string) => {
+            ctx.strokeStyle = c;
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            path.forEach(([a, b], j) => (j ? ctx.lineTo(a, b) : ctx.moveTo(a, b)));
+            ctx.stroke();
+          };
+          stroke(lw + 8 * u, '#ffffff');
+          stroke(lw, col);
+          ctx.restore();
+          // 箭頭
+          const ah = lw * 2.7;
+          const head = (s2: number, c: string) => {
+            ctx.save();
+            ctx.translate(tip[0], tip[1]);
+            ctx.rotate(ang);
+            ctx.fillStyle = c;
+            ctx.beginPath();
+            ctx.moveTo(ah * 0.35 * s2, 0);
+            ctx.lineTo(-ah * 0.75 * s2, -ah * 0.55 * s2);
+            ctx.lineTo(-ah * 0.75 * s2, ah * 0.55 * s2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          };
+          head(1.28, '#ffffff');
+          head(1, col);
+          // 目的地標籤：箭頭到達後彈出，放在箭頭前方
+          const lp = st - 0.75;
+          if (lp > 0 && it[0]) {
+            const sc2 = back(lp / 0.4);
+            const fs = 46 * u;
+            ctx.font = `900 ${fs}px ${FONT}`;
+            const w = ctx.measureText(it[0]).width + fs * 1.2;
+            const h = fs * 1.62;
+            const ux = Math.cos(ang);
+            const uy = Math.sin(ang);
+            const edge = Math.min(Math.abs(ux) > 0.01 ? w / 2 / Math.abs(ux) : 1e9, Math.abs(uy) > 0.01 ? h / 2 / Math.abs(uy) : 1e9);
+            const gap = ah * 0.6 + edge;
+            const LX = DX + ux * gap;
+            const LY = DY + uy * gap;
+            ctx.save();
+            ctx.translate(LX, LY);
+            ctx.scale(sc2, sc2);
+            pill(ctx, 0, 0, it[0], fs, col, isLight(col) ? '#1c1c1c' : '#ffffff');
+            if (it[1]) pill(ctx, 0, h * 0.95, it[1], fs * 0.62, '#1c1c1c', '#ffffff', 0.88, 0.6);
+            ctx.restore();
+            xs.push(LX - w / 2, LX + w / 2);
+            ys.push(LY - h / 2, LY + h * 1.5);
+          }
+        });
+        // 起點：放在線的上面
+        const e0 = back(clamp(lt / 0.4));
+        ctx.save();
+        ctx.globalAlpha *= clamp(lt / 0.12);
+        if (lt > 0.4) {
+          const pr = (lt % 1.6) / 1.6;
+          ctx.save();
+          ctx.globalAlpha *= (1 - pr) * 0.85;
+          ctx.strokeStyle = base;
+          ctx.lineWidth = 5 * u;
+          ctx.beginPath();
+          ctx.arc(X, Y, r0 * (1.3 + pr * 1.8), 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(X, Y, r0 * 1.4 * e0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = base;
+        ctx.beginPath();
+        ctx.arc(X, Y, r0 * e0, 0, Math.PI * 2);
+        ctx.fill();
+        if (el.text) {
+          const fs = 44 * u;
+          ctx.translate(X, Y - r0 * 1.4 - fs * 1.15);
+          ctx.scale(e0, e0);
+          pill(ctx, 0, 0, el.text, fs, '#1c1c1c', '#ffffff', 0.9, 0.6);
+          ys.push(Y - r0 * 1.4 - fs * 2);
+        }
+        ctx.restore();
+        box = [Math.min(...xs) - r0, Math.min(...ys) - r0, Math.max(...xs) + r0, Math.max(...ys) + r0];
+        break;
+      }
       case 'text': {
         const fs = 56 * u;
         ctx.globalAlpha *= ease(p);
@@ -439,11 +609,35 @@ export const TEMPLATES: { name: string; scene: () => MScene }[] = [
       ],
     }),
   },
+  {
+    name: '放射路線',
+    scene: () => ({
+      ratio: '9:16',
+      loop: 6,
+      bgZoom: 1,
+      bgX: 0.5,
+      bgY: 0.5,
+      bgDim: 0.1,
+      els: [
+        makeEl('tag', { role: 'tag', x: 0.04, y: 0.075, text: '交通｜開車到哪都方便', delay: 0 }),
+        makeEl('compass', { role: 'compass', x: 0.9, y: 0.12, delay: 0.2 }),
+        makeEl('routes', {
+          role: 'routes',
+          x: 0.42,
+          y: 0.6,
+          delay: 0.3,
+          pts: [[0.8, 0.36], [0.62, 0.24], [0.2, 0.33]],
+        }),
+        makeEl('text', { role: 'subtitle', x: 0.5, y: 0.82, text: '字幕放這裡', vertical: true, delay: 2.4 }),
+        makeEl('text', { role: 'credit', x: 0.5, y: 0.88, text: '底圖：請標示出處', color: '#ffffffcc', vertical: false, size: 0.42, delay: 0 }),
+      ],
+    }),
+  },
   { name: '空白', scene: () => ({ ratio: '9:16', loop: 6, bgZoom: 1, bgX: 0.5, bgY: 0.5, bgDim: 0, els: [] }) },
 ];
 
 export interface MapSceneInput {
-  template?: 'aerial' | 'street' | 'blank';
+  template?: 'aerial' | 'street' | 'routes' | 'blank';
   ratio?: MScene['ratio'];
   duration?: number;
   tag?: string;
@@ -459,11 +653,21 @@ export interface MapSceneInput {
   bg_url?: string;
   bg_dim?: number;
   elements?: Partial<MEl>[];
+  /** 放射路線：一個起點到多個目的地 */
+  routes?: {
+    origin?: string;
+    x?: number;
+    y?: number;
+    destinations: { name: string; note?: string; color?: string; x?: number; y?: number }[];
+    curve?: number;
+    dash?: boolean;
+    single_color?: string;
+  };
 }
 
 /** 從範本與文字組出地圖場景（給 MCP 與 API 使用） */
 export const buildMapScene = (a: MapSceneInput): MScene => {
-  const tpl = a.template === 'street' ? TEMPLATES[1] : a.template === 'blank' ? TEMPLATES[2] : TEMPLATES[0];
+  const tpl = TEMPLATES[{ aerial: 0, street: 1, routes: 2, blank: 3 }[a.template ?? 'aerial'] ?? 0];
   const sc = tpl.scene();
   if (a.ratio && a.ratio in RATIO_PX) sc.ratio = a.ratio;
   if (a.duration) sc.loop = Math.max(2, Math.min(20, a.duration));
@@ -520,6 +724,29 @@ export const buildMapScene = (a: MapSceneInput): MScene => {
       });
     });
     sc.els.splice(firstIdx >= 0 ? firstIdx : sc.els.length, 0, ...made);
+  }
+  if (a.routes?.destinations?.length) {
+    let rt = byRole('routes')[0];
+    if (!rt) {
+      rt = makeEl('routes', { role: 'routes', delay: 0.3 });
+      sc.els.push(rt);
+    }
+    const r = a.routes;
+    if (r.origin !== undefined) rt.text = r.origin;
+    if (typeof r.x === 'number') rt.x = r.x;
+    if (typeof r.y === 'number') rt.y = r.y;
+    if (typeof r.curve === 'number') rt.curve = Math.max(-0.5, Math.min(0.5, r.curve));
+    if (typeof r.dash === 'boolean') rt.dash = r.dash;
+    if (r.single_color) {
+      rt.multi = false;
+      rt.color = r.single_color;
+    }
+    const ds = r.destinations.slice(0, 6);
+    rt.lines = ds.map((d) => [d.name, d.note ?? '', d.color ?? ''].join('|').replace(/\|+$/, ''));
+    const keep = rt.pts ?? [];
+    rt.pts = [];
+    syncRoutes(rt);
+    rt.pts = rt.pts!.map((p, i) => [ds[i].x ?? keep[i]?.[0] ?? p[0], ds[i].y ?? keep[i]?.[1] ?? p[1]]);
   }
   for (const e of a.elements ?? []) {
     if (!e.type || !(e.type in TYPE_NAME)) continue;

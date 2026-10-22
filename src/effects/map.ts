@@ -130,6 +130,74 @@ export const map: Fx[] = [
     },
   },
   {
+    id: 'map-routes',
+    cat: 'map',
+    zh: '放射路線',
+    en: 'Radiating Routes',
+    desc: '從一個起點拉出多條帶箭頭的路線，指向不同目的地',
+    tags: ['交通', '區位', 'Shorts'],
+    tone: 'paper',
+    sample: ['某某建案', '南港|開車約 ○ 分鐘', '內湖|開車約 ○ 分鐘', '台北車站|開車約 ○ 分鐘'],
+    hint: '第一行是起點，之後每行一個目的地：名稱|附註|#色碼（附註、色碼可省略）。要調位置請用地圖工作室',
+    motion: '起點是一個帶白框的實心圓點與深色膠囊名稱，周圍有一圈硬邊圓環向外擴散；接著依序從起點拉出多條略帶弧度的粗線（白色外框＋各自的顏色），線頭是實心三角箭頭，畫到目的地後，箭頭前方彈出同色膠囊目的地名稱，下方附一行深色小字附註。全部硬邊，不使用陰影或模糊。',
+    motionEn: 'The origin is a solid dot with a white ring and a dark pill name, with a hard-edged ring pulsing outward; then several gently curved thick lines (white casing plus their own colors) draw out from it one by one, each led by a solid triangular arrowhead; on arrival a pill in the same color pops up ahead of the arrow with the destination name and a small dark note below. All hard-edged, with no shadows or blur.',
+    css: `${MAP_CSS}
+.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`,
+    html: (w) => {
+      const j = w.find((x) => String(x).trim().startsWith('{'));
+      const sc = j
+        ? sceneFromWords(w)
+        : buildMapScene({
+            template: 'routes',
+            ratio: '16:9',
+            tag: '',
+            subtitle: '',
+            credit: '',
+            routes: {
+              origin: w[0] ?? '某某建案',
+              x: 0.45,
+              y: 0.68,
+              destinations: (w.length > 1 ? w.slice(1) : ['南港', '內湖', '台北車站']).slice(0, 6).map((l, i) => {
+                const [name, note, color] = String(l).split('|');
+                const spot = [[0.78, 0.3], [0.56, 0.2], [0.2, 0.3], [0.85, 0.62], [0.12, 0.62], [0.36, 0.18]][i];
+                return { name, note, color, x: spot[0], y: spot[1] };
+              }),
+            },
+          });
+      return `${svg(base(true))}<canvas data-scene="${esc(JSON.stringify(sc))}"></canvas>`;
+    },
+    globals: MAP_GLOBALS,
+    run: (root) => {
+      const R = (globalThis as unknown as { MA_MAP: { drawScene: (...a: unknown[]) => unknown } }).MA_MAP;
+      const cv = root.querySelector('canvas')!;
+      const ctx = cv.getContext('2d')!;
+      let sc: { loop: number; bgUrl?: string };
+      try {
+        sc = JSON.parse(cv.dataset.scene || '{}');
+      } catch {
+        return;
+      }
+      let img: HTMLImageElement | undefined;
+      if (sc.bgUrl) {
+        const im = new Image();
+        im.onload = () => (img = im);
+        im.src = sc.bgUrl;
+      }
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
+      const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
+      const t0 = performance.now();
+      const loop = Math.max(2, sc.loop || 6) + 1.5;
+      let raf = 0;
+      const f = (now: number) => {
+        raf = requestAnimationFrame(f);
+        R.drawScene(ctx, W, H, sc, ((now - t0) / 1000) % loop, img);
+      };
+      raf = requestAnimationFrame(f);
+      return () => cancelAnimationFrame(raf);
+    },
+  },
+  {
     id: 'map-pin-drop',
     cat: 'map',
     zh: '地圖定位',

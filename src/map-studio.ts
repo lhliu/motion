@@ -1,5 +1,5 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
-import { drawScene, makeEl, RATIO_PX, TEMPLATES, TYPE_NAME, type MEl, type MScene, type MType } from './mapkit';
+import { drawScene, makeEl, RATIO_PX, syncRoutes, TEMPLATES, TYPE_NAME, type MEl, type MScene, type MType } from './mapkit';
 import { esc } from './util';
 import { presetBar } from './preset-bar';
 import type { Preset } from './presets';
@@ -58,8 +58,8 @@ export const initMapStudio = (deps: MapStudioDeps) => {
         ctx.setLineDash([8, 6]);
         ctx.strokeRect(b[0] - 6, b[1] - 6, b[2] - b[0] + 12, b[3] - b[1] + 12);
         ctx.setLineDash([]);
-        if (el?.type === 'site')
-          el.pts?.forEach(([x, y]) => {
+        if (el?.type === 'site' || el?.type === 'routes')
+          [...(el.pts ?? []), ...(el.type === 'routes' ? [[el.x, el.y]] : [])].forEach(([x, y]) => {
             ctx.fillStyle = '#fff';
             ctx.strokeStyle = '#3b82f6';
             ctx.beginPath();
@@ -108,10 +108,16 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     const k = cv.width / cv.clientWidth;
     // 先找基地框的角
     const cur = sc.els.find((x) => x.id === sel);
-    if (cur?.type === 'site' && cur.pts) {
+    if ((cur?.type === 'site' || cur?.type === 'routes') && cur.pts) {
       const ci = cur.pts.findIndex(([x, y]) => Math.hypot(x * cv.width - px, y * cv.height - py) < 16 * k);
       if (ci >= 0) {
         drag = { id: cur.id, corner: ci, sx: px, sy: py, ox: 0, oy: 0 };
+        cv.setPointerCapture(e.pointerId);
+        return;
+      }
+      // 放射路線：拖起點只移動起點，目的地不動
+      if (cur.type === 'routes' && Math.hypot(cur.x * cv.width - px, cur.y * cv.height - py) < 22 * k) {
+        drag = { id: cur.id, corner: -2, sx: px, sy: py, ox: cur.x, oy: cur.y };
         cv.setPointerCapture(e.pointerId);
         return;
       }
@@ -137,8 +143,16 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     const dx = (px - drag.sx) / cv.width;
     const dy = (py - drag.sy) / cv.height;
     if (drag.corner >= 0 && el.pts) el.pts[drag.corner] = [px / cv.width, py / cv.height];
-    else if (el.type === 'site' && drag.pts) el.pts = drag.pts.map(([x, y]) => [x + dx, y + dy]);
-    else {
+    else if (drag.corner === -2) {
+      el.x = drag.ox + dx;
+      el.y = drag.oy + dy;
+    } else if (el.type === 'site' && drag.pts) el.pts = drag.pts.map(([x, y]) => [x + dx, y + dy]);
+    else if (el.type === 'routes' && drag.pts) {
+      // 拖整組：起點與目的地一起移動
+      el.x = drag.ox + dx;
+      el.y = drag.oy + dy;
+      el.pts = drag.pts.map(([x, y]) => [x + dx, y + dy]);
+    } else {
       el.x = drag.ox + dx;
       el.y = drag.oy + dy;
     }
@@ -198,11 +212,19 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     stat: [['text', '標題', 'text'], ['fg', '副標', 'text'], ['lines', '欄位（標籤|數字|單位|附註）', 'lines'], ['color', '數字顏色', 'color'], ['alpha', '底色透明度', 'range', 0.3, 1, 0.01]],
     compass: [],
     text: [['text', '文字（可多行）', 'area'], ['color', '文字色', 'color'], ['vertical', '黑色描邊', 'check'], ['fg', '描邊色', 'color']],
+    routes: [
+      ['text', '起點名稱（留空＝只有圓點）', 'text'],
+      ['lines', '目的地，一行一個：名稱|附註|#色碼（附註與色碼可省略）', 'lines'],
+      ['multi', '每條不同顏色', 'check'],
+      ['color', '起點與單色路線顏色', 'color'],
+      ['curve', '彎曲程度', 'range', -0.5, 0.5, 0.01],
+      ['dash', '虛線流動', 'check'],
+    ],
   };
   const renderProps = () => {
     const el = sc.els.find((x) => x.id === sel);
     if (!el) {
-      props.innerHTML = '<p class="ms-hint">點預覽畫面上的元件或清單來編輯；拖曳可移動，基地框選取後可拖四個角。</p>';
+      props.innerHTML = '<p class="ms-hint">點預覽畫面上的元件或清單來編輯；拖曳可移動，基地框選取後可拖四個角；放射路線選取後可分別拖起點與每個目的地。</p>';
       return;
     }
     const f = (fd: Field) => {
@@ -232,6 +254,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     else if (t.type === 'range') rec[k] = parseFloat(t.value);
     else if (t.dataset.lines !== undefined) rec[k] = t.value.split('\n').filter((s) => s.trim());
     else rec[k] = t.value;
+    if (el.type === 'routes' && k === 'lines') syncRoutes(el);
     const out = t.parentElement?.querySelector('output');
     if (out) out.textContent = t.value;
     persist();
