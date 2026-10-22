@@ -111,7 +111,8 @@ export const sceneSummary = (effect: string, words: string[], quote = false): st
       const n = (sc.images ?? []).filter(Boolean).length;
       return `圖片運鏡「${MODULE_INFO[sc.module]?.zh ?? sc.module}」（${n ? `${n} 張圖` : '未放圖'}）${sc.caption?.text ? `：字幕${q(sc.caption.text)}` : ''}`;
     } catch {
-      return '圖片運鏡（預設）';
+      const m = effect.slice(6) as PScene['module'];
+      return `圖片運鏡「${MODULE_INFO[m]?.zh ?? m}」（示意圖）${words.length ? `：字幕${q(words.join(' '))}` : ''}`;
     }
   }
   if (effect === 'crisp-drop') {
@@ -124,6 +125,8 @@ export const sceneSummary = (effect: string, words: string[], quote = false): st
 
 export const sceneSeconds = (s: ComboScene): number => {
   if (s.seconds) return s.seconds;
+  // 圖片運鏡預設 6 秒動畫＋1 秒停留
+  if (isPhotoFx(s.effect)) return 7;
   const fx = findEffect(s.effect);
   return fx ? Math.min(6, Math.max(2.4, loopSeconds(fx))) : 3;
 };

@@ -13,7 +13,9 @@ export type CatId =
   | 'retro'
   | 'map'
   | 'liquid'
-  | 'photo';
+  | 'photo'
+  | 'pmulti'
+  | 'pmark';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';
@@ -49,8 +51,23 @@ export interface Fx {
   added?: string;
 }
 
+/** 網站的三個工作區：文字特效、圖片運鏡、地圖區位 */
+export type SecId = 'text' | 'photo' | 'map';
+
+export interface Section {
+  id: SecId;
+  code: string;
+  zh: string;
+  en: string;
+  /** 一句話說明 */
+  desc: string;
+  /** 對應的工作室 */
+  studio?: 'photo' | 'map' | 'drop';
+}
+
 export interface Category {
   id: CatId;
+  sec: SecId;
   code: string;
   zh: string;
   tagline: string;

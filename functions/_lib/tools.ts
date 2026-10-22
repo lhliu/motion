@@ -1,4 +1,4 @@
-import { ALL_TAGS, CATEGORIES, EFFECTS, NUM, PALETTES } from '../../src/data';
+import { ALL_TAGS, CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from '../../src/data';
 import { comboOutline, comboPrompt, comboHtml, encodeCombo, findEffect, normalizeCombo, totalSeconds, type Combo } from '../../src/combo';
 import { loopSeconds, toneVars } from '../../src/engine';
 import { buildPrompt, type PromptMode, type Ratio } from '../../src/prompts';
@@ -32,6 +32,7 @@ const summary = (f: Fx) => ({
   number: NUM.get(f.id),
   zh: f.zh,
   en: f.en,
+  section: secOf(f),
   category: f.cat,
   description: f.desc,
   tags: f.tags,
@@ -146,11 +147,12 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'list_categories',
     title: '列出分類與配色',
-    description: `列出 Motion Atlas 的 ${CATEGORIES.length} 個特效分類（共 ${EFFECTS.length} 招）、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。`,
+    description: `列出 Motion Atlas 的三個工作區（文字特效、圖片運鏡、地圖區位）、${CATEGORIES.length} 個分類（共 ${EFFECTS.length} 招）、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。`,
     inputSchema: { type: 'object', properties: {} },
     annotations: { readOnlyHint: true },
     run: async () => ({
       total_effects: EFFECTS.length,
+      sections: SECTIONS.map((x) => ({ ...x, count: EFFECTS.filter((f) => secOf(f) === x.id).length, categories: CATEGORIES.filter((c) => c.sec === x.id).map((c) => c.id) })),
       categories: CATEGORIES.map((c) => ({ ...c, count: EFFECTS.filter((f) => f.cat === c.id).length })),
       tags: ALL_TAGS,
       palettes: PALETTES,
@@ -159,13 +161,14 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'search_effects',
-    title: '搜尋文字特效',
+    title: '搜尋特效',
     description:
-      '依關鍵字、分類或情境標籤搜尋文字動態特效，回傳 id、說明、建議字數與預設文字。關鍵字可用中文或英文，例如「轉場」「數字」「霓虹」「Shorts 字幕」。組 Combo 前用它挑選每一段的特效。',
+      '依關鍵字、工作區、分類或情境標籤搜尋特效（文字、圖片運鏡、地圖），回傳 id、說明、建議字數與預設文字。關鍵字可用中文或英文，例如「轉場」「數字」「霓虹」「Shorts 字幕」。組 Combo 前用它挑選每一段的特效。',
     inputSchema: {
       type: 'object',
       properties: {
         query: { type: 'string', description: '關鍵字，空白分隔多個詞' },
+        section: { type: 'string', enum: SECTIONS.map((x) => x.id), description: 'text＝文字特效、photo＝圖片運鏡、map＝地圖區位' },
         category: { type: 'string', enum: CATEGORIES.map((c) => c.id) },
         tag: { type: 'string', description: '情境標籤，例如 轉場、片頭、數據' },
         limit: { type: 'number', description: '最多回傳幾筆，預設 20' },
@@ -176,14 +179,14 @@ export const TOOLS: ToolDef[] = [
       const terms = norm(String(a.query ?? ''))
         .split(/\s+/)
         .filter(Boolean);
-      let list = EFFECTS.filter((f) => (!a.category || f.cat === a.category) && (!a.tag || f.tags.includes(String(a.tag).replace(/^#/, ''))));
+      let list = EFFECTS.filter((f) => (!a.section || secOf(f) === a.section) && (!a.category || f.cat === a.category) && (!a.tag || f.tags.includes(String(a.tag).replace(/^#/, ''))));
       if (terms.length)
         list = list
           .map((f) => ({ f, s: score(f, terms) }))
           .filter((x) => x.s > 0)
           .sort((x, y) => y.s - x.s)
           .map((x) => x.f);
-      const limit = Math.min(113, Math.max(1, Number(a.limit) || 20));
+      const limit = Math.min(200, Math.max(1, Number(a.limit) || 20));
       return { count: list.length, effects: list.slice(0, limit).map(summary) };
     },
   },
@@ -328,7 +331,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'build_photo_scene',
     title: '組圖片運鏡',
-    description: `把照片做成固定的運鏡模組（參數化，可存成預設重複使用）。模組：${PHOTO_MODULES.map((m) => `${m}＝${MODULE_INFO[m].zh}（${MODULE_INFO[m].desc}，${MODULE_INFO[m].slots} 張圖）`).join('；')}。回傳 combo_scene、預覽與編輯連結、各參數說明，以及在本機逐格渲染的方法。圖片通常在使用者電腦上：預覽時可留空（顯示示意圖），本機渲染時再放入。`,
+    description: `把照片做成固定的運鏡模組（參數化，可存成預設重複使用）。模組：${PHOTO_MODULES.map((m) => `${m}＝${MODULE_INFO[m].zh}（${MODULE_INFO[m].desc}；圖片：${MODULE_INFO[m].names.join('、')}）`).join('；')}。回傳 combo_scene、預覽與編輯連結、各參數說明，以及在本機逐格渲染的方法。圖片通常在使用者電腦上：預覽時可留空（顯示示意圖），本機渲染時再放入。`,
     inputSchema: {
       type: 'object',
       required: ['module'],
@@ -336,7 +339,7 @@ export const TOOLS: ToolDef[] = [
         module: { type: 'string', enum: PHOTO_MODULES },
         ratio: { type: 'string', enum: ['9:16', '16:9', '1:1'], description: '預設 9:16' },
         duration: { type: 'number', description: '動畫秒數，預設 6' },
-        images: { type: 'array', items: { type: 'string' }, description: '圖片網址或本機相對路徑（compare 需 2 張：前、後）；留空＝示意圖' },
+        images: { type: 'array', items: { type: 'string' }, description: '圖片網址或本機相對路徑，依模組的插槽順序（見說明）；留空＝示意圖' },
         params: { type: 'object', description: '模組參數，見回傳的 params_doc；位置類參數皆為 0–1 的畫面比例' },
         caption: {
           type: 'object',
@@ -521,7 +524,7 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
-export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是 ${EFFECTS.length} 種文字動態特效的圖鑑，所有特效都是原生 HTML/CSS/JS。
+export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分三個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位。所有特效都是原生 HTML/CSS/JS。
 你可以：查特效（search_effects / get_effect）、把多個特效組成 Combo 動畫（compose_combo），並存進 Combo 庫（save_combo）當作日後參考（list_combos / get_combo）。
 
 組 Combo 的建議流程：

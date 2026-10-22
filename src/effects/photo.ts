@@ -1,7 +1,7 @@
 import type { Fx } from '../types';
 import { esc } from '../util';
 import { fnSource } from '../engine';
-import { photoRenderer, photoSceneFromWords, type PModule } from '../photokit';
+import { MODULE_INFO, photoRenderer, photoSceneFromWords, type PModule } from '../photokit';
 
 export const PHOTO_GLOBALS = `window.MA_PHOTO=${fnSource(photoRenderer)}();`;
 
@@ -41,9 +41,11 @@ const run: Fx['run'] = (root) => {
   return () => cancelAnimationFrame(raf);
 };
 
-const make = (module: PModule, o: Pick<Fx, 'zh' | 'en' | 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn'>): Fx => ({
+const make = (module: PModule, o: Pick<Fx, 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn'>): Fx => ({
   id: `photo-${module}`,
-  cat: 'photo',
+  cat: MODULE_INFO[module].group,
+  zh: MODULE_INFO[module].zh,
+  en: MODULE_INFO[module].en,
   tone: 'ink',
   hint: '在圖片工作室放入照片、調整後加入 Combo；或由 AI 透過 MCP 的 build_photo_scene 產生。文字會當成字幕',
   css: CSS,
@@ -55,8 +57,6 @@ const make = (module: PModule, o: Pick<Fx, 'zh' | 'en' | 'desc' | 'tags' | 'samp
 
 export const photo: Fx[] = [
   make('kenburns', {
-    zh: '推拉運鏡',
-    en: 'Ken Burns',
     desc: '照片從起始取景慢慢推近、平移到結束取景，讓靜態照片變成運鏡',
     tags: ['建案', '外觀', '可疊影片'],
     sample: ['外觀慢推'],
@@ -64,8 +64,6 @@ export const photo: Fx[] = [
     motionEn: 'A full-frame photo where the virtual camera glides from a start framing (zoom and center) to an end framing with an ease-in-out push and pan; a dark pill caption fades up after a short delay. Hard edges throughout, no blur.',
   }),
   make('swing', {
-    zh: '旋轉甩入',
-    en: 'Swing In',
     desc: '照片帶白框從側邊旋轉甩進畫面，回彈後停在微斜角度並輕輕漂浮',
     tags: ['開箱', '社群', 'Shorts'],
     sample: ['這間採光超好'],
@@ -73,8 +71,6 @@ export const photo: Fx[] = [
     motionEn: 'A photo with a white border and rounded corners swings in from off-screen at a steep angle and oversized scale, decelerating with an overshoot to rest at a slight tilt in the center, then floats gently; a caption fades in below. No shadows or blur.',
   }),
   make('tilt', {
-    zh: '3D 傾斜卡片',
-    en: '3D Tilt Card',
     desc: '照片變成有厚度的卡片，以透視角度轉入後輕微擺動',
     tags: ['建案', '2D 轉 3D', '質感'],
     sample: ['樣品屋客廳'],
@@ -82,8 +78,6 @@ export const photo: Fx[] = [
     motionEn: 'The photo becomes a thick physical card that rotates in from a steep side angle in perspective, settles at a slight angle and then sways slowly; its edges show thickness in a flat solid color; a caption fades in. Rendered in 3D perspective with no shadows or blur.',
   }),
   make('compare', {
-    zh: '前後滑桿對比',
-    en: 'Before / After',
     desc: '分隔線帶著圓形把手掃過畫面，前後兩張照片對照',
     tags: ['重劃區', '施工前後', '對比'],
     sample: ['三年前 vs 現在'],
@@ -91,12 +85,80 @@ export const photo: Fx[] = [
     motionEn: 'Two photos stacked; after a short hold, a white divider with a round arrow knob sweeps smoothly across to reveal the second photo; dark pill labels (BEFORE / AFTER) sit in the top corners and a caption fades in. Hard edges, no blur.',
   }),
   make('magnify', {
-    zh: '局部放大鏡',
-    en: 'Magnifier',
     desc: '圈出照片中的細節，連線放大到旁邊的圓形鏡頭',
     tags: ['細節', '建材', '標註'],
     sample: ['這裡是防水層'],
     motion: '照片緩慢推近，黃色圓圈畫出要強調的細節，接著一條黃線延伸到旁邊，圓形放大鏡頭帶回彈展開，鏡頭內是該細節的放大畫面，外圈黃色實線；字幕淡入。無陰影、無模糊。',
     motionEn: 'The photo pushes in slowly; a yellow circle draws around a detail, a yellow line extends to the side, and a round magnifier lens springs open showing the detail enlarged inside a solid yellow ring; a caption fades in. No shadows or blur.',
+  }),
+  make('window', {
+    desc: '照片裝進圓角視窗，從下方或指定點彈出放大，可加標題列',
+    tags: ['開箱', '空間', '介面感'],
+    sample: ['客廳採光'],
+    motion: '一個圓角視窗從畫面下方（或指定點）以回彈方式放大彈出到定位，視窗上方是淺色標題列（左側紅黃綠三個圓點、中間標題文字），下方裝著照片並緩慢推近；字幕淡入。硬邊、無陰影。',
+    motionEn: 'A rounded window springs up from the bottom (or a chosen point) and scales into place with an overshoot; it has a light title bar with red, yellow and green dots and a centered title, and holds a photo that slowly pushes in; a caption fades in. Hard edges, no shadow.',
+  }),
+  make('parallax', {
+    desc: '背景與前景以不同速度移動做出景深，標題可以夾在前景後面',
+    tags: ['2D 轉 3D', '片頭', '質感'],
+    sample: ['新店央北'],
+    motion: '背景照片緩慢平移，前景去背圖層以較大的幅度朝同方向移動，產生 2.5D 景深；大標題位於兩層之間，被前景擋住一部分，淡入上移。全部硬邊，無模糊。',
+    motionEn: 'The background photo pans slowly while a cut-out foreground layer moves further in the same direction, creating 2.5D depth; a large title sits between the layers, partly hidden by the foreground, fading up. Hard edges, no blur.',
+  }),
+  make('phone', {
+    desc: '截圖放進手機框滑入畫面，長截圖會在螢幕裡自動往下捲',
+    tags: ['App', '截圖', '物件頁'],
+    sample: ['實價登錄這樣查'],
+    motion: '一支深色機身、圓角螢幕、上方膠囊鏡頭孔的手機，帶著傾斜角度從畫面下方回彈滑入並轉正、輕微漂浮；螢幕內的長截圖停留後平滑往下捲動；字幕淡入。無陰影、無模糊。',
+    motionEn: 'A phone with a dark body, rounded screen and pill camera cutout slides up from the bottom at an angle, settles upright with an overshoot and floats gently; a long screenshot inside scrolls smoothly down after a pause; a caption fades in. No shadow, no blur.',
+  }),
+  make('flip', {
+    desc: '卡片 3D 翻面，正面是施工前、背面是完工後',
+    tags: ['施工前後', '對比', '2D 轉 3D'],
+    sample: ['兩年後長這樣'],
+    motion: '照片成為有厚度的實體卡片，停留後在透視空間中沿垂直軸翻轉 180 度，背面是第二張照片，翻完後輕微擺動；卡片下方膠囊標籤從 BEFORE 換成 AFTER。無陰影。',
+    motionEn: 'The photo becomes a thick card that, after a pause, flips 180 degrees around its vertical axis in perspective to reveal a second photo on the back, then sways gently; a pill label below switches from BEFORE to AFTER. No shadow.',
+  }),
+  make('stack', {
+    desc: '拍立得照片一張張從上方落下疊成一疊，下方留白可寫標籤',
+    tags: ['回顧', '生活感', '社群'],
+    sample: ['看房這一天'],
+    motion: '白色拍立得照片（下方留白較寬、寫著手寫風標籤）依序從畫面上方甩落，帶旋轉與回彈，停在略微散開、各自傾斜的位置疊成一疊，每張以細實線區隔。無陰影、無模糊。',
+    motionEn: 'White polaroid prints with wide bottom margins and handwritten-style labels drop in one by one from above with spin and overshoot, landing slightly scattered and individually tilted into a pile, separated by thin solid outlines. No shadow, no blur.',
+  }),
+  make('grid', {
+    desc: '2×2、3×3 宮格依序彈出，適合格局、空間總覽',
+    tags: ['格局', '空間', '總覽'],
+    sample: ['四房兩廳一次看'],
+    motion: '畫面切成圓角宮格，照片依序（逐列、斜向或隨機）以回彈放大彈出，格內照片緩慢推近，左下角膠囊標籤標示空間名稱；字幕淡入。硬邊。',
+    motionEn: 'The frame is divided into a rounded grid; photos pop in one after another (row by row, diagonally or randomly) with an overshoot and slowly push in, with pill labels naming each room at the bottom left; a caption fades in. Hard edges.',
+  }),
+  make('split', {
+    desc: '畫面切成 2–3 格並排，照片交錯滑入，用白線分隔',
+    tags: ['比較', '並排', 'Shorts'],
+    sample: ['A 案 vs B 案'],
+    motion: '畫面切成 2 到 3 個直欄（或橫列），各欄照片依序從上、下交錯滑入，欄與欄之間的白色分隔線同時延伸；每欄左上角有膠囊標籤；字幕淡入。硬邊。',
+    motionEn: 'The frame splits into 2–3 columns (or rows); each photo slides in from alternating top and bottom in turn while white dividers extend between them; each panel has a pill label at the top left; a caption fades in. Hard edges.',
+  }),
+  make('freeze', {
+    desc: '畫面定格閃白、縮成白框相片，接著圈出重點加上標籤',
+    tags: ['影片', '重點', '標註'],
+    sample: ['這面牆有裂縫'],
+    motion: '全畫面影格在定格瞬間閃白，接著縮小、略微傾斜並長出白色相框，左上角出現紅色 PAUSE 標記；之後在重點處畫出彩色圓圈，拉出一條線到旁邊，標籤膠囊以回彈彈出。硬邊、無模糊。',
+    motionEn: 'The full-frame shot freezes with a white flash, then shrinks, tilts slightly and grows a white photo border, with a red PAUSE tag at the top left; a colored circle then draws around the key spot, a line extends to the side and a label pill springs in. Hard edges, no blur.',
+  }),
+  make('mask', {
+    desc: '用圓形、菱形、斜切、百葉窗等硬邊遮罩揭露照片',
+    tags: ['轉場', '揭露', '片頭'],
+    sample: ['正式公開'],
+    motion: '照片透過硬邊遮罩揭露：圓形從一點擴大、菱形展開、斜切刷過、從中線對開或多條百葉窗依序打開，遮罩邊緣有一條實色線；照片緩慢推近。無模糊、無羽化。',
+    motionEn: 'The photo is revealed through a hard-edged mask: a circle expanding from a point, a growing diamond, a diagonal wipe, a center split or staggered blinds, with a solid colored line along the mask edge; the photo slowly pushes in. No blur or feathering.',
+  }),
+  make('zoomthru', {
+    desc: '鏡頭衝進照片中的一點，穿過圓形開口到下一張照片',
+    tags: ['轉場', '節奏', '連接'],
+    sample: ['走進社區'],
+    motion: '第一張照片朝指定點加速放大，接近時該點出現白框圓形開口並迅速擴大，開口內是第二張照片；穿越後第二張照片由放大狀態拉回正常大小。硬邊、無動態模糊。',
+    motionEn: 'The first photo accelerates into a chosen point; near the end a white-rimmed circular opening appears there and expands rapidly to reveal the second photo, which then settles from an enlarged state back to normal. Hard edges, no motion blur.',
   }),
 ];

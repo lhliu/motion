@@ -8,7 +8,9 @@ import {
   normalizePhotoScene,
   PARAMS,
   photoFxId,
+  HANDLE_KEYS,
   PHOTO_MODULES,
+  slotsOf,
   placeholder,
   RATIO_PX,
   type PField,
@@ -134,7 +136,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     box(L.a, '#3b82f6', '起始');
     box(L.b, '#ff5a36', '結束');
   };
-  const HANDLE_NAME: Record<string, string> = { card: '照片', divider: '分隔線', target: '細節', lens: '鏡頭', caption: '字幕' };
+  const HANDLE_NAME: Record<string, string> = { card: '照片', divider: '分隔線', target: '重點', lens: '鏡頭', label: '標籤', center: '中心', origin: '起點', title: '標題', caption: '字幕' };
   const redraw = (t?: number) => {
     if (t === undefined && editView() && sc.module === 'kenburns') {
       drawKbEdit();
@@ -258,11 +260,10 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
       const x = c01(px / W);
       const y = c01(py / H);
       const n = drag.name;
-      if (n === 'card') [P.px, P.py] = [x, y];
-      else if (n === 'divider') P.to = P.dir === 'v' ? y : x;
-      else if (n === 'target') [P.ax, P.ay] = [x, y];
-      else if (n === 'lens') [P.lx, P.ly] = [x, y];
+      const keys = HANDLE_KEYS[n];
+      if (n === 'divider') P.to = P.dir === 'v' ? y : x;
       else if (n === 'caption' && sc.caption) [sc.caption.x, sc.caption.y] = [x, y];
+      else if (keys) [P[keys[0]], P[keys[1]]] = [x, y];
     }
     redraw();
   });
@@ -278,8 +279,19 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
 
   /* ───────── 模組、圖片、參數、字幕 ───────── */
   const modEl = $('#psMod');
-  modEl.innerHTML = PHOTO_MODULES.map((m) => `<button type="button" data-m="${m}"><b>${MODULE_INFO[m].zh}</b><small>${esc(MODULE_INFO[m].desc)}</small></button>`).join('');
-  const syncMod = () => modEl.querySelectorAll<HTMLElement>('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === sc.module)));
+  const GROUP_NAME = { photo: '單張運鏡', pmulti: '多張組合', pmark: '標註轉場' } as const;
+  modEl.innerHTML = (Object.keys(GROUP_NAME) as (keyof typeof GROUP_NAME)[])
+    .map(
+      (gk) =>
+        `<h5>${GROUP_NAME[gk]}</h5><div class="ps-mod-g">${PHOTO_MODULES.filter((m) => MODULE_INFO[m].group === gk)
+          .map((m) => `<button type="button" data-m="${m}" title="${esc(MODULE_INFO[m].desc)}"><b>${MODULE_INFO[m].zh}</b><small>${esc(MODULE_INFO[m].desc)}</small></button>`)
+          .join('')}</div>`,
+    )
+    .join('') + '<p class="ps-mod-desc" id="psModDesc"></p>';
+  const syncMod = () => {
+    modEl.querySelectorAll<HTMLElement>('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === sc.module)));
+    $('#psModDesc').textContent = `${MODULE_INFO[sc.module].zh}：${MODULE_INFO[sc.module].desc}`;
+  };
   modEl.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-m]');
     if (!b || b.dataset.m === sc.module) return;
@@ -294,11 +306,14 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   const file = $<HTMLInputElement>('#psFile');
   let slotTarget = 0;
   const renderSlots = () => {
-    const n = MODULE_INFO[sc.module].slots;
-    const names = sc.module === 'compare' ? ['前（圖片 1）', '後（圖片 2）'] : ['圖片 1'];
+    const info = MODULE_INFO[sc.module];
+    const names = info.names;
+    const n = names.length;
+    slotsEl.classList.toggle('many', n > 3);
     slotsEl.innerHTML = Array.from({ length: n }, (_, i) => {
       const has = !!imgs[i];
-      return `<div class="ps-slot" data-i="${i}"><div class="ps-thumb">${has ? `<img src="${esc(srcs[i])}" alt="">` : '<span>未放圖<br>顯示示意圖</span>'}</div><div class="ps-slot-b"><b>${names[i]}</b>${has ? `<small>${imgs[i]!.naturalWidth}×${imgs[i]!.naturalHeight}</small>` : ''}<div class="st-presets"><button type="button" class="btn-ghost" data-op="up">${has ? '換圖' : '放入圖片'}</button>${has ? '<button type="button" class="btn-ghost" data-op="rm">移除</button>' : ''}</div></div></div>`;
+      const empty = info.optional?.includes(i) ? '可留空' : n > 3 ? '未放圖' : '未放圖<br>顯示示意圖';
+      return `<div class="ps-slot" data-i="${i}"><div class="ps-thumb">${has ? `<img src="${esc(srcs[i])}" alt="">` : `<span>${empty}</span>`}</div><div class="ps-slot-b"><b>${names[i]}</b>${has ? `<small>${imgs[i]!.naturalWidth}×${imgs[i]!.naturalHeight}</small>` : ''}<div class="st-presets"><button type="button" class="btn-ghost" data-op="up">${has ? '換圖' : '放入圖片'}</button>${has ? '<button type="button" class="btn-ghost" data-op="rm">移除</button>' : ''}</div></div></div>`;
     }).join('');
   };
   slotsEl.addEventListener('click', (e) => {
@@ -334,7 +349,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   };
   file.addEventListener('change', () => {
     const fs = [...(file.files ?? [])];
-    fs.slice(0, MODULE_INFO[sc.module].slots - slotTarget).forEach((f, j) => readFile(f, slotTarget + j));
+    fs.slice(0, slotsOf(sc.module) - slotTarget).forEach((f, j) => readFile(f, slotTarget + j));
     file.value = '';
   });
   // 直接把圖片拖進預覽區
@@ -342,8 +357,10 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   stage.addEventListener('drop', (e) => {
     e.preventDefault();
     const fs = [...(e.dataTransfer?.files ?? [])].filter((f) => f.type.startsWith('image/'));
-    const empty = Math.max(0, imgs.slice(0, MODULE_INFO[sc.module].slots).findIndex((x) => !x));
-    fs.slice(0, MODULE_INFO[sc.module].slots).forEach((f, j) => readFile(f, fs.length > 1 ? j : empty));
+    const n = slotsOf(sc.module);
+    const empty = Math.max(0, Array.from({ length: n }, (_, i) => imgs[i]).findIndex((x) => !x));
+    // 一次拖多張：從第一個空插槽開始依序放
+    fs.slice(0, n).forEach((f, j) => readFile(f, Math.min(n - 1, empty + j)));
   });
 
   const field = (f: PField, v: unknown, attr = 'data-k') => {
@@ -375,7 +392,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
       const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.st-seg button');
       if (!b) return;
       const key = b.closest<HTMLElement>('.st-seg')!.dataset.k!;
-      target()[key] = key === 'float' ? Number(b.dataset.v) : b.dataset.v;
+      target()[key] = /^\d+$/.test(b.dataset.v!) ? Number(b.dataset.v) : b.dataset.v;
       persist();
       after();
       redraw();
@@ -480,7 +497,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   });
   /** 帶圖輸出時壓成長邊 1280 的 JPEG，Combo 與預設才存得下 */
   const sceneOut = (withImages: boolean): PScene => {
-    const n = MODULE_INFO[sc.module].slots;
+    const n = slotsOf(sc.module);
     return {
       ...structuredClone({ ...sc, images: [] }),
       images: Array.from({ length: n }, (_, i) => (withImages && imgs[i] ? downscale(imgs[i]!, 1280, 0.82) : '')),

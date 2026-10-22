@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Motion Atlas｜字卡與文字特效圖鑑</title>
+    <title>Motion Atlas｜短影音動態素材庫</title>
     <meta
       name="description"
-      content="收集影片用得到的字卡與文字動態特效，可即時預覽、套用自己的文字與配色，一鍵複製給 AI 的提示詞或下載 HTML 原始碼。"
+      content="短影音動態素材庫：文字特效、圖片運鏡、地圖區位三個工作區，可即時預覽、套用自己的文字、照片與配色，一鍵複製給 AI 的提示詞或下載 HTML 原始碼。"
     />
-    <meta property="og:title" content="Motion Atlas｜字卡與文字特效圖鑑" />
-    <meta property="og:description" content="100+ 種文字動態，即時預覽、換字換色、一鍵複製提示詞。" />
+    <meta property="og:title" content="Motion Atlas｜短影音動態素材庫" />
+    <meta property="og:description" content="文字特效、圖片運鏡、地圖區位，即時預覽、換字換圖換色、一鍵複製提示詞。" />
     <meta property="og:url" content="https://motion.leichthub.com/" />
     <meta property="og:type" content="website" />
     <meta name="theme-color" content="#f3efe6" />
@@ -36,8 +36,9 @@
     <header class="ma-top">
       <a class="brand" href="/" aria-label="Motion Atlas 首頁">
         <span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="brand-t"><b>Motion Atlas</b><small>字卡圖鑑</small></span>
+        <span class="brand-t"><b>Motion Atlas</b><small>短影音動態素材庫</small></span>
       </a>
+      <nav class="ws" id="ws" aria-label="工作區"></nav>
       <label class="search">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
         <input id="q" type="search" placeholder="搜尋特效、情境、風格⋯ 例如：轉場、霓虹、字幕" autocomplete="off" aria-label="搜尋特效" />
@@ -74,18 +75,17 @@
     <main>
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">TEXT MOTION ATLAS <span>／</span> 光寓科技收藏版</p>
+          <p class="eyebrow"><span id="heroCode">TEXT MOTION</span> <span>／</span> 光寓科技收藏版</p>
           <h1>
-            <span class="h-small">影片用得到的</span>
-            <span class="h-big">文字動態 <em><b id="countUp">0</b> 招</em></span>
+            <span class="h-small" id="heroSmall">影片用得到的</span>
+            <span class="h-big"><span id="heroBig">文字動態</span> <em><b id="countUp">0</b> 招</em></span>
           </h1>
-          <p class="lede">
-            字卡、標題、字幕條、轉場文字，一次收齊。每一招都是<strong>即時渲染</strong>的真實動畫——輸入你的文字、換上你的配色，再把對應的<strong>提示詞</strong>或<strong>原始碼</strong>帶走，套用在自己的字卡上。
-          </p>
+          <p class="lede" id="heroLede"></p>
+          <div class="hero-cta" id="heroCta"><button class="ma-btn" id="heroStudio"></button><span id="heroCtaNote"></span></div>
           <ul class="stats">
-            <li><b id="statFx">0</b><span>種特效</span></li>
+            <li><b id="statFx">0</b><span>招</span></li>
             <li><b id="statCat">0</b><span>個分類</span></li>
-            <li><b>4</b><span>種提示詞格式</span></li>
+            <li><b id="statAll">0</b><span>全站總數</span></li>
             <li><b>3</b><span>種影片比例</span></li>
           </ul>
         </div>
@@ -104,7 +104,7 @@
 
       <section class="workbench" aria-label="預覽設定">
         <label class="wb-text">
-          <span class="wb-l">預覽文字</span>
+          <span class="wb-l" id="wbLabel">預覽文字</span>
           <input id="userText" type="text" placeholder="輸入你的文字，全部卡片即時套用；多個詞用 / 分隔" maxlength="80" />
           <button id="clearText" class="wb-clear" aria-label="清除文字" hidden>✕</button>
         </label>
@@ -142,15 +142,16 @@
       <div id="grid" class="grid-wrap" tabindex="-1"></div>
       <div class="empty" id="empty" hidden>
         <p class="empty-big">找不到「<span id="emptyQ"></span>」</p>
+        <p class="empty-other" id="emptyOther" hidden></p>
         <p>試試其他關鍵字，例如：<button data-q="轉場">轉場</button><button data-q="字幕">字幕</button><button data-q="科技">科技</button><button data-q="復古">復古</button></p>
       </div>
     </main>
 
     <footer class="foot">
       <div>
-        <b>Motion Atlas</b> 字卡圖鑑 · 由 <a href="https://www.leichthub.com/" rel="noopener">光寓科技 Leichthub</a> 製作
+        <b>Motion Atlas</b> 短影音動態素材庫 · 由 <a href="https://www.leichthub.com/" rel="noopener">光寓科技 Leichthub</a> 製作
       </div>
-      <div class="foot-sub">所有預覽皆為原生 HTML／CSS／JS 即時渲染，沒有影片檔。匯出的程式碼可自由用於個人與商業影片。</div>
+      <div class="foot-sub">三個工作區：文字特效、圖片運鏡、地圖區位。所有預覽皆為原生 HTML／CSS／JS 即時渲染，沒有影片檔。匯出的程式碼可自由用於個人與商業影片。</div>
       <div class="foot-sub keys"><kbd>/</kbd> 搜尋 <kbd>←</kbd><kbd>→</kbd> 上一招／下一招 <kbd>F</kbd> 收藏 <kbd>R</kbd> 重播 <kbd>Esc</kbd> 關閉</div>
     </footer>
 

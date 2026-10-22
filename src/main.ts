@@ -1,8 +1,8 @@
 import './styles.css';
-import { ALL_TAGS, CATEGORIES, EFFECTS, NUM, PALETTES } from './data';
+import { CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from './data';
 import { mount, setSpeed, toneVars, type Mounted } from './engine';
 import { buildPrompt, exportHtml, PROMPT_MODES, type PromptMode, type Ratio } from './prompts';
-import type { CatId, Fx, Palette, Tone } from './types';
+import type { CatId, Fx, Palette, SecId, Tone } from './types';
 import { esc } from './util';
 import { initCombos } from './combo-ui';
 import { initStudio } from './drop-studio';
@@ -36,7 +36,10 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ───────── 狀態 ───────── */
 type PlayMode = 'auto' | 'hover';
+const SEC_IDS = SECTIONS.map((x) => x.id);
+const urlSec = new URLSearchParams(location.search).get('ws') as SecId | null;
 const state = {
+  sec: (urlSec && SEC_IDS.includes(urlSec) ? urlSec : store.get<SecId>('sec', 'text')) as SecId,
   q: '',
   cat: 'all' as CatId | 'all',
   tag: '' as string,
@@ -85,16 +88,21 @@ const haystack = new Map(
   }),
 );
 
+/** 關鍵字是否命中（不看工作區與分類），用來提示其他工作區的結果 */
+const matchQ = (f: Fx, terms: string[]) => {
+  const h = haystack.get(f.id)!;
+  const n = NUM.get(f.id)!;
+  return terms.every((t) => h.includes(t) || t.replace('#', '') === String(n) || t.replace('#', '') === pad(n));
+};
 const filtered = (): Fx[] => {
   const terms = norm(state.q).split(' ').filter(Boolean);
   let list = EFFECTS.filter((f) => {
+    if (secOf(f) !== state.sec) return false;
     if (state.cat !== 'all' && f.cat !== state.cat) return false;
     if (state.tag && !f.tags.includes(state.tag)) return false;
     if (state.favOnly && !state.favs.has(f.id)) return false;
     if (!terms.length) return true;
-    const h = haystack.get(f.id)!;
-    const n = NUM.get(f.id)!;
-    return terms.every((t) => h.includes(t) || t.replace('#', '') === String(n) || t.replace('#', '') === pad(n));
+    return matchQ(f, terms);
   });
   if (state.sort === 'name') list = [...list].sort((a, b) => a.zh.localeCompare(b.zh, 'zh-Hant'));
   if (state.sort === 'shuffle') {
@@ -204,21 +212,113 @@ const unwatchAll = () => {
 };
 const refreshAll = () => slots.forEach((s) => s.visible && renderSlot(s));
 
+/* ───────── 工作區 ───────── */
+const secFx = (id: SecId = state.sec) => EFFECTS.filter((f) => secOf(f) === id);
+const SEC_ICON: Record<SecId, string> = {
+  text: '<svg viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></svg>',
+  photo: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 8"/></svg>',
+  map: '<svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
+};
+const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: string; ph: string; hero: string[] }> = {
+  text: {
+    small: '影片用得到的',
+    big: '文字動態',
+    lede: '字卡、標題、字幕條、轉場文字，一次收齊。每一招都是<strong>即時渲染</strong>的真實動畫——輸入你的文字、換上你的配色，再把對應的<strong>提示詞</strong>或<strong>原始碼</strong>帶走，套用在自己的字卡上。',
+    wb: '預覽文字',
+    ph: '輸入你的文字，全部卡片即時套用；多個詞用 / 分隔',
+    hero: ['punch-zoom', 'text-tunnel', 'split-flap', 'neon-flicker', 'particle-form', 'glitch-slices', 'text-cube', 'diagonal-bands', 'synthwave', 'long-shadow'],
+  },
+  photo: {
+    small: '照片放進來就會動',
+    big: '圖片運鏡',
+    lede: '推拉、甩入、3D 卡片、前後對比、宮格、手機框、定格標註……每一招都是<strong>固定模組</strong>：在圖片工作室放入照片、拖曳微調，存成<strong>預設</strong>，AI 在你電腦上渲染時直接套用同一套運鏡。',
+    wb: '預覽字幕',
+    ph: '輸入字幕，全部卡片即時套用',
+    hero: [],
+  },
+  map: {
+    small: '把位置講清楚',
+    big: '地圖區位',
+    lede: '基地框、路名、資訊卡、通勤路線、生活圈……在<strong>地圖工作室</strong>上傳自己的底圖、拖曳擺放，輸出<strong>透明素材</strong>疊進影片，或存成預設讓 AI 沿用。',
+    wb: '預覽文字',
+    ph: '輸入地點或標題，全部卡片即時套用；多個詞用 / 分隔',
+    hero: [],
+  },
+};
+const wsEl = $('#ws');
+const renderWs = () => {
+  wsEl.innerHTML = SECTIONS.map(
+    (x) =>
+      `<button type="button" data-sec="${x.id}" aria-pressed="${state.sec === x.id}" title="${esc(x.desc)}">${SEC_ICON[x.id]}<span>${x.zh}</span><small>${secFx(x.id).length}</small></button>`,
+  ).join('');
+};
+const renderHeroCopy = () => {
+  const x = SECTIONS.find((y) => y.id === state.sec)!;
+  const h = SEC_HERO[state.sec];
+  $('#heroCode').textContent = x.en.toUpperCase();
+  $('#heroSmall').textContent = h.small;
+  $('#heroBig').textContent = h.big;
+  $('#heroLede').innerHTML = h.lede;
+  $('#wbLabel').textContent = h.wb;
+  $<HTMLInputElement>('#userText').placeholder = h.ph;
+  $('#heroStudio').textContent = { text: '打開水滴工作室', photo: '打開圖片工作室', map: '打開地圖工作室' }[state.sec];
+  $('#heroCtaNote').textContent = { text: '邊緣零模糊的水滴標題，可疊進影片', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放' }[state.sec];
+  const n = secFx().length;
+  $('#statFx').textContent = String(n);
+  $('#statCat').textContent = String(CATEGORIES.filter((c) => c.sec === state.sec).length);
+  $('#statAll').textContent = String(EFFECTS.length);
+  countUp($('#countUp'), n);
+  document.title = `${x.zh}｜Motion Atlas 短影音動態素材庫`;
+};
+const setSec = (id: SecId, push = true) => {
+  if (!SEC_IDS.includes(id)) return;
+  const changed = id !== state.sec;
+  state.sec = id;
+  store.set('sec', id);
+  if (push) {
+    const u = new URL(location.href);
+    if (id === 'text') u.searchParams.delete('ws');
+    else u.searchParams.set('ws', id);
+    history.replaceState(history.state, '', u.pathname + u.search);
+  }
+  if (!changed) return;
+  state.cat = 'all';
+  state.tag = '';
+  renderWs();
+  renderHeroCopy();
+  renderCats();
+  renderTags();
+  renderGrid();
+  heroShow(0);
+};
+wsEl.addEventListener('click', (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sec]');
+  if (!b) return;
+  setSec(b.dataset.sec as SecId);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
 /* ───────── 篩選列 ───────── */
 const catsEl = $('#cats');
 const tagsEl = $('#tags');
 const renderCats = () => {
   const counts = new Map<string, number>();
   EFFECTS.forEach((f) => counts.set(f.cat, (counts.get(f.cat) ?? 0) + 1));
+  const cats = CATEGORIES.filter((c) => c.sec === state.sec);
   catsEl.innerHTML =
-    `<button class="cat" data-cat="all" aria-pressed="${state.cat === 'all'}">全部 <small>${EFFECTS.length}</small></button>` +
-    CATEGORIES.map(
+    `<button class="cat" data-cat="all" aria-pressed="${state.cat === 'all'}">全部 <small>${secFx().length}</small></button>` +
+    cats.map(
       (c) =>
         `<button class="cat" data-cat="${c.id}" aria-pressed="${state.cat === c.id}"><code>${c.code}</code>${c.zh} <small>${counts.get(c.id) ?? 0}</small></button>`,
     ).join('');
 };
 const renderTags = () => {
-  tagsEl.innerHTML = ALL_TAGS.slice(0, 22)
+  const m = new Map<string, number>();
+  secFx().forEach((f) => f.tags.forEach((t) => m.set(t, (m.get(t) ?? 0) + 1)));
+  tagsEl.innerHTML = [...m.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([t]) => t)
+    .slice(0, 22)
     .map((t) => `<button class="ma-tag" data-tag="${esc(t)}" aria-pressed="${state.tag === t}">#${esc(t)}</button>`)
     .join('');
 };
@@ -260,7 +360,13 @@ let currentList: Fx[] = [];
 const renderGrid = () => {
   unwatchAll();
   currentList = filtered();
-  $('#result').textContent = `顯示 ${currentList.length} / ${EFFECTS.length}`;
+  $('#result').textContent = `顯示 ${currentList.length} / ${secFx().length}`;
+  // 搜尋不到時，提示其他工作區的結果
+  const terms = norm(state.q).split(' ').filter(Boolean);
+  const other = $('#emptyOther');
+  const hits = terms.length && !currentList.length ? SECTIONS.filter((x) => x.id !== state.sec).map((x) => ({ x, n: secFx(x.id).filter((f) => matchQ(f, terms)).length })).filter((h) => h.n) : [];
+  other.hidden = !hits.length;
+  other.innerHTML = hits.map((h) => `<button data-sec="${h.x.id}">在「${h.x.zh}」找到 ${h.n} 個</button>`).join('');
   $('#empty').hidden = currentList.length > 0;
   $('#emptyQ').textContent = state.q || (state.favOnly ? '收藏' : '條件');
   if (state.favOnly && !currentList.length && !state.q) {
@@ -418,6 +524,8 @@ qEl.addEventListener('input', () => {
   }, 160);
 });
 $('#empty').addEventListener('click', (e) => {
+  const sb = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sec]');
+  if (sb) return setSec(sb.dataset.sec as SecId);
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-q]');
   if (!b) return;
   state.cat = 'all';
@@ -455,7 +563,7 @@ $('#themeBtn').addEventListener('click', () => {
 });
 
 /* ───────── Hero 輪播 ───────── */
-const HERO = ['punch-zoom', 'text-tunnel', 'split-flap', 'neon-flicker', 'particle-form', 'glitch-slices', 'text-cube', 'diagonal-bands', 'synthwave', 'long-shadow'];
+const heroList = () => (SEC_HERO[state.sec].hero.length ? SEC_HERO[state.sec].hero : secFx().map((f) => f.id));
 const heroStage = $('#heroStage');
 const heroLabel = $('#heroLabel');
 const heroBar = $('#heroBar');
@@ -464,8 +572,9 @@ let heroM: Mounted | undefined;
 let heroTimer = 0;
 const HERO_MS = 5200;
 const heroShow = (i: number, advance = true) => {
-  heroIdx = (i + HERO.length) % HERO.length;
-  const fx = EFFECTS.find((f) => f.id === HERO[heroIdx])!;
+  const list = heroList();
+  heroIdx = (i + list.length) % list.length;
+  const fx = EFFECTS.find((f) => f.id === list[heroIdx])!;
   heroM?.stop();
   heroM = mount(heroStage, fx, wordsFor(fx), toneVars(palette(), fx.tone));
   heroLabel.textContent = `${pad(NUM.get(fx.id)!)} ${fx.zh} ${fx.en}`;
@@ -601,7 +710,7 @@ detail.addEventListener('close', () => {
   d.rel = [];
   document.body.style.overflow = '';
   if (location.search.includes('fx=')) history.pushState({}, '', location.pathname);
-  document.title = 'Motion Atlas｜字卡與文字特效圖鑑';
+  document.title = `${SECTIONS.find((x) => x.id === state.sec)!.zh}｜Motion Atlas 短影音動態素材庫`;
   const card = gridEl.querySelector<HTMLElement>(`.ma-card[data-id="${d.fx.id}"]`);
   card?.focus({ preventScroll: true });
 });
@@ -838,19 +947,23 @@ const openEdit = async () => {
 applyBrand();
 renderSwatches();
 renderPlay();
+// 直接打開某一招時，切到它所在的工作區
+const initial = new URLSearchParams(location.search).get('fx');
+const initialFx = initial ? EFFECTS.find((f) => f.id === initial || String(NUM.get(f.id)) === initial) : undefined;
+if (initialFx) state.sec = secOf(initialFx);
+renderWs();
+renderHeroCopy();
 renderCats();
 renderTags();
 updateFavCount();
 renderGrid();
-$('#statFx').textContent = String(EFFECTS.length);
-$('#statCat').textContent = String(CATEGORIES.length);
-countUp($('#countUp'), EFFECTS.length);
-countUp($('#statFx'), EFFECTS.length);
+$('#heroStudio').addEventListener('click', () => (state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : studio.open()));
+// 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊
+new ResizeObserver(([e]) => document.documentElement.style.setProperty('--top-h', `${Math.round(e.borderBoxSize?.[0]?.blockSize ?? (e.target as HTMLElement).offsetHeight)}px`)).observe($('.ma-top'));
 const startHero = () => heroShow(0);
 if (document.fonts?.ready) document.fonts.ready.then(startHero);
 else startHero();
 openEdit();
-const initial = new URLSearchParams(location.search).get('fx');
 if (initial) openDetail(initial, false);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) clearTimeout(heroTimer);

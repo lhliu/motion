@@ -541,7 +541,7 @@ h1 {
 /* ───────── 篩選列 ───────── */
 .filters {
   position: sticky;
-  top: 67px;
+  top: var(--top-h, 67px);
   z-index: 20;
   margin: 28px -8px 8px;
   padding: 10px 8px 12px;
@@ -1340,7 +1340,7 @@ pre.code {
     padding-bottom: 10px;
   }
   .search {
-    order: 3;
+    order: 4;
     flex-basis: 100%;
     max-width: none;
     height: 40px;
@@ -1352,7 +1352,7 @@ pre.code {
     margin-left: auto;
   }
   .filters {
-    top: 111px;
+    top: var(--top-h, 111px);
     background: color-mix(in srgb, var(--page) 97%, transparent);
   }
   html {
@@ -2304,10 +2304,28 @@ pre.code {
 .photo-btn svg {
   color: #3b82f6;
 }
-.ps-mod {
+.ps-mod h5 {
+  margin: 6px 0 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+}
+.ps-mod h5:first-child {
+  margin-top: 0;
+}
+.ps-mod-g {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   gap: 6px;
+}
+.ps-mod button small {
+  display: none;
+}
+.ps-mod-desc {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
 }
 .ps-mod button {
   display: flex;
@@ -2323,7 +2341,7 @@ pre.code {
   cursor: pointer;
 }
 .ps-mod button b {
-  font-size: 14px;
+  font-size: 13.5px;
 }
 .ps-mod button small {
   font-size: 11.5px;
@@ -2369,6 +2387,27 @@ pre.code {
   gap: 4px;
   min-width: 0;
 }
+.ps-slots.many {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.ps-slots.many .ps-slot {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.ps-slots.many .ps-thumb {
+  width: 100%;
+  height: 64px;
+}
+.ps-slots.many .ps-slot-b small {
+  display: none;
+}
+.ps-slots.many .btn-ghost {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+}
 .ps-slot-b small {
   font-family: var(--mono);
   color: var(--ink-3);
@@ -2398,4 +2437,103 @@ pre.code {
 }
 #psTitle:focus {
   outline: none;
+}
+
+/* ───────── 工作區切換 ───────── */
+.ws {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  flex: none;
+}
+.ws button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ws button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ws button small {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.ws button:hover {
+  background: var(--chip);
+}
+.ws button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--page);
+}
+.ws button[aria-pressed='true'] small {
+  color: color-mix(in srgb, var(--page) 70%, transparent);
+}
+.hero-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 22px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.empty-other {
+  margin-top: 12px;
+}
+.empty-other button {
+  border-color: var(--brand);
+  color: var(--ink);
+}
+/* 窄螢幕：工作室改由各工作區的按鈕進入，站頂只留必要按鈕 */
+@media (max-width: 1100px) {
+  .map-btn,
+  .photo-btn,
+  .drop-btn,
+  #randomBtn,
+  .brand-t small,
+  .ws button small {
+    display: none;
+  }
+  .search {
+    min-width: 0;
+  }
+}
+@media (max-width: 900px) and (min-width: 721px) {
+  .combo-btn span,
+  .brand-t {
+    display: none;
+  }
+}
+@media (max-width: 720px) {
+  #randomBtn,
+  .brand-t small {
+    display: none;
+  }
+  .ws {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  .ws button {
+    flex: 1;
+    justify-content: center;
+  }
 }
