@@ -2240,3 +2240,59 @@ pre.code {
 #msTitle:focus {
   outline: none;
 }
+
+/* ───────── 預設列 ───────── */
+.pb {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand) 9%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line));
+}
+.pb-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.pb-name {
+  flex: 1 1 180px;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line-2);
+  background: var(--page);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 13px;
+}
+.pb .ma-btn,
+.pb .btn-ghost {
+  height: 34px;
+  font-size: 13px;
+  padding: 0 12px;
+}
+.pb-id {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--page);
+}
+.pb-load,
+.pb-key {
+  flex: 1 1 200px;
+  min-width: 0;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--page);
+  color: var(--ink);
+  font-size: 13px;
+  padding: 0 8px;
+}

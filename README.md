@@ -15,7 +15,17 @@ https://motion.leichthub.com
 
 - MCP 端點：`https://motion.leichthub.com/mcp`（Streamable HTTP、無狀態）
 - 寫入（儲存／刪除 Combo）需要金鑰：網址加 `?key=金鑰`，或 `Authorization: Bearer 金鑰`
-- 工具：`list_categories`、`search_effects`、`get_effect`、`compose_combo`、`save_combo`、`list_combos`、`get_combo`、`delete_combo`
+- 工具：`list_categories`、`search_effects`、`get_effect`、`build_map_scene`、`build_drop_scene`、`list_presets`、`get_preset`、`save_preset`、`compose_combo`、`save_combo`、`list_combos`、`get_combo`、`delete_combo`
+
+### 與 AI 來回修改（預設）
+
+1. AI 用 `build_map_scene`／`build_drop_scene` 產生段落，回傳 `edit_url`；`get_combo` 也會回傳每段的 `scene_edit_urls`
+2. 打開 `edit_url` 進入對應工作室，手動調整後按「存成預設」，得到代碼（例如 `p7k2x`）；之後按「存回」會更新同一個代碼
+3. 把代碼告訴 AI（工作室有「複製給 AI」），AI 用 `get_preset` 讀取，或在 Combo 的 scenes 直接寫 `{ "preset": "p7k2x" }`
+4. 網址：`/?edit=p7k2x`（已存的預設）、`/?edit=map&d=…`、`/?edit=drop&d=…`（尚未存的設定）
+5. API：`GET /api/presets?kind=map|drop`、`GET /api/presets/:id`；寫入 `POST /api/presets`、`PUT|DELETE /api/presets/:id`
+
+Combo 存的是預設當下的內容（快照）；預設更新後，請 AI 重新以 `{ "preset": 代碼 }` 存一次 Combo。
 - 公開 API：`GET /api/effects`、`GET /api/combos`、`GET /api/combos/:id`；寫入：`POST /api/combos`、`PUT|DELETE /api/combos/:id`
 - 播放頁：`/c/<id>`（加 `?hud=0` 隱藏進度條，適合錄影）
 - 未儲存的預覽：`/?combo=<編碼>`；網站分頁：`/?view=combos`、`/?view=draft`、`/?view=mcp`

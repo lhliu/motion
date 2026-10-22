@@ -6,7 +6,8 @@ import type { Fx } from '../../src/types';
 import { buildMapScene, type MapSceneInput } from '../../src/mapkit';
 import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
 import type { Env } from './env';
-import { deleteCombo, getCombo, listCombos, saveCombo } from './store';
+import { deleteCombo, getCombo, getPreset, listCombos, listPresets, saveCombo, savePreset } from './store';
+import { checkPresetData, editUrl, KIND_NAME, presetToScene, sceneToPresetData, type PresetKind } from '../../src/presets';
 
 export interface ToolCtx {
   env: Env;
@@ -79,6 +80,11 @@ const comboView = (c: Combo, origin: string, withHtml = false) => ({
   total_seconds: totalSeconds(c),
   scenes: c.scenes,
   outline: comboOutline(c),
+  scene_edit_urls: c.scenes.map((sc, i) => {
+    const pd = sceneToPresetData(sc.effect, sc.words ?? []);
+    const pid = sc.note?.match(/預設 (p[0-9a-z]+)/)?.[1];
+    return pd ? { scene: i + 1, effect: sc.effect, preset: pid ?? null, edit_url: pid ? `${origin}/?edit=${pid}` : editUrl(origin, pd) } : null;
+  }).filter(Boolean),
   notes: c.notes ?? null,
   play_url: linkFor(origin, c),
   created_at: c.created_at ?? null,
@@ -96,9 +102,9 @@ const comboInput = {
     description: '依播放順序排列的段落',
     items: {
       type: 'object',
-      required: ['effect'],
       properties: {
-        effect: { type: 'string', description: '特效 id（用 search_effects 查），也接受編號' },
+        preset: { type: 'string', description: '預設代碼（例如 p7k2x）；給了就不必再給 effect 與 words，會使用使用者在網站上調好的版本' },
+        effect: { type: 'string', description: '特效 id（用 search_effects 查），也接受編號；與 preset 二選一' },
         words: { type: 'array', items: { type: 'string' }, description: '這段的文字；多個詞代表輪播或分行，格式依特效的 word_hint' },
         seconds: { type: 'number', description: '這段播放秒數，預設依特效循環長度（2.4–6 秒）' },
         tone: { type: 'string', enum: ['ink', 'paper', 'accent'], description: '底色：深、淺、主色；省略用特效預設' },
@@ -112,6 +118,26 @@ const comboInput = {
   transition: { type: 'string', enum: ['cut', 'fade', 'slide', 'zoom'], description: '段落轉場，預設 fade' },
   tags: { type: 'array', items: { type: 'string' }, description: '分類標籤，例如 片頭、建案、Shorts' },
   notes: { type: 'string', description: '給未來參考的備註' },
+};
+
+
+/** 把 scenes 裡的 { preset } 換成實際段落；回傳錯誤清單 */
+const resolvePresets = async (a: Args, env: Env): Promise<string[]> => {
+  if (!Array.isArray(a.scenes)) return [];
+  const errors: string[] = [];
+  a.scenes = await Promise.all(
+    (a.scenes as Record<string, unknown>[]).map(async (sc, i) => {
+      if (!sc || typeof sc !== 'object' || !sc.preset) return sc;
+      const p = await getPreset(env, String(sc.preset));
+      if (!p) {
+        errors.push(`scenes[${i}].preset「${String(sc.preset)}」不存在，請用 list_presets 查`);
+        return sc;
+      }
+      const base = presetToScene(p);
+      return { ...base, ...(sc.seconds ? { seconds: sc.seconds } : {}), ...(sc.note ? { note: sc.note } : { note: base.note }) };
+    }),
+  );
+  return errors;
 };
 
 export const TOOLS: ToolDef[] = [
@@ -241,6 +267,7 @@ export const TOOLS: ToolDef[] = [
         combo_scene: scene,
         elements: sc.els.map((e) => ({ type: e.type, role: e.role ?? null, text: e.text ?? null, lines: e.lines ?? null, x: +e.x.toFixed(3), y: +e.y.toFixed(3), delay: e.delay })),
         preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`,
+        edit_url: editUrl(ctx.origin, { kind: 'map', data: sc }),
         ratio: sc.ratio,
         next: `把 combo_scene 原封不動放進 compose_combo 或 save_combo 的 scenes，並把 ratio 設為 ${sc.ratio}，否則元件位置會跑掉；要微調位置可請使用者到網站的地圖工作室（/?view=map）調整後再加入 Combo。`,
       };
@@ -293,7 +320,64 @@ export const TOOLS: ToolDef[] = [
       const words = dropToWords(o, lines);
       const scene = { effect: 'crisp-drop', words, seconds: o.loop };
       const { combo } = normalizeCombo({ title: String(a.title ?? '水滴預覽'), ratio: '9:16', transition: 'cut', scenes: [scene] });
-      return { combo_scene: scene, ratio: '9:16', preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`, studio_url: `${ctx.origin}/?view=drop`, next: '把 combo_scene 放進 compose_combo 或 save_combo 的 scenes；水滴以短邊為基準，9:16、16:9 都能用。' };
+      return { combo_scene: scene, ratio: '9:16', preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`, edit_url: editUrl(ctx.origin, { kind: 'drop', data: { words } }), next: '把 combo_scene 放進 compose_combo 或 save_combo 的 scenes；水滴以短邊為基準，9:16、16:9 都能用。' };
+    },
+  },
+  {
+    name: 'list_presets',
+    title: '列出預設',
+    description: '列出使用者在網站工作室調好並存起來的預設（地圖場景、銳利水滴）。使用者說「用 p7k2x」或「用外觀慢推那個」時，用這個查代碼。',
+    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const list = await listPresets(ctx.env, String(a.kind ?? ''), String(a.query ?? ''), Number(a.limit) || 50);
+      return { count: list.length, presets: list.map((p) => ({ id: p.id, kind: p.kind, kind_name: KIND_NAME[p.kind], name: p.name, note: p.note ?? null, updated_at: p.updated_at, edit_url: `${ctx.origin}/?edit=${p.id}` })) };
+    },
+  },
+  {
+    name: 'get_preset',
+    title: '取得預設',
+    description: '取得一個預設的完整設定與可直接放進 Combo 的 combo_scene。也可以在 compose_combo / save_combo 的 scenes 直接寫 { "preset": "代碼" }。',
+    inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const p = await getPreset(ctx.env, String(a.id));
+      if (!p) throw new Error(`找不到預設 ${String(a.id)}`);
+      return { id: p.id, kind: p.kind, name: p.name, note: p.note ?? null, data: p.data, combo_scene: presetToScene(p), edit_url: `${ctx.origin}/?edit=${p.id}`, updated_at: p.updated_at };
+    },
+  },
+  {
+    name: 'save_preset',
+    title: '儲存預設',
+    description: '把一份地圖場景或水滴設定存成預設，回傳代碼與編輯連結，讓使用者能在網站上手動微調後存回同一個代碼。data 可直接給 build_map_scene / build_drop_scene 回傳的 combo_scene。帶 id 代表更新。需要寫入金鑰。',
+    inputSchema: {
+      type: 'object',
+      required: ['name'],
+      properties: {
+        id: { type: 'string', description: '要更新的預設代碼；省略則新增' },
+        name: { type: 'string', description: '好記的名稱，例如「外觀慢推_左到右」' },
+        note: { type: 'string' },
+        combo_scene: { type: 'object', description: 'build_map_scene 或 build_drop_scene 回傳的 combo_scene（擇一）' },
+        kind: { type: 'string', enum: ['map', 'drop'] },
+        data: { type: 'object', description: 'map：場景物件；drop：{ words: [...] }（擇一）' },
+      },
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false },
+    write: true,
+    run: async (a, ctx) => {
+      let kind = a.kind as PresetKind | undefined;
+      let data = a.data as Record<string, unknown> | undefined;
+      const cs = a.combo_scene as { effect?: string; words?: string[] } | undefined;
+      if (cs?.effect) {
+        const pd = sceneToPresetData(cs.effect, cs.words ?? []);
+        if (!pd) return { ok: false, error: `combo_scene 的 effect「${cs.effect}」不支援存成預設（目前支援 map-overlay、crisp-drop）` };
+        kind = pd.kind;
+        data = pd.data as unknown as Record<string, unknown>;
+      }
+      const bad = checkPresetData(kind, data);
+      if (bad) return { ok: false, error: bad };
+      const saved = await savePreset(ctx.env, { kind: kind!, name: String(a.name).slice(0, 60), note: a.note ? String(a.note).slice(0, 500) : undefined, data: data as never, source: 'mcp' }, typeof a.id === 'string' && a.id ? a.id : undefined);
+      return { ok: true, id: saved.id, kind: saved.kind, name: saved.name, edit_url: `${ctx.origin}/?edit=${saved.id}`, next: '把 edit_url 給使用者微調；使用者存回後代碼不變，之後用 get_preset 或在 scenes 寫 { "preset": 代碼 } 取用最新版本。' };
     },
   },
   {
@@ -308,6 +392,8 @@ export const TOOLS: ToolDef[] = [
     },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
+      const pe = await resolvePresets(a, ctx.env);
+      if (pe.length) return { ok: false, errors: pe };
       const { combo, errors } = normalizeCombo(a);
       if (errors.length) return { ok: false, errors };
       return {
@@ -327,6 +413,8 @@ export const TOOLS: ToolDef[] = [
     annotations: { readOnlyHint: false, destructiveHint: false },
     write: true,
     run: async (a, ctx) => {
+      const pe = await resolvePresets(a, ctx.env);
+      if (pe.length) return { ok: false, errors: pe };
       const { combo, errors } = normalizeCombo({ ...a, source: a.source ?? 'mcp' });
       if (errors.length) return { ok: false, errors };
       const saved = await saveCombo(ctx.env, combo, typeof a.id === 'string' && a.id ? a.id : undefined);
@@ -385,6 +473,6 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是 ${EFFECTS
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
 地圖片段請用 build_map_scene、水滴請用 build_drop_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
-寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
+手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

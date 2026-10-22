@@ -8,7 +8,7 @@ export interface ComboDeps {
   toast: (msg: string) => void;
   copy: (text: string, msg: string) => Promise<void>;
   openDetail: (id: string) => void;
-  openStudio?: (effect: string, words: string[]) => void;
+  openStudio?: (effect: string, words: string[], note?: string) => void;
   palette: () => { id: string; accent?: string };
   store: { get<T>(k: string, d: T): T; set(k: string, v: unknown): void };
 }
@@ -125,7 +125,7 @@ export const initCombos = (deps: ComboDeps) => {
     const s = draft.scenes;
     const act = b.dataset.act;
     if (act === 'open') return deps.openDetail(s[i].effect);
-    if (act === 'studio') return deps.openStudio?.(s[i].effect, s[i].words ?? []);
+    if (act === 'studio') return deps.openStudio?.(s[i].effect, s[i].words ?? [], s[i].note);
     if (act === 'up' && i > 0) [s[i - 1], s[i]] = [s[i], s[i - 1]];
     if (act === 'down' && i < s.length - 1) [s[i + 1], s[i]] = [s[i], s[i + 1]];
     if (act === 'dup') s.splice(i + 1, 0, structuredClone(s[i]));

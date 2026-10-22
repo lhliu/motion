@@ -8,6 +8,7 @@ import { initCombos } from './combo-ui';
 import { initStudio } from './drop-studio';
 import { initMapStudio } from './map-studio';
 import { sceneFromWords } from './effects/map';
+import { decodeJson, type Preset, type PresetData } from './presets';
 
 /* ───────── 小工具 ───────── */
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -760,7 +761,16 @@ const combos = initCombos({
   toast,
   copy,
   openDetail,
-  openStudio: (effect, words) => (effect === 'map-overlay' ? mapStudio.load(sceneFromWords(words)) : studio.load(words)),
+  openStudio: (effect, words, note) => {
+    // 由預設產生的段落：沿用原代碼，存回時更新同一個預設
+    const m = note?.match(/預設 (p[0-9a-z]+)(?:「(.*)」)?/);
+    const meta = m ? { id: m[1], name: m[2] ?? '' } : null;
+    if (effect === 'map-overlay') {
+      const data = sceneFromWords(words);
+      return meta ? mapStudio.loadPreset({ ...meta, data }) : mapStudio.load(data);
+    }
+    return meta ? studio.loadPreset({ ...meta, data: { words } }) : studio.load(words);
+  },
   palette: () => ({ id: state.pal, accent: state.custom ?? undefined }),
   store,
 });
@@ -783,6 +793,32 @@ $('#dStudio').addEventListener('click', () => {
   studio.load(words);
 });
 
+/* ───────── 編輯連結：?edit=p7k2x 或 ?edit=map|drop&d=… ───────── */
+const openEdit = async () => {
+  const q = new URLSearchParams(location.search);
+  const edit = q.get('edit');
+  if (!edit) return;
+  const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) => (p.kind === 'map' ? mapStudio.loadPreset(p) : studio.loadPreset(p));
+  if (edit === 'map' || edit === 'drop') {
+    try {
+      route({ kind: edit, name: '', data: decodeJson<PresetData>(q.get('d') ?? '') });
+      toast('已載入 AI 產生的設定，調好後按「存成預設」');
+    } catch {
+      toast('編輯連結的內容無法讀取');
+    }
+    return;
+  }
+  try {
+    const res = await fetch(`/api/presets/${encodeURIComponent(edit)}`);
+    const j = (await res.json()) as { ok: boolean; preset?: Preset; error?: string };
+    if (!j.ok || !j.preset) throw new Error(j.error ?? '找不到這個預設');
+    route(j.preset);
+    toast(`已載入預設 ${j.preset.id}`);
+  } catch (e) {
+    toast(e instanceof Error ? e.message : '讀取預設失敗');
+  }
+};
+
 /* ───────── 啟動 ───────── */
 applyBrand();
 renderSwatches();
@@ -798,6 +834,7 @@ countUp($('#statFx'), EFFECTS.length);
 const startHero = () => heroShow(0);
 if (document.fonts?.ready) document.fonts.ready.then(startHero);
 else startHero();
+openEdit();
 const initial = new URLSearchParams(location.search).get('fx');
 if (initial) openDetail(initial, false);
 document.addEventListener('visibilitychange', () => {

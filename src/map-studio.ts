@@ -1,6 +1,8 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
 import { drawScene, makeEl, RATIO_PX, TEMPLATES, TYPE_NAME, type MEl, type MScene, type MType } from './mapkit';
 import { esc } from './util';
+import { presetBar } from './preset-bar';
+import type { Preset } from './presets';
 
 export interface MapStudioDeps {
   toast: (msg: string) => void;
@@ -392,6 +394,23 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     persist();
   });
 
+  /* ───────── 預設（與 AI 來回修改） ───────── */
+  const applyScene = (scene: MScene) => {
+    sc = { ...scene, els: scene.els.map((e) => ({ ...e })) };
+    if (scene.bgUrl) loadBg(scene.bgUrl);
+    sel = null;
+    persist();
+    open();
+  };
+  const bar = presetBar($('#msPreset'), {
+    kind: 'map',
+    getData: () => sceneForExport(),
+    onLoad: (p) => applyScene(p.data as MScene),
+    toast: deps.toast,
+    copy: deps.copy,
+    store: deps.store,
+  });
+
   /* ───────── 開關 ───────── */
   const ro = new ResizeObserver(() => {
     size();
@@ -422,8 +441,10 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     cancelAnimationFrame(raf);
     document.body.style.overflow = '';
     const u = new URL(location.href);
-    if (u.searchParams.get('view') === 'map') {
+    if (u.searchParams.get('view') === 'map' || u.searchParams.has('edit')) {
       u.searchParams.delete('view');
+      u.searchParams.delete('edit');
+      u.searchParams.delete('d');
       history.replaceState({}, '', u.pathname + u.search);
     }
   });
@@ -433,11 +454,13 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     open,
     /** 載入外部場景（例如 AI 產生的），底圖網址會一併載入 */
     load: (scene: MScene) => {
-      sc = { ...scene, els: scene.els.map((e) => ({ ...e })) };
-      if (scene.bgUrl) loadBg(scene.bgUrl);
-      sel = null;
-      persist();
-      open();
+      bar.set();
+      applyScene(scene);
+    },
+    /** 載入預設或 AI 產生的場景；有 id 時「存回」會更新同一個代碼 */
+    loadPreset: (p: Pick<Preset, 'id' | 'name' | 'data'>) => {
+      bar.set(p);
+      applyScene(p.data as MScene);
     },
   };
 };

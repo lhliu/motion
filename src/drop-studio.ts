@@ -1,5 +1,7 @@
 import { drawDrop, dropToWords, parseDrop, type DropOpts } from './drop';
 import { esc } from './util';
+import { presetBar } from './preset-bar';
+import type { Preset } from './presets';
 import { zip } from './export-kit';
 
 export interface StudioDeps {
@@ -337,6 +339,21 @@ export const initStudio = (deps: StudioDeps) => {
   dlg.querySelector('#stCopyWords')!.addEventListener('click', () => deps.copy(dropToWords(o, lines).join('\n'), '已複製設定，可貼到特效文字或給 AI'));
   dlg.querySelector('#stCombo')!.addEventListener('click', () => deps.addScene({ effect: 'crisp-drop', words: dropToWords(o, lines), seconds: o.loop, ratio: o.ratio }));
 
+  /* ───────── 預設（與 AI 來回修改） ───────── */
+  const bar = presetBar(dlg.querySelector<HTMLElement>('#stPreset')!, {
+    kind: 'drop',
+    getData: () => ({ words: dropToWords(o, lines) }),
+    onLoad: (p) => applyWords((p.data as { words: string[] }).words ?? []),
+    toast: deps.toast,
+    copy: deps.copy,
+    store: deps.store,
+  });
+  const applyWords = (words: string[]) => {
+    ({ o, lines } = parseDrop(words));
+    persist();
+    open();
+  };
+
   /* ───────── 開關 ───────── */
   const open = () => {
     if (!dlg.open) dlg.showModal();
@@ -357,8 +374,10 @@ export const initStudio = (deps: StudioDeps) => {
     ro.disconnect();
     document.body.style.overflow = '';
     const u = new URL(location.href);
-    if (u.searchParams.get('view') === 'drop') {
+    if (u.searchParams.get('view') === 'drop' || u.searchParams.has('edit')) {
       u.searchParams.delete('view');
+      u.searchParams.delete('edit');
+      u.searchParams.delete('d');
       history.replaceState({}, '', u.pathname + u.search);
     }
   });
@@ -368,8 +387,13 @@ export const initStudio = (deps: StudioDeps) => {
   return {
     open,
     load: (words: string[]) => {
-      ({ o, lines } = parseDrop(words));
-      open();
+      bar.set();
+      applyWords(words);
+    },
+    /** 載入預設或 AI 產生的設定；有 id 時「存回」會更新同一個代碼 */
+    loadPreset: (p: Pick<Preset, 'id' | 'name' | 'data'>) => {
+      bar.set(p);
+      applyWords((p.data as { words: string[] }).words ?? []);
     },
   };
 };
