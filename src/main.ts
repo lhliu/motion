@@ -15,6 +15,9 @@ import { initStudio } from './drop-studio';
 import { initMapStudio } from './map-studio';
 import { initPhotoStudio } from './photo-studio';
 import { isPhotoFx, photoSceneFromWords, type PModule } from './photokit';
+import { initObjectStudio } from './object-studio';
+import { isObjFx, objFxModule, objSceneFromWords, type OScene } from './objkit';
+import { comboHtml, findEffect } from './combo';
 import { sceneFromWords } from './effects/map';
 import { decodeJson, type Preset, type PresetData } from './presets';
 
@@ -245,8 +248,10 @@ const SEC_ICON: Record<SecId, string> = {
   text: '<svg viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></svg>',
   photo: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 8"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  object: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M5.5 9.5c3 2 10 2 13 0M8 4.5l1.5 2M16 19.5l-1.5-2"/></svg>',
   explain: '<svg viewBox="0 0 24 24"><path d="M3 8l9-4 9 4-9 4z"/><path d="M3 12l9 4 9-4M3 16l9 4 9-4"/></svg>',
 };
+const KITS_ICON = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/></svg>';
 const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: string; ph: string; hero: string[] }> = {
   text: {
     small: '影片用得到的',
@@ -272,6 +277,14 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
     ph: '輸入地點或標題，全部卡片即時套用；多個詞用 / 分隔',
     hero: [],
   },
+  object: {
+    small: '一系列可調的主角物件',
+    big: '物件特效',
+    lede: '水滴、隕石、魔術方塊、星空宇宙……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
+    wb: '預覽文字',
+    ph: '輸入標題，全部卡片即時套用；一行一句用 / 分隔',
+    hero: ['obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
+  },
   explain: {
     small: '一張剖面講清楚',
     big: '圖解動畫',
@@ -285,8 +298,8 @@ const wsEl = $('#ws');
 const renderWs = () => {
   wsEl.innerHTML = SECTIONS.map(
     (x) =>
-      `<button type="button" data-sec="${x.id}" aria-pressed="${state.sec === x.id}" title="${esc(x.desc)}">${SEC_ICON[x.id]}<span>${x.zh}</span><small>${secFx(x.id).length}</small></button>`,
-  ).join('');
+      `<button type="button" data-sec="${x.id}" aria-pressed="${!kitsOn && state.sec === x.id}" title="${esc(x.desc)}">${SEC_ICON[x.id]}<span>${x.zh}</span><small>${secFx(x.id).length}</small></button>`,
+  ).join('') + `<button type="button" data-kits aria-pressed="${kitsOn}" title="常見段落順序的現成 Combo，一鍵帶進草稿">${KITS_ICON}<span>套組</span><small>${KITS.length}</small></button>`;
 };
 const renderHeroCopy = () => {
   const x = SECTIONS.find((y) => y.id === state.sec)!;
@@ -297,8 +310,8 @@ const renderHeroCopy = () => {
   $('#heroLede').innerHTML = h.lede;
   $('#wbLabel').textContent = h.wb;
   $<HTMLInputElement>('#userText').placeholder = h.ph;
-  $('#heroStudio').textContent = { text: '打開水滴工作室', photo: '打開圖片工作室', map: '打開地圖工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
-  $('#heroCtaNote').textContent = { text: '邊緣零模糊的水滴標題，可疊進影片', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
+  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
+  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '隕石、魔術方塊、星空；水滴在工作室裡切換', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
   const n = secFx().length;
   $('#statFx').textContent = String(n);
   $('#statCat').textContent = String(CATEGORIES.filter((c) => c.sec === state.sec).length);
@@ -308,7 +321,9 @@ const renderHeroCopy = () => {
 };
 const setSec = (id: SecId, push = true) => {
   if (!SEC_IDS.includes(id)) return;
-  const changed = id !== state.sec;
+  const wasKits = kitsOn;
+  if (kitsOn) showKits(false, push);
+  const changed = id !== state.sec || wasKits;
   state.sec = id;
   store.set('sec', id);
   if (push) {
@@ -329,11 +344,58 @@ const setSec = (id: SecId, push = true) => {
   heroShow(0);
 };
 wsEl.addEventListener('click', (e) => {
+  if ((e.target as HTMLElement).closest('[data-kits]')) {
+    showKits(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-sec]');
   if (!b) return;
   setSec(b.dataset.sec as SecId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
+
+/* ───────── 套組（獨立分頁） ───────── */
+let kitsOn = new URLSearchParams(location.search).get('ws') === 'kits';
+const kitsView = $('#kitsView');
+const renderKits = () => {
+  kitsView.innerHTML = `<header class="kits-head"><p class="eyebrow">KITS <span>／</span> 現成 Combo</p><h1>套組</h1><p class="lede">常見影片的段落順序已經排好：預覽後一鍵帶進 Combo 草稿，把文字換成自己的內容（地名、數字請用查證過的資料），也可以逐段換特效、換字型。</p></header>
+<div class="kit-grid">${KITS.map(
+    (k) => `<article class="kit-card" data-kit="${k.id}">
+  <div class="kit-prev" data-r="${k.combo.ratio ?? '16:9'}"><iframe loading="lazy" title="${esc(k.zh)} 預覽" sandbox="allow-scripts"></iframe></div>
+  <div class="kit-body"><h3>${esc(k.zh)}</h3><p>${esc(k.desc)}</p>
+  <ol>${k.combo.scenes.map((s) => `<li>${esc(findEffect(s.effect)?.zh ?? s.effect)}<small>${s.seconds ?? ''}${s.seconds ? ' 秒' : ''}</small></li>`).join('')}</ol>
+  <div class="kit-ops"><span class="ma-chip">${k.combo.ratio ?? '16:9'}</span><button type="button" class="ma-btn" data-use>帶進 Combo 草稿</button></div></div>
+</article>`,
+  ).join('')}</div>`;
+  kitsView.querySelectorAll<HTMLElement>('.kit-card').forEach((card) => {
+    const k = KITS.find((x) => x.id === card.dataset.kit)!;
+    card.querySelector('iframe')!.srcdoc = comboHtml({ ...k.combo, palette: state.pal, ...(state.custom ? { accent: state.custom } : {}) }, { hud: true });
+  });
+};
+kitsView.addEventListener('click', (e) => {
+  const use = (e.target as HTMLElement).closest('[data-use]');
+  const card = (e.target as HTMLElement).closest<HTMLElement>('.kit-card');
+  if (!use || !card) return;
+  const k = KITS.find((x) => x.id === card.dataset.kit);
+  if (k) combos.loadDraft(structuredClone(k.combo));
+});
+const showKits = (on: boolean, push = true) => {
+  kitsOn = on;
+  document.body.classList.toggle('kits-on', on);
+  kitsView.hidden = !on;
+  if (on) renderKits();
+  else kitsView.replaceChildren();
+  if (push) {
+    const u = new URL(location.href);
+    if (on) u.searchParams.set('ws', 'kits');
+    else if (state.sec === 'text') u.searchParams.delete('ws');
+    else u.searchParams.set('ws', state.sec);
+    history.replaceState(history.state, '', u.pathname + u.search);
+  }
+  if (on) document.title = '套組｜Motion Atlas 短影音動態素材庫';
+  renderWs();
+};
 
 /* ───────── 篩選列 ───────── */
 const catsEl = $('#cats');
@@ -441,7 +503,6 @@ const renderGrid = () => {
     if (browsing) {
       const picks = PICKS.map((id) => EFFECTS.find((f) => f.id === id)!).filter(Boolean);
       html += `<section class="sec sec-picks" id="cat-picks"><div class="sec-h"><code>PICKS</code><h2>建案片常用</h2><p>每週剪片最常用的 ${picks.length} 招</p></div>
-<div class="kits"><span class="kits-l">套組<small>一鍵帶進 Combo 草稿，換字就能用</small></span>${KITS.map((k) => `<button type="button" class="kit" data-kit="${k.id}"><b>${esc(k.zh)}</b><small>${esc(k.desc)}</small></button>`).join('')}</div>
 <div class="grid">${picks.map(cardHtml).join('')}</div></section>`;
     }
     for (const g of groups()) {
@@ -760,7 +821,8 @@ const renderDetail = () => {
   $('#dFav').setAttribute('aria-pressed', String(state.favs.has(fx.id)));
   $('#dStudio').hidden = fx.cat !== 'liquid';
   $('#dMapStudio').hidden = fx.cat !== 'map';
-  $('#dPhotoStudio').hidden = fx.cat !== 'photo';
+  $('#dPhotoStudio').hidden = !isPhotoFx(fx.id);
+  $('#dObjStudio').hidden = !isObjFx(fx.id);
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
   syncSegs();
   renderStage();
@@ -978,6 +1040,10 @@ const combos = initCombos({
       const data = photoSceneFromWords(words, effect.slice(6) as PModule);
       return meta ? photoStudio.loadPreset({ ...meta, data }) : photoStudio.load(data);
     }
+    if (isObjFx(effect)) {
+      const data = objSceneFromWords(words, objFxModule(effect));
+      return meta ? objStudio.loadPreset({ ...meta, data }) : objStudio.load(data);
+    }
     return meta ? studio.loadPreset({ ...meta, data: { words } }) : studio.load(words);
   },
   palette: () => ({ id: state.pal, accent: state.custom ?? undefined }),
@@ -1000,6 +1066,16 @@ $('#dPhotoStudio').addEventListener('click', () => {
   closeDetail();
   photoStudio.open(m);
 });
+const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open() });
+$('#dObjStudio').addEventListener('click', () => {
+  const fx = d.fx;
+  const html = fx.html(d.words);
+  const m = html.match(/data-scene="([^"]+)"/);
+  closeDetail();
+  // 帶著這張卡的形狀、材質打開工作室
+  const scene = m ? (JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')) as OScene) : undefined;
+  objStudio.open(objFxModule(fx.id), scene);
+});
 $('#dStudio').addEventListener('click', () => {
   const words = d.fx.id === 'crisp-drop' ? d.words : ['好好', '~just savor', '生活'];
   closeDetail();
@@ -1012,8 +1088,8 @@ const openEdit = async () => {
   const edit = q.get('edit');
   if (!edit) return;
   const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) =>
-    p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : studio.loadPreset(p);
-  if (edit === 'map' || edit === 'drop' || edit === 'photo') {
+    p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : studio.loadPreset(p);
+  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object') {
     try {
       route({ kind: edit, name: '', data: decodeJson<PresetData>(q.get('d') ?? '') });
       toast('已載入 AI 產生的設定，調好後按「存成預設」');
@@ -1049,7 +1125,8 @@ updateFavCount();
 renderGrid();
 $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'explain') return copy(EXPLAIN_PROMPT, '已複製，貼給 Claude Code 並附上草圖');
-  return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : studio.open();
+  if (state.sec === 'text') return showKits(true);
+  return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : objStudio.open();
 });
 // 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊
 new ResizeObserver(([e]) => document.documentElement.style.setProperty('--top-h', `${Math.round(e.borderBoxSize?.[0]?.blockSize ?? (e.target as HTMLElement).offsetHeight)}px`)).observe($('.ma-top'));
@@ -1057,6 +1134,7 @@ const startHero = () => heroShow(0);
 if (document.fonts?.ready) document.fonts.ready.then(startHero);
 else startHero();
 openEdit();
+if (kitsOn) showKits(true, false);
 if (initial) openDetail(initial, false);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) clearTimeout(heroTimer);

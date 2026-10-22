@@ -6,6 +6,7 @@ import type { Fx, Palette, Tone } from './types';
 import { esc } from './util';
 import { FONT_IDS, fontPack } from './fonts';
 import { isPhotoFx, MODULE_INFO, type PScene } from './photokit';
+import { isObjFx, OBJ_INFO, type OScene } from './objkit';
 
 export type Transition = 'cut' | 'fade' | 'slide' | 'zoom';
 export const TRANSITIONS: Transition[] = ['cut', 'fade', 'slide', 'zoom'];
@@ -59,7 +60,7 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     const r = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>;
     const fx = findEffect(str(r.effect, 40));
     if (!fx) errors.push(`scenes[${i}].effect「${String(r.effect)}」不存在，請先用 search_effects 查 id`);
-    const long = fx?.id === 'map-overlay' || fx?.id === 'crisp-drop' || isPhotoFx(fx?.id ?? '');
+    const long = fx?.id === 'map-overlay' || fx?.id === 'crisp-drop' || isPhotoFx(fx?.id ?? '') || isObjFx(fx?.id ?? '');
     const diagram = fx?.cat === 'diagram';
     const max = long ? 900_000 : diagram ? 180 : 60;
     const rows = Array.isArray(r.words) ? r.words.map((w) => str(w, max)) : typeof r.words === 'string' ? (long ? [str(r.words, max)] : diagram ? str(r.words, 4320).split('\n').map((w) => str(w, max)) : str(r.words, 200).split(/\s*\/\s*|\n/)) : undefined;
@@ -117,6 +118,16 @@ export const sceneSummary = (effect: string, words: string[], quote = false): st
       return '地圖場景（預設範本）';
     }
   }
+  if (isObjFx(effect)) {
+    const j = words.find((x) => x.trim().startsWith('{'));
+    if (!j) return words.map(q).join(quote ? '、' : ' / ');
+    try {
+      const sc = JSON.parse(j) as OScene;
+      return `物件特效「${OBJ_INFO[sc.module]?.zh ?? sc.module}」${sc.text?.lines?.length ? `：${sc.text.lines.map((l) => q(l.replace(/^~/, ''))).join(quote ? '、' : ' / ')}` : ''}`;
+    } catch {
+      return '物件特效';
+    }
+  }
   if (isPhotoFx(effect)) {
     const j = words.find((x) => x.trim().startsWith('{'));
     try {
@@ -140,6 +151,7 @@ export const sceneSeconds = (s: ComboScene): number => {
   if (s.seconds) return s.seconds;
   // 圖片運鏡預設 6 秒動畫＋1 秒停留
   if (isPhotoFx(s.effect)) return 7;
+  if (isObjFx(s.effect)) return 6;
   const fx = findEffect(s.effect);
   if (fx && typeof fx.duration === 'number' && Number.isFinite(fx.duration) && fx.duration > 0) return fx.duration;
   return fx ? Math.min(6, Math.max(2.4, loopSeconds(fx))) : 3;

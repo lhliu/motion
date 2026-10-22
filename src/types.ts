@@ -17,7 +17,10 @@ export type CatId =
   | 'pmulti'
   | 'pmark'
   | 'pcut'
-  | 'diagram';
+  | 'diagram'
+  | 'meteor'
+  | 'cube'
+  | 'cosmos';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';
@@ -62,7 +65,7 @@ export interface Fx {
 }
 
 /** 網站的三個工作區：文字特效、圖片運鏡、地圖區位 */
-export type SecId = 'text' | 'photo' | 'map' | 'explain';
+export type SecId = 'text' | 'photo' | 'map' | 'object' | 'explain';
 
 export interface Section {
   id: SecId;
@@ -72,7 +75,7 @@ export interface Section {
   /** 一句話說明 */
   desc: string;
   /** 對應的工作室 */
-  studio?: 'photo' | 'map' | 'drop';
+  studio?: 'photo' | 'map' | 'drop' | 'object';
 }
 
 export interface Category {

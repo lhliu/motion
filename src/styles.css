@@ -2629,3 +2629,120 @@ pre.code {
 .ma-num {
   font-family: 'MA Num', var(--sans);
 }
+
+/* ───────── 套組分頁 ───────── */
+.kits-on .hero,
+.kits-on .workbench,
+.kits-on .filters,
+.kits-on #grid,
+.kits-on #empty {
+  display: none;
+}
+.kits-view {
+  padding: clamp(28px, 5vw, 56px) 0 40px;
+}
+.kits-head h1 {
+  font-size: clamp(40px, 6vw, 72px);
+  margin: 0 0 10px;
+}
+.kits-head .lede {
+  max-width: 760px;
+}
+.kit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 18px;
+  margin-top: 26px;
+}
+.kit-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.kit-prev {
+  background: #0b0b0b;
+  display: grid;
+  place-items: center;
+  height: 360px;
+}
+.kit-prev iframe {
+  border: 0;
+  height: 100%;
+  width: 100%;
+}
+.kit-prev[data-r='9:16'] iframe {
+  width: 202px;
+}
+.kit-body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.kit-body h3 {
+  margin: 0;
+  font-size: 20px;
+}
+.kit-body p {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 13.5px;
+}
+.kit-body ol {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.8;
+}
+.kit-body ol small {
+  margin-left: 8px;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.kit-ops {
+  margin-top: auto;
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ma-chip {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line-2);
+}
+
+/* 六個工作區：中等寬度時分頁獨立成一列 */
+@media (max-width: 1500px) {
+  .ws button small {
+    display: none;
+  }
+}
+@media (max-width: 1320px) and (min-width: 721px) {
+  .ma-top {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .ws {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  .ws button {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+  .brand-t {
+    display: flex;
+  }
+}
+.ps-mod-g .ps-mod-desc {
+  grid-column: 1 / -1;
+}

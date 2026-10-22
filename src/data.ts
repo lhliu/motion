@@ -15,12 +15,14 @@ import { map } from './effects/map';
 import { liquid } from './effects/liquid';
 import { photo } from './effects/photo';
 import { diagram } from './effects/diagram';
+import { objects } from './effects/object';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
-  { id: 'text', code: 'TEXT', zh: '文字特效', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字、水滴標題', studio: 'drop' },
+  { id: 'text', code: 'TEXT', zh: '文字特效', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字' },
   { id: 'photo', code: 'PHOTO', zh: '圖片運鏡', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
   { id: 'map', code: 'MAP', zh: '地圖區位', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
+  { id: 'object', code: 'OBJECT', zh: '物件特效', en: 'Object Motion', desc: '水滴、隕石、魔術方塊、星空宇宙；一系列可調形狀材質的主角物件', studio: 'object' },
   { id: 'explain', code: 'EXPLAIN', zh: '圖解動畫', en: 'Explainer', desc: '工法、剖面、流程示意；一支一支客製，改圖請交給 AI' },
 ];
 
@@ -34,7 +36,6 @@ export const CATEGORIES: Category[] = [
   { id: 'style', sec: 'text', code: 'STYLE', zh: '字體風格', tagline: '換個呈現方式就升級' },
   { id: 'light', sec: 'text', code: 'LIGHT', zh: '光影發光', tagline: '用光替文字加戲' },
   { id: 'texture', sec: 'text', code: 'TEXTURE', zh: '粒子質感', tagline: '從像素到粒子' },
-  { id: 'liquid', sec: 'text', code: 'LIQUID', zh: '水滴泡泡', tagline: '柔軟、透明、會呼吸' },
   { id: 'caption', sec: 'text', code: 'CAPTION', zh: '字幕資訊條', tagline: '影片最常用的那幾條' },
   { id: 'card', sec: 'text', code: 'CARD', zh: '字卡版型', tagline: '直接拿來當段落字卡' },
   { id: 'retro', sec: 'text', code: 'RETRO', zh: '復古懷舊', tagline: '一秒回到那個年代' },
@@ -43,6 +44,10 @@ export const CATEGORIES: Category[] = [
   { id: 'pmark', sec: 'photo', code: 'FOCUS', zh: '標註轉場', tagline: '圈重點、定格、穿越' },
   { id: 'pcut', sec: 'photo', code: 'MASK', zh: '裁切與遮罩', tagline: '切片、拼塊、撕紙、剪報與遮擋換景' },
   { id: 'map', sec: 'map', code: 'MAP', zh: '地圖區位', tagline: '把位置、距離、通勤講清楚' },
+  { id: 'liquid', sec: 'object', code: 'DROP', zh: '水滴泡泡', tagline: '柔軟、透明、會呼吸' },
+  { id: 'meteor', sec: 'object', code: 'METEOR', zh: '隕石', tagline: '隨機、對稱、熔岩、冰晶' },
+  { id: 'cube', sec: 'object', code: 'CUBE', zh: '魔術方塊', tagline: '塑膠、金屬、花色、單色' },
+  { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '星空、光速、星系、行星' },
   { id: 'diagram', sec: 'explain', code: 'DIAGRAM', zh: '工法剖面', tagline: '建材、管線、結構，一張剖面講清楚' },
 ];
 
@@ -65,10 +70,11 @@ export const EFFECTS: Fx[] = [
   ...liquid,
   ...photo,
   ...diagram,
+  ...objects,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 文字特效：指定用途、標籤收斂成固定詞彙，並依用途重新排序（編號跟著用途走）
-const secIdx = (f: Fx) => ['text', 'photo', 'map', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
+const secIdx = (f: Fx) => ['text', 'photo', 'map', 'object', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
 const useIdx = (f: Fx) => USES.findIndex((u) => u.id === f.use);
 // 同一用途內依 uses.ts 列出的順序（常用的在前）
 const useRank = new Map(Object.keys(USE_OF).map((id, i) => [id, i]));

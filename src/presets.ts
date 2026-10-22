@@ -2,13 +2,14 @@
 import { parseDrop } from './drop';
 import { sceneLength, type MScene } from './mapkit';
 import { isPhotoFx, normalizePhotoScene, photoFxId, type PScene } from './photokit';
+import { isObjFx, normalizeObjScene, objFxId, objFxModule, type OScene } from './objkit';
 
-export type PresetKind = 'map' | 'drop' | 'photo';
-export const PRESET_KINDS: PresetKind[] = ['map', 'drop', 'photo'];
-export const KIND_NAME: Record<PresetKind, string> = { map: '地圖場景', drop: '銳利水滴', photo: '圖片運鏡' };
+export type PresetKind = 'map' | 'drop' | 'photo' | 'object';
+export const PRESET_KINDS: PresetKind[] = ['map', 'drop', 'photo', 'object'];
+export const KIND_NAME: Record<PresetKind, string> = { map: '地圖場景', drop: '銳利水滴', photo: '圖片運鏡', object: '物件特效' };
 
 /** map：MScene；drop：{ words: string[] }（文字行＋@設定行）；photo：PScene（images 通常留空，渲染時再填） */
-export type PresetData = MScene | { words: string[] } | PScene;
+export type PresetData = MScene | { words: string[] } | PScene | OScene;
 
 export interface Preset {
   id?: string;
@@ -41,6 +42,10 @@ export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, 
     return { effect: photoFxId(sc.module), words: [JSON.stringify(sc)], seconds: sc.loop + 1, ...(sc.font ? { font: sc.font } : {}), note };
   }
   const words = (p.data as { words: string[] }).words ?? [];
+  if (p.kind === 'object') {
+    const sc = normalizeObjScene(p.data as OScene);
+    return { effect: objFxId(sc.module), words: [JSON.stringify(sc)], seconds: sc.loop, ...(sc.font ? { font: sc.font } : {}), note };
+  }
   const d = parseDrop(words).o;
   return { effect: 'crisp-drop', words, seconds: d.loop, ...(d.font ? { font: d.font } : {}), note };
 };
@@ -56,6 +61,14 @@ export const sceneToPresetData = (effect: string, words: string[]): { kind: Pres
     }
   }
   if (effect === 'crisp-drop') return { kind: 'drop', data: { words } };
+  if (isObjFx(effect)) {
+    const j = words.find((w) => w.trim().startsWith('{'));
+    try {
+      return { kind: 'object', data: normalizeObjScene(j ? (JSON.parse(j) as OScene) : { module: objFxModule(effect), text: { lines: words } as OScene['text'] }, objFxModule(effect)) };
+    } catch {
+      return null;
+    }
+  }
   if (isPhotoFx(effect)) {
     const j = words.find((w) => w.trim().startsWith('{'));
     try {
@@ -77,6 +90,7 @@ export const checkPresetData = (kind: unknown, data: unknown): string => {
     if (!d.ratio) return '地圖場景缺少 ratio';
   }
   if (kind === 'photo' && !(data as Partial<PScene>).module) return '圖片運鏡缺少 module';
+  if (kind === 'object' && !(data as Partial<OScene>).module) return '物件特效缺少 module';
   if (kind === 'drop' && !Array.isArray((data as { words?: unknown }).words)) return '水滴設定缺少 words（文字行與 @設定行）';
   const size = JSON.stringify(data).length;
   if (size > 900_000) return `資料太大（${Math.round(size / 1024)}KB），底圖或圖片請縮小後再存`;

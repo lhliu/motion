@@ -1,5 +1,6 @@
 // 文字特效的「用途」分類（剪片時怎麼找），原本的技法分類改當「風格」篩選。網站與 MCP 共用。
 import type { Combo } from './combo';
+import { buildMapScene, sceneLength } from './mapkit';
 
 export type UseId = 'open' | 'caption' | 'info' | 'trans' | 'emph' | 'mood';
 
@@ -88,6 +89,45 @@ export const KITS: { id: string; zh: string; desc: string; combo: Combo }[] = [
         { effect: 'versus', words: ['尖峰', '離峰'], seconds: 2.6, note: '兩種時段的實測' },
         { effect: 'big-number', words: ['○○', '分鐘', '門到門實測'], seconds: 3, note: '請換成實測數字' },
         { effect: 'shorts-caption', words: ['結論', '是'], seconds: 2.4 },
+      ],
+    },
+  },
+  {
+    id: 'kit-site',
+    zh: '區位介紹 Shorts',
+    desc: '太空降落到基地 → 交通放射路線 → 重點數字 → 訂閱',
+    combo: {
+      title: '區位介紹 Shorts',
+      ratio: '9:16',
+      transition: 'cut',
+      tags: ['套組', '區位', 'Shorts'],
+      scenes: [
+        (() => {
+          const sc = buildMapScene({ template: 'site', heading: '基地位置', badges: [{ text: 'B棟' }, { text: 'A棟' }], bars: ['A、B 兩棟', '*地上 ○ 樓|地下 ○ 樓'], subtitle: '', handle: '' });
+          return { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sceneLength(sc) + 0.5, note: '底圖請在地圖工作室上傳；樓層數請用建照資料' };
+        })(),
+        (() => {
+          const sc = buildMapScene({ template: 'routes', tag: '交通｜開車到哪都方便', subtitle: '', routes: { origin: '某某建案', destinations: [{ name: '南港', note: '開車約 ○ 分鐘' }, { name: '內湖', note: '開車約 ○ 分鐘' }, { name: '台北車站', note: '開車約 ○ 分鐘' }] } });
+          return { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sceneLength(sc), note: '時間請換成實測' };
+        })(),
+        { effect: 'big-number', words: ['○', '分鐘', '開車到最近的交流道'], seconds: 3 },
+        { effect: 'subscribe-cta', seconds: 2.4 },
+      ],
+    },
+  },
+  {
+    id: 'kit-object',
+    zh: '物件片頭',
+    desc: '光速穿越 → 隕石墜落帶出標題 → 衝擊放大',
+    combo: {
+      title: '物件片頭',
+      ratio: '9:16',
+      transition: 'cut',
+      tags: ['套組', '片頭', '物件'],
+      scenes: [
+        { effect: 'obj-cosmos-warp', words: ['未來已來'], seconds: 2.4 },
+        { effect: 'obj-meteor-lava', words: ['重磅登場'], seconds: 3.2 },
+        { effect: 'punch-zoom', words: ['開箱'], seconds: 1.8 },
       ],
     },
   },

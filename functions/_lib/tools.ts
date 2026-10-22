@@ -7,6 +7,7 @@ import { buildMapScene, sceneLength, type MapSceneInput } from '../../src/mapkit
 import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
 import { KITS, USES } from '../../src/uses';
 import { FONT_IDS, FONT_PACKS } from '../../src/fonts';
+import { normalizeObjScene, objFxId, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from '../../src/objkit';
 
 const FONT_HELP = `字型組合：${FONT_PACKS.map((f) => `${f.id}＝${f.zh}（${f.use}）`).join('；')}。省略＝sharp`;
 import { MODULE_INFO, normalizePhotoScene, PARAMS, photoFxId, PHOTO_MODULES, type PModule, type PScene } from '../../src/photokit';
@@ -425,10 +426,60 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    name: 'build_object_scene',
+    title: '組物件特效',
+    description: `物件特效（跟水滴同一系列，硬邊零模糊、可透明疊進影片）：${OBJ_MODULES.map((m) => `${m}＝${OBJ_INFO[m].zh}（${OBJ_INFO[m].desc}）`).join('；')}。回傳 combo_scene、各參數說明與編輯連結。水滴請用 build_drop_scene。`,
+    inputSchema: {
+      type: 'object',
+      required: ['module'],
+      properties: {
+        module: { type: 'string', enum: OBJ_MODULES },
+        params: { type: 'object', description: '模組參數，見回傳的 params_doc；x、y 為物件位置 0–1' },
+        lines: { type: 'array', items: { type: 'string' }, description: '文字，一行一句（最多 4 行），~ 開頭為英文小字' },
+        layout: { type: 'string', enum: ['below', 'over', 'above', 'none'], description: '文字在物件下方、疊在物件上、上方或不顯示' },
+        text_color: { type: 'string' },
+        text_size: { type: 'number', description: '0.3–3，預設 1' },
+        bg: { type: 'string', description: 'transparent、#hex 或 #hex,#hex 漸層' },
+        ratio: { type: 'string', enum: ['9:16', '16:9', '1:1'] },
+        duration: { type: 'number', description: '秒數，預設 6' },
+        font: { type: 'string', enum: FONT_IDS, description: FONT_HELP },
+        title: { type: 'string' },
+      },
+    },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const module = String(a.module) as OModule;
+      if (!OBJ_MODULES.includes(module)) return { ok: false, error: `module 必須是 ${OBJ_MODULES.join('｜')}` };
+      const sc = normalizeObjScene(
+        {
+          module,
+          ratio: a.ratio as OScene['ratio'],
+          loop: a.duration as number,
+          bg: a.bg as string,
+          params: (a.params ?? {}) as OScene['params'],
+          text: { lines: Array.isArray(a.lines) ? a.lines.map(String) : [], layout: (a.layout as OScene['text']['layout']) ?? (module === 'cosmos' && (a.params as { mode?: string } | undefined)?.mode !== 'planet' ? 'over' : 'below'), color: (a.text_color as string) ?? '#ffffff', size: Number(a.text_size ?? 1), stroke: '#111111', strokeW: 0, delay: 0.6 },
+          ...(FONT_IDS.includes(a.font as never) && a.font !== 'sharp' ? { font: String(a.font) } : {}),
+        },
+        module,
+      );
+      const scene = { effect: objFxId(module), words: [JSON.stringify(sc)], seconds: sc.loop, ...(sc.font ? { font: sc.font } : {}) };
+      const { combo } = normalizeCombo({ title: String(a.title ?? `${OBJ_INFO[module].zh}預覽`), ratio: sc.ratio, transition: 'cut', scenes: [scene] });
+      return {
+        combo_scene: scene,
+        scene: sc,
+        params_doc: OBJ_PARAMS[module].map((f) => ({ key: f.k, label: f.label, ...(f.type === 'range' ? { min: f.min, max: f.max } : f.type === 'seg' ? { options: f.opts.map(([v, l]) => `${v}＝${l}`) } : { type: f.type }), value: sc.params[f.k] })),
+        preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`,
+        edit_url: editUrl(ctx.origin, { kind: 'object', data: sc }),
+        local_render: `本機渲染：載入 ${ctx.origin}/r/fonts.css 與 ${ctx.origin}/r/obj.js，對每一格呼叫 MA_OBJ.drawObj(ctx, W, H, scene, i / fps)。`,
+        next: `把 combo_scene 放進 compose_combo / save_combo（ratio 設 ${sc.ratio}）。`,
+      };
+    },
+  },
+  {
     name: 'list_presets',
     title: '列出預設',
     description: '列出使用者在網站工作室調好並存起來的預設（地圖場景、銳利水滴、圖片運鏡）。使用者說「用 p7k2x」或「用外觀慢推那個」時，用這個查代碼。',
-    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
+    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
       const list = await listPresets(ctx.env, String(a.kind ?? ''), String(a.query ?? ''), Number(a.limit) || 50);
@@ -459,7 +510,7 @@ export const TOOLS: ToolDef[] = [
         name: { type: 'string', description: '好記的名稱，例如「外觀慢推_左到右」' },
         note: { type: 'string' },
         combo_scene: { type: 'object', description: 'build_map_scene / build_drop_scene / build_photo_scene 回傳的 combo_scene（擇一）' },
-        kind: { type: 'string', enum: ['map', 'drop', 'photo'] },
+        kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object'] },
         data: { type: 'object', description: 'map：場景物件；drop：{ words: [...] }；photo：build_photo_scene 回傳的 scene（擇一）' },
       },
     },
@@ -471,7 +522,7 @@ export const TOOLS: ToolDef[] = [
       const cs = a.combo_scene as { effect?: string; words?: string[] } | undefined;
       if (cs?.effect) {
         const pd = sceneToPresetData(cs.effect, cs.words ?? []);
-        if (!pd) return { ok: false, error: `combo_scene 的 effect「${cs.effect}」不支援存成預設（目前支援 map-overlay、crisp-drop、photo-*）` };
+        if (!pd) return { ok: false, error: `combo_scene 的 effect「${cs.effect}」不支援存成預設（目前支援 map-overlay、crisp-drop、photo-*、obj-*）` };
         kind = pd.kind;
         data = pd.data as unknown as Record<string, unknown>;
       }
@@ -573,7 +624,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
-地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡（推拉、甩入、3D 卡片、前後對比、放大鏡）請用 build_photo_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、隕石／魔術方塊／星空宇宙請用 build_object_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 字型：Combo 的 font（整支）與 scenes[].font（單段）可選字型組合，依段落情緒挑：數據、資訊、標題用 sharp（預設）；開箱、生活、通勤用 round；質感建案、片頭大標用 serif；旁白金句、心得用 hand；俏皮吐槽用 cute。一支影片以 2–3 組為限，同類段落維持同一組，避免每段都換。\n手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;
