@@ -60,8 +60,11 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     const fx = findEffect(str(r.effect, 40));
     if (!fx) errors.push(`scenes[${i}].effect「${String(r.effect)}」不存在，請先用 search_effects 查 id`);
     const long = fx?.id === 'map-overlay' || fx?.id === 'crisp-drop' || isPhotoFx(fx?.id ?? '');
-    const max = long ? 900_000 : 60;
-    const words = Array.isArray(r.words) ? r.words.map((w) => str(w, max)).filter(Boolean).slice(0, 12) : typeof r.words === 'string' ? (long ? [str(r.words, max)] : str(r.words, 200).split(/\s*\/\s*|\n/).filter(Boolean)) : undefined;
+    const diagram = fx?.cat === 'diagram';
+    const max = long ? 900_000 : diagram ? 180 : 60;
+    const rows = Array.isArray(r.words) ? r.words.map((w) => str(w, max)) : typeof r.words === 'string' ? (long ? [str(r.words, max)] : diagram ? str(r.words, 4320).split('\n').map((w) => str(w, max)) : str(r.words, 200).split(/\s*\/\s*|\n/)) : undefined;
+    // 圖解的文字按位置對應部位；空白也必須保留，否則後面的名稱會錯位。
+    const words = rows ? (diagram ? rows : rows.filter(Boolean)).slice(0, diagram ? 24 : 12) : undefined;
     const sec = Number(r.seconds);
     const tone = TONES.includes(r.tone as Tone) ? (r.tone as Tone) : undefined;
     if (r.font !== undefined && r.font !== '' && !FONT_IDS.includes(r.font as never)) errors.push(`scenes[${i}].font「${String(r.font)}」不存在，可用：${FONT_IDS.join('｜')}`);
@@ -138,6 +141,7 @@ export const sceneSeconds = (s: ComboScene): number => {
   // 圖片運鏡預設 6 秒動畫＋1 秒停留
   if (isPhotoFx(s.effect)) return 7;
   const fx = findEffect(s.effect);
+  if (fx && typeof fx.duration === 'number' && Number.isFinite(fx.duration) && fx.duration > 0) return fx.duration;
   return fx ? Math.min(6, Math.max(2.4, loopSeconds(fx))) : 3;
 };
 

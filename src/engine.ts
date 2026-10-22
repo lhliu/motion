@@ -85,6 +85,7 @@ export const mount = (host: HTMLElement, fx: Fx, words: string[], vars: Vars, sp
 };
 
 export const setSpeed = (root: HTMLElement, speed: number) => {
+  root.dataset.motionSpeed = String(speed);
   root.getAnimations({ subtree: true }).forEach((a) => (a.playbackRate = speed));
   root.querySelectorAll('svg').forEach((s) => {
     try {
@@ -96,8 +97,9 @@ export const setSpeed = (root: HTMLElement, speed: number) => {
   });
 };
 
-/** 從 CSS 抓出主要循環秒數 */
+/** Canvas 可明訂循環長度；其餘從 CSS 抓出主要循環秒數。 */
 export const loopSeconds = (fx: Fx): number => {
+  if (typeof fx.duration === 'number' && Number.isFinite(fx.duration) && fx.duration > 0) return fx.duration;
   const m = fx.css.match(/animation:[^;]*?(\d+(?:\.\d+)?)s/);
   return m ? parseFloat(m[1]) : fx.run ? 4 : 4;
 };

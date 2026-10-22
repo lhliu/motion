@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<title>Precast process regression tests</title>
+<style>body{font:14px system-ui;background:#e9f0f5;color:#173e58;margin:24px}#fixtures{position:fixed;left:-4000px;top:0}.fx{position:relative;width:540px;height:960px;--sans:system-ui,sans-serif}.fx canvas{position:absolute;inset:0;width:100%;height:100%}#storyboard{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}#storyboard canvas{width:100%;height:auto}figure{margin:0}figcaption{padding:8px 0}</style>
+<body>
+<h1>預鑄工法流程：本機動畫與匯出回歸測試</h1>
+<pre id="results">Running…</pre><div id="fixtures"></div><div id="storyboard"></div>
+<script type="module">
+import { EFFECTS, secOf } from '/src/data.ts';
+import { fnSource, loopSeconds } from '/src/engine.ts';
+import { normalizeCombo, sceneSeconds } from '/src/combo.ts';
+import { exportHtml } from '/src/prompts.ts';
+
+const fx = EFFECTS.find(f => f.id === 'precast-process');
+const results = [];
+const check = (condition, message) => { if (!condition) throw new Error(message); };
+const test = (name, run) => { try { run(); results.push({ name, passed: true }); } catch (e) { results.push({ name, passed: false, error: String(e) }); } };
+const extracted = (0, eval)(fnSource(fx.run));
+const fixtures = document.querySelector('#fixtures');
+const capture = (time, { words = fx.sample, size = [540, 960], run = fx.run, reduced = false, speed = 1 } = {}) => {
+  const root = document.createElement('div'); root.className = 'fx'; root.style.width = size[0] + 'px'; root.style.height = size[1] + 'px';
+  root.dataset.motionSpeed = String(speed);
+  root.innerHTML = fx.html(words); fixtures.append(root);
+  const cv = root.querySelector('canvas');
+  const callbacks = new Map(); let id = 0;
+  const original = { raf: window.requestAnimationFrame, cancel: window.cancelAnimationFrame, now: performance.now, media: window.matchMedia };
+  let cleanup;
+  const text = [];
+  const context = cv.getContext('2d');
+  const fillText = context.fillText;
+  context.fillText = function(value, ...args) { text.push(String(value)); return fillText.call(this, value, ...args); };
+  try {
+    window.requestAnimationFrame = callback => { callbacks.set(++id, callback); return id; };
+    window.cancelAnimationFrame = n => callbacks.delete(n);
+    performance.now = () => 0;
+    if (reduced) window.matchMedia = query => query === '(prefers-reduced-motion: reduce)' ? { matches: true, addEventListener(){}, removeEventListener(){} } : original.media.call(window, query);
+    cleanup = run(root, words);
+    if (!reduced) {
+      const [n, callback] = callbacks.entries().next().value;
+      callbacks.delete(n); callback(time * 1000);
+    }
+    const canvas = document.createElement('canvas'); canvas.width = cv.width; canvas.height = cv.height; canvas.getContext('2d').drawImage(cv, 0, 0);
+    const pixels = context.getImageData(0, 0, cv.width, cv.height).data;
+    check(context.shadowBlur === 0 && context.filter === 'none', 'Soft rendering effect introduced');
+    cleanup(); check(callbacks.size === 0, 'Animation frame was not cancelled'); cleanup = undefined;
+    return { canvas, pixels, text };
+  } finally {
+    cleanup?.(); root.remove(); window.requestAnimationFrame = original.raf; window.cancelAnimationFrame = original.cancel; performance.now = original.now; window.matchMedia = original.media;
+  }
+};
+const equal = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
+const changed = (a, b, y0, y1) => {
+  let count = 0;
+  for (let y = y0; y < y1; y++) for (let x = 40; x < 500; x++) {
+    const i = (y * a.canvas.width + x) * 4;
+    if (a.pixels[i] !== b.pixels[i] || a.pixels[i + 1] !== b.pixels[i + 1] || a.pixels[i + 2] !== b.pixels[i + 2]) count++;
+  }
+  return count;
+};
+
+test('Effect uses next unique fixed number and the explainer workspace', () => {
+  const others = EFFECTS.filter(f => f !== fx);
+  check(fx.no === Math.max(...others.map(f => f.no)) + 1, 'Effect number reused');
+  check(fx.no === 157 && fx.cat === 'diagram' && secOf(fx) === 'explain', 'Wrong catalog registration');
+});
+test('Combo and effect metadata retain the complete 12-second timeline', () => {
+  check(loopSeconds(fx) === 12 && sceneSeconds({ effect: fx.id }) === 12, 'Animation would be cut short');
+  check(sceneSeconds({ effect: fx.id, seconds: 15 }) === 15, 'Explicit duration overridden');
+  check(sceneSeconds({ effect: 'layer-section' }) === 4, 'Existing default duration changed');
+});
+test('Positional text, blank labels and source survive Combo normalization', () => {
+  const words = fx.sample.map((_, i) => `測試欄位 ${i}`); words[5] = ''; words[7] = '樓板 A/B';
+  const normalized = normalizeCombo({ title: 'QA', scenes: [{ effect: fx.id, words }] });
+  check(!normalized.errors.length, 'Invalid Combo');
+  check(equal(normalized.combo.scenes[0].words, words), 'Text truncated or shifted');
+  const lines = normalizeCombo({ title: 'QA', scenes: [{ effect: fx.id, words: words.join('\n') }] });
+  check(equal(lines.combo.scenes[0].words, words), 'Multiline labels shifted');
+});
+test('Construction stages appear in order', () => {
+  const early = capture(0.24), factory = capture(2), assembly = capture(5.9), casting = capture(7.4), complete = capture(10.5);
+  check(changed(early, factory, 195, 317) > 3000, 'Factory parts did not appear');
+  check(changed(factory, assembly, 429, 577) > 5000, 'Site assembly did not appear');
+  check(changed(factory, assembly, 665, 813) === 0, 'Casting appeared before assembly');
+  check(changed(assembly, casting, 665, 813) > 5000, 'Casting structure did not appear');
+  check(changed(casting, complete, 665, 813) > 300, 'Concrete did not advance across slab');
+});
+test('All visible labels read from words; empty and malformed input are supported', () => {
+  const words = fx.sample.map((_, i) => `改字 ${i}`); words[5] = '';
+  const result = capture(10.5, { words });
+  check(result.text.includes('改字 0') && result.text.includes('改字 12') && result.text.includes('改字 8'), 'Custom text missing');
+  check(!result.text.includes(fx.sample[5]), 'Blank label reverted to default');
+  capture(1, { words: [] }); capture(1, { words: { invalid: true } });
+});
+test('Reduced motion shows the completed structure without scheduling animation', () => {
+  check(equal(capture(10.5).pixels, capture(0, { reduced: true }).pixels), 'Reduced-motion frame is incomplete');
+});
+test('Playback speed and pause affect the Canvas timeline', () => {
+  check(equal(capture(2, { speed: 2 }).pixels, capture(4).pixels), 'Double speed ignored');
+  check(equal(capture(7, { speed: 0 }).pixels, capture(0).pixels), 'Pause ignored');
+});
+for (const size of [[540, 960], [960, 540], [540, 540]]) {
+  for (const time of [1.6, 4.5, 7.4, 10.5]) test(`Self-contained exported run matches preview at ${size}, ${time}s`, () => {
+    const a = capture(time, { size }), b = capture(time, { size, run: extracted });
+    check(equal(a.pixels, b.pixels), 'Export references external code or changes the frame');
+    check(a.pixels.some(v => v > 0), 'Blank frame');
+  });
+}
+test('Standalone HTML contains the diagram and complete editable words', () => {
+  const html = exportHtml(fx, fx.sample, { bg: '#f2f7fa', fg: '#123f64', ac: '#009bd5', ac2: '#85c8e0' }, '9:16');
+  check(html.includes('fx-precast-process') && html.includes('canvas') && html.includes(fx.sample[12]), 'Incomplete standalone export');
+  window.precastStandaloneHtml = html;
+});
+for (const [time, caption] of [[1.6, '工廠預鑄'], [4.5, '現場組裝'], [7.4, '澆築結合'], [10.5, '完整流程']]) {
+  const figure = document.createElement('figure'); const result = capture(time);
+  figure.append(result.canvas); const label = document.createElement('figcaption'); label.textContent = `${time}s · ${caption}`; figure.append(label); document.querySelector('#storyboard').append(figure);
+}
+window.precastResults = { passed: results.filter(r => r.passed).length, failed: results.filter(r => !r.passed).length, results };
+document.querySelector('#results').textContent = JSON.stringify(window.precastResults, null, 2);
+</script>
+</body>
+</html>

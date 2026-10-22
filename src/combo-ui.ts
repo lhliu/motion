@@ -59,12 +59,13 @@ export const initCombos = (deps: ComboDeps) => {
   const sceneRow = (s: ComboScene, i: number) => {
     const fx = findEffect(s.effect);
     const words = (s.words ?? fx?.sample ?? []).join(' / ');
+    const diagram = fx?.cat === 'diagram';
     const long = s.effect === 'map-overlay' || s.effect === 'crisp-drop' || isPhotoFx(s.effect);
     return `<li class="dr-scene" data-i="${i}">
       <div class="dr-s-head"><span class="ma-num">${pad(i + 1)}</span><button class="dr-fx" data-act="open" title="打開特效">${fx ? `${esc(fx.zh)} <small>#${pad(NUM.get(fx.id)!)} ${esc(fx.en)}</small>` : esc(s.effect)}</button>
         <span class="dr-s-tools"><button class="ic" data-act="up" aria-label="上移"${i === 0 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg></button><button class="ic" data-act="down" aria-label="下移"${i === draft.scenes.length - 1 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>${long ? '<button class="ic" data-act="studio" aria-label="在工作室開啟" title="在工作室開啟">✎</button>' : ''}<button class="ic" data-act="dup" aria-label="複製這段"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><button class="ic" data-act="del" aria-label="刪除這段"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span></div>
       <div class="dr-s-body">
-        ${long ? `<label><span>內容</span><input value="${esc(sceneSummary(s.effect, s.words ?? fx?.sample ?? []))}" readonly title="這段的內容請在工作室編輯後重新加入"></label>` : `<label><span>文字（/ 分隔）</span><input data-k="words" value="${esc(words)}" placeholder="${esc(fx?.hint ?? '')}"></label>`}
+        ${long ? `<label><span>內容</span><input value="${esc(sceneSummary(s.effect, s.words ?? fx?.sample ?? []))}" readonly title="這段的內容請在工作室編輯後重新加入"></label>` : diagram ? `<label><span>部位文字（每行一項，保留空行）</span><textarea data-k="words" rows="4" aria-label="圖解部位文字" placeholder="${esc(fx?.hint ?? '')}">${esc((s.words ?? fx?.sample ?? []).join('\n'))}</textarea></label>` : `<label><span>文字（/ 分隔）</span><input data-k="words" value="${esc(words)}" placeholder="${esc(fx?.hint ?? '')}"></label>`}
         <label class="sm"><span>秒數</span><input data-k="seconds" type="number" min="0.8" max="20" step="0.1" value="${sceneSeconds(s)}"></label>
         <label class="sm"><span>字型</span><select data-k="font"><option value="">跟整支</option>${FONT_PACKS.map((f) => `<option value="${f.id}"${s.font === f.id ? ' selected' : ''}>${f.zh}</option>`).join('')}</select></label>
         <label class="sm"><span>底色</span><select data-k="tone"><option value="">預設</option>${(['ink', 'paper', 'accent'] as Tone[]).map((t) => `<option value="${t}"${s.tone === t ? ' selected' : ''}>${{ ink: '深', paper: '淺', accent: '主色' }[t]}</option>`).join('')}</select></label>
@@ -146,13 +147,15 @@ export const initCombos = (deps: ComboDeps) => {
     renderDraft();
   });
   scenesEl.addEventListener('input', (e) => {
-    const el = e.target as HTMLInputElement | HTMLSelectElement;
+    const el = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
     const li = el.closest<HTMLElement>('.dr-scene');
     if (!li || !el.dataset.k) return;
     const s = draft.scenes[Number(li.dataset.i)];
     if (el.dataset.k === 'words') {
-      const w = el.value.split(/\s*\/\s*/).map((x) => x.trim()).filter(Boolean);
-      if (w.length) s.words = w;
+      const diagram = findEffect(s.effect)?.cat === 'diagram';
+      const w = el.value.split(diagram ? '\n' : /\s*\/\s*/).map((x) => x.trim());
+      if (diagram) s.words = w;
+      else if (w.some(Boolean)) s.words = w.filter(Boolean);
       else delete s.words;
     } else if (el.dataset.k === 'seconds') {
       const v = parseFloat(el.value);

@@ -38,6 +38,8 @@ export interface Fx {
   tone: Tone;
   /** 預設示範文字；多個詞代表會輪播或分段 */
   sample: string[];
+  /** Canvas 等非 CSS 動畫的完整循環秒數；Combo 預設播放完整一輪。 */
+  duration?: number;
   /** 給 AI 的動態描述（中文） */
   motion: string;
   /** 給 AI 的動態描述（英文） */

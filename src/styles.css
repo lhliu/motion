@@ -1654,6 +1654,7 @@ pre.code {
 .dr-field input,
 .dr-field textarea,
 .dr-scene input,
+.dr-scene textarea,
 .dr-scene select,
 .dr-key input {
   padding: 8px 10px;
@@ -1670,6 +1671,7 @@ pre.code {
 .dr-field input:focus,
 .dr-field textarea:focus,
 .dr-scene input:focus,
+.dr-scene textarea:focus,
 .dr-key input:focus {
   border-color: var(--ink);
 }
@@ -1754,9 +1756,14 @@ pre.code {
   min-width: 0;
 }
 .dr-scene input,
+.dr-scene textarea,
 .dr-scene select {
   padding: 6px 8px;
   font-size: 13px;
+}
+.dr-scene textarea {
+  resize: vertical;
+  line-height: 1.5;
 }
 .dr-empty {
   margin: 0;

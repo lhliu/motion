@@ -778,6 +778,7 @@ const openDetail = (id: string, push = true) => {
   const fx = EFFECTS.find((f) => f.id === id);
   if (!fx) return;
   d.fx = fx;
+  if (fx.cat === 'diagram') d.ratio = '9:16';
   d.words = wordsFor(fx);
   d.tone = '';
   dWords.value = d.words.join('\n');
@@ -853,11 +854,11 @@ let wTimer = 0;
 dWords.addEventListener('input', () => {
   clearTimeout(wTimer);
   wTimer = window.setTimeout(() => {
-    const w = dWords.value
+    const lines = dWords.value
       .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    d.words = w.length ? w : d.fx.sample;
+      .map((s) => s.trim());
+    const w = lines.filter(Boolean);
+    d.words = d.fx.cat === 'diagram' ? lines : w.length ? w : d.fx.sample;
     renderStage();
     renderPrompt();
   }, 250);
@@ -984,7 +985,7 @@ const combos = initCombos({
 });
 $('#dAddCombo').addEventListener('click', () => {
   const same = d.words.join('\n') === d.fx.sample.join('\n');
-  combos.addScene({ effect: d.fx.id, ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}), ...(state.font !== 'sharp' ? { font: state.font } : {}) });
+  combos.addScene({ effect: d.fx.id, ...(d.fx.cat === 'diagram' ? { ratio: d.ratio } : {}), ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}), ...(state.font !== 'sharp' ? { font: state.font } : {}) });
 });
 
 const studio = initStudio({ toast, copy, addScene: (sc) => combos.addScene(sc), store });
