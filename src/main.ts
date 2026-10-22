@@ -4,6 +4,7 @@ import { mount, setSpeed, toneVars, type Mounted } from './engine';
 import { buildPrompt, exportHtml, PROMPT_MODES, type PromptMode, type Ratio } from './prompts';
 import type { CatId, Fx, Palette, Tone } from './types';
 import { esc } from './util';
+import { initCombos } from './combo-ui';
 
 /* ───────── 小工具 ───────── */
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -696,7 +697,7 @@ const copy = async (text: string, msg: string) => {
     ta.value = text;
     ta.style.position = 'fixed';
     ta.style.opacity = '0';
-    (detail.open ? detail : document.body).appendChild(ta);
+    topLayer().appendChild(ta);
     ta.select();
     document.execCommand('copy');
     ta.remove();
@@ -710,15 +711,16 @@ const toast = (msg: string) => {
   t.classList.add('on');
   clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => t.classList.remove('on'), 1800);
-  if (detail.open && t.parentElement !== detail) detail.appendChild(t);
-  if (!detail.open && t.parentElement !== document.body) document.body.appendChild(t);
+  const host = topLayer();
+  if (t.parentElement !== host) host.appendChild(t);
 };
+const topLayer = (): HTMLElement => (detail.open ? detail : document.querySelector<HTMLDialogElement>('#combos[open]') ?? document.body);
 
 /* ───────── 鍵盤 ───────── */
 document.addEventListener('keydown', (e) => {
   const tgt = e.target as HTMLElement;
   const typing = tgt.matches('input, textarea, select');
-  if (e.key === '/' && !typing && !detail.open) {
+  if (e.key === '/' && !typing && !detail.open && !combos.isOpen()) {
     e.preventDefault();
     qEl.focus();
     qEl.select();
@@ -746,6 +748,19 @@ window.addEventListener('popstate', () => {
   const id = new URLSearchParams(location.search).get('fx');
   if (id) openDetail(id, false);
   else closeDetail();
+});
+
+/* ───────── Combo ───────── */
+const combos = initCombos({
+  toast,
+  copy,
+  openDetail,
+  palette: () => ({ id: state.pal, accent: state.custom ?? undefined }),
+  store,
+});
+$('#dAddCombo').addEventListener('click', () => {
+  const same = d.words.join('\n') === d.fx.sample.join('\n');
+  combos.addScene({ effect: d.fx.id, ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}) });
 });
 
 /* ───────── 啟動 ───────── */

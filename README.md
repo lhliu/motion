@@ -9,6 +9,26 @@ https://motion.leichthub.com
 - 打開單一特效：切換 16:9／9:16／1:1、底色、播放速度，全螢幕錄影
 - 一鍵複製提示詞：網頁實作（中文）、English、AI 影片生成，或直接複製／下載完整 HTML 原始碼
 
+## MCP 與 Combo 庫
+
+網站內建 MCP（Model Context Protocol）伺服器，讓 Claude、ChatGPT、Claude Code 直接使用這個圖鑑：描述需求 → AI 查特效 → 組成 Combo（多段特效串成一段動畫）→ 給預覽連結 → 存進 Combo 庫當日後參考。
+
+- MCP 端點：`https://motion.leichthub.com/mcp`（Streamable HTTP、無狀態）
+- 寫入（儲存／刪除 Combo）需要金鑰：網址加 `?key=金鑰`，或 `Authorization: Bearer 金鑰`
+- 工具：`list_categories`、`search_effects`、`get_effect`、`compose_combo`、`save_combo`、`list_combos`、`get_combo`、`delete_combo`
+- 公開 API：`GET /api/effects`、`GET /api/combos`、`GET /api/combos/:id`；寫入：`POST /api/combos`、`PUT|DELETE /api/combos/:id`
+- 播放頁：`/c/<id>`（加 `?hud=0` 隱藏進度條，適合錄影）
+- 未儲存的預覽：`/?combo=<編碼>`；網站分頁：`/?view=combos`、`/?view=draft`、`/?view=mcp`
+
+連線方式（網站「Combo → MCP 連線」也有說明）：
+
+```sh
+# Claude Code
+claude mcp add --transport http motion-atlas https://motion.leichthub.com/mcp --header "Authorization: Bearer 你的金鑰"
+```
+
+Claude 網頁版／App 與 ChatGPT（開發者模式）：新增自訂連接器，網址填 `https://motion.leichthub.com/mcp?key=你的金鑰`。
+
 ## 開發
 
 ```sh
@@ -16,6 +36,9 @@ npm ci
 npm run dev      # http://127.0.0.1:4174
 npm run build    # tsc 型別檢查 + vite build → dist/
 npm run preview
+
+# 含 MCP 與資料庫的本機測試（需要 wrangler）
+npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 ```
 
 ## 結構
@@ -28,6 +51,12 @@ npm run preview
 | `src/prompts.ts` | 四種提示詞產生器與單檔 HTML 匯出 |
 | `src/data.ts` | 分類、配色、特效總表 |
 | `src/effects/*.ts` | 12 個分類的特效定義 |
+| `src/combo.ts` | Combo 驗證、HTML 播放器、提示詞（網站與伺服器共用） |
+| `src/combo-ui.ts` | 網站的 Combo 庫、草稿編輯、MCP 說明 |
+| `functions/mcp.ts` | MCP 伺服器（JSON-RPC） |
+| `functions/_lib/tools.ts` | MCP 工具定義 |
+| `functions/_lib/store.ts` | D1 資料庫存取（第一次使用自動建表） |
+| `functions/api/`、`functions/c/` | REST API 與 Combo 播放頁 |
 | `src/styles.css` | 網站樣式（站內 class 一律以 `ma-` 或具體前綴命名，避免滲入特效） |
 
 ## 新增一個特效
@@ -48,3 +77,11 @@ Cloudflare Pages 連接本 repo（Git 整合），push 到 `main` 自動部署�
 - Output directory：`dist`
 - 環境變數：`NODE_VERSION=22`
 - 自訂網域：`motion.leichthub.com`
+
+MCP 與 Combo 庫另外需要（Pages 專案 → 設定）：
+
+1. 建立 D1 資料庫（例如 `motion-combos`），在「繫結」新增 D1，變數名稱 `DB`。資料表會在第一次使用時自動建立。
+2. 在「變數與機密」新增加密變數 `MOTION_KEY`（自己產生一組長隨機字串），這就是寫入金鑰。
+3. 重新部署一次讓設定生效。
+
+沒有設定時，網站與特效仍正常運作；MCP 可讀取特效，Combo 相關功能會回傳設定提示。

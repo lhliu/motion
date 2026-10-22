@@ -97,3 +97,10 @@ export const loopSeconds = (fx: Fx): number => {
   const m = fx.css.match(/animation:[^;]*?(\d+(?:\.\d+)?)s/);
   return m ? parseFloat(m[1]) : fx.run ? 4 : 4;
 };
+
+/** 把 run 函式轉成可內嵌的原始碼；補上打包工具可能插入的 __name 輔助函式 */
+export const fnSource = (f: (...a: never[]) => unknown): string => {
+  const s = f.toString();
+  const names = [...new Set(s.match(/\b__name\d*\b/g) ?? [])];
+  return names.length ? `(()=>{const ${names.map((n) => `${n}=(f)=>f`).join(',')};return (${s})})()` : `(${s})`;
+};

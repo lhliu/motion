@@ -1,5 +1,5 @@
 import type { Fx } from './types';
-import { BASE_FX_CSS, FONT_LINK, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
+import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
 
 export type Ratio = '16:9' | '9:16' | '1:1';
 export type PromptMode = 'web' | 'en' | 'video' | 'code';
@@ -78,7 +78,7 @@ const ratioCss: Record<Ratio, string> = {
 export const exportHtml = (fx: Fx, words: string[], v: Vars, ratio: Ratio): string => {
   const css = scopeCss(fx).trim();
   const script = fx.run
-    ? `\n<script>\n(${fx.run.toString()})(document.querySelector('.fx'), ${JSON.stringify(words)});\n</script>`
+    ? `\n<script>\n${fnSource(fx.run)}(document.querySelector('.fx'), ${JSON.stringify(words)});\n</script>`
     : '';
   return `<!doctype html>
 <html lang="zh-Hant-TW">

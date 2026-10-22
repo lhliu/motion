@@ -44,6 +44,10 @@
         <kbd>/</kbd>
       </label>
       <div class="top-actions">
+        <button class="combo-btn" id="comboBtn" title="Combo 庫與草稿" aria-label="打開 Combo">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5" /><rect x="14" y="4" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M17.5 14v7M14 17.5h7" /></svg>
+          <span>Combo</span><b id="draftN" hidden>0</b>
+        </button>
         <button class="ic" id="randomBtn" title="隨機看一招" aria-label="隨機看一招">
           <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" /></svg>
         </button>
@@ -206,6 +210,7 @@
               <pre id="dPrompt" tabindex="0"></pre>
               <div class="d-actions">
                 <button class="ma-btn" id="dCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg><span>複製提示詞</span></button>
+                <button class="btn-ghost" id="dAddCombo"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>加入 Combo</button>
                 <button class="btn-ghost" id="dDownload"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>下載 HTML</button>
               </div>
             </div>
@@ -214,6 +219,110 @@
               <div class="rel" id="dRel"></div>
             </div>
           </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="combos" class="detail cb" aria-labelledby="cbTitle">
+      <div class="d-inner">
+        <header class="d-head">
+          <div class="d-title">
+            <span class="ma-num cb-badge">C</span>
+            <div>
+              <h2 id="cbTitle" tabindex="-1" autofocus>Combo</h2>
+              <p>把多個特效串成一段動畫，存成參考資料庫</p>
+            </div>
+          </div>
+          <div class="cb-tabs" role="tablist" id="cbTabs">
+            <button class="ma-tab" role="tab" data-tab="library">Combo 庫</button>
+            <button class="ma-tab" role="tab" data-tab="draft">我的草稿 <small id="draftTabN"></small></button>
+            <button class="ma-tab" role="tab" data-tab="mcp">MCP 連線</button>
+          </div>
+          <div class="d-nav"><button class="ic" id="cbClose" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg></button></div>
+        </header>
+        <div class="cb-body">
+          <section class="cb-pane" data-pane="library">
+            <div class="cb-shared" id="cbShared" hidden></div>
+            <div class="cb-bar">
+              <label class="cb-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg><input id="cbQ" type="search" placeholder="搜尋 Combo：片頭、建案、Shorts⋯" autocomplete="off" /></label>
+              <button class="btn-ghost" id="cbReload"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5" /></svg>重新整理</button>
+            </div>
+            <div class="cb-msg" id="cbMsg" hidden></div>
+            <div class="cb-grid" id="cbGrid"></div>
+          </section>
+          <section class="cb-pane" data-pane="draft" hidden>
+            <div class="dr">
+              <div class="dr-left">
+                <label class="dr-field"><span>Combo 名稱</span><input id="drTitle" type="text" maxlength="80" placeholder="例如：建案開箱片頭" /></label>
+                <label class="dr-field"><span>需求說明（選填，之後搜尋用）</span><textarea id="drBrief" rows="2" maxlength="1000" placeholder="例如：YouTube 建案開箱前 10 秒，要有衝擊感、帶出通勤優勢"></textarea></label>
+                <div class="dr-row">
+                  <div class="seg" id="drRatio" role="radiogroup" aria-label="比例"><button data-v="16:9">16:9</button><button data-v="9:16">9:16</button><button data-v="1:1">1:1</button></div>
+                  <div class="seg" id="drTrans" role="radiogroup" aria-label="轉場"><button data-v="cut">硬切</button><button data-v="fade">淡入</button><button data-v="slide">推移</button><button data-v="zoom">放大</button></div>
+                </div>
+                <label class="dr-field"><span>標籤（用空白分隔）</span><input id="drTags" type="text" placeholder="片頭 建案" /></label>
+                <ol class="dr-scenes" id="drScenes"></ol>
+                <p class="dr-empty" id="drEmpty">草稿還是空的。打開任何特效，按「加入 Combo」就會出現在這裡。</p>
+              </div>
+              <div class="dr-right">
+                <div class="dr-preview" id="drPreviewWrap"><iframe id="drPreview" title="Combo 預覽" sandbox="allow-scripts"></iframe></div>
+                <p class="dr-meta" id="drMeta"></p>
+                <div class="d-actions dr-actions">
+                  <button class="ma-btn" id="drSave"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5zM8 3v6h8M8 21v-7h8v7" /></svg><span>存到 Combo 庫</span></button>
+                  <button class="btn-ghost" id="drPlay"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z" /></svg>重播</button>
+                  <button class="btn-ghost" id="drCopyPrompt">複製提示詞</button>
+                  <button class="btn-ghost" id="drCopyHtml">複製 HTML</button>
+                  <button class="btn-ghost" id="drCopyJson">複製 JSON</button>
+                  <button class="btn-ghost danger" id="drClear">清空草稿</button>
+                </div>
+                <details class="dr-key" id="drKeyBox">
+                  <summary>寫入金鑰 <small id="drKeyState"></small></summary>
+                  <p>儲存與刪除需要網站的 MOTION_KEY。金鑰只會存在這台裝置的瀏覽器。</p>
+                  <input id="drKey" type="password" autocomplete="off" placeholder="貼上金鑰" />
+                </details>
+              </div>
+            </div>
+          </section>
+          <section class="cb-pane mcp" data-pane="mcp" hidden>
+            <div class="mcp-hero">
+              <h3>讓 AI 直接使用這個圖鑑</h3>
+              <p>Motion Atlas 提供 MCP（Model Context Protocol）伺服器。連上之後，你只要描述需求，AI 就能查特效、組 Combo、給你預覽連結，滿意後存進 Combo 庫。</p>
+              <div class="mcp-url"><code id="mcpUrl"></code><button class="btn-ghost" id="mcpCopy">複製網址</button></div>
+              <p class="mcp-note">只讀取時直接用這個網址。要讓 AI 能儲存或刪除 Combo，網址後面加上 <code>?key=你的金鑰</code>，或用 <code>Authorization: Bearer</code> 標頭。</p>
+            </div>
+            <div class="mcp-grid">
+              <article>
+                <h4>Claude（網頁版／App）</h4>
+                <ol><li>設定 → 連接器 → 新增自訂連接器</li><li>名稱填 Motion Atlas，網址貼上 MCP 網址（含 <code>?key=</code>）</li><li>在對話中開啟這個連接器</li></ol>
+              </article>
+              <article>
+                <h4>Claude Code</h4>
+                <pre id="mcpCC"></pre>
+              </article>
+              <article>
+                <h4>ChatGPT</h4>
+                <ol><li>設定 → 應用程式與連接器 → 進階設定，開啟開發者模式</li><li>建立連接器，網址貼上 MCP 網址（含 <code>?key=</code>），驗證選「無」</li><li>在對話中選用這個連接器</li></ol>
+              </article>
+              <article>
+                <h4>可以這樣說</h4>
+                <pre class="ask">幫我用 Motion Atlas 做一段 Shorts 片頭，9:16、6 秒內：
+先用衝擊感帶出「XX 重劃區」，再秀「步行 3 分鐘到捷運」，
+最後用翻牌收在「開箱」。先給我預覽，我確認後再存成 Combo。</pre>
+              </article>
+            </div>
+            <h4 class="mcp-h">提供的工具</h4>
+            <table class="mcp-tools">
+              <tbody>
+                <tr><td><code>list_categories</code></td><td>分類、情境標籤、配色</td><td>讀取</td></tr>
+                <tr><td><code>search_effects</code></td><td>用關鍵字、分類、標籤找特效</td><td>讀取</td></tr>
+                <tr><td><code>get_effect</code></td><td>單一特效的動態拆解、提示詞、HTML 原始碼</td><td>讀取</td></tr>
+                <tr><td><code>compose_combo</code></td><td>組合多段特效並產生預覽連結（不儲存）</td><td>讀取</td></tr>
+                <tr><td><code>save_combo</code></td><td>存進 Combo 庫；帶 id 代表更新</td><td>需金鑰</td></tr>
+                <tr><td><code>list_combos</code> / <code>get_combo</code></td><td>查詢 Combo 庫，當作新需求的參考</td><td>讀取</td></tr>
+                <tr><td><code>delete_combo</code></td><td>刪除 Combo</td><td>需金鑰</td></tr>
+              </tbody>
+            </table>
+            <p class="mcp-note">另有公開 API：<code>/api/effects</code>（特效目錄）、<code>/api/combos</code>（Combo 庫）、<code>/c/&lt;id&gt;</code>（Combo 全螢幕播放頁）。</p>
+          </section>
         </div>
       </div>
     </dialog>
