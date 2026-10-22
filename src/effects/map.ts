@@ -3,7 +3,7 @@ import { blobPath, esc, lobes, pick, rand, range, rep } from '../util';
 import { fnSource } from '../engine';
 import { buildMapScene, mapRenderer, type MScene } from '../mapkit';
 
-const MAP_GLOBALS = `window.MA_MAP=${fnSource(mapRenderer)}();`;
+export const MAP_GLOBALS = `window.MA_MAP=${fnSource(mapRenderer)}();`;
 
 /** words 裡第一個以 { 開頭的字串視為場景 JSON；沒有就用鳥瞰範本 */
 export const sceneFromWords = (w: string[]): MScene => {

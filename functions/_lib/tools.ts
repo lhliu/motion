@@ -5,6 +5,7 @@ import { buildPrompt, type PromptMode, type Ratio } from '../../src/prompts';
 import type { Fx } from '../../src/types';
 import { buildMapScene, type MapSceneInput } from '../../src/mapkit';
 import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
+import { MODULE_INFO, normalizePhotoScene, PARAMS, photoFxId, PHOTO_MODULES, type PModule, type PScene } from '../../src/photokit';
 import type { Env } from './env';
 import { deleteCombo, getCombo, getPreset, listCombos, listPresets, saveCombo, savePreset } from './store';
 import { checkPresetData, editUrl, KIND_NAME, presetToScene, sceneToPresetData, type PresetKind } from '../../src/presets';
@@ -104,6 +105,7 @@ const comboInput = {
       type: 'object',
       properties: {
         preset: { type: 'string', description: '預設代碼（例如 p7k2x）；給了就不必再給 effect 與 words，會使用使用者在網站上調好的版本' },
+        images: { type: 'array', items: { type: 'string' }, description: '搭配圖片運鏡預設：換成這次要用的圖片網址' },
         effect: { type: 'string', description: '特效 id（用 search_effects 查），也接受編號；與 preset 二選一' },
         words: { type: 'array', items: { type: 'string' }, description: '這段的文字；多個詞代表輪播或分行，格式依特效的 word_hint' },
         seconds: { type: 'number', description: '這段播放秒數，預設依特效循環長度（2.4–6 秒）' },
@@ -133,7 +135,7 @@ const resolvePresets = async (a: Args, env: Env): Promise<string[]> => {
         errors.push(`scenes[${i}].preset「${String(sc.preset)}」不存在，請用 list_presets 查`);
         return sc;
       }
-      const base = presetToScene(p);
+      const base = presetToScene(p, Array.isArray(sc.images) ? { images: (sc.images as unknown[]).map(String) } : {});
       return { ...base, ...(sc.seconds ? { seconds: sc.seconds } : {}), ...(sc.note ? { note: sc.note } : { note: base.note }) };
     }),
   );
@@ -324,10 +326,65 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    name: 'build_photo_scene',
+    title: '組圖片運鏡',
+    description: `把照片做成固定的運鏡模組（參數化，可存成預設重複使用）。模組：${PHOTO_MODULES.map((m) => `${m}＝${MODULE_INFO[m].zh}（${MODULE_INFO[m].desc}，${MODULE_INFO[m].slots} 張圖）`).join('；')}。回傳 combo_scene、預覽與編輯連結、各參數說明，以及在本機逐格渲染的方法。圖片通常在使用者電腦上：預覽時可留空（顯示示意圖），本機渲染時再放入。`,
+    inputSchema: {
+      type: 'object',
+      required: ['module'],
+      properties: {
+        module: { type: 'string', enum: PHOTO_MODULES },
+        ratio: { type: 'string', enum: ['9:16', '16:9', '1:1'], description: '預設 9:16' },
+        duration: { type: 'number', description: '動畫秒數，預設 6' },
+        images: { type: 'array', items: { type: 'string' }, description: '圖片網址或本機相對路徑（compare 需 2 張：前、後）；留空＝示意圖' },
+        params: { type: 'object', description: '模組參數，見回傳的 params_doc；位置類參數皆為 0–1 的畫面比例' },
+        caption: {
+          type: 'object',
+          properties: {
+            text: { type: 'string', description: '字幕，可用 \\n 換行；空字串＝不顯示' },
+            x: { type: 'number' },
+            y: { type: 'number', description: '0–1，預設 0.86' },
+            size: { type: 'number', description: '0.4–3，預設 1' },
+            style: { type: 'string', enum: ['pill', 'bar', 'plain'], description: '深色膠囊｜左側色條｜黑色描邊字' },
+            color: { type: 'string', description: '文字色 #RRGGBB，預設黃 #ffd23f' },
+            delay: { type: 'number', description: '出現時間（秒）' },
+          },
+        },
+        bg: { type: 'string', description: 'transparent、#hex 或 #hex,#hex 漸層；預設 #151515' },
+        title: { type: 'string' },
+      },
+    },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const module = String(a.module) as PModule;
+      if (!PHOTO_MODULES.includes(module)) return { ok: false, error: `module 必須是 ${PHOTO_MODULES.join('｜')}` };
+      const sc = normalizePhotoScene({
+        module,
+        ratio: a.ratio as PScene['ratio'],
+        loop: a.duration as number,
+        images: Array.isArray(a.images) ? a.images.map(String) : [],
+        params: (a.params ?? {}) as PScene['params'],
+        caption: a.caption as PScene['caption'],
+        bg: a.bg as string,
+      });
+      const scene = { effect: photoFxId(module), words: [JSON.stringify(sc)], seconds: sc.loop + 1 };
+      const { combo } = normalizeCombo({ title: String(a.title ?? `${MODULE_INFO[module].zh}預覽`), ratio: sc.ratio, transition: 'cut', scenes: [scene] });
+      return {
+        combo_scene: scene,
+        scene: sc,
+        params_doc: PARAMS[module].map((f) => ({ key: f.k, label: f.label, ...(f.type === 'range' ? { min: f.min, max: f.max } : f.type === 'seg' ? { options: f.opts.map(([v, l]) => `${v}＝${l}`) } : { type: f.type }), value: sc.params[f.k] })),
+        preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`,
+        edit_url: editUrl(ctx.origin, { kind: 'photo', data: sc }),
+        local_render: `本機逐格渲染（畫面與網站一致）：在 HTML 載入 ${ctx.origin}/r/photo.js，用 <img> 載入本機照片，建立 ${sc.ratio === '16:9' ? '1920×1080' : sc.ratio === '1:1' ? '1080×1080' : '1080×1920'} 的 canvas，對每一格呼叫 MA_PHOTO.drawPhoto(ctx, W, H, scene, i / fps, [img1, img2])，再用 Playwright 截圖或 canvas.toBlob 存成 PNG 序列、ffmpeg 合成。scene 用這裡回傳的 scene（或 get_preset 的 data），images 欄位可忽略。`,
+        next: `把 combo_scene 放進 compose_combo / save_combo（ratio 設 ${sc.ratio}）。要讓使用者手動調整，給 edit_url；使用者存成預設後，之後在 scenes 寫 { "preset": 代碼, "images": [...] } 即可換圖沿用同一套運鏡。`,
+      };
+    },
+  },
+  {
     name: 'list_presets',
     title: '列出預設',
-    description: '列出使用者在網站工作室調好並存起來的預設（地圖場景、銳利水滴）。使用者說「用 p7k2x」或「用外觀慢推那個」時，用這個查代碼。',
-    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
+    description: '列出使用者在網站工作室調好並存起來的預設（地圖場景、銳利水滴、圖片運鏡）。使用者說「用 p7k2x」或「用外觀慢推那個」時，用這個查代碼。',
+    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
       const list = await listPresets(ctx.env, String(a.kind ?? ''), String(a.query ?? ''), Number(a.limit) || 50);
@@ -349,7 +406,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'save_preset',
     title: '儲存預設',
-    description: '把一份地圖場景或水滴設定存成預設，回傳代碼與編輯連結，讓使用者能在網站上手動微調後存回同一個代碼。data 可直接給 build_map_scene / build_drop_scene 回傳的 combo_scene。帶 id 代表更新。需要寫入金鑰。',
+    description: '把一份地圖場景、水滴或圖片運鏡設定存成預設，回傳代碼與編輯連結，讓使用者能在網站上手動微調後存回同一個代碼。可直接給 build_map_scene / build_drop_scene / build_photo_scene 回傳的 combo_scene。帶 id 代表更新。需要寫入金鑰。',
     inputSchema: {
       type: 'object',
       required: ['name'],
@@ -357,9 +414,9 @@ export const TOOLS: ToolDef[] = [
         id: { type: 'string', description: '要更新的預設代碼；省略則新增' },
         name: { type: 'string', description: '好記的名稱，例如「外觀慢推_左到右」' },
         note: { type: 'string' },
-        combo_scene: { type: 'object', description: 'build_map_scene 或 build_drop_scene 回傳的 combo_scene（擇一）' },
-        kind: { type: 'string', enum: ['map', 'drop'] },
-        data: { type: 'object', description: 'map：場景物件；drop：{ words: [...] }（擇一）' },
+        combo_scene: { type: 'object', description: 'build_map_scene / build_drop_scene / build_photo_scene 回傳的 combo_scene（擇一）' },
+        kind: { type: 'string', enum: ['map', 'drop', 'photo'] },
+        data: { type: 'object', description: 'map：場景物件；drop：{ words: [...] }；photo：build_photo_scene 回傳的 scene（擇一）' },
       },
     },
     annotations: { readOnlyHint: false, destructiveHint: false },
@@ -370,7 +427,7 @@ export const TOOLS: ToolDef[] = [
       const cs = a.combo_scene as { effect?: string; words?: string[] } | undefined;
       if (cs?.effect) {
         const pd = sceneToPresetData(cs.effect, cs.words ?? []);
-        if (!pd) return { ok: false, error: `combo_scene 的 effect「${cs.effect}」不支援存成預設（目前支援 map-overlay、crisp-drop）` };
+        if (!pd) return { ok: false, error: `combo_scene 的 effect「${cs.effect}」不支援存成預設（目前支援 map-overlay、crisp-drop、photo-*）` };
         kind = pd.kind;
         data = pd.data as unknown as Record<string, unknown>;
       }
@@ -472,7 +529,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是 ${EFFECTS
 2. 用 search_effects 依每段的目的挑特效，留意 word_hint 的文字格式。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
-地圖片段請用 build_map_scene、水滴請用 build_drop_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+地圖片段請用 build_map_scene、水滴請用 build_drop_scene、照片運鏡（推拉、甩入、3D 卡片、前後對比、放大鏡）請用 build_photo_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

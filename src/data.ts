@@ -13,6 +13,7 @@ import { texture } from './effects/texture';
 import { retro } from './effects/retro';
 import { map } from './effects/map';
 import { liquid } from './effects/liquid';
+import { photo } from './effects/photo';
 
 export const CATEGORIES: Category[] = [
   { id: 'impact', code: 'IMPACT', zh: '衝擊登場', tagline: '一個字就能改變氣氛' },
@@ -27,6 +28,7 @@ export const CATEGORIES: Category[] = [
   { id: 'liquid', code: 'LIQUID', zh: '水滴泡泡', tagline: '柔軟、透明、會呼吸' },
   { id: 'caption', code: 'CAPTION', zh: '字幕資訊條', tagline: '影片最常用的那幾條' },
   { id: 'card', code: 'CARD', zh: '字卡版型', tagline: '直接拿來當段落字卡' },
+  { id: 'photo', code: 'PHOTO', zh: '圖片運鏡', tagline: '照片放進來就會動' },
   { id: 'map', code: 'MAP', zh: '地圖區位', tagline: '把位置、距離、通勤講清楚' },
   { id: 'retro', code: 'RETRO', zh: '復古懷舊', tagline: '一秒回到那個年代' },
 ];
@@ -48,6 +50,7 @@ export const EFFECTS: Fx[] = [
   ...retro,
   ...map,
   ...liquid,
+  ...photo,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 export const NUM = new Map(EFFECTS.map((f, i) => [f.id, i + 1]));

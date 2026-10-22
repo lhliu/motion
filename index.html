@@ -47,6 +47,9 @@
         <button class="ic map-btn" id="mapBtn" title="地圖工作室" aria-label="打開地圖工作室">
           <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z" /><path d="M9 4v14M15 6v14" /></svg>
         </button>
+        <button class="ic photo-btn" id="photoBtn" title="圖片工作室" aria-label="打開圖片工作室">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.8" /><path d="m21 16-5-5-8 8" /></svg>
+        </button>
         <button class="ic drop-btn" id="dropBtn" title="水滴工作室" aria-label="打開水滴工作室">
           <svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /><path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2.5" /></svg>
         </button>
@@ -217,6 +220,7 @@
               <div class="d-actions">
                 <button class="ma-btn" id="dCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg><span>複製提示詞</span></button>
                 <button class="btn-ghost" id="dMapStudio" hidden><svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z" /></svg>用自己的底圖做（地圖工作室）</button>
+                <button class="btn-ghost" id="dPhotoStudio" hidden><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m21 16-5-5-8 8" /></svg>放自己的照片（圖片工作室）</button>
                 <button class="btn-ghost" id="dStudio" hidden><svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /></svg>在水滴工作室調整</button>
                 <button class="btn-ghost" id="dAddCombo"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>加入 Combo</button>
                 <button class="btn-ghost" id="dDownload"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>下載 HTML</button>
@@ -422,6 +426,53 @@
             </fieldset>
             <fieldset><legend>圖層（下方的蓋在上面）</legend><ol class="ms-list" id="msList"></ol></fieldset>
             <fieldset><legend>屬性</legend><div id="msProps"></div></fieldset>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="photostudio" class="detail st ms ps" aria-labelledby="psTitle">
+      <div class="d-inner">
+        <header class="d-head">
+          <div class="d-title">
+            <span class="ma-num cb-badge">🖼</span>
+            <div>
+              <h2 id="psTitle" tabindex="-1" autofocus>圖片工作室</h2>
+              <p>挑一種運鏡、放入照片、拖曳微調，存成預設讓 AI 渲染時直接套用</p>
+            </div>
+          </div>
+          <div class="d-nav"><button class="ic" id="psClose" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg></button></div>
+        </header>
+        <div class="st-body">
+          <div class="st-left">
+            <div class="st-stage ms-stage" id="psStage" data-ratio="9:16"><canvas id="psCanvas"></canvas></div>
+            <div class="d-controls">
+              <div class="seg" id="psRatio" role="radiogroup" aria-label="比例"><button data-v="9:16">9:16 手機</button><button data-v="16:9">16:9</button><button data-v="1:1">1:1</button></div>
+              <button class="btn-ghost" id="psPlay">▶ 播放</button>
+              <label class="ms-loop">時間 <input type="range" id="psTime" min="0" max="6" step="0.02" /></label>
+              <label class="ms-loop">長度 <input type="range" id="psLoop" min="1.5" max="15" step="0.5" /> <output id="psLoopV"></output></label>
+            </div>
+            <div id="psPreset"></div>
+            <label class="ps-keep"><input type="checkbox" id="psKeepImg" /> 存預設時連圖片一起存（預設只存動畫設定，AI 渲染時再放你本機的圖）</label>
+            <div class="st-out">
+              <button class="ma-btn" id="psPng"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>PNG</button>
+              <button class="btn-ghost" id="psSeq">PNG 序列（ZIP）</button>
+              <button class="btn-ghost" id="psWebm">WebM 影片</button>
+              <button class="btn-ghost" id="psCombo">加入 Combo</button>
+              <button class="btn-ghost" id="psJson">複製設定 JSON</button>
+            </div>
+            <p class="st-status" id="psStatus" hidden></p>
+            <p class="st-note">照片只存在你的瀏覽器，不會上傳；加入 Combo 時會壓成長邊 1280 的 JPEG 一起帶入。可以直接把照片拖進預覽區。背景勾選「透明」可輸出疊加用素材。</p>
+          </div>
+          <div class="st-panel">
+            <fieldset><legend>運鏡模組</legend><div class="ps-mod" id="psMod"></div></fieldset>
+            <fieldset><legend>圖片</legend><div class="ps-slots" id="psSlots"></div><input type="file" id="psFile" accept="image/*" multiple hidden /></fieldset>
+            <fieldset><legend>參數</legend><div id="psParams" class="ps-fields"></div></fieldset>
+            <fieldset><legend>字幕</legend><div id="psCap" class="ps-fields"></div></fieldset>
+            <fieldset><legend>背景</legend>
+              <label class="st-row"><span>底色</span><input type="color" id="psBgC" value="#151515" /></label>
+              <label class="st-row"><span>透明</span><input type="checkbox" id="psTrans" /></label>
+            </fieldset>
           </div>
         </div>
       </div>

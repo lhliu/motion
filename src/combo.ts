@@ -4,6 +4,7 @@ import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, toneVars, vars
 import type { Ratio } from './prompts';
 import type { Fx, Palette, Tone } from './types';
 import { esc } from './util';
+import { isPhotoFx, MODULE_INFO, type PScene } from './photokit';
 
 export type Transition = 'cut' | 'fade' | 'slide' | 'zoom';
 export const TRANSITIONS: Transition[] = ['cut', 'fade', 'slide', 'zoom'];
@@ -53,7 +54,7 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     const r = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>;
     const fx = findEffect(str(r.effect, 40));
     if (!fx) errors.push(`scenes[${i}].effect「${String(r.effect)}」不存在，請先用 search_effects 查 id`);
-    const long = fx?.id === 'map-overlay' || fx?.id === 'crisp-drop';
+    const long = fx?.id === 'map-overlay' || fx?.id === 'crisp-drop' || isPhotoFx(fx?.id ?? '');
     const max = long ? 900_000 : 60;
     const words = Array.isArray(r.words) ? r.words.map((w) => str(w, max)).filter(Boolean).slice(0, 12) : typeof r.words === 'string' ? (long ? [str(r.words, max)] : str(r.words, 200).split(/\s*\/\s*|\n/).filter(Boolean)) : undefined;
     const sec = Number(r.seconds);
@@ -101,6 +102,16 @@ export const sceneSummary = (effect: string, words: string[], quote = false): st
       return `地圖場景（${sc.els?.length ?? 0} 個元件${sc.bgUrl ? '、含底圖' : '、無底圖'}）：${parts.join('、')}`;
     } catch {
       return '地圖場景（預設範本）';
+    }
+  }
+  if (isPhotoFx(effect)) {
+    const j = words.find((x) => x.trim().startsWith('{'));
+    try {
+      const sc = JSON.parse(j ?? '') as PScene;
+      const n = (sc.images ?? []).filter(Boolean).length;
+      return `圖片運鏡「${MODULE_INFO[sc.module]?.zh ?? sc.module}」（${n ? `${n} 張圖` : '未放圖'}）${sc.caption?.text ? `：字幕${q(sc.caption.text)}` : ''}`;
+    } catch {
+      return '圖片運鏡（預設）';
     }
   }
   if (effect === 'crisp-drop') {

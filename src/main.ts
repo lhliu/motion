@@ -7,6 +7,8 @@ import { esc } from './util';
 import { initCombos } from './combo-ui';
 import { initStudio } from './drop-studio';
 import { initMapStudio } from './map-studio';
+import { initPhotoStudio } from './photo-studio';
+import { isPhotoFx, photoSceneFromWords, type PModule } from './photokit';
 import { sceneFromWords } from './effects/map';
 import { decodeJson, type Preset, type PresetData } from './presets';
 
@@ -557,6 +559,7 @@ const renderDetail = () => {
   $('#dFav').setAttribute('aria-pressed', String(state.favs.has(fx.id)));
   $('#dStudio').hidden = fx.cat !== 'liquid';
   $('#dMapStudio').hidden = fx.cat !== 'map';
+  $('#dPhotoStudio').hidden = fx.cat !== 'photo';
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
   syncSegs();
   renderStage();
@@ -769,6 +772,10 @@ const combos = initCombos({
       const data = sceneFromWords(words);
       return meta ? mapStudio.loadPreset({ ...meta, data }) : mapStudio.load(data);
     }
+    if (isPhotoFx(effect)) {
+      const data = photoSceneFromWords(words, effect.slice(6) as PModule);
+      return meta ? photoStudio.loadPreset({ ...meta, data }) : photoStudio.load(data);
+    }
     return meta ? studio.loadPreset({ ...meta, data: { words } }) : studio.load(words);
   },
   palette: () => ({ id: state.pal, accent: state.custom ?? undefined }),
@@ -787,19 +794,27 @@ $('#dMapStudio').addEventListener('click', () => {
   closeDetail();
   mapStudio.open();
 });
+const photoStudio = initPhotoStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc) });
+$('#photoBtn').addEventListener('click', () => photoStudio.open());
+$('#dPhotoStudio').addEventListener('click', () => {
+  const m = d.fx.id.slice(6) as PModule;
+  closeDetail();
+  photoStudio.open(m);
+});
 $('#dStudio').addEventListener('click', () => {
   const words = d.fx.id === 'crisp-drop' ? d.words : ['好好', '~just savor', '生活'];
   closeDetail();
   studio.load(words);
 });
 
-/* ───────── 編輯連結：?edit=p7k2x 或 ?edit=map|drop&d=… ───────── */
+/* ───────── 編輯連結：?edit=p7k2x 或 ?edit=map|drop|photo&d=… ───────── */
 const openEdit = async () => {
   const q = new URLSearchParams(location.search);
   const edit = q.get('edit');
   if (!edit) return;
-  const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) => (p.kind === 'map' ? mapStudio.loadPreset(p) : studio.loadPreset(p));
-  if (edit === 'map' || edit === 'drop') {
+  const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) =>
+    p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : studio.loadPreset(p);
+  if (edit === 'map' || edit === 'drop' || edit === 'photo') {
     try {
       route({ kind: edit, name: '', data: decodeJson<PresetData>(q.get('d') ?? '') });
       toast('已載入 AI 產生的設定，調好後按「存成預設」');

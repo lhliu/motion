@@ -12,7 +12,8 @@ export type CatId =
   | 'texture'
   | 'retro'
   | 'map'
-  | 'liquid';
+  | 'liquid'
+  | 'photo';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';
