@@ -118,7 +118,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'list_categories',
     title: '列出分類與配色',
-    description: '列出 Motion Atlas 的 12 個特效分類、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。',
+    description: `列出 Motion Atlas 的 ${CATEGORIES.length} 個特效分類（共 ${EFFECTS.length} 招）、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。`,
     inputSchema: { type: 'object', properties: {} },
     annotations: { readOnlyHint: true },
     run: async () => ({
