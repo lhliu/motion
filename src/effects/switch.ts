@@ -4,6 +4,7 @@ import { esc, pick, rep } from '../util';
 export const switching: Fx[] = [
   {
     id: 'split-flap',
+    no: 52,
     cat: 'switch',
     zh: '翻牌',
     en: 'Split Flap',
@@ -55,6 +56,7 @@ export const switching: Fx[] = [
   },
   {
     id: 'flip-cards',
+    no: 56,
     cat: 'switch',
     zh: '翻卡',
     en: 'Flip Cards',
@@ -79,6 +81,7 @@ export const switching: Fx[] = [
   },
   {
     id: 'typewriter',
+    no: 37,
     cat: 'switch',
     zh: '打字機',
     en: 'Typewriter',
@@ -134,6 +137,7 @@ export const switching: Fx[] = [
   },
   {
     id: 'slot-reel',
+    no: 85,
     cat: 'switch',
     zh: '拉霸',
     en: 'Slot Text',
@@ -164,6 +168,7 @@ export const switching: Fx[] = [
   },
   {
     id: 'odometer',
+    no: 50,
     cat: 'switch',
     zh: '計數器',
     en: 'Odometer',
@@ -199,6 +204,7 @@ export const switching: Fx[] = [
   },
   {
     id: 'headline-swap',
+    no: 51,
     cat: 'switch',
     zh: '標題切換',
     en: 'Headline Swap',
@@ -224,6 +230,7 @@ export const switching: Fx[] = [
   },
   {
     id: 'led-board',
+    no: 53,
     cat: 'switch',
     zh: 'LED 看板',
     en: 'LED Text',
@@ -285,6 +292,7 @@ export const switching: Fx[] = [
   },
   {
     id: 'split-halves',
+    no: 57,
     cat: 'switch',
     zh: '上下裂開',
     en: 'Split Halves',
@@ -310,6 +318,7 @@ export const switching: Fx[] = [
   },
   {
     id: 'scramble',
+    no: 59,
     cat: 'switch',
     zh: '亂碼解碼',
     en: 'Text Scramble',
@@ -359,6 +368,7 @@ export const switching: Fx[] = [
   },
   {
     id: 'blinds',
+    no: 58,
     cat: 'switch',
     zh: '百葉窗',
     en: 'Venetian Blinds',

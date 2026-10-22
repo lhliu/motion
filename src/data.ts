@@ -77,7 +77,15 @@ EFFECTS.sort((a, b) => secIdx(a) - secIdx(b) || (secIdx(a) === 0 ? useIdx(a) - u
 
 export const secOf = (f: Fx): SecId => CATEGORIES.find((c) => c.id === f.cat)!.sec;
 
-export const NUM = new Map(EFFECTS.map((f, i) => [f.id, i + 1]));
+/** 編號固定寫在各特效的 no，不隨排序或新增而改變 */
+export const NUM = new Map(EFFECTS.map((f) => [f.id, f.no]));
+{
+  const seen = new Map<number, string>();
+  for (const f of EFFECTS) {
+    if (seen.has(f.no)) console.error(`特效編號重複：#${f.no} 同時給了 ${seen.get(f.no)} 與 ${f.id}`);
+    seen.set(f.no, f.id);
+  }
+}
 
 export const PALETTES: Palette[] = [
   { id: 'leicht', name: '光寓橘', ink: '#151515', paper: '#f5f1e8', accent: '#ff5a36', accent2: '#ffd23f' },

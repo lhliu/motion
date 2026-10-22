@@ -4,6 +4,7 @@ import { chars, esc, rep } from '../util';
 export const light: Fx[] = [
   {
     id: 'neon-flicker',
+    no: 106,
     cat: 'light',
     zh: '霓虹燈',
     en: 'Neon Flicker',
@@ -24,6 +25,7 @@ export const light: Fx[] = [
   },
   {
     id: 'glow-pulse',
+    no: 107,
     cat: 'light',
     zh: '光暈呼吸',
     en: 'Glow Pulse',
@@ -43,6 +45,7 @@ export const light: Fx[] = [
   },
   {
     id: 'shine-sweep',
+    no: 19,
     cat: 'light',
     zh: '金屬掃光',
     en: 'Metal Shine',
@@ -60,6 +63,7 @@ export const light: Fx[] = [
   },
   {
     id: 'spotlight',
+    no: 18,
     cat: 'light',
     zh: '聚光燈',
     en: 'Spotlight',
@@ -80,6 +84,7 @@ export const light: Fx[] = [
   },
   {
     id: 'lightning',
+    no: 83,
     cat: 'light',
     zh: '閃電',
     en: 'Lightning Flash',
@@ -99,6 +104,7 @@ export const light: Fx[] = [
   },
   {
     id: 'laser-scan',
+    no: 108,
     cat: 'light',
     zh: '雷射掃描',
     en: 'Laser Scan',
@@ -120,6 +126,7 @@ export const light: Fx[] = [
   },
   {
     id: 'lens-flare',
+    no: 16,
     cat: 'light',
     zh: '鏡頭光斑',
     en: 'Lens Flare',
@@ -142,6 +149,7 @@ export const light: Fx[] = [
   },
   {
     id: 'sunrise',
+    no: 109,
     cat: 'light',
     zh: '日出漸層',
     en: 'Sunrise Gradient',

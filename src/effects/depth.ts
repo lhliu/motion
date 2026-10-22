@@ -4,6 +4,7 @@ import { chars, esc, pick, rep } from '../util';
 export const depth: Fx[] = [
   {
     id: 'text-tunnel',
+    no: 10,
     cat: 'depth',
     zh: '文字隧道',
     en: 'Text Tunnel',
@@ -26,6 +27,7 @@ export const depth: Fx[] = [
   },
   {
     id: 'text-corridor',
+    no: 96,
     cat: 'depth',
     zh: '文字走廊',
     en: 'Text Corridor',
@@ -53,6 +55,7 @@ export const depth: Fx[] = [
   },
   {
     id: 'text-cylinder',
+    no: 13,
     cat: 'depth',
     zh: '圓柱',
     en: 'Text Cylinder',
@@ -79,6 +82,7 @@ export const depth: Fx[] = [
   },
   {
     id: 'text-vortex',
+    no: 97,
     cat: 'depth',
     zh: '漩渦',
     en: 'Text Vortex',
@@ -105,6 +109,7 @@ export const depth: Fx[] = [
   },
   {
     id: 'ring-tunnel',
+    no: 11,
     cat: 'depth',
     zh: '圓環隧道',
     en: 'Ring Text Tunnel',
@@ -131,6 +136,7 @@ export const depth: Fx[] = [
   },
   {
     id: 'text-orbit',
+    no: 12,
     cat: 'depth',
     zh: '軌道',
     en: 'Text Orbit',
@@ -155,6 +161,7 @@ export const depth: Fx[] = [
   },
   {
     id: 'text-cube',
+    no: 63,
     cat: 'depth',
     zh: '方塊',
     en: 'Text Cube',
@@ -181,6 +188,7 @@ export const depth: Fx[] = [
   },
   {
     id: 'extrude',
+    no: 14,
     cat: 'depth',
     zh: '立體字',
     en: 'Extrude Text',
@@ -196,6 +204,7 @@ export const depth: Fx[] = [
   },
   {
     id: 'flip-chars',
+    no: 62,
     cat: 'depth',
     zh: '逐字翻轉',
     en: '3D Letter Flip',
@@ -215,6 +224,7 @@ export const depth: Fx[] = [
   },
   {
     id: 'star-crawl',
+    no: 15,
     cat: 'depth',
     zh: '星際開場',
     en: 'Perspective Crawl',

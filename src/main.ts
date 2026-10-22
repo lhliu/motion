@@ -49,7 +49,7 @@ const state = {
   moodOpen: false,
   tag: '' as string,
   favOnly: false,
-  sort: 'num' as 'num' | 'name' | 'shuffle',
+  sort: 'num' as 'num' | 'no' | 'name' | 'shuffle',
   text: store.get('text', ''),
   pal: store.get('pal', 'leicht'),
   custom: store.get<string | null>('custom', null),
@@ -112,6 +112,7 @@ const filtered = (): Fx[] => {
     return matchQ(f, terms);
   });
   if (state.sort === 'name') list = [...list].sort((a, b) => a.zh.localeCompare(b.zh, 'zh-Hant'));
+  if (state.sort === 'no') list = [...list].sort((a, b) => a.no - b.no);
   if (state.sort === 'shuffle') {
     const r = (s: string) => {
       let h = shuffleSeed * 1e9;
@@ -418,11 +419,9 @@ const renderGrid = () => {
     for (const g of groups()) {
       const items = currentList.filter(g.has);
       if (!items.length) continue;
-      const first = NUM.get(items[0].id)!;
-      const last = NUM.get(items[items.length - 1].id)!;
       const fold = browsing && g.id === 'mood' && !state.moodOpen && items.length > MOOD_PREVIEW;
       const shown = fold ? items.slice(0, MOOD_PREVIEW) : items;
-      html += `<section class="sec" id="cat-${g.id}"><div class="sec-h"><code>${g.code}</code><h2>${g.zh}</h2><p>${g.tagline}</p><span>${pad(first)}–${pad(last)}</span></div><div class="grid">${shown.map(cardHtml).join('')}</div>${fold ? `<button type="button" class="sec-more" data-more>看更多${g.zh}（還有 ${items.length - shown.length} 招）</button>` : ''}</section>`;
+      html += `<section class="sec" id="cat-${g.id}"><div class="sec-h"><code>${g.code}</code><h2>${g.zh}</h2><p>${g.tagline}</p><span>${items.length} 招</span></div><div class="grid">${shown.map(cardHtml).join('')}</div>${fold ? `<button type="button" class="sec-more" data-more>看更多${g.zh}（還有 ${items.length - shown.length} 招）</button>` : ''}</section>`;
     }
   } else {
     html = `<section class="sec"><div class="grid">${currentList.map(cardHtml).join('')}</div></section>`;

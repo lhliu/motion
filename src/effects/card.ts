@@ -4,6 +4,7 @@ import { esc, pick } from '../util';
 export const card: Fx[] = [
   {
     id: 'chapter-card',
+    no: 45,
     cat: 'card',
     zh: '章節卡',
     en: 'Chapter Card',
@@ -34,6 +35,7 @@ export const card: Fx[] = [
   },
   {
     id: 'big-number',
+    no: 41,
     cat: 'card',
     zh: '數字大字報',
     en: 'Big Number',
@@ -101,6 +103,7 @@ export const card: Fx[] = [
   },
   {
     id: 'quote-card',
+    no: 49,
     cat: 'card',
     zh: '金句卡',
     en: 'Quote Card',
@@ -128,6 +131,7 @@ export const card: Fx[] = [
   },
   {
     id: 'versus',
+    no: 42,
     cat: 'card',
     zh: '對決 VS',
     en: 'Versus Split',
@@ -157,6 +161,7 @@ export const card: Fx[] = [
   },
   {
     id: 'checklist',
+    no: 43,
     cat: 'card',
     zh: '清單打勾',
     en: 'Checklist',
@@ -191,6 +196,7 @@ export const card: Fx[] = [
   },
   {
     id: 'countdown',
+    no: 23,
     cat: 'card',
     zh: '倒數',
     en: 'Countdown',
@@ -245,6 +251,7 @@ export const card: Fx[] = [
   },
   {
     id: 'timeline',
+    no: 44,
     cat: 'card',
     zh: '時間軸',
     en: 'Timeline',
@@ -279,6 +286,7 @@ export const card: Fx[] = [
   },
   {
     id: 'progress-bar',
+    no: 47,
     cat: 'card',
     zh: '進度條',
     en: 'Progress Bar',
@@ -309,6 +317,7 @@ export const card: Fx[] = [
   },
   {
     id: 'ranking',
+    no: 48,
     cat: 'card',
     zh: '排行榜',
     en: 'Ranking Bars',
@@ -346,6 +355,7 @@ export const card: Fx[] = [
   },
   {
     id: 'qa-card',
+    no: 46,
     cat: 'card',
     zh: '問答卡',
     en: 'Q&A Card',

@@ -4,6 +4,7 @@ import { chars, esc } from '../util';
 export const reveal: Fx[] = [
   {
     id: 'mask-rise',
+    no: 3,
     cat: 'reveal',
     zh: '遮罩上升',
     en: 'Mask Rise',
@@ -24,6 +25,7 @@ export const reveal: Fx[] = [
   },
   {
     id: 'blur-focus',
+    no: 87,
     cat: 'reveal',
     zh: '模糊聚焦',
     en: 'Blur to Focus',
@@ -41,6 +43,7 @@ export const reveal: Fx[] = [
   },
   {
     id: 'fade-chars',
+    no: 88,
     cat: 'reveal',
     zh: '逐字浮現',
     en: 'Staggered Fade',
@@ -59,6 +62,7 @@ export const reveal: Fx[] = [
   },
   {
     id: 'box-wipe',
+    no: 4,
     cat: 'reveal',
     zh: '色塊擦除',
     en: 'Box Reveal',
@@ -81,6 +85,7 @@ export const reveal: Fx[] = [
   },
   {
     id: 'ink-spread',
+    no: 89,
     cat: 'reveal',
     zh: '墨水暈開',
     en: 'Ink Spread',
@@ -101,6 +106,7 @@ export const reveal: Fx[] = [
   },
   {
     id: 'curtain',
+    no: 5,
     cat: 'reveal',
     zh: '拉幕',
     en: 'Curtain Open',
@@ -122,6 +128,7 @@ export const reveal: Fx[] = [
   },
   {
     id: 'handwrite',
+    no: 38,
     cat: 'reveal',
     zh: '手寫描邊',
     en: 'Stroke Draw',
@@ -141,6 +148,7 @@ export const reveal: Fx[] = [
   },
   {
     id: 'iris',
+    no: 8,
     cat: 'reveal',
     zh: '圓形開場',
     en: 'Iris Reveal',
@@ -162,6 +170,7 @@ export const reveal: Fx[] = [
   },
   {
     id: 'line-unfold',
+    no: 7,
     cat: 'reveal',
     zh: '線條展開',
     en: 'Line Unfold',
@@ -182,6 +191,7 @@ export const reveal: Fx[] = [
   },
   {
     id: 'split-reveal',
+    no: 6,
     cat: 'reveal',
     zh: '左右對開',
     en: 'Center Split',

@@ -4,6 +4,7 @@ import { chars, esc, rand } from '../util';
 export const texture: Fx[] = [
   {
     id: 'particle-form',
+    no: 17,
     cat: 'texture',
     zh: '粒子聚合',
     en: 'Particle Assemble',
@@ -65,6 +66,7 @@ export const texture: Fx[] = [
   },
   {
     id: 'pixelate',
+    no: 84,
     cat: 'texture',
     zh: '像素化',
     en: 'Pixelate Resolve',
@@ -117,6 +119,7 @@ export const texture: Fx[] = [
   },
   {
     id: 'shatter',
+    no: 65,
     cat: 'texture',
     zh: '碎裂',
     en: 'Shatter',
@@ -160,6 +163,7 @@ export const texture: Fx[] = [
   },
   {
     id: 'smoke-away',
+    no: 110,
     cat: 'texture',
     zh: '煙霧消散',
     en: 'Smoke Dissolve',
@@ -178,6 +182,7 @@ export const texture: Fx[] = [
   },
   {
     id: 'halftone',
+    no: 111,
     cat: 'texture',
     zh: '網點',
     en: 'Halftone Dots',
@@ -198,6 +203,7 @@ export const texture: Fx[] = [
   },
   {
     id: 'heat-distort',
+    no: 112,
     cat: 'texture',
     zh: '水波扭曲',
     en: 'Ripple Distortion',
@@ -215,6 +221,7 @@ export const texture: Fx[] = [
   },
   {
     id: 'noise-dissolve',
+    no: 66,
     cat: 'texture',
     zh: '顆粒溶解',
     en: 'Grain Dissolve',
@@ -232,6 +239,7 @@ export const texture: Fx[] = [
   },
   {
     id: 'matrix-rain',
+    no: 113,
     cat: 'texture',
     zh: '數位雨',
     en: 'Digital Rain',

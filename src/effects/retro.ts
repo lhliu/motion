@@ -4,6 +4,7 @@ import { esc } from '../util';
 export const retro: Fx[] = [
   {
     id: 'vhs',
+    no: 116,
     cat: 'retro',
     zh: 'VHS 錄影帶',
     en: 'VHS Tape',
@@ -29,6 +30,7 @@ export const retro: Fx[] = [
   },
   {
     id: 'terminal',
+    no: 117,
     cat: 'retro',
     zh: '終端機',
     en: 'Terminal Boot',
@@ -86,6 +88,7 @@ export const retro: Fx[] = [
   },
   {
     id: 'crt-power',
+    no: 25,
     cat: 'retro',
     zh: '映像管開關',
     en: 'CRT Power',
@@ -106,6 +109,7 @@ export const retro: Fx[] = [
   },
   {
     id: 'newspaper-spin',
+    no: 54,
     cat: 'retro',
     zh: '報紙旋轉',
     en: 'Newspaper Spin',
@@ -130,6 +134,7 @@ export const retro: Fx[] = [
   },
   {
     id: 'old-film',
+    no: 118,
     cat: 'retro',
     zh: '老電影',
     en: 'Old Film',
@@ -155,6 +160,7 @@ export const retro: Fx[] = [
   },
   {
     id: 'synthwave',
+    no: 119,
     cat: 'retro',
     zh: '80 年代霓虹',
     en: 'Synthwave',
@@ -176,6 +182,7 @@ export const retro: Fx[] = [
   },
   {
     id: 'pixel-game',
+    no: 120,
     cat: 'retro',
     zh: '像素遊戲',
     en: '8-bit Game',

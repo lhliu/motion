@@ -4,6 +4,7 @@ import { esc, rep } from '../util';
 export const style: Fx[] = [
   {
     id: 'outline-fill',
+    no: 98,
     cat: 'style',
     zh: '空心字',
     en: 'Outline Text',
@@ -23,6 +24,7 @@ export const style: Fx[] = [
   },
   {
     id: 'glitch-slices',
+    no: 99,
     cat: 'style',
     zh: '故障切片',
     en: 'Glitch Slices',
@@ -46,6 +48,7 @@ export const style: Fx[] = [
   },
   {
     id: 'pattern-mask',
+    no: 100,
     cat: 'style',
     zh: '圖案遮罩',
     en: 'Text Mask Pattern',
@@ -66,6 +69,7 @@ export const style: Fx[] = [
   },
   {
     id: 'long-shadow',
+    no: 101,
     cat: 'style',
     zh: '長陰影',
     en: 'Long Shadow',
@@ -81,6 +85,7 @@ export const style: Fx[] = [
   },
   {
     id: 'liquid-fill',
+    no: 102,
     cat: 'style',
     zh: '液體填滿',
     en: 'Liquid Fill',
@@ -103,6 +108,7 @@ export const style: Fx[] = [
   },
   {
     id: 'highlighter',
+    no: 30,
     cat: 'style',
     zh: '螢光筆',
     en: 'Highlight Text',
@@ -123,6 +129,7 @@ export const style: Fx[] = [
   },
   {
     id: 'split-invert',
+    no: 64,
     cat: 'style',
     zh: '雙色反轉',
     en: 'Split Invert',
@@ -142,6 +149,7 @@ export const style: Fx[] = [
   },
   {
     id: 'text-echo',
+    no: 103,
     cat: 'style',
     zh: '殘影',
     en: 'Text Echo',
@@ -160,6 +168,7 @@ export const style: Fx[] = [
   },
   {
     id: 'offset-stroke',
+    no: 104,
     cat: 'style',
     zh: '錯位描邊',
     en: 'Offset Outline',
@@ -179,6 +188,7 @@ export const style: Fx[] = [
   },
   {
     id: 'paper-cut',
+    no: 105,
     cat: 'style',
     zh: '剪紙疊層',
     en: 'Paper Cut Layers',

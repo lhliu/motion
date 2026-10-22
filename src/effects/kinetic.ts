@@ -12,6 +12,7 @@ const charsWithRandom = (t: string) =>
 export const kinetic: Fx[] = [
   {
     id: 'wave-text',
+    no: 81,
     cat: 'kinetic',
     zh: '波浪字',
     en: 'Wave Text',
@@ -30,6 +31,7 @@ export const kinetic: Fx[] = [
   },
   {
     id: 'bounce-in',
+    no: 75,
     cat: 'kinetic',
     zh: '彈跳入場',
     en: 'Bounce In',
@@ -49,6 +51,7 @@ export const kinetic: Fx[] = [
   },
   {
     id: 'swing-sign',
+    no: 76,
     cat: 'kinetic',
     zh: '吊牌搖擺',
     en: 'Hanging Swing',
@@ -74,6 +77,7 @@ export const kinetic: Fx[] = [
   },
   {
     id: 'gravity-fall',
+    no: 77,
     cat: 'kinetic',
     zh: '重力掉落',
     en: 'Gravity Drop',
@@ -92,6 +96,7 @@ export const kinetic: Fx[] = [
   },
   {
     id: 'spin-in',
+    no: 9,
     cat: 'kinetic',
     zh: '旋轉入場',
     en: 'Spin In',
@@ -111,6 +116,7 @@ export const kinetic: Fx[] = [
   },
   {
     id: 'jelly',
+    no: 78,
     cat: 'kinetic',
     zh: '果凍晃動',
     en: 'Jelly Wobble',
@@ -128,6 +134,7 @@ export const kinetic: Fx[] = [
   },
   {
     id: 'tracking-breathe',
+    no: 90,
     cat: 'kinetic',
     zh: '字距伸展',
     en: 'Tracking Expand',
@@ -145,6 +152,7 @@ export const kinetic: Fx[] = [
   },
   {
     id: 'scatter-gather',
+    no: 80,
     cat: 'kinetic',
     zh: '散開聚合',
     en: 'Scatter & Gather',
@@ -164,6 +172,7 @@ export const kinetic: Fx[] = [
   },
   {
     id: 'domino',
+    no: 61,
     cat: 'kinetic',
     zh: '骨牌倒下',
     en: 'Domino Fall',
@@ -183,6 +192,7 @@ export const kinetic: Fx[] = [
   },
   {
     id: 'heartbeat',
+    no: 79,
     cat: 'kinetic',
     zh: '心跳',
     en: 'Heartbeat',

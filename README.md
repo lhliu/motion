@@ -93,6 +93,7 @@ npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 
 在對應分類檔加一筆 `Fx`：
 
+- `no`：**固定編號**，用目前最大編號 +1（`grep -rhoE "no: [0-9]+" src/effects | sort -k2 -n | tail -1` 可查）。編號一旦公開就不再變動、刪除特效也不回收，AI 與 Combo 會用「#編號」引用；重複時瀏覽器 console 會報錯
 - `css`：用 `.S` 代表特效根節點、`K_` 當 keyframes 前綴，會自動範圍化成 `.fx-<id>`
 - 可用變數：`--bg` `--fg` `--ac` `--ac2` `--mu`、字體 `--sans` `--serif` `--mono`；尺寸用 `cqw`／`cqh`／`cqmin`
 - `html(words)`：回傳特效 DOM；`run(root, words)`（選填）處理 JS 動畫並回傳清除函式。`run` 必須自給自足、不可引用模組變數，因為匯出時會用 `toString()` 內嵌

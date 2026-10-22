@@ -11,6 +11,7 @@ const GLASS = `.S .gb{border-radius:50%;background:radial-gradient(circle at 32%
 export const liquid: Fx[] = [
   {
     id: 'crisp-drop',
+    no: 20,
     cat: 'liquid',
     zh: '銳利水滴',
     en: 'Crisp Drop',
@@ -44,6 +45,7 @@ export const liquid: Fx[] = [
   },
   {
     id: 'glass-blob-title',
+    no: 21,
     cat: 'liquid',
     zh: '果凍泡泡標題',
     en: 'Glass Blob Title',
@@ -96,6 +98,7 @@ export const liquid: Fx[] = [
   },
   {
     id: 'drop-splash',
+    no: 22,
     cat: 'liquid',
     zh: '水滴落下',
     en: 'Drop Splash',
@@ -125,6 +128,7 @@ export const liquid: Fx[] = [
   },
   {
     id: 'bubbles-rise',
+    no: 114,
     cat: 'liquid',
     zh: '泡泡上升',
     en: 'Rising Bubbles',
@@ -149,6 +153,7 @@ export const liquid: Fx[] = [
   },
   {
     id: 'gooey-merge',
+    no: 67,
     cat: 'liquid',
     zh: '液態融合',
     en: 'Gooey Merge',
@@ -178,6 +183,7 @@ export const liquid: Fx[] = [
   },
   {
     id: 'water-ripple',
+    no: 115,
     cat: 'liquid',
     zh: '水波漣漪',
     en: 'Water Ripple',
@@ -200,6 +206,7 @@ export const liquid: Fx[] = [
   },
   {
     id: 'bubble-pop',
+    no: 68,
     cat: 'liquid',
     zh: '泡泡破掉換字',
     en: 'Bubble Pop Swap',

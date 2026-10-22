@@ -6,6 +6,7 @@ const loop = (t: string, n: number, sep = ' • ') => rep(n, () => `${esc(t)}${s
 export const flow: Fx[] = [
   {
     id: 'huge-scroll',
+    no: 91,
     cat: 'flow',
     zh: '巨字滑過',
     en: 'Huge Text Scroll',
@@ -28,6 +29,7 @@ export const flow: Fx[] = [
   },
   {
     id: 'vertical-flow',
+    no: 92,
     cat: 'flow',
     zh: '直書逆走',
     en: 'Vertical Typography',
@@ -55,6 +57,7 @@ export const flow: Fx[] = [
   },
   {
     id: 'repeat-wave',
+    no: 93,
     cat: 'flow',
     zh: '重複波浪',
     en: 'Repeating Text',
@@ -73,6 +76,7 @@ export const flow: Fx[] = [
   },
   {
     id: 'diagonal-bands',
+    no: 60,
     cat: 'flow',
     zh: '斜線帶',
     en: 'Diagonal Text Bands',
@@ -94,6 +98,7 @@ export const flow: Fx[] = [
   },
   {
     id: 'ribbon',
+    no: 94,
     cat: 'flow',
     zh: '緞帶',
     en: 'Text Ribbon',
@@ -113,6 +118,7 @@ export const flow: Fx[] = [
   },
   {
     id: 'marquee-stack',
+    no: 39,
     cat: 'flow',
     zh: '跑馬燈',
     en: 'Marquee',
@@ -140,6 +146,7 @@ export const flow: Fx[] = [
   },
   {
     id: 'parallax-columns',
+    no: 95,
     cat: 'flow',
     zh: '直書三層',
     en: 'Parallax Columns',
@@ -165,6 +172,7 @@ export const flow: Fx[] = [
   },
   {
     id: 'tape-cross',
+    no: 86,
     cat: 'flow',
     zh: '封鎖膠帶',
     en: 'Tape Cross',
@@ -188,6 +196,7 @@ export const flow: Fx[] = [
   },
   {
     id: 'credits-roll',
+    no: 40,
     cat: 'flow',
     zh: '片尾名單',
     en: 'Credits Roll',
@@ -213,6 +222,7 @@ export const flow: Fx[] = [
   },
   {
     id: 'circle-badge',
+    no: 24,
     cat: 'flow',
     zh: '環形旋轉',
     en: 'Rotating Badge',

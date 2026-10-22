@@ -41,7 +41,7 @@ const run: Fx['run'] = (root) => {
   return () => cancelAnimationFrame(raf);
 };
 
-const make = (module: PModule, o: Pick<Fx, 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn'>): Fx => ({
+const make = (module: PModule, o: Pick<Fx, 'no' | 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn'>): Fx => ({
   id: `photo-${module}`,
   cat: MODULE_INFO[module].group,
   zh: MODULE_INFO[module].zh,
@@ -57,6 +57,7 @@ const make = (module: PModule, o: Pick<Fx, 'desc' | 'tags' | 'sample' | 'motion'
 
 export const photo: Fx[] = [
   make('kenburns', {
+    no: 121,
     desc: '照片從起始取景慢慢推近、平移到結束取景，讓靜態照片變成運鏡',
     tags: ['建案', '外觀', '可疊影片'],
     sample: ['外觀慢推'],
@@ -64,6 +65,7 @@ export const photo: Fx[] = [
     motionEn: 'A full-frame photo where the virtual camera glides from a start framing (zoom and center) to an end framing with an ease-in-out push and pan; a dark pill caption fades up after a short delay. Hard edges throughout, no blur.',
   }),
   make('swing', {
+    no: 122,
     desc: '照片帶白框從側邊旋轉甩進畫面，回彈後停在微斜角度並輕輕漂浮',
     tags: ['開箱', '社群', 'Shorts'],
     sample: ['這間採光超好'],
@@ -71,6 +73,7 @@ export const photo: Fx[] = [
     motionEn: 'A photo with a white border and rounded corners swings in from off-screen at a steep angle and oversized scale, decelerating with an overshoot to rest at a slight tilt in the center, then floats gently; a caption fades in below. No shadows or blur.',
   }),
   make('tilt', {
+    no: 123,
     desc: '照片變成有厚度的卡片，以透視角度轉入後輕微擺動',
     tags: ['建案', '2D 轉 3D', '質感'],
     sample: ['樣品屋客廳'],
@@ -78,6 +81,7 @@ export const photo: Fx[] = [
     motionEn: 'The photo becomes a thick physical card that rotates in from a steep side angle in perspective, settles at a slight angle and then sways slowly; its edges show thickness in a flat solid color; a caption fades in. Rendered in 3D perspective with no shadows or blur.',
   }),
   make('compare', {
+    no: 127,
     desc: '分隔線帶著圓形把手掃過畫面，前後兩張照片對照',
     tags: ['重劃區', '施工前後', '對比'],
     sample: ['三年前 vs 現在'],
@@ -85,6 +89,7 @@ export const photo: Fx[] = [
     motionEn: 'Two photos stacked; after a short hold, a white divider with a round arrow knob sweeps smoothly across to reveal the second photo; dark pill labels (BEFORE / AFTER) sit in the top corners and a caption fades in. Hard edges, no blur.',
   }),
   make('magnify', {
+    no: 132,
     desc: '圈出照片中的細節，連線放大到旁邊的圓形鏡頭',
     tags: ['細節', '建材', '標註'],
     sample: ['這裡是防水層'],
@@ -92,6 +97,7 @@ export const photo: Fx[] = [
     motionEn: 'The photo pushes in slowly; a yellow circle draws around a detail, a yellow line extends to the side, and a round magnifier lens springs open showing the detail enlarged inside a solid yellow ring; a caption fades in. No shadows or blur.',
   }),
   make('window', {
+    no: 124,
     desc: '照片裝進圓角視窗，從下方或指定點彈出放大，可加標題列',
     tags: ['開箱', '空間', '介面感'],
     sample: ['客廳採光'],
@@ -99,6 +105,7 @@ export const photo: Fx[] = [
     motionEn: 'A rounded window springs up from the bottom (or a chosen point) and scales into place with an overshoot; it has a light title bar with red, yellow and green dots and a centered title, and holds a photo that slowly pushes in; a caption fades in. Hard edges, no shadow.',
   }),
   make('parallax', {
+    no: 125,
     desc: '背景與前景以不同速度移動做出景深，標題可以夾在前景後面',
     tags: ['2D 轉 3D', '片頭', '質感'],
     sample: ['新店央北'],
@@ -106,6 +113,7 @@ export const photo: Fx[] = [
     motionEn: 'The background photo pans slowly while a cut-out foreground layer moves further in the same direction, creating 2.5D depth; a large title sits between the layers, partly hidden by the foreground, fading up. Hard edges, no blur.',
   }),
   make('phone', {
+    no: 126,
     desc: '截圖放進手機框滑入畫面，長截圖會在螢幕裡自動往下捲',
     tags: ['App', '截圖', '物件頁'],
     sample: ['實價登錄這樣查'],
@@ -113,6 +121,7 @@ export const photo: Fx[] = [
     motionEn: 'A phone with a dark body, rounded screen and pill camera cutout slides up from the bottom at an angle, settles upright with an overshoot and floats gently; a long screenshot inside scrolls smoothly down after a pause; a caption fades in. No shadow, no blur.',
   }),
   make('flip', {
+    no: 128,
     desc: '卡片 3D 翻面，正面是施工前、背面是完工後',
     tags: ['施工前後', '對比', '2D 轉 3D'],
     sample: ['兩年後長這樣'],
@@ -120,6 +129,7 @@ export const photo: Fx[] = [
     motionEn: 'The photo becomes a thick card that, after a pause, flips 180 degrees around its vertical axis in perspective to reveal a second photo on the back, then sways gently; a pill label below switches from BEFORE to AFTER. No shadow.',
   }),
   make('stack', {
+    no: 129,
     desc: '拍立得照片一張張從上方落下疊成一疊，下方留白可寫標籤',
     tags: ['回顧', '生活感', '社群'],
     sample: ['看房這一天'],
@@ -127,6 +137,7 @@ export const photo: Fx[] = [
     motionEn: 'White polaroid prints with wide bottom margins and handwritten-style labels drop in one by one from above with spin and overshoot, landing slightly scattered and individually tilted into a pile, separated by thin solid outlines. No shadow, no blur.',
   }),
   make('grid', {
+    no: 130,
     desc: '2×2、3×3 宮格依序彈出，適合格局、空間總覽',
     tags: ['格局', '空間', '總覽'],
     sample: ['四房兩廳一次看'],
@@ -134,6 +145,7 @@ export const photo: Fx[] = [
     motionEn: 'The frame is divided into a rounded grid; photos pop in one after another (row by row, diagonally or randomly) with an overshoot and slowly push in, with pill labels naming each room at the bottom left; a caption fades in. Hard edges.',
   }),
   make('split', {
+    no: 131,
     desc: '畫面切成 2–3 格並排，照片交錯滑入，用白線分隔',
     tags: ['比較', '並排', 'Shorts'],
     sample: ['A 案 vs B 案'],
@@ -141,6 +153,7 @@ export const photo: Fx[] = [
     motionEn: 'The frame splits into 2–3 columns (or rows); each photo slides in from alternating top and bottom in turn while white dividers extend between them; each panel has a pill label at the top left; a caption fades in. Hard edges.',
   }),
   make('freeze', {
+    no: 133,
     desc: '畫面定格閃白、縮成白框相片，接著圈出重點加上標籤',
     tags: ['影片', '重點', '標註'],
     sample: ['這面牆有裂縫'],
@@ -148,6 +161,7 @@ export const photo: Fx[] = [
     motionEn: 'The full-frame shot freezes with a white flash, then shrinks, tilts slightly and grows a white photo border, with a red PAUSE tag at the top left; a colored circle then draws around the key spot, a line extends to the side and a label pill springs in. Hard edges, no blur.',
   }),
   make('mask', {
+    no: 134,
     desc: '用圓形、菱形、斜切、百葉窗等硬邊遮罩揭露照片',
     tags: ['轉場', '揭露', '片頭'],
     sample: ['正式公開'],
@@ -155,6 +169,7 @@ export const photo: Fx[] = [
     motionEn: 'The photo is revealed through a hard-edged mask: a circle expanding from a point, a growing diamond, a diagonal wipe, a center split or staggered blinds, with a solid colored line along the mask edge; the photo slowly pushes in. No blur or feathering.',
   }),
   make('zoomthru', {
+    no: 135,
     desc: '鏡頭衝進照片中的一點，穿過圓形開口到下一張照片',
     tags: ['轉場', '節奏', '連接'],
     sample: ['走進社區'],

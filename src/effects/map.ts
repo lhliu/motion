@@ -85,6 +85,7 @@ const split = (s: string) => (s.includes('｜') ? s.split('｜') : s.includes('|
 export const map: Fx[] = [
   {
     id: 'map-overlay',
+    no: 136,
     cat: 'map',
     zh: '地圖疊加場景',
     en: 'Map Overlay Scene',
@@ -131,6 +132,7 @@ export const map: Fx[] = [
   },
   {
     id: 'map-routes',
+    no: 137,
     cat: 'map',
     zh: '放射路線',
     en: 'Radiating Routes',
@@ -199,6 +201,7 @@ export const map: Fx[] = [
   },
   {
     id: 'map-pin-drop',
+    no: 138,
     cat: 'map',
     zh: '地圖定位',
     en: 'Map Pin Drop',
@@ -231,6 +234,7 @@ export const map: Fx[] = [
   },
   {
     id: 'map-route',
+    no: 139,
     cat: 'map',
     zh: '路線繪製',
     en: 'Route Draw',
@@ -266,6 +270,7 @@ ${chip(240, 790, a, 34, 'lab s')}${chip(1345, 50, b, 34, 'lab')}${chip(810, 420,
   },
   {
     id: 'map-radius',
+    no: 140,
     cat: 'map',
     zh: '生活圈半徑',
     en: 'Radius Rings',
@@ -302,6 +307,7 @@ ${[r1, r2, r3].map((t, i) => chip(800, 450 - R[i], t, 30, 'ac rl', ` style="--i:
   },
   {
     id: 'map-zoom',
+    no: 141,
     cat: 'map',
     zh: '地圖推進',
     en: 'Map Zoom In',
@@ -330,6 +336,7 @@ ${[r1, r2, r3].map((t, i) => chip(800, 450 - R[i], t, 30, 'ac rl', ` style="--i:
   },
   {
     id: 'map-district',
+    no: 142,
     cat: 'map',
     zh: '區域框選',
     en: 'District Highlight',
@@ -363,6 +370,7 @@ ${base()}<path class="dim" d="M0 0H${W}V${H}H0Z ${poly}"/><path class="fill" d="
   },
   {
     id: 'map-metro',
+    no: 143,
     cat: 'map',
     zh: '捷運路線',
     en: 'Metro Line',
@@ -420,6 +428,7 @@ ${base()}<path class="dim" d="M0 0H${W}V${H}H0Z ${poly}"/><path class="fill" d="
   },
   {
     id: 'map-poi',
+    no: 144,
     cat: 'map',
     zh: '生活機能',
     en: 'Nearby Amenities',
@@ -456,6 +465,7 @@ ${base()}<path class="dim" d="M0 0H${W}V${H}H0Z ${poly}"/><path class="fill" d="
   },
   {
     id: 'map-flyover',
+    no: 145,
     cat: 'map',
     zh: '3D 鳥瞰',
     en: '3D Flyover',
@@ -500,6 +510,7 @@ ${base()}<path class="dim" d="M0 0H${W}V${H}H0Z ${poly}"/><path class="fill" d="
   },
   {
     id: 'map-distance',
+    no: 146,
     cat: 'map',
     zh: '距離量測',
     en: 'Distance Measure',
@@ -547,6 +558,7 @@ ${chip(380, 680, a, 32)}${chip(1220, 220, b, 32)}
   },
   {
     id: 'map-isochrone',
+    no: 147,
     cat: 'map',
     zh: '等時圈',
     en: 'Isochrone Zones',

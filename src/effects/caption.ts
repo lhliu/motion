@@ -4,6 +4,7 @@ import { esc, pick, rand, rep } from '../util';
 export const caption: Fx[] = [
   {
     id: 'lower-third',
+    no: 28,
     cat: 'caption',
     zh: '名牌條',
     en: 'Lower Third',
@@ -32,6 +33,7 @@ export const caption: Fx[] = [
   },
   {
     id: 'news-ticker',
+    no: 32,
     cat: 'caption',
     zh: '新聞跑馬',
     en: 'News Ticker',
@@ -61,6 +63,7 @@ export const caption: Fx[] = [
   },
   {
     id: 'chat-bubbles',
+    no: 33,
     cat: 'caption',
     zh: '對話泡泡',
     en: 'Chat Bubbles',
@@ -81,6 +84,7 @@ export const caption: Fx[] = [
   },
   {
     id: 'karaoke',
+    no: 34,
     cat: 'caption',
     zh: '卡拉 OK 字幕',
     en: 'Karaoke Fill',
@@ -102,6 +106,7 @@ export const caption: Fx[] = [
   },
   {
     id: 'danmaku',
+    no: 35,
     cat: 'caption',
     zh: '彈幕',
     en: 'Danmaku Comments',
@@ -125,6 +130,7 @@ export const caption: Fx[] = [
   },
   {
     id: 'callout',
+    no: 29,
     cat: 'caption',
     zh: '重點圈選',
     en: 'Callout Circle',
@@ -152,6 +158,7 @@ export const caption: Fx[] = [
   },
   {
     id: 'hashtag-pop',
+    no: 36,
     cat: 'caption',
     zh: '標籤彈出',
     en: 'Tag Pop',
@@ -171,6 +178,7 @@ export const caption: Fx[] = [
   },
   {
     id: 'shorts-caption',
+    no: 26,
     cat: 'caption',
     zh: '短影音大字幕',
     en: 'Shorts Caption',
@@ -207,6 +215,7 @@ export const caption: Fx[] = [
   },
   {
     id: 'location-pin',
+    no: 27,
     cat: 'caption',
     zh: '地點標記',
     en: 'Location Pin',
@@ -236,6 +245,7 @@ export const caption: Fx[] = [
   },
   {
     id: 'subscribe-cta',
+    no: 31,
     cat: 'caption',
     zh: '訂閱提示',
     en: 'Subscribe CTA',

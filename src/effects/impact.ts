@@ -4,6 +4,7 @@ import { chars, esc, pick, rep } from '../util';
 export const impact: Fx[] = [
   {
     id: 'word-burst',
+    no: 70,
     cat: 'impact',
     zh: '文字爆開',
     en: 'Word Burst',
@@ -23,6 +24,7 @@ export const impact: Fx[] = [
   },
   {
     id: 'letter-hit',
+    no: 71,
     cat: 'impact',
     zh: '逐字敲擊',
     en: 'Letter Sequence',
@@ -41,6 +43,7 @@ export const impact: Fx[] = [
   },
   {
     id: 'stamp',
+    no: 72,
     cat: 'impact',
     zh: '印章',
     en: 'Text Stamp',
@@ -67,6 +70,7 @@ export const impact: Fx[] = [
   },
   {
     id: 'punch-zoom',
+    no: 1,
     cat: 'impact',
     zh: '衝擊放大',
     en: 'Punch Zoom',
@@ -85,6 +89,7 @@ export const impact: Fx[] = [
   },
   {
     id: 'kinetic-stack',
+    no: 82,
     cat: 'impact',
     zh: '動態堆疊',
     en: 'Kinetic Stack',
@@ -109,6 +114,7 @@ export const impact: Fx[] = [
   },
   {
     id: 'stretch',
+    no: 73,
     cat: 'impact',
     zh: '伸縮字',
     en: 'Stretch Text',
@@ -127,6 +133,7 @@ export const impact: Fx[] = [
   },
   {
     id: 'zoom-through',
+    no: 55,
     cat: 'impact',
     zh: '穿越放大',
     en: 'Text Zoom Through',
@@ -145,6 +152,7 @@ export const impact: Fx[] = [
   },
   {
     id: 'squeeze',
+    no: 69,
     cat: 'impact',
     zh: '擠壓彈跳',
     en: 'Text Squeeze',
@@ -162,6 +170,7 @@ export const impact: Fx[] = [
   },
   {
     id: 'shake-alert',
+    no: 74,
     cat: 'impact',
     zh: '震動警示',
     en: 'Shake Alert',
@@ -181,6 +190,7 @@ export const impact: Fx[] = [
   },
   {
     id: 'slam',
+    no: 2,
     cat: 'impact',
     zh: '重摔落地',
     en: 'Heavy Slam',
