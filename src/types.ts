@@ -15,7 +15,8 @@ export type CatId =
   | 'liquid'
   | 'photo'
   | 'pmulti'
-  | 'pmark';
+  | 'pmark'
+  | 'diagram';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';
@@ -58,7 +59,7 @@ export interface Fx {
 }
 
 /** 網站的三個工作區：文字特效、圖片運鏡、地圖區位 */
-export type SecId = 'text' | 'photo' | 'map';
+export type SecId = 'text' | 'photo' | 'map' | 'explain';
 
 export interface Section {
   id: SecId;

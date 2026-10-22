@@ -1,5 +1,5 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
-import { drawScene, makeEl, RATIO_PX, syncRoutes, TEMPLATES, TYPE_NAME, type MEl, type MScene, type MType } from './mapkit';
+import { drawScene, makeEl, RATIO_PX, sceneLength, syncRoutes, TEMPLATES, TYPE_NAME, type MEl, type MScene, type MType } from './mapkit';
 import { esc } from './util';
 import { presetBar } from './preset-bar';
 import type { Preset } from './presets';
@@ -75,7 +75,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     if (!playing) return;
     const t = (now - t0) / 1000;
     redraw(t);
-    if (t > sc.loop) {
+    if (t > sceneLength(sc)) {
       playing = false;
       playBtn.textContent = '▶ 播放進場';
       redraw();
@@ -208,6 +208,8 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     site: [['color', '框線顏色', 'color'], ['alpha', '填色透明度', 'range', 0, 0.8, 0.01]],
     label: [['text', '文字', 'text'], ['color', '底色', 'color'], ['fg', '文字色', 'color']],
     pin: [['color', '顏色', 'color']],
+    badge: [['text', '文字（例如 A棟）', 'text'], ['color', '底色', 'color'], ['fg', '文字色', 'color']],
+    bar: [['text', '內容（| 分欄，* 開頭用強調色）', 'text'], ['color', '強調色', 'color'], ['alpha', '底色透明度', 'range', 0.3, 1, 0.01]],
     info: [['lines', '內容（一行一句，* 開頭用強調色）', 'lines'], ['color', '強調色', 'color'], ['alpha', '底色透明度', 'range', 0.3, 1, 0.01]],
     stat: [['text', '標題', 'text'], ['fg', '副標', 'text'], ['lines', '欄位（標籤|數字|單位|附註）', 'lines'], ['color', '數字顏色', 'color'], ['alpha', '底色透明度', 'range', 0.3, 1, 0.01]],
     compass: [],
@@ -242,7 +244,9 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     };
     props.innerHTML = `<h4>${TYPE_NAME[el.type]}</h4>${FIELDS[el.type].map(f).join('')}
 <label class="st-row"><span>大小</span><input type="range" data-k="size" min="0.3" max="2.5" step="0.05" value="${el.size}"><output>${el.size}</output></label>
-<label class="st-row"><span>登場時間（秒）</span><input type="range" data-k="delay" min="0" max="6" step="0.1" value="${el.delay}"><output>${el.delay}</output></label>`;
+<label class="st-row"><span>登場時間（秒）</span><input type="range" data-k="delay" min="0" max="6" step="0.1" value="${el.delay}"><output>${el.delay}</output></label>${
+      el.type === 'site' ? `<div class="st-presets"><button type="button" class="btn-ghost" data-pt="add">＋ 加一個角</button><button type="button" class="btn-ghost" data-pt="del"${(el.pts?.length ?? 0) <= 3 ? ' disabled' : ''}>－ 減一個角</button><span class="ms-hint">L 形、梯形基地用；新角點加在最長的邊中間</span></div>` : ''
+    }`;
   };
   props.addEventListener('input', (e) => {
     const t = e.target as HTMLInputElement;
@@ -262,6 +266,29 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     redraw();
   });
   props.addEventListener('click', (e) => {
+    const pt = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-pt]');
+    const cur = sc.els.find((x) => x.id === sel);
+    if (pt && cur?.pts) {
+      const pts = cur.pts;
+      if (pt.dataset.pt === 'del' && pts.length > 3) pts.pop();
+      if (pt.dataset.pt === 'add' && pts.length < 12) {
+        // 在最長的邊中間插入新角點
+        let best = 0;
+        let len = -1;
+        pts.forEach((a, i) => {
+          const b2 = pts[(i + 1) % pts.length];
+          const d = Math.hypot(b2[0] - a[0], b2[1] - a[1]);
+          if (d > len) [best, len] = [i, d];
+        });
+        const a = pts[best];
+        const b2 = pts[(best + 1) % pts.length];
+        pts.splice(best + 1, 0, [(a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2]);
+      }
+      persist();
+      renderProps();
+      redraw();
+      return;
+    }
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.st-seg button');
     const el = sc.els.find((x) => x.id === sel);
     if (!b || !el) return;
@@ -323,10 +350,12 @@ export const initMapStudio = (deps: MapStudioDeps) => {
   const bgCtl = $('#msBg');
   const syncBgCtl = () =>
     bgCtl.querySelectorAll<HTMLInputElement>('input[data-bg]').forEach((i) => {
-      i.value = String(sc[i.dataset.bg as 'bgZoom']);
+      i.value = String(sc[i.dataset.bg as 'bgZoom'] ?? 0);
     });
+  const syncDescend = () => ($('#msDescendV').textContent = `${sc.descend ?? 0}s`);
   bgCtl.addEventListener('input', (e) => {
     const i = e.target as HTMLInputElement;
+    if (i.dataset.bg === 'descend') $('#msDescendV').textContent = `${i.value}s`;
     if (i.dataset.bg) (sc as unknown as Record<string, number>)[i.dataset.bg] = parseFloat(i.value);
     if (i.id === 'msWithBg') withBg = i.checked;
     persist();
@@ -371,7 +400,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
   $('#msSeq').addEventListener('click', async () => {
     await fonts();
     const [W, H] = RATIO_PX[sc.ratio];
-    const blob = await pngSequence(W, H, sc.loop, (c, t) => drawScene(c, W, H, sc, t, exportBg()), (i, n) => busy(`輸出 PNG 序列⋯ ${i}/${n}`));
+    const blob = await pngSequence(W, H, sceneLength(sc), (c, t) => drawScene(c, W, H, sc, t, exportBg()), (i, n) => busy(`輸出 PNG 序列⋯ ${i}/${n}`));
     saveBlob(blob, `map-${stamp()}-30fps.zip`);
     busy('');
     deps.toast('已輸出 PNG 序列');
@@ -379,7 +408,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
   $('#msWebm').addEventListener('click', async () => {
     await fonts();
     const [W, H] = RATIO_PX[sc.ratio];
-    const p = recordWebm(W, H, sc.loop, (c, t) => drawScene(c, W, H, sc, t, exportBg()), (x) => busy(`錄製中⋯ ${Math.round(x * 100)}%`));
+    const p = recordWebm(W, H, sceneLength(sc), (c, t) => drawScene(c, W, H, sc, t, exportBg()), (x) => busy(`錄製中⋯ ${Math.round(x * 100)}%`));
     if (!p) return deps.toast('這個瀏覽器不支援錄製 WebM，請改用 Chrome 或輸出 PNG 序列');
     saveBlob(await p, `map-${stamp()}.webm`);
     busy('');
@@ -402,7 +431,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
   };
   $('#msCombo').addEventListener('click', () => {
     const out = sceneForExport();
-    deps.addScene({ effect: 'map-overlay', words: [JSON.stringify(out)], seconds: out.loop + 1, ratio: out.ratio });
+    deps.addScene({ effect: 'map-overlay', words: [JSON.stringify(out)], seconds: sceneLength(out) + 1, ratio: out.ratio });
     if (bg && !withBg) deps.toast('已加入 Combo（未含底圖，勾選「輸出包含底圖」可一起帶入）');
   });
   $('#msJson').addEventListener('click', () => {
@@ -442,6 +471,7 @@ export const initMapStudio = (deps: MapStudioDeps) => {
   const renderAll = () => {
     syncRatio();
     syncBgCtl();
+    syncDescend();
     $<HTMLInputElement>('#msLoop').value = String(sc.loop);
     $('#msLoopV').textContent = `${sc.loop}s`;
     renderList();

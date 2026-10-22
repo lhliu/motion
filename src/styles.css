@@ -2521,8 +2521,17 @@ pre.code {
     flex: 1 1 100%;
   }
   .ws button {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     justify-content: center;
+    gap: 4px;
+    padding: 0 4px;
+    font-size: 13px;
+  }
+}
+@media (max-width: 440px) {
+  .ws button svg {
+    display: none;
   }
 }
 

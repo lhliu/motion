@@ -1,7 +1,7 @@
 // 地圖疊加元件：照「持家男子KC」地圖片段的樣式設計，全部硬邊、不使用陰影或模糊。
 // 座標用 0–1 的畫面比例，尺寸以短邊 1080 為基準。
 
-export type MType = 'tag' | 'road' | 'site' | 'label' | 'pin' | 'info' | 'stat' | 'compass' | 'text' | 'routes';
+export type MType = 'tag' | 'road' | 'site' | 'label' | 'pin' | 'badge' | 'info' | 'bar' | 'stat' | 'compass' | 'text' | 'routes';
 
 export interface MEl {
   id: string;
@@ -45,7 +45,12 @@ export interface MScene {
   bgDim: number;
   /** 底圖網址或 data URL（選填） */
   bgUrl?: string;
+  /** 太空降落開場的秒數（0 或省略＝不用）；元件會在降落結束後才開始登場 */
+  descend?: number;
 }
+
+/** 場景總長度＝降落開場＋元件動畫 */
+export const sceneLength = (sc: Pick<MScene, 'loop' | 'descend'>) => (sc.loop || 6) + (sc.descend || 0);
 
 export const RATIO_PX: Record<MScene['ratio'], [number, number]> = { '9:16': [1080, 1920], '16:9': [1920, 1080], '1:1': [1080, 1080] };
 
@@ -55,7 +60,9 @@ export const TYPE_NAME: Record<MType, string> = {
   site: '基地框',
   label: '基地標籤',
   pin: '定位針',
+  badge: '圓形標記',
   info: '資訊卡',
+  bar: '資訊條',
   stat: '數據卡',
   compass: '指北針',
   text: '文字',
@@ -74,6 +81,8 @@ export const makeEl = (type: MType, at: Partial<MEl> = {}): MEl => {
     site: { x: 0.5, y: 0.42, size: 1, color: YELLOW, alpha: 0.28, pts: [[0.3, 0.37], [0.7, 0.37], [0.7, 0.49], [0.3, 0.49]] },
     label: { x: 0.5, y: 0.43, size: 1, text: '某某 基地', color: YELLOW, fg: '#1c1c1c' },
     pin: { x: 0.58, y: 0.45, size: 1, color: '#f07a3f' },
+    badge: { x: 0.5, y: 0.45, size: 1, text: 'A棟', color: '#f07a3f', fg: '#ffffff' },
+    bar: { x: 0.5, y: 0.62, size: 1, text: '*地上 ○ 樓|地下 ○ 樓', color: '#f07a3f', alpha: 0.82 },
     info: { x: 0.5, y: 0.66, size: 1, color: YELLOW, alpha: 0.8, lines: ['*地上 30 層', 'A、B 兩棟 雙塔', '*SRC 鋼骨結構'] },
     stat: { x: 0.5, y: 0.67, size: 1, color: YELLOW, alpha: 0.95, text: '案名', fg: '路名 × 路名', lines: ['地上|27|層|', '全案|283|戶|', '每層|11–12|戶|4 部電梯'] },
     compass: { x: 0.9, y: 0.12, size: 1 },
@@ -356,6 +365,73 @@ export const mapRenderer = () => {
         box = [X - r, Y - r * 1.4, X + r * 1.4, Y + r];
         break;
       }
+      case 'badge': {
+        const s = back(p);
+        const r = 52 * u;
+        ctx.globalAlpha *= clamp(lt / 0.12);
+        ctx.translate(X, Y);
+        ctx.scale(s, s);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 6 * u, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = el.color ?? '#f07a3f';
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        const txt = el.text ?? '';
+        let fs = 40 * u;
+        ctx.font = `900 ${fs}px ${FONT}`;
+        const tw = ctx.measureText(txt).width;
+        if (tw > r * 1.6) fs *= (r * 1.6) / tw;
+        ctx.font = `900 ${fs}px ${FONT}`;
+        ctx.fillStyle = el.fg ?? '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(txt, 0, fs * 0.04);
+        box = [X - r - 6 * u, Y - r - 6 * u, X + r + 6 * u, Y + r + 6 * u];
+        break;
+      }
+      case 'bar': {
+        // 資訊條：| 分欄，* 開頭用強調色
+        const cells = (el.text ?? '').split('|').map((c) => c.trim());
+        const w = Math.min(W * 0.9, 900 * u);
+        const h = 104 * u;
+        const e = ease(p);
+        ctx.globalAlpha *= e;
+        ctx.translate(0, (1 - e) * 40 * u);
+        ctx.save();
+        ctx.globalAlpha *= el.alpha ?? 0.82;
+        ctx.fillStyle = '#1c1c1c';
+        ctx.beginPath();
+        ctx.roundRect(X - w / 2, Y - h / 2, w, h, 22 * u);
+        ctx.fill();
+        ctx.restore();
+        const cw = w / Math.max(1, cells.length);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        cells.forEach((c, i) => {
+          const ce = ease((lt - 0.15 - i * 0.15) / 0.4);
+          const cx = X - w / 2 + cw * (i + 0.5);
+          if (i > 0) {
+            ctx.fillStyle = '#ffffff80';
+            ctx.fillRect(X - w / 2 + cw * i - 1.5 * u, Y - h * 0.24, 3 * u, h * 0.48);
+          }
+          ctx.save();
+          ctx.globalAlpha *= ce;
+          const txt = c.replace(/^\*/, '');
+          let fs = 54 * u;
+          ctx.font = `900 ${fs}px ${FONT}`;
+          const tw = ctx.measureText(txt).width;
+          if (tw > cw * 0.86) fs *= (cw * 0.86) / tw;
+          ctx.font = `900 ${fs}px ${FONT}`;
+          ctx.fillStyle = c.startsWith('*') ? (el.color ?? '#f07a3f') : '#ffffff';
+          ctx.fillText(txt, cx, Y + (1 - ce) * 10 * u + fs * 0.04);
+          ctx.restore();
+        });
+        box = [X - w / 2, Y - h / 2, X + w / 2, Y + h / 2];
+        break;
+      }
       case 'routes': {
         const PAL = ['#ff5a36', '#f2c14e', '#3fa9f5', '#34c38f', '#a78bfa', '#f472b6'];
         const isLight = (hex: string) => {
@@ -534,20 +610,133 @@ export const mapRenderer = () => {
   };
 
   /** 畫整個場景；bg 為底圖（可省略＝透明）；回傳每個元素的外框 */
-  const drawScene = (ctx: CanvasRenderingContext2D, W: number, H: number, sc: MScene, t: number, bg?: CanvasImageSource & { width: number; height: number }): Map<string, number[]> => {
-    ctx.clearRect(0, 0, W, H);
-    if (bg) {
-      const s = Math.max(W / bg.width, H / bg.height) * sc.bgZoom;
-      const dw = bg.width * s;
-      const dh = bg.height * s;
-      ctx.drawImage(bg, (W - dw) * sc.bgX, (H - dh) * sc.bgY, dw, dh);
-      if (sc.bgDim > 0) {
-        ctx.fillStyle = `rgba(0,0,0,${sc.bgDim})`;
-        ctx.fillRect(0, 0, W, H);
+  /* ───────── 太空降落開場 ───────── */
+  // 地球上的陸地（以圓盤座標 -1～1 表示，示意用）；台灣放在 TW，鏡頭對準它降落
+  // 經緯度轉成圓盤座標（台灣附近放大比例，示意用）
+  const geo = (lon: number, lat: number) => [0.16 + (lon - 121) * 0.03, -0.02 - (lat - 23.6) * 0.03];
+  // 鏡頭降落點：北台灣
+  const TW = geo(121.35, 24.95);
+  const LAND: number[][][] = [
+    [[-1, -0.55], [-0.55, -0.75], [-0.1, -0.7], [0.05, -0.45], [0.02, -0.25], [0.08, -0.12], [-0.02, 0.05], [-0.12, 0.2], [-0.32, 0.32], [-0.55, 0.38], [-0.7, 0.62], [-1, 0.7]],
+    [[0.32, -0.58], [0.42, -0.62], [0.48, -0.45], [0.38, -0.32], [0.3, -0.38]],
+    [[0.5, -0.4], [0.6, -0.5], [0.66, -0.36], [0.55, -0.24], [0.46, -0.28]],
+    [[0.16, 0.22], [0.24, 0.2], [0.27, 0.36], [0.22, 0.5], [0.15, 0.42], [0.13, 0.3]],
+    [[-0.35, 0.55], [-0.15, 0.5], [0.05, 0.62], [-0.05, 0.75], [-0.3, 0.72]],
+  ];
+  const TAIWAN = [
+    [121.52, 25.3], [121.75, 25.15], [122.0, 25.0], [121.85, 24.65], [121.78, 24.3], [121.6, 23.9], [121.48, 23.35], [121.3, 22.9], [120.95, 22.35], [120.85, 21.9],
+    [120.72, 22.1], [120.6, 22.35], [120.3, 22.55], [120.15, 22.95], [120.1, 23.4], [120.18, 23.8], [120.45, 24.3], [120.75, 24.7], [121.05, 25.05],
+  ].map(([lon, lat]) => geo(lon, lat));
+  const stars = Array.from({ length: 140 }, (_, i) => {
+    const r = (k: number) => {
+      const x = Math.sin((i * 7 + k) * 12.9898) * 43758.5453;
+      return x - Math.floor(x);
+    };
+    return [r(1), r(2), 0.6 + r(3) * 1.6, 0.35 + r(4) * 0.65];
+  });
+  const drawDescend = (ctx: CanvasRenderingContext2D, W: number, H: number, sc: MScene, p: number, bg?: CanvasImageSource & { width: number; height: number }) => {
+    const S = Math.min(W, H);
+    const u = S / 1080;
+    ctx.fillStyle = '#05070d';
+    ctx.fillRect(0, 0, W, H);
+    stars.forEach(([x, y, r, a]) => {
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.fillRect(x * W, y * H, r * u * 2, r * u * 2);
+    });
+    // 0–0.2：從遠處接近地球；0.2–1：鏡頭對準台灣往下降（對數縮放，速度先快後慢）
+    const s0 = 0.012;
+    const q = clamp((p - 0.2) / 0.8);
+    const k = q < 0.5 ? 4 * q * q * q : 1 - Math.pow(-2 * q + 2, 3) / 2;
+    const s = Math.exp(Math.log(s0) * (1 - k));
+    const approach = ease(p / 0.2);
+    const Rg = q > 0 ? S * 0.32 * (s / s0) : S * (0.12 + 0.2 * approach);
+    const cx = W / 2 - TW[0] * Rg;
+    const cy = H / 2 - TW[1] * Rg;
+    const gAlpha = 1 - clamp((s - 0.35) / 0.4);
+    if (gAlpha > 0) {
+      ctx.save();
+      ctx.globalAlpha *= gAlpha;
+      ctx.beginPath();
+      ctx.arc(cx, cy, Rg, 0, Math.PI * 2);
+      ctx.fillStyle = '#1f4f7a';
+      ctx.fill();
+      ctx.clip();
+      const poly = (pts: number[][], fill: string) => {
+        ctx.beginPath();
+        pts.forEach(([x, y], i) => (i ? ctx.lineTo(cx + x * Rg, cy + y * Rg) : ctx.moveTo(cx + x * Rg, cy + y * Rg)));
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+      };
+      LAND.forEach((l) => poly(l, '#5f8a52'));
+      poly(TAIWAN, '#7fae5e');
+      // 晨昏線：右下半邊較暗（實色，不用漸層模糊）
+      ctx.fillStyle = 'rgba(0,0,0,0.22)';
+      ctx.beginPath();
+      ctx.arc(cx + Rg * 0.35, cy + Rg * 0.35, Rg * 1.05, 0, Math.PI * 2);
+      ctx.arc(cx - Rg * 0.2, cy - Rg * 0.2, Rg * 1.1, 0, Math.PI * 2, true);
+      ctx.fill('evenodd');
+      ctx.restore();
+      // 目標圈
+      if (p < 0.45) {
+        const a = 1 - clamp((p - 0.3) / 0.15);
+        ctx.save();
+        ctx.globalAlpha *= a * ease(p / 0.15);
+        ctx.strokeStyle = '#ff7a3d';
+        ctx.lineWidth = 4 * u;
+        const pr = (p * 3) % 1;
+        ctx.beginPath();
+        ctx.arc(W / 2, H / 2, 18 * u + pr * 40 * u, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
       }
     }
+    // 底圖從台灣的位置長出來，到 s＝1 時與正常畫面完全重合
+    const a2 = clamp((s - 0.03) / 0.08);
+    if (a2 > 0) {
+      ctx.save();
+      ctx.globalAlpha *= a2;
+      ctx.translate(W / 2, H / 2);
+      ctx.scale(s, s);
+      ctx.translate(-W / 2, -H / 2);
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ctx.clip();
+      if (bg) drawBg(ctx, W, H, sc, bg);
+      else {
+        // 沒有底圖時挖空，露出下層的示意地圖
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillRect(0, 0, W, H);
+      }
+      ctx.restore();
+      if (s < 0.98) {
+        ctx.save();
+        ctx.globalAlpha *= a2 * (1 - clamp((s - 0.6) / 0.38));
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3 * u;
+        ctx.strokeRect(W / 2 - (W * s) / 2, H / 2 - (H * s) / 2, W * s, H * s);
+        ctx.restore();
+      }
+    }
+  };
+  const drawBg = (ctx: CanvasRenderingContext2D, W: number, H: number, sc: MScene, bg: CanvasImageSource & { width: number; height: number }) => {
+    const s = Math.max(W / bg.width, H / bg.height) * sc.bgZoom;
+    const dw = bg.width * s;
+    const dh = bg.height * s;
+    ctx.drawImage(bg, (W - dw) * sc.bgX, (H - dh) * sc.bgY, dw, dh);
+    if (sc.bgDim > 0) {
+      ctx.fillStyle = `rgba(0,0,0,${sc.bgDim})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  };
+
+  const drawScene = (ctx: CanvasRenderingContext2D, W: number, H: number, sc: MScene, t: number, bg?: CanvasImageSource & { width: number; height: number }): Map<string, number[]> => {
+    ctx.clearRect(0, 0, W, H);
+    const D = sc.descend || 0;
+    if (D > 0 && t < D) drawDescend(ctx, W, H, sc, t / D, bg);
+    else if (bg) drawBg(ctx, W, H, sc, bg);
     const boxes = new Map<string, number[]>();
-    for (const el of sc.els) boxes.set(el.id, drawEl(ctx, W, H, el, t));
+    for (const el of sc.els) boxes.set(el.id, drawEl(ctx, W, H, el, t - D));
     return boxes;
   };
 
@@ -610,6 +799,31 @@ export const TEMPLATES: { name: string; scene: () => MScene }[] = [
     }),
   },
   {
+    name: '降落基地',
+    scene: () => ({
+      ratio: '9:16',
+      loop: 6,
+      bgZoom: 1,
+      bgX: 0.5,
+      bgY: 0.5,
+      bgDim: 0.12,
+      descend: 2.6,
+      els: [
+        makeEl('text', { role: 'title', x: 0.5, y: 0.1, text: '基地位置', vertical: true, size: 1.35, delay: 0 }),
+        makeEl('text', { role: 'legend', x: 0.5, y: 0.14, text: '依建照圖套繪，僅供示意', vertical: true, size: 0.5, delay: 0.2 }),
+        makeEl('site', { role: 'site', color: '#f07a3f', alpha: 0.35, pts: [[0.29, 0.39], [0.5, 0.28], [0.58, 0.39], [0.47, 0.46], [0.56, 0.45], [0.43, 0.52]], delay: 0.3 }),
+        makeEl('badge', { role: 'badge', x: 0.44, y: 0.34, text: 'B棟', delay: 1.2 }),
+        makeEl('badge', { role: 'badge', x: 0.42, y: 0.44, text: 'A棟', delay: 1.4 }),
+        makeEl('road', { role: 'road', x: 0.27, y: 0.43, text: '某某路一段', variant: 'light', delay: 1.6 }),
+        makeEl('bar', { role: 'bar', x: 0.5, y: 0.61, text: 'A、B 兩棟', delay: 2 }),
+        makeEl('bar', { role: 'bar', x: 0.5, y: 0.68, text: '*地上 ○ 樓|地下 ○ 樓', delay: 2.3 }),
+        makeEl('text', { role: 'credit', x: 0.75, y: 0.8, text: '底圖：內政部國土測繪中心 正射影像', color: '#ffffffcc', vertical: false, size: 0.4, delay: 0 }),
+        makeEl('text', { role: 'subtitle', x: 0.5, y: 0.845, text: '字幕放這裡', vertical: true, delay: 2.6 }),
+        makeEl('text', { role: 'handle', x: 0.5, y: 0.93, text: '持家男子KC  @kch0263', vertical: true, size: 0.55, delay: 0 }),
+      ],
+    }),
+  },
+  {
     name: '放射路線',
     scene: () => ({
       ratio: '9:16',
@@ -637,7 +851,17 @@ export const TEMPLATES: { name: string; scene: () => MScene }[] = [
 ];
 
 export interface MapSceneInput {
-  template?: 'aerial' | 'street' | 'routes' | 'blank';
+  template?: 'aerial' | 'street' | 'site' | 'routes' | 'blank';
+  /** 太空降落開場秒數，0＝關閉 */
+  descend?: number;
+  /** 大標題（site 範本的「基地位置」） */
+  heading?: string;
+  /** 圓形標記，例如 A棟、B棟 */
+  badges?: { text: string; x?: number; y?: number; color?: string }[];
+  /** 資訊條，| 分欄、* 開頭用強調色 */
+  bars?: string[];
+  /** 基地框角點（0–1），可多於 4 點 */
+  site_points?: number[][];
   ratio?: MScene['ratio'];
   duration?: number;
   tag?: string;
@@ -667,7 +891,7 @@ export interface MapSceneInput {
 
 /** 從範本與文字組出地圖場景（給 MCP 與 API 使用） */
 export const buildMapScene = (a: MapSceneInput): MScene => {
-  const tpl = TEMPLATES[{ aerial: 0, street: 1, routes: 2, blank: 3 }[a.template ?? 'aerial'] ?? 0];
+  const tpl = TEMPLATES[{ aerial: 0, street: 1, site: 2, routes: 3, blank: 4 }[a.template ?? 'aerial'] ?? 0];
   const sc = tpl.scene();
   if (a.ratio && a.ratio in RATIO_PX) sc.ratio = a.ratio;
   if (a.duration) sc.loop = Math.max(2, Math.min(20, a.duration));
@@ -679,12 +903,27 @@ export const buildMapScene = (a: MapSceneInput): MScene => {
     if (!v) sc.els = sc.els.filter((e) => e.role !== r);
     else byRole(r).forEach((e) => (e.text = v));
   };
+  if (typeof a.descend === 'number') sc.descend = Math.max(0, Math.min(6, a.descend));
+  setText('title', a.heading);
   setText('tag', a.tag);
   setText('legend', a.legend);
   setText('siteLabel', a.site_label);
   setText('subtitle', a.subtitle);
   setText('credit', a.credit);
   setText('handle', a.handle);
+  if (a.site_points && a.site_points.length >= 3) byRole('site').forEach((e) => (e.pts = a.site_points!.slice(0, 12).map((p) => [Number(p[0]), Number(p[1])])));
+  if (a.badges) {
+    const old = byRole('badge');
+    sc.els = sc.els.filter((e) => e.role !== 'badge');
+    a.badges.slice(0, 8).forEach((b, i) => sc.els.push(makeEl('badge', { role: 'badge', text: b.text, x: b.x ?? old[i]?.x ?? 0.4 + i * 0.1, y: b.y ?? old[i]?.y ?? 0.4, color: b.color ?? old[i]?.color, delay: 1.2 + i * 0.2 })));
+  }
+  if (a.bars) {
+    const old = byRole('bar');
+    const at = sc.els.findIndex((e) => e.role === 'bar');
+    sc.els = sc.els.filter((e) => e.role !== 'bar');
+    const made = a.bars.slice(0, 4).map((t, i) => makeEl('bar', { role: 'bar', text: t, x: 0.5, y: old[i]?.y ?? (old[0]?.y ?? 0.61) + i * 0.07, delay: 2 + i * 0.3 }));
+    sc.els.splice(at >= 0 ? at : sc.els.length, 0, ...made);
+  }
   if (a.site_color) byRole('site').concat(byRole('siteLabel')).forEach((e) => (e.color = a.site_color));
   if (a.info_lines) {
     const info = byRole('info')[0] ?? (sc.els.push(makeEl('info', { role: 'info', delay: 2 })), byRole('info')[0]);

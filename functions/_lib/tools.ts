@@ -3,7 +3,7 @@ import { comboOutline, comboPrompt, comboHtml, encodeCombo, findEffect, normaliz
 import { loopSeconds, toneVars } from '../../src/engine';
 import { buildPrompt, type PromptMode, type Ratio } from '../../src/prompts';
 import type { Fx } from '../../src/types';
-import { buildMapScene, type MapSceneInput } from '../../src/mapkit';
+import { buildMapScene, sceneLength, type MapSceneInput } from '../../src/mapkit';
 import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
 import { KITS, USES } from '../../src/uses';
 import { MODULE_INFO, normalizePhotoScene, PARAMS, photoFxId, PHOTO_MODULES, type PModule, type PScene } from '../../src/photokit';
@@ -242,7 +242,12 @@ export const TOOLS: ToolDef[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        template: { type: 'string', enum: ['aerial', 'street', 'routes', 'blank'], description: '預設 aerial；routes＝放射路線（從一個起點拉箭頭到多個目的地）' },
+        template: { type: 'string', enum: ['aerial', 'street', 'site', 'routes', 'blank'], description: '預設 aerial；site＝太空降落後畫出基地（大標題＋多邊形基地＋A棟/B棟圓形標記＋資訊條）；routes＝放射路線（從一個起點拉箭頭到多個目的地）' },
+        descend: { type: 'number', description: '太空降落開場秒數（像 Google 地球從太空降到底圖），0＝關閉；site 範本預設 2.6' },
+        heading: { type: 'string', description: 'site 範本的大標題，例如「基地位置」' },
+        site_points: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '基地多邊形角點 [[x,y],…]（0–1），可 3–12 點，L 形基地用 6 點' },
+        badges: { type: 'array', items: { type: 'object', required: ['text'], properties: { text: { type: 'string' }, x: { type: 'number' }, y: { type: 'number' }, color: { type: 'string' } } }, description: '圓形標記，例如 A棟、B棟' },
+        bars: { type: 'array', items: { type: 'string' }, description: '資訊條，一條一個字串；| 分欄、* 開頭用強調色，例如「*地上 15 樓|地下 3 樓」（樓層數請用建照資料）' },
         ratio: { type: 'string', enum: ['9:16', '16:9', '1:1'], description: '預設 9:16' },
         duration: { type: 'number', description: '整段秒數，預設 6' },
         tag: { type: 'string', description: '左上標題籤，例如「區域｜案名」；空字串＝移除' },
@@ -290,7 +295,7 @@ export const TOOLS: ToolDef[] = [
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
       const sc = buildMapScene(a as MapSceneInput);
-      const scene = { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sc.loop + 1 };
+      const scene = { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sceneLength(sc) + 1 };
       const { combo } = normalizeCombo({ title: String(a.title ?? '地圖場景預覽'), ratio: sc.ratio, transition: 'cut', scenes: [scene] });
       return {
         combo_scene: scene,
@@ -548,7 +553,7 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
-export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分三個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位。所有特效都是原生 HTML/CSS/JS。
+export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分四個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
 你可以：查特效（search_effects / get_effect）、把多個特效組成 Combo 動畫（compose_combo），並存進 Combo 庫（save_combo）當作日後參考（list_combos / get_combo）。
 
 組 Combo 的建議流程：
@@ -556,7 +561,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
-地圖片段請用 build_map_scene（要表達「從這裡到 A、B、C 都方便」時用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡（推拉、甩入、3D 卡片、前後對比、放大鏡）請用 build_photo_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡（推拉、甩入、3D 卡片、前後對比、放大鏡）請用 build_photo_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

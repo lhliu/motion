@@ -221,11 +221,22 @@ const unwatchAll = () => {
 const refreshAll = () => slots.forEach((s) => s.visible && renderSlot(s));
 
 /* ───────── 工作區 ───────── */
+const EXPLAIN_PROMPT = `請幫我做一支新的「圖解動畫」，收進 Motion Atlas（repo：lhliu/motion）的圖解動畫工作區。
+
+內容：（描述要講的工法／剖面／流程，並附上草圖或參考截圖）
+要換的文字：（標題、副標、各部位名稱）
+
+做法：
+1. 參考 src/effects/diagram.ts 現有的「樓板剖面層疊」「同層排水剖面」，用同樣的寫法新增一筆 Fx（cat: 'diagram'）：canvas 繪製、9:16 版面、文字從 words 讀取、run 必須自給自足。
+2. 編號 no 用目前最大編號 +1（不可重用）。
+3. 全部硬邊，不用陰影、模糊、光暈；數字與規格只用我提供、可查證的資料。
+4. 在本機預覽確認動畫後再 commit、push。`;
 const secFx = (id: SecId = state.sec) => EFFECTS.filter((f) => secOf(f) === id);
 const SEC_ICON: Record<SecId, string> = {
   text: '<svg viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></svg>',
   photo: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 8"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  explain: '<svg viewBox="0 0 24 24"><path d="M3 8l9-4 9 4-9 4z"/><path d="M3 12l9 4 9-4M3 16l9 4 9-4"/></svg>',
 };
 const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: string; ph: string; hero: string[] }> = {
   text: {
@@ -252,6 +263,14 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
     ph: '輸入地點或標題，全部卡片即時套用；多個詞用 / 分隔',
     hero: [],
   },
+  explain: {
+    small: '一張剖面講清楚',
+    big: '圖解動畫',
+    lede: '樓板層疊、同層排水、結構工法……這區是<strong>一支一支客製</strong>的示意動畫：文字可以直接換，構圖要改就把原始碼交給 <strong>AI 改寫</strong>，改好的新圖解再收進來。',
+    wb: '預覽文字',
+    ph: '一行一個項目，用 / 分隔；格式見各招的建議',
+    hero: [],
+  },
 };
 const wsEl = $('#ws');
 const renderWs = () => {
@@ -269,8 +288,8 @@ const renderHeroCopy = () => {
   $('#heroLede').innerHTML = h.lede;
   $('#wbLabel').textContent = h.wb;
   $<HTMLInputElement>('#userText').placeholder = h.ph;
-  $('#heroStudio').textContent = { text: '打開水滴工作室', photo: '打開圖片工作室', map: '打開地圖工作室' }[state.sec];
-  $('#heroCtaNote').textContent = { text: '邊緣零模糊的水滴標題，可疊進影片', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放' }[state.sec];
+  $('#heroStudio').textContent = { text: '打開水滴工作室', photo: '打開圖片工作室', map: '打開地圖工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
+  $('#heroCtaNote').textContent = { text: '邊緣零模糊的水滴標題，可疊進影片', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
   const n = secFx().length;
   $('#statFx').textContent = String(n);
   $('#statCat').textContent = String(CATEGORIES.filter((c) => c.sec === state.sec).length);
@@ -1006,7 +1025,10 @@ renderCats();
 renderTags();
 updateFavCount();
 renderGrid();
-$('#heroStudio').addEventListener('click', () => (state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : studio.open()));
+$('#heroStudio').addEventListener('click', () => {
+  if (state.sec === 'explain') return copy(EXPLAIN_PROMPT, '已複製，貼給 Claude Code 並附上草圖');
+  return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : studio.open();
+});
 // 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊
 new ResizeObserver(([e]) => document.documentElement.style.setProperty('--top-h', `${Math.round(e.borderBoxSize?.[0]?.blockSize ?? (e.target as HTMLElement).offsetHeight)}px`)).observe($('.ma-top'));
 const startHero = () => heroShow(0);

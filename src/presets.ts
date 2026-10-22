@@ -1,6 +1,6 @@
 // 預設（preset）：工作室調好的一份設定，有短代碼，AI 與網站來回修改都用它。網站與伺服器共用，不可在載入時碰 DOM。
 import { parseDrop } from './drop';
-import type { MScene } from './mapkit';
+import { sceneLength, type MScene } from './mapkit';
 import { isPhotoFx, normalizePhotoScene, photoFxId, type PScene } from './photokit';
 
 export type PresetKind = 'map' | 'drop' | 'photo';
@@ -33,7 +33,7 @@ export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, 
   const note = p.id ? `預設 ${p.id}${p.name ? `「${p.name}」` : ''}` : undefined;
   if (p.kind === 'map') {
     const sc = p.data as MScene;
-    return { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: (sc.loop || 6) + 1, note };
+    return { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sceneLength(sc) + 1, note };
   }
   if (p.kind === 'photo') {
     const sc = normalizePhotoScene({ ...(p.data as PScene), ...(o.images ? { images: o.images } : {}) });

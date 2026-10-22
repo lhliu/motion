@@ -120,7 +120,7 @@ export const map: Fx[] = [
       const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
       const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
       const t0 = performance.now();
-      const loop = Math.max(2, sc.loop || 6) + 1.5;
+      const loop = Math.max(2, sc.loop || 6) + ((sc as { descend?: number }).descend || 0) + 1.5;
       let raf = 0;
       const f = (now: number) => {
         raf = requestAnimationFrame(f);
@@ -189,7 +189,7 @@ export const map: Fx[] = [
       const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
       const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
       const t0 = performance.now();
-      const loop = Math.max(2, sc.loop || 6) + 1.5;
+      const loop = Math.max(2, sc.loop || 6) + ((sc as { descend?: number }).descend || 0) + 1.5;
       let raf = 0;
       const f = (now: number) => {
         raf = requestAnimationFrame(f);

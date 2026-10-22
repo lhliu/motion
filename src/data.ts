@@ -14,12 +14,14 @@ import { retro } from './effects/retro';
 import { map } from './effects/map';
 import { liquid } from './effects/liquid';
 import { photo } from './effects/photo';
+import { diagram } from './effects/diagram';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
   { id: 'text', code: 'TEXT', zh: '文字特效', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字、水滴標題', studio: 'drop' },
   { id: 'photo', code: 'PHOTO', zh: '圖片運鏡', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
   { id: 'map', code: 'MAP', zh: '地圖區位', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
+  { id: 'explain', code: 'EXPLAIN', zh: '圖解動畫', en: 'Explainer', desc: '工法、剖面、流程示意；一支一支客製，改圖請交給 AI' },
 ];
 
 export const CATEGORIES: Category[] = [
@@ -40,6 +42,7 @@ export const CATEGORIES: Category[] = [
   { id: 'pmulti', sec: 'photo', code: 'MULTI', zh: '多張組合', tagline: '前後對比、宮格、並排' },
   { id: 'pmark', sec: 'photo', code: 'FOCUS', zh: '標註轉場', tagline: '圈重點、定格、揭露、穿越' },
   { id: 'map', sec: 'map', code: 'MAP', zh: '地圖區位', tagline: '把位置、距離、通勤講清楚' },
+  { id: 'diagram', sec: 'explain', code: 'DIAGRAM', zh: '工法剖面', tagline: '建材、管線、結構，一張剖面講清楚' },
 ];
 
 const order = CATEGORIES.map((c) => c.id);
@@ -60,10 +63,11 @@ export const EFFECTS: Fx[] = [
   ...map,
   ...liquid,
   ...photo,
+  ...diagram,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 文字特效：指定用途、標籤收斂成固定詞彙，並依用途重新排序（編號跟著用途走）
-const secIdx = (f: Fx) => ['text', 'photo', 'map'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
+const secIdx = (f: Fx) => ['text', 'photo', 'map', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
 const useIdx = (f: Fx) => USES.findIndex((u) => u.id === f.use);
 // 同一用途內依 uses.ts 列出的順序（常用的在前）
 const useRank = new Map(Object.keys(USE_OF).map((id, i) => [id, i]));

@@ -380,4 +380,46 @@ export const card: Fx[] = [
       return `<div class="cd"><div class="fc"><b>Q</b><span>${esc(q)}</span></div><div class="fc"><b>A</b><span>${esc(a)}</span></div></div>`;
     },
   },
+  {
+    id: 'title-checklist',
+    no: 148,
+    cat: 'card',
+    zh: '標題重點清單',
+    en: 'Headline Checklist',
+    desc: '大標題中的數字特別放大，下方膠囊條逐條打勾',
+    tags: ['重點', '數據', 'Shorts'],
+    tone: 'ink',
+    sample: ['某某建設 *30* 年', '建築工法新標竿', '專利制音樓板', '同層排水＋一體式衛浴', '鋁模施工・長期保固'],
+    hint: '第 1 行標題（用 *…* 包住要放大的數字或詞）、第 2 行副標、之後每行一個重點（最多 5 項）',
+    motion: '深色背景上，標題文字由下往上浮現，用星號標記的數字以主色、約兩倍字級彈性放大登場；副標接著出現；下方圓角膠囊條依序從左滑入，每條左側的主色圓形打勾記號彈出並畫上白色勾勾。全部硬邊，不用陰影或模糊。',
+    motionEn: 'On a dark background the headline rises in, with the starred number popping in at about twice the size in the accent color; the subtitle follows; below, rounded pill rows slide in from the left one by one, each with an accent check circle that pops in and draws a white tick. Hard edges, no shadow or blur.',
+    css: `
+.S .w{display:flex;flex-direction:column;align-items:center;width:min(88cqw,120cqmin);gap:2.6cqmin}
+.S h3{margin:0;font-weight:900;text-align:center;line-height:1.1;font-size:10.5cqmin;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:0 2.2cqmin}
+.S h3 span{display:inline-block;animation:K_up 6.5s cubic-bezier(.2,.8,.2,1) infinite both}
+.S h3 b{display:inline-block;color:var(--ac);font-size:1.85em;line-height:.85;animation:K_num 6.5s cubic-bezier(.34,1.56,.64,1) infinite both;animation-delay:.2s}
+.S .sub{margin:0;font-size:7.4cqmin;font-weight:900;animation:K_up 6.5s cubic-bezier(.2,.8,.2,1) infinite both;animation-delay:.35s}
+.S .ls{display:flex;flex-direction:column;gap:2.4cqmin;margin-top:4cqmin;width:min(78cqw,96cqmin)}
+.S .it{display:flex;align-items:center;gap:2.6cqmin;padding:2cqmin 4cqmin;border-radius:99cqmin;background:color-mix(in srgb,var(--fg) 13%,transparent);font-size:5cqmin;font-weight:800;animation:K_in 6.5s cubic-bezier(.2,.8,.2,1) infinite both;animation-delay:calc(.9s + var(--i)*.35s)}
+.S .ck{width:6cqmin;height:6cqmin;border-radius:50%;background:var(--ac);flex:none;display:grid;place-items:center;animation:K_pop 6.5s cubic-bezier(.34,1.56,.64,1) infinite both;animation-delay:calc(1.05s + var(--i)*.35s)}
+.S .ck svg{width:64%;height:64%;overflow:visible}
+.S .ck path{fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:30;stroke-dashoffset:30;animation:K_tick 6.5s ease-out infinite;animation-delay:calc(1.2s + var(--i)*.35s)}
+@keyframes K_up{0%{opacity:0;transform:translateY(40%)}7%,93%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes K_num{0%{opacity:0;transform:scale(.2)}9%,93%{opacity:1;transform:scale(1)}100%{opacity:0}}
+@keyframes K_in{0%{opacity:0;transform:translateX(-10%)}6%,93%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes K_pop{0%{transform:scale(0)}6%,93%{transform:scale(1)}100%{transform:scale(0)}}
+@keyframes K_tick{0%,2%{stroke-dashoffset:30}8%,93%{stroke-dashoffset:0}100%{stroke-dashoffset:30}}`,
+    html: (w) => {
+      const [title = '', sub = '', ...items] = w;
+      // *…* 包住的部分放大
+      const head = title
+        .split(/\*([^*]+)\*/)
+        .map((part, i) => (i % 2 ? `<b>${esc(part)}</b>` : part.trim() ? `<span>${esc(part.trim())}</span>` : ''))
+        .join('');
+      return `<div class="w"><h3>${head}</h3>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}<div class="ls">${items
+        .slice(0, 5)
+        .map((t, i) => `<div class="it" style="--i:${i}"><span class="ck"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><span>${esc(t)}</span></div>`)
+        .join('')}</div></div>`;
+    },
+  },
 ];
