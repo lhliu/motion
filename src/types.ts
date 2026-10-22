@@ -10,7 +10,9 @@ export type CatId =
   | 'card'
   | 'kinetic'
   | 'texture'
-  | 'retro';
+  | 'retro'
+  | 'map'
+  | 'liquid';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';

@@ -29,3 +29,29 @@ export const rand = (seed: number): number => {
 export const range = (n: number): number[] => Array.from({ length: n }, (_, i) => i);
 
 export const rep = (n: number, f: (i: number) => string): string => range(n).map(f).join('');
+
+/** 以極座標半徑陣列產生平滑封閉曲線（Catmull-Rom 轉三次貝茲），點數固定，可用於 SVG 形變動畫 */
+export const blobPath = (cx: number, cy: number, radii: number[], rot = 0): string => {
+  const n = radii.length;
+  const p = radii.map((r, i) => {
+    const a = rot + (i / n) * Math.PI * 2;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  });
+  const f = (v: number) => v.toFixed(1);
+  let d = `M${f(p[0][0])} ${f(p[0][1])}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = p[(i - 1 + n) % n];
+    const p1 = p[i];
+    const p2 = p[(i + 1) % n];
+    const p3 = p[(i + 2) % n];
+    d += `C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
+  }
+  return d + 'Z';
+};
+
+/** 有機形狀的半徑：lobes 瓣數、amp 起伏、phase 相位、wobble 細節 */
+export const lobes = (n: number, base: number, k: number, amp: number, phase = 0, wobble = 0, seed = 1): number[] =>
+  range(n).map((i) => {
+    const t = (i / n) * Math.PI * 2;
+    return base * (1 + amp * Math.cos(k * t + phase) + wobble * (rand(seed * 31 + i) - 0.5));
+  });
