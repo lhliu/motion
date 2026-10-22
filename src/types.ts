@@ -16,6 +16,7 @@ export type CatId =
   | 'photo'
   | 'pmulti'
   | 'pmark'
+  | 'pcut'
   | 'diagram';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */

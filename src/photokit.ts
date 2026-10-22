@@ -16,10 +16,17 @@ export type PModule =
   | 'magnify'
   | 'freeze'
   | 'mask'
-  | 'zoomthru';
+  | 'zoomthru'
+  | 'slices'
+  | 'tiles'
+  | 'tear'
+  | 'collage'
+  | 'morph'
+  | 'occlude';
 
-/** 模組分組：單張運鏡、多張組合、標註與轉場（對應圖鑑分類） */
-export type PGroup = 'photo' | 'pmulti' | 'pmark';
+/** 模組分組：單張運鏡、多張組合、標註轉場、裁切與遮罩（對應圖鑑分類） */
+export type PGroup = 'photo' | 'pmulti' | 'pmark' | 'pcut';
+export const PHOTO_GROUPS: Record<PGroup, string> = { photo: '單張運鏡', pmulti: '多張組合', pmark: '標註轉場', pcut: '裁切與遮罩' };
 
 export interface PCaption {
   text: string;
@@ -70,8 +77,14 @@ export const MODULE_INFO: Record<PModule, ModuleInfo> = {
   split: { zh: '分割畫面', en: 'Split Screen', desc: '畫面切成 2–3 格，照片依序滑入並排比較', group: 'pmulti', names: N(3) },
   magnify: { zh: '局部放大鏡', en: 'Magnifier', desc: '圈出細節，放大到旁邊的圓形鏡頭並加上標註', group: 'pmark', names: ['照片'] },
   freeze: { zh: '影片定格標註', en: 'Freeze Frame', desc: '畫面定格閃白、縮成相片，再圈出重點加上標籤', group: 'pmark', names: ['定格畫面'] },
-  mask: { zh: '遮罩揭露', en: 'Mask Reveal', desc: '以圓形、斜切、百葉窗等硬邊遮罩揭露照片', group: 'pmark', names: ['揭露的照片', '底下的照片（可留空）'], optional: [1] },
+  mask: { zh: '遮罩揭露', en: 'Mask Reveal', desc: '以圓形、斜切、百葉窗等硬邊遮罩揭露照片', group: 'pcut', names: ['揭露的照片', '底下的照片（可留空）'], optional: [1] },
   zoomthru: { zh: '縮放穿越', en: 'Zoom Through', desc: '鏡頭衝進照片的一點，穿越到下一張照片', group: 'pmark', names: ['第一張', '第二張'] },
+  slices: { zh: '切片錯位', en: 'Slice Assembly', desc: '同一張照片切成條帶，交錯滑入後拼回完整畫面', group: 'pcut', names: ['照片'] },
+  tiles: { zh: '拼塊組圖', en: 'Mosaic Assembly', desc: '照片裁成大小不同的矩形，依序展開並拼成完整構圖', group: 'pcut', names: ['照片'] },
+  tear: { zh: '撕紙揭露', en: 'Paper Tear', desc: '不規則紙邊掃過畫面，撕開第一張照片、露出第二張', group: 'pcut', names: ['撕開前', '撕開後'] },
+  collage: { zh: '剪報拼貼', en: 'Cutout Collage', desc: '透明底物件加上剪紙描邊，依序移動、旋轉並堆疊；請先準備去背 PNG／WebP', group: 'pcut', names: ['背景（可留空）', '剪報 1（去背 PNG／WebP）', '剪報 2（去背 PNG／WebP）', '剪報 3（去背 PNG／WebP）'], optional: [0, 2, 3] },
+  morph: { zh: '形狀變換', en: 'Morphing Mask', desc: '圖片框從圓形拉成膠囊，再展開成全螢幕', group: 'pcut', names: ['照片', '底圖（可留空）'], optional: [1] },
+  occlude: { zh: '前景遮擋換景', en: 'Foreground Wipe', desc: '門片或斜切前景掃過鏡頭，在完全遮住畫面時換景，可加透明前景圖', group: 'pcut', names: ['第一個場景', '第二個場景', '前景（去背 PNG／WebP，可留空）'], optional: [2] },
 };
 export const slotsOf = (m: PModule) => MODULE_INFO[m].names.length;
 
@@ -91,6 +104,12 @@ export const MODULE_DEFAULTS: Record<PModule, Record<string, number | string>> =
   freeze: { hold: 1.2, flash: 1, shrink: 0.84, tilt: -3, border: 16, frame: '#ffffff', stamp: 'PAUSE', ax: 0.56, ay: 0.55, ar: 0.09, lx: 0.32, ly: 0.24, label: '注意這裡', ring: '#ff5a36' },
   mask: { shape: 'circle', cx: 0.5, cy: 0.5, angle: 20, delay: 0.3, dur: 1.2, bands: 6, edge: '#ffd23f', edgeW: 10, push: 1.06 },
   zoomthru: { cx: 0.5, cy: 0.42, at: 2.6, dur: 1.1, depth: 5, mode: 'circle', ring: '#ffffff' },
+  slices: { axis: 'h', count: 7, order: 'forward', delay: 0.2, dur: 0.9, stagger: 0.09 },
+  tiles: { cols: 4, rows: 5, order: 'diagonal', seed: 3, delay: 0.2, dur: 0.8, stagger: 1.1 },
+  tear: { dir: 'right', delay: 0.7, dur: 1.8, rough: 35, paper: 22, color: '#f5f1e8', seed: 4 },
+  collage: { count: 3, size: 0.6, angle: 12, border: 16, color: '#ffffff', delay: 0.2, dur: 0.7, stagger: 0.35, x1: 0.35, y1: 0.34, x2: 0.65, y2: 0.5, x3: 0.42, y3: 0.7 },
+  morph: { cx: 0.5, cy: 0.5, radius: 0.18, delay: 0.5, dur: 2.2, border: 6, color: '#ffffff' },
+  occlude: { dir: 'right', shape: 'slant', color: '#ff5a36', delay: 0.8, dur: 1.8, width: 1.3, angle: 12 },
 };
 
 /** 拖曳把手對應的參數（x, y） */
@@ -102,6 +121,9 @@ export const HANDLE_KEYS: Record<string, [string, string]> = {
   center: ['cx', 'cy'],
   origin: ['ox', 'oy'],
   title: ['titleX', 'titleY'],
+  cut1: ['x1', 'y1'],
+  cut2: ['x2', 'y2'],
+  cut3: ['x3', 'y3'],
 };
 
 /** 參數規格：工作室依此產生控制項，MCP 依此說明參數 */
@@ -273,6 +295,62 @@ export const PARAMS: Record<PModule, PField[]> = {
     { k: 'dur', label: '衝入時間（秒）', type: 'range', min: 0.3, max: 3, step: 0.05 },
     { k: 'depth', label: '放大倍數', type: 'range', min: 2, max: 12, step: 0.5 },
     { k: 'ring', label: '開口外框顏色', type: 'color' },
+  ],
+  slices: [
+    { k: 'axis', label: '切片方向', type: 'seg', opts: [['h', '橫條'], ['v', '直條']] },
+    { k: 'count', label: '切片數', type: 'range', min: 2, max: 16, step: 1 },
+    { k: 'order', label: '進場順序', type: 'seg', opts: [['forward', '依序'], ['reverse', '反向'], ['center', '中央向外']] },
+    { k: 'delay', label: '開始時間（秒）', type: 'range', min: 0, max: 5, step: 0.1 },
+    { k: 'dur', label: '每片滑入時間（秒）', type: 'range', min: 0.2, max: 3, step: 0.05 },
+    { k: 'stagger', label: '切片間隔（秒）', type: 'range', min: 0, max: 0.3, step: 0.01 },
+  ],
+  tiles: [
+    { k: 'cols', label: '拼塊欄數', type: 'range', min: 2, max: 8, step: 1 },
+    { k: 'rows', label: '拼塊列數', type: 'range', min: 2, max: 8, step: 1 },
+    { k: 'order', label: '展開順序', type: 'seg', opts: [['diagonal', '斜向'], ['row', '逐列'], ['random', '隨機']] },
+    { k: 'seed', label: '拼塊變化', type: 'range', min: 1, max: 30, step: 1 },
+    { k: 'delay', label: '開始時間（秒）', type: 'range', min: 0, max: 5, step: 0.1 },
+    { k: 'dur', label: '每塊展開時間（秒）', type: 'range', min: 0.2, max: 3, step: 0.05 },
+    { k: 'stagger', label: '整組錯開時間（秒）', type: 'range', min: 0, max: 3, step: 0.05 },
+  ],
+  tear: [
+    { k: 'dir', label: '撕開方向', type: 'seg', opts: [['right', '向右'], ['left', '向左'], ['down', '向下'], ['up', '向上']] },
+    { k: 'rough', label: '紙邊起伏', type: 'range', min: 8, max: 100, step: 1 },
+    { k: 'paper', label: '紙邊厚度', type: 'range', min: 0, max: 60, step: 1 },
+    { k: 'color', label: '紙邊顏色', type: 'color' },
+    { k: 'seed', label: '撕痕變化', type: 'range', min: 1, max: 30, step: 1 },
+    { k: 'delay', label: '開始時間（秒）', type: 'range', min: 0, max: 5, step: 0.1 },
+    { k: 'dur', label: '撕開時間（秒）', type: 'range', min: 0.2, max: 5, step: 0.05 },
+  ],
+  collage: [
+    { k: 'count', label: '剪報張數', type: 'seg', opts: [['1', '1'], ['2', '2'], ['3', '3']] },
+    { k: 'size', label: '剪報大小', type: 'range', min: 0.15, max: 1, step: 0.01 },
+    { k: 'angle', label: '散開角度', type: 'range', min: 0, max: 30, step: 1 },
+    { k: 'border', label: '剪紙描邊', type: 'range', min: 0, max: 40, step: 1 },
+    { k: 'color', label: '描邊顏色', type: 'color' },
+    { k: 'delay', label: '開始時間（秒）', type: 'range', min: 0, max: 5, step: 0.1 },
+    { k: 'dur', label: '每張進場時間（秒）', type: 'range', min: 0.2, max: 3, step: 0.05 },
+    { k: 'stagger', label: '張與張間隔（秒）', type: 'range', min: 0, max: 1.5, step: 0.05 },
+    pos('x1', '剪報 1 位置 X'), pos('y1', '剪報 1 位置 Y'),
+    pos('x2', '剪報 2 位置 X'), pos('y2', '剪報 2 位置 Y'),
+    pos('x3', '剪報 3 位置 X'), pos('y3', '剪報 3 位置 Y'),
+  ],
+  morph: [
+    pos('cx', '起始圓形中心 X'), pos('cy', '起始圓形中心 Y'),
+    { k: 'radius', label: '起始圓形半徑', type: 'range', min: 0.04, max: 0.4, step: 0.01 },
+    { k: 'border', label: '圖片框描邊', type: 'range', min: 0, max: 30, step: 1 },
+    { k: 'color', label: '描邊顏色', type: 'color' },
+    { k: 'delay', label: '圓形停留（秒）', type: 'range', min: 0, max: 5, step: 0.1 },
+    { k: 'dur', label: '形狀變換時間（秒）', type: 'range', min: 0.4, max: 5, step: 0.05 },
+  ],
+  occlude: [
+    { k: 'dir', label: '前景移動方向', type: 'seg', opts: [['right', '向右'], ['left', '向左'], ['down', '向下'], ['up', '向上']] },
+    { k: 'shape', label: '遮擋底板', type: 'seg', opts: [['door', '門片'], ['slant', '斜切']] },
+    { k: 'color', label: '前景底板顏色', type: 'color' },
+    { k: 'width', label: '遮擋寬度', type: 'range', min: 1.05, max: 2, step: 0.05 },
+    { k: 'angle', label: '斜切角度', type: 'range', min: -25, max: 25, step: 1 },
+    { k: 'delay', label: '開始時間（秒）', type: 'range', min: 0, max: 5, step: 0.1 },
+    { k: 'dur', label: '掃過時間（秒）', type: 'range', min: 0.4, max: 5, step: 0.05 },
   ],
 };
 
@@ -480,6 +558,37 @@ export const photoRenderer = () => {
     return c as Img;
   };
 
+  /** 透明剪報示意：不依賴外部圖片，圖鑑與匯出也能預覽裁出的輪廓。 */
+  const placeholderCutout = (i: number): Img => {
+    const key = `cutout-${i}`;
+    let c = holders.get(key);
+    if (!c) {
+      c = document.createElement('canvas');
+      c.width = 600;
+      c.height = 700;
+      const x = c.getContext('2d')!;
+      x.fillStyle = ['#eb6b43', '#68a591', '#e4b94f'][i % 3];
+      x.beginPath();
+      x.moveTo(70, 660);
+      x.lineTo(70, 240);
+      x.lineTo(200, 240);
+      x.lineTo(200, 80 + i * 35);
+      x.lineTo(450, 80 + i * 35);
+      x.lineTo(450, 360);
+      x.lineTo(530, 360);
+      x.lineTo(530, 660);
+      x.closePath();
+      x.fill();
+      x.fillStyle = '#243c4b';
+      for (let row = 0; row < 7; row++) for (let col = 0; col < 3; col++) x.fillRect(230 + col * 65, 145 + i * 35 + row * 65, 32, 36);
+      x.fillStyle = '#f5f1e8';
+      x.fillRect(100, 330, 60, 180);
+      x.fillRect(260, 570, 105, 90);
+      holders.set(key, c);
+    }
+    return c as Img;
+  };
+
   /** 手機示意長截圖：物件頁（灰條代表文字，不放假數字） */
   const placeholderTall = (): Img => {
     let c = holders.get('tall');
@@ -584,6 +693,38 @@ export const photoRenderer = () => {
       x.drawImage(img, (img.width - vw) / 2, (img.height - vh) / 2, vw, vh, border, border, iw, ih);
       x.restore();
     }
+    if (framed.size > 40) framed.clear();
+    framed.set(key, c);
+    return c;
+  };
+
+  /** 沿圖片 alpha 輪廓描邊，不把透明剪報變成矩形相框。 */
+  const cutoutTex = (im: Img, w: number, h: number, border: number, color: string) => {
+    const iw = Math.max(1, Math.round(w));
+    const ih = Math.max(1, Math.round(h));
+    const bd = Math.max(0, Math.round(border));
+    const key = `cut|${idOf(im)}|${iw}x${ih}|${bd}|${color}`;
+    const cached = framed.get(key);
+    if (cached) return cached;
+    const silhouette = document.createElement('canvas');
+    silhouette.width = iw + 2 * bd;
+    silhouette.height = ih + 2 * bd;
+    const sx = silhouette.getContext('2d')!;
+    sx.drawImage(im, bd, bd, iw, ih);
+    sx.globalCompositeOperation = 'source-in';
+    sx.fillStyle = color;
+    sx.fillRect(0, 0, silhouette.width, silhouette.height);
+    const c = document.createElement('canvas');
+    c.width = silhouette.width;
+    c.height = silhouette.height;
+    const x = c.getContext('2d')!;
+    if (bd) {
+      for (let k = 0; k < 24; k++) {
+        const angle = (k / 24) * Math.PI * 2;
+        x.drawImage(silhouette, Math.cos(angle) * bd, Math.sin(angle) * bd);
+      }
+    }
+    x.drawImage(im, bd, bd, iw, ih);
     if (framed.size > 40) framed.clear();
     framed.set(key, c);
     return c;
@@ -1428,6 +1569,221 @@ export const photoRenderer = () => {
         }
       }
       if (shape === 'circle' || shape === 'diamond' || shape === 'rect') handles.center = [cx, cy];
+    }
+
+    // 預留尾端定格，PNG 序列的最後一格（L - 1/fps）也必須完成。
+    const motionTime = (end: number) => t * Math.max(1, end / Math.max(0.1, L - 0.15));
+    const noise = (n: number) => {
+      const v = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+      return v - Math.floor(v);
+    };
+
+    if (sc.module === 'slices') {
+      const count = ci(g('count', 7), 2, 16);
+      const horizontal = P.axis !== 'v';
+      const delay = g('delay', 0.2);
+      const dur = Math.max(0.2, g('dur', 0.9));
+      const stagger = g('stagger', 0.09);
+      const end = delay + dur + (count - 1) * stagger;
+      const clock = motionTime(end);
+      if (clock >= end) drawCover(ctx, img(0), W, H, 1, 0.5, 0.5);
+      else for (let i = 0; i < count; i++) {
+        const rank = P.order === 'reverse' ? count - 1 - i : P.order === 'center' ? Math.abs(i - (count - 1) / 2) : i;
+        const p = ease((clock - delay - rank * stagger) / dur);
+        if (!p) continue;
+        const x = horizontal ? 0 : (i / count) * W;
+        const y = horizontal ? (i / count) * H : 0;
+        const w = horizontal ? W : W / count;
+        const h = horizontal ? H / count : H;
+        const offset = (i % 2 ? 1 : -1) * (1 - p);
+        ctx.save();
+        ctx.translate(horizontal ? offset * W : 0, horizontal ? 0 : offset * H);
+        ctx.beginPath();
+        ctx.rect(x, y, w + 0.5, h + 0.5);
+        ctx.clip();
+        drawCover(ctx, img(0), W, H, 1, 0.5, 0.5);
+        ctx.restore();
+      }
+    }
+
+    if (sc.module === 'tiles') {
+      const cols = ci(g('cols', 4), 2, 8);
+      const rows = ci(g('rows', 5), 2, 8);
+      const seed = g('seed', 3);
+      const delay = g('delay', 0.2);
+      const dur = Math.max(0.2, g('dur', 0.8));
+      const span = g('stagger', 1.1);
+      const end = delay + dur + span;
+      const clock = motionTime(end);
+      if (clock >= end) drawCover(ctx, img(0), W, H, 1, 0.5, 0.5);
+      else {
+        const heights = Array.from({ length: rows }, (_, r) => 0.65 + noise(seed + r * 9));
+        const sumH = heights.reduce((a, b) => a + b, 0);
+        let y = 0;
+        for (let row = 0; row < rows; row++) {
+          const h = (heights[row] / sumH) * H;
+          const widths = Array.from({ length: cols }, (_, c) => 0.65 + noise(seed + row * 47 + c * 13));
+          const sumW = widths.reduce((a, b) => a + b, 0);
+          let x = 0;
+          for (let col = 0; col < cols; col++) {
+            const w = (widths[col] / sumW) * W;
+            const rank = P.order === 'random' ? noise(seed + row * cols + col + 300) : P.order === 'row' ? (row * cols + col) / (rows * cols - 1) : (row + col) / (rows + cols - 2);
+            const p = ease((clock - delay - rank * span) / dur);
+            if (p) {
+              const cx = x + w / 2;
+              const cy = y + h / 2;
+              ctx.save();
+              ctx.translate(cx, cy + (1 - p) * h * 0.3);
+              ctx.scale(p, p);
+              ctx.translate(-cx, -cy);
+              ctx.beginPath();
+              ctx.rect(x, y, w + 0.5, h + 0.5);
+              ctx.clip();
+              drawCover(ctx, img(0), W, H, 1, 0.5, 0.5);
+              ctx.restore();
+            }
+            x += w;
+          }
+          y += h;
+        }
+      }
+    }
+
+    if (sc.module === 'tear') {
+      const delay = g('delay', 0.7);
+      const dur = Math.max(0.2, g('dur', 1.8));
+      const p = inout((motionTime(delay + dur) - delay) / dur);
+      drawCover(ctx, img(p >= 1 ? 1 : 0), W, H, 1, 0.5, 0.5);
+      if (p > 0 && p < 1) {
+        const dir = String(P.dir ?? 'right');
+        const horizontal = dir === 'left' || dir === 'right';
+        const major = horizontal ? W : H;
+        const cross = horizontal ? H : W;
+        const rough = g('rough', 35) * u;
+        const paper = g('paper', 22) * u;
+        const pad = rough + paper + 2;
+        const at = lerp(-pad, major + pad, p);
+        const map = (a: number, b: number): [number, number] => dir === 'left' ? [W - a, b] : dir === 'down' ? [b, a] : dir === 'up' ? [b, H - a] : [a, b];
+        const path = (offset: number) => {
+          ctx.beginPath();
+          ctx.moveTo(...map(-pad, -pad));
+          for (let i = 0; i <= 48; i++) ctx.lineTo(...map(at + (noise(i + g('seed', 4) * 17) * 2 - 1) * rough + offset, -pad + ((cross + pad * 2) * i) / 48));
+          ctx.lineTo(...map(-pad, cross + pad));
+          ctx.closePath();
+        };
+        path(paper);
+        ctx.fillStyle = String(P.color ?? '#f5f1e8');
+        ctx.fill();
+        ctx.save();
+        path(0);
+        ctx.clip();
+        drawCover(ctx, img(1), W, H, 1, 0.5, 0.5);
+        ctx.restore();
+      }
+    }
+
+    if (sc.module === 'collage') {
+      if (imgs[0]) drawCover(ctx, imgs[0], W, H, 1, 0.5, 0.5);
+      const count = ci(g('count', 3), 1, 3);
+      const delay = g('delay', 0.2);
+      const dur = Math.max(0.2, g('dur', 0.7));
+      const stagger = g('stagger', 0.35);
+      const clock = motionTime(delay + dur + (count - 1) * stagger);
+      const positions = [[0.35, 0.34], [0.65, 0.5], [0.42, 0.7]];
+      for (let i = 0; i < count; i++) {
+        const cx = g(`x${i + 1}`, positions[i][0]) * W;
+        const cy = g(`y${i + 1}`, positions[i][1]) * H;
+        handles[`cut${i + 1}`] = [cx, cy];
+        const progress = clamp((clock - delay - i * stagger) / dur);
+        if (!progress) continue;
+        const im = imgs[i + 1] ?? placeholderCutout(i);
+        const [cw, ch] = fitCard(im, g('size', 0.6), 0, 0.6);
+        const bd = g('border', 16) * u;
+        const tex = cutoutTex(im, cw, ch, bd, String(P.color ?? '#ffffff'));
+        const q = back(progress);
+        ctx.save();
+        ctx.translate(cx + (i % 2 ? 1 : -1) * W * (1 - q), cy + H * 0.12 * (1 - q));
+        ctx.rotate(((i % 2 ? 1 : -1) * g('angle', 12) + 18 * (1 - q)) * Math.PI / 180);
+        const scale = lerp(0.7, 1, q);
+        ctx.scale(scale, scale);
+        ctx.drawImage(tex, -tex.width / 2, -tex.height / 2);
+        ctx.restore();
+      }
+    }
+
+    if (sc.module === 'morph') {
+      const delay = g('delay', 0.5);
+      const dur = Math.max(0.4, g('dur', 2.2));
+      const progress = clamp((motionTime(delay + dur) - delay) / dur);
+      if (imgs[1]) drawCover(ctx, imgs[1], W, H, 1, 0.5, 0.5);
+      if (progress >= 1) drawCover(ctx, img(0), W, H, 1, 0.5, 0.5);
+      else {
+        const d = g('radius', 0.18) * S * 2;
+        const first = inout(progress * 2);
+        const second = inout((progress - 0.5) * 2);
+        const pw = Math.max(d, W * 0.88);
+        const ph = d * 0.8;
+        const w = progress < 0.5 ? lerp(d, pw, first) : lerp(pw, W, second);
+        const h = progress < 0.5 ? lerp(d, ph, first) : lerp(ph, H, second);
+        const cx = lerp(g('cx', 0.5) * W, W / 2, second);
+        const cy = lerp(g('cy', 0.5) * H, H / 2, second);
+        const radius = (Math.min(w, h) / 2) * (1 - second);
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(cx - w / 2, cy - h / 2, w, h, radius);
+        ctx.clip();
+        drawCover(ctx, img(0), W, H, 1, 0.5, 0.5);
+        ctx.restore();
+        if (g('border', 6)) {
+          ctx.beginPath();
+          ctx.roundRect(cx - w / 2, cy - h / 2, w, h, radius);
+          ctx.strokeStyle = String(P.color ?? '#ffffff');
+          ctx.lineWidth = g('border', 6) * u * (1 - second);
+          ctx.stroke();
+        }
+      }
+      handles.center = [g('cx', 0.5) * W, g('cy', 0.5) * H];
+    }
+
+    if (sc.module === 'occlude') {
+      const delay = g('delay', 0.8);
+      const dur = Math.max(0.4, g('dur', 1.8));
+      const p = inout((motionTime(delay + dur) - delay) / dur);
+      drawCover(ctx, img(p < 0.5 ? 0 : 1), W, H, 1, 0.5, 0.5);
+      if (p > 0 && p < 1) {
+        const horizontal = P.dir !== 'up' && P.dir !== 'down';
+        const major = horizontal ? W : H;
+        const cross = horizontal ? H : W;
+        const angle = P.shape === 'door' ? 0 : Math.tan(g('angle', 12) * Math.PI / 180);
+        // 在中點底板必須完全覆蓋畫面；加上斜邊位移，透明前景也不會露出換景接縫。
+        const width = major * Math.max(1.05, g('width', 1.3)) + Math.abs(angle) * cross;
+        let center = lerp(-width / 2 - Math.abs(angle) * cross, major + width / 2 + Math.abs(angle) * cross, p);
+        if (P.dir === 'left' || P.dir === 'up') center = major - center;
+        const point = (a: number, b: number): [number, number] => horizontal ? [a, b] : [b, a];
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(...point(center - width / 2 - angle * cross / 2, 0));
+        ctx.lineTo(...point(center + width / 2 - angle * cross / 2, 0));
+        ctx.lineTo(...point(center + width / 2 + angle * cross / 2, cross));
+        ctx.lineTo(...point(center - width / 2 + angle * cross / 2, cross));
+        ctx.closePath();
+        ctx.fillStyle = String(P.color ?? '#ff5a36');
+        ctx.fill();
+        ctx.clip();
+        if (imgs[2]) {
+          const im = imgs[2];
+          const k = Math.min((horizontal ? width : W) / im.width, (horizontal ? H : width) / im.height);
+          const [cx, cy] = point(center, cross / 2);
+          ctx.drawImage(im, cx - im.width * k / 2, cy - im.height * k / 2, im.width * k, im.height * k);
+        } else if (P.shape === 'door') {
+          const [cx, cy] = point(center + major * 0.25, cross / 2);
+          ctx.fillStyle = '#f5f1e8';
+          ctx.beginPath();
+          ctx.roundRect(cx - 12 * u, cy - 48 * u, 24 * u, 96 * u, 12 * u);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
     }
 
     if (sc.module === 'zoomthru') {

@@ -9,7 +9,7 @@ export const PHOTO_GLOBALS = `${FONTS_GLOBALS}window.MA_PHOTO=${fnSource(photoRe
 const CSS = `.S{background:#151515}
 .S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
 
-/** 五個模組共用同一段播放程式；圖片載入失敗時保留佔位圖 */
+/** 圖片模組共用同一段播放程式；圖片載入失敗時保留佔位圖 */
 const run: Fx['run'] = (root) => {
   const R = (globalThis as unknown as { MA_PHOTO: { drawPhoto: (...a: unknown[]) => unknown } }).MA_PHOTO;
   const cv = root.querySelector('canvas')!;
@@ -43,7 +43,7 @@ const run: Fx['run'] = (root) => {
   return () => cancelAnimationFrame(raf);
 };
 
-const make = (module: PModule, o: Pick<Fx, 'no' | 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn'>): Fx => ({
+const make = (module: PModule, o: Pick<Fx, 'no' | 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn' | 'added'>): Fx => ({
   id: `photo-${module}`,
   cat: MODULE_INFO[module].group,
   zh: MODULE_INFO[module].zh,
@@ -177,5 +177,47 @@ export const photo: Fx[] = [
     sample: ['走進社區'],
     motion: '第一張照片朝指定點加速放大，接近時該點出現白框圓形開口並迅速擴大，開口內是第二張照片；穿越後第二張照片由放大狀態拉回正常大小。硬邊、無動態模糊。',
     motionEn: 'The first photo accelerates into a chosen point; near the end a white-rimmed circular opening appears there and expands rapidly to reveal the second photo, which then settles from an enlarged state back to normal. Hard edges, no motion blur.',
+  }),
+  make('slices', {
+    no: 151, added: '2026-10-22',
+    desc: '照片裁成橫條或直條，從兩側交錯滑入後對齊成完整畫面',
+    tags: ['裁切', '切片', '片頭', '節奏'], sample: [],
+    motion: '同一張照片切成 2–16 條，各條保持原始取景，從相反方向錯開滑入並以緩出減速對齊。可切換橫直、依序、反向或中央向外；最後拼回無縫完整照片。全程硬邊，不加文字、模糊或陰影。',
+    motionEn: 'Divide one photo into 2–16 horizontal or vertical strips. Alternate strips slide in from opposite sides, staggered forward, backward or outward from the center, easing into their original alignment. End on the seamless full image. Hard edges, no text, blur or shadows.',
+  }),
+  make('tiles', {
+    no: 152, added: '2026-10-22',
+    desc: '同一張照片裁成大小不同的矩形，斜向、逐列或隨機展開拼回原圖',
+    tags: ['裁切', '拼塊', '揭露', '片頭'], sample: [],
+    motion: '將同一張照片裁成不等大的矩形拼塊，各塊從中心縮放展開並稍微上移歸位，可選斜向、逐列或固定種子的隨機順序。取景在所有拼塊間連續，最終組成無縫原圖；同一種子逐格渲染完全一致。無文字、模糊、陰影。',
+    motionEn: 'Partition a single photo into unequal rectangular tiles. Tiles scale out from their centers and settle slightly upward in diagonal, row or seeded random order. All crops share one framing and finish as the seamless original. Deterministic per-frame rendering; no text, blur or shadows.',
+  }),
+  make('tear', {
+    no: 153, added: '2026-10-22',
+    desc: '不規則撕紙邊從指定方向掃過，揭露第二張照片',
+    tags: ['裁切', '撕紙', '轉場', '剪貼'], sample: [],
+    motion: '第一張照片全畫面停留，再由指定方向撕開。固定種子的鋸齒紙邊平滑掃過，前沿露出可調色的紙纖維邊帶，後方顯示第二張照片，結束完整停在第二張。四方向可選，紙邊起伏與厚度可調，無文字、模糊、陰影。',
+    motionEn: 'Hold the first photo full-frame, then sweep a seeded irregular torn-paper edge in one of four directions. A configurable paper-colored rim leads the reveal of photo two. End completely on the second photo. Adjustable roughness and paper thickness, no text, blur or shadows.',
+  }),
+  make('collage', {
+    no: 154, added: '2026-10-22',
+    desc: '去背 PNG／WebP 沿輪廓描邊，交錯旋轉進場並堆疊成剪報',
+    tags: ['裁切', '剪貼', '拼貼', '可疊影片'], sample: [],
+    motion: '選填背景圖，將 1–3 張預先去背的 PNG／WebP 沿 alpha 輪廓加上實色剪紙描邊，依序從左右交錯滑入、回彈旋轉並堆疊。每張可拖曳定位、調整大小、描邊與時間；保留透明背景，不會自動去背。無文字、模糊、陰影。',
+    motionEn: 'Over an optional background, outline the alpha silhouettes of 1–3 already-cut-out PNG/WebP images and stagger them in from alternating sides with rotation and overshoot. Position each independently; preserve transparency. No automatic background removal, text, blur or shadows.',
+  }),
+  make('morph', {
+    no: 155, added: '2026-10-22',
+    desc: '照片先藏在圓形框內，拉成膠囊，再連續展開成全螢幕',
+    tags: ['裁切', '遮罩', '形變', '揭露'], sample: [],
+    motion: '照片先透過可定位的圓形遮罩顯示，停留後平滑拉成橫向膠囊，接著圖片框移到畫面中央、擴展到滿版，圓角與描邊同步收斂消失。可搭配底圖或透明背景，全程共用同一張照片取景，無文字、模糊、陰影。',
+    motionEn: 'Show one photo through a positioned circular mask, morph it smoothly into a horizontal capsule, then center and expand the frame to full-screen while its corner radius and outline resolve to zero. Optional background image or transparency. Continuous source framing, no text, blur or shadows.',
+  }),
+  make('occlude', {
+    no: 156, added: '2026-10-22',
+    desc: '門片或斜切前景掃過鏡頭，完全遮住畫面時銜接第二個場景',
+    tags: ['遮擋', '前景', '轉場', '開箱'], sample: [],
+    motion: '第一張照片停留後，一片不透明門片或斜切前景從指定方向掃過；前景覆蓋全畫面時切換到第二張照片，再移出露出新場景。可將預先去背 PNG／WebP 疊在底板上；底板確保透明孔洞不會露出切換接縫。四方向、顏色、斜度與時間可調，無文字、模糊、陰影。',
+    motionEn: 'Sweep an opaque door or slanted foreground panel across the first scene. Switch to scene two only while the panel fully covers the frame, then let it exit. An optional pre-cut PNG/WebP rides on the panel; the solid backing prevents transparent holes from exposing the cut. Four directions, adjustable color, angle and timing; no text, blur or shadows.',
   }),
 ];

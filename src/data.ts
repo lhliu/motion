@@ -40,7 +40,8 @@ export const CATEGORIES: Category[] = [
   { id: 'retro', sec: 'text', code: 'RETRO', zh: '復古懷舊', tagline: '一秒回到那個年代' },
   { id: 'photo', sec: 'photo', code: 'MOVE', zh: '單張運鏡', tagline: '一張照片也能有鏡頭感' },
   { id: 'pmulti', sec: 'photo', code: 'MULTI', zh: '多張組合', tagline: '前後對比、宮格、並排' },
-  { id: 'pmark', sec: 'photo', code: 'FOCUS', zh: '標註轉場', tagline: '圈重點、定格、揭露、穿越' },
+  { id: 'pmark', sec: 'photo', code: 'FOCUS', zh: '標註轉場', tagline: '圈重點、定格、穿越' },
+  { id: 'pcut', sec: 'photo', code: 'MASK', zh: '裁切與遮罩', tagline: '切片、拼塊、撕紙、剪報與遮擋換景' },
   { id: 'map', sec: 'map', code: 'MAP', zh: '地圖區位', tagline: '把位置、距離、通勤講清楚' },
   { id: 'diagram', sec: 'explain', code: 'DIAGRAM', zh: '工法剖面', tagline: '建材、管線、結構，一張剖面講清楚' },
 ];

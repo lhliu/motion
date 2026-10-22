@@ -10,6 +10,7 @@ import {
   photoFxId,
   HANDLE_KEYS,
   PHOTO_MODULES,
+  PHOTO_GROUPS,
   slotsOf,
   placeholder,
   RATIO_PX,
@@ -137,7 +138,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     box(L.a, '#3b82f6', '起始');
     box(L.b, '#ff5a36', '結束');
   };
-  const HANDLE_NAME: Record<string, string> = { card: '照片', divider: '分隔線', target: '重點', lens: '鏡頭', label: '標籤', center: '中心', origin: '起點', title: '標題', caption: '字幕' };
+  const HANDLE_NAME: Record<string, string> = { card: '照片', divider: '分隔線', target: '重點', lens: '鏡頭', label: '標籤', center: '中心', origin: '起點', title: '標題', caption: '字幕', cut1: '剪報 1', cut2: '剪報 2', cut3: '剪報 3' };
   const redraw = (t?: number) => {
     if (t === undefined && editView() && sc.module === 'kenburns') {
       drawKbEdit();
@@ -280,7 +281,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
 
   /* ───────── 模組、圖片、參數、字幕 ───────── */
   const modEl = $('#psMod');
-  const GROUP_NAME = { photo: '單張運鏡', pmulti: '多張組合', pmark: '標註轉場' } as const;
+  const GROUP_NAME = PHOTO_GROUPS;
   modEl.innerHTML = (Object.keys(GROUP_NAME) as (keyof typeof GROUP_NAME)[])
     .map(
       (gk) =>
@@ -335,7 +336,8 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     const s = Math.min(1, maxSide / Math.max(im.naturalWidth || im.width, im.naturalHeight || im.height));
     const c = canvasOf(Math.round((im.naturalWidth || im.width) * s), Math.round((im.naturalHeight || im.height) * s));
     c.getContext('2d')!.drawImage(im, 0, 0, c.width, c.height);
-    return c.toDataURL('image/jpeg', q);
+    // WebP 保留去背圖的 alpha；不支援的瀏覽器會依 Canvas 規範退回 PNG。
+    return c.toDataURL('image/webp', q);
   };
   const readFile = (f: File, i: number) => {
     const url = URL.createObjectURL(f);
@@ -375,7 +377,11 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   const paramsEl = $('#psParams');
   const renderParams = () => {
     paramsEl.innerHTML =
-      (sc.module === 'kenburns' ? '<p class="ms-hint">時間軸拉到最右是編輯視圖：拖藍框（起始）、橘框（結束）移動取景，拖框角縮放。</p>' : '<p class="ms-hint">拖預覽上的藍色圓點可移動位置。</p>') +
+      (sc.module === 'kenburns' ? '<p class="ms-hint">時間軸拉到最右是編輯視圖：拖藍框（起始）、橘框（結束）移動取景，拖框角縮放。</p>' :
+        sc.module === 'collage' ? '<p class="ms-hint">請放入已去背的 PNG／WebP；這裡不會自動去背。拖藍點調整每張剪報位置。</p>' :
+        sc.module === 'occlude' ? '<p class="ms-hint">透明前景會疊在不透明底板上，確保換景接縫被完全遮住。</p>' :
+        '<p class="ms-hint">按播放或拖時間軸預覽；有藍色圓點時可拖曳位置。</p>') +
+      (MODULE_INFO[sc.module].group === 'pcut' && sc.module !== 'mask' ? '<p class="ms-hint">動作總時間超過片段長度時會等比例加速，確保尾格完成。</p>' : '') +
       PARAMS[sc.module].map((f) => field(f, sc.params[f.k])).join('');
   };
   const onField = (host: HTMLElement, target: () => Record<string, unknown>, after: () => void) => {
@@ -505,7 +511,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     busy('');
     deps.toast('已輸出 WebM');
   });
-  /** 帶圖輸出時壓成長邊 1280 的 JPEG，Combo 與預設才存得下 */
+  /** 帶圖輸出時壓成長邊 1280 的 WebP，保留透明剪報並控制大小。 */
   const sceneOut = (withImages: boolean): PScene => {
     const n = slotsOf(sc.module);
     return {

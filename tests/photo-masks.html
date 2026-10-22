@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<title>Photo masks regression tests</title>
+<body>
+<h1>裁切與遮罩：瀏覽器回歸測試</h1>
+<p>以 Vite 提供此頁面；測試使用真正的 Canvas 像素，不需要額外測試套件。</p>
+<pre id="results">Running…</pre>
+<script type="module">
+import { defaultPhotoScene, normalizePhotoScene, drawPhoto, photoRenderer, PHOTO_MODULES, MODULE_INFO } from '/src/photokit.ts';
+import { EFFECTS } from '/src/data.ts';
+import { fnSource } from '/src/engine.ts';
+import { buildPrompt } from '/src/prompts.ts';
+
+const results = [];
+const check = (condition, message) => { if (!condition) throw new Error(message); };
+const test = (name, run) => {
+  try { run(); results.push({ name, passed: true }); }
+  catch (error) { results.push({ name, passed: false, error: String(error) }); }
+};
+const makeCanvas = (w, h, color) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  if (color) { const ctx = canvas.getContext('2d'); ctx.fillStyle = color; ctx.fillRect(0, 0, w, h); }
+  return canvas;
+};
+const pattern = makeCanvas(360, 240, '#f17642');
+const px = pattern.getContext('2d');
+for (let y = 0; y < 6; y++) for (let x = 0; x < 9; x++) {
+  px.fillStyle = ['#164156', '#e9c16a', '#63af91'][(x + y) % 3];
+  px.fillRect(x * 40, y * 40, 30, 30);
+}
+const red = makeCanvas(240, 240, '#ff0000');
+const blue = makeCanvas(240, 240, '#0000ff');
+const modules = ['slices', 'tiles', 'tear', 'collage', 'morph', 'occlude'];
+const sizes = [[180, 320], [320, 180], [220, 220]];
+const exported = (0, eval)(`(${fnSource(photoRenderer)})`)();
+const scene = (module, params = {}) => {
+  const sc = defaultPhotoScene(module);
+  sc.bg = 'transparent'; sc.params = { ...sc.params, ...params };
+  return sc;
+};
+const render = (sc, t, images, size, renderer = drawPhoto) => {
+  const canvas = makeCanvas(...size);
+  const ctx = canvas.getContext('2d');
+  renderer(ctx, ...size, sc, t, images);
+  check(ctx.getTransform().isIdentity && ctx.globalAlpha === 1 && ctx.globalCompositeOperation === 'source-over', 'Canvas state leaked');
+  return ctx.getImageData(0, 0, ...size).data;
+};
+const equal = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+const reference = (image, size) => render(scene('kenburns', { fz: 1, tz: 1, fx: 0.5, fy: 0.5, tx: 0.5, ty: 0.5 }), 6, [image], size);
+const solid = (pixels, rgb) => {
+  for (let i = 0; i < pixels.length; i += 4) if (pixels[i] !== rgb[0] || pixels[i + 1] !== rgb[1] || pixels[i + 2] !== rgb[2] || pixels[i + 3] !== 255) return false;
+  return true;
+};
+
+test('Catalog IDs stay unique; existing mask remains #134 and new IDs are #151–156', () => {
+  check(new Set(EFFECTS.map(f => f.no)).size === EFFECTS.length, 'Duplicate effect numbers');
+  check(EFFECTS.find(f => f.id === 'photo-mask').no === 134, 'Existing number changed');
+  modules.forEach((m, i) => {
+    const fx = EFFECTS.find(f => f.id === `photo-${m}`);
+    check(fx?.no === 151 + i && fx.cat === 'pcut', `Missing catalog entry: ${m}`);
+    check(MODULE_INFO[m].group === 'pcut', `Missing studio group: ${m}`);
+  });
+});
+test('Malformed settings are clamped and unknown options fall back', () => {
+  const sc = normalizePhotoScene({ module: 'slices', params: { count: 999, dur: -1, axis: 'unknown' }, images: ['one', 'two'] });
+  check(sc.params.count === 16 && sc.params.dur === 0.2 && sc.params.axis === 'h', 'Unsafe parameters');
+  check(sc.images.length === 1, 'Wrong slot count');
+});
+test('Image prompts describe image slots and renderer instead of a text entrance', () => {
+  for (const module of modules) {
+    const fx = EFFECTS.find(f => f.id === `photo-${module}`);
+    const prompt = buildPrompt(fx, 'web', [], { bg: '#151515', fg: '#ffffff', ac: '#ff5a36', ac2: '#ffd23f' }, '9:16');
+    check(prompt.includes('build_photo_scene') && prompt.includes(`"${module}"`) && prompt.includes('圖片插槽'), 'Missing image workflow');
+    check(!prompt.includes('文字動態字卡'), 'Wrong typography prompt');
+  }
+});
+
+for (const size of sizes) {
+  for (const module of ['slices', 'tiles', 'morph']) test(`${module}: seamless final frame at ${size}`, () => {
+    const sc = scene(module, module === 'morph' ? { cx: 0.12, cy: 0.85 } : {});
+    check(equal(render(sc, sc.loop, [pattern], size), reference(pattern, size)), 'Final crop differs from original');
+  });
+  for (const module of ['slices', 'tiles']) test(`${module}: clean transparent first frame at ${size}`, () => {
+    check(render(scene(module), 0, [pattern], size).every(v => v === 0), 'First frame is not empty');
+  });
+  for (const dir of ['right', 'left', 'down', 'up']) {
+    for (const module of ['tear', 'occlude']) test(`${module}/${dir}: first and last scenes at ${size}`, () => {
+      const sc = scene(module, { dir });
+      check(solid(render(sc, 0, [red, blue], size), [255, 0, 0]), 'Wrong starting scene');
+      check(solid(render(sc, sc.loop, [red, blue], size), [0, 0, 255]), 'Outgoing scene remains at end');
+    });
+    test(`occlude/${dir}: opaque coverage across the scene switch at ${size}`, () => {
+      for (const angle of [-25, 25]) for (const offset of [-0.0001, 0, 0.0001]) {
+        const sc = scene('occlude', { dir, angle, width: 1.05, color: '#00ff00' });
+        check(solid(render(sc, Number(sc.params.delay) + Number(sc.params.dur) / 2 + offset, [red, blue], size), [0, 255, 0]), 'Exposed cut at switch');
+      }
+    });
+  }
+  for (const module of modules) test(`${module}: exported engine matches studio at ${size}`, () => {
+    for (const t of [0, 0.8, 1.6, 6]) {
+      const sc = scene(module);
+      check(equal(render(sc, t, [pattern, blue], size), render(sc, t, [pattern, blue], size, exported.drawPhoto)), `Export mismatch at ${t}`);
+    }
+  });
+}
+for (const module of ['slices', 'tiles', 'morph', 'tear', 'occlude']) test(`${module}: long settings complete in a short clip`, () => {
+  const sc = normalizePhotoScene({ module, loop: 1.5, params: { delay: 5, dur: 3, stagger: 0.3, count: 16 } });
+  for (const t of [sc.loop, sc.loop - 1 / 30]) {
+    check(equal(render(sc, t, [pattern, blue], sizes[0]), reference(module === 'tear' || module === 'occlude' ? blue : pattern, sizes[0])), 'Short clip / PNG sequence ends before animation completes');
+  }
+});
+for (const module of ['tiles', 'tear']) test(`${module}: random-access rendering is deterministic`, () => {
+  const sc = scene(module, { order: 'random' });
+  const before = render(sc, 0.9, [pattern, blue], sizes[0]);
+  render(sc, 5, [pattern, blue], sizes[0]);
+  check(equal(before, render(sc, 0.9, [pattern, blue], sizes[0])), 'Seed or timing changes between frames');
+});
+for (const axis of ['h', 'v']) for (const order of ['forward', 'reverse', 'center']) test(`slices/${axis}/${order}: strips retain original framing`, () => {
+  const sc = scene('slices', { axis, order, count: 16 });
+  check(equal(render(sc, 6, [pattern], sizes[0]), reference(pattern, sizes[0])), 'Strip crop shifted');
+  check(!equal(render(sc, 0.7, [pattern], sizes[0]), reference(pattern, sizes[0])), 'No visible intermediate animation');
+});
+test('Transparent foreground cannot expose an occlusion cut', () => {
+  const transparent = makeCanvas(200, 200);
+  const sc = scene('occlude', { color: '#00ff00' });
+  check(solid(render(sc, 1.7, [red, blue, transparent], sizes[0]), [0, 255, 0]), 'Transparent foreground exposed scene cut');
+});
+test('Cutout collage preserves transparency and outlines the silhouette', () => {
+  const cutout = makeCanvas(200, 200);
+  const c = cutout.getContext('2d');
+  c.fillStyle = '#00ff00'; c.beginPath(); c.moveTo(100, 20); c.lineTo(180, 180); c.lineTo(20, 180); c.closePath(); c.fill();
+  const data = render(scene('collage', { count: 1, border: 30, angle: 0, x1: 0.5, y1: 0.5 }), 6, [undefined, cutout], [220, 220]);
+  let clear = 0, green = 0, white = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] === 0) clear++;
+    if (data[i] === 0 && data[i + 1] === 255 && data[i + 2] === 0) green++;
+    if (data[i] === 255 && data[i + 1] === 255 && data[i + 2] === 255) white++;
+  }
+  check(clear > 20000 && green > 1000 && white > 100, 'Alpha silhouette or outline lost');
+});
+test('All original and new modules render without images', () => {
+  for (const module of PHOTO_MODULES) for (const t of [0, 1, 6]) render(scene(module), t, [], [180, 320]);
+});
+
+window.photoMaskResults = { passed: results.filter(r => r.passed).length, failed: results.filter(r => !r.passed).length, results };
+document.querySelector('#results').textContent = JSON.stringify(window.photoMaskResults, null, 2);
+</script>
+</body>
+</html>

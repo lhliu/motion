@@ -378,7 +378,7 @@ export const TOOLS: ToolDef[] = [
         module: { type: 'string', enum: PHOTO_MODULES },
         ratio: { type: 'string', enum: ['9:16', '16:9', '1:1'], description: '預設 9:16' },
         duration: { type: 'number', description: '動畫秒數，預設 6' },
-        images: { type: 'array', items: { type: 'string' }, description: '圖片網址或本機相對路徑，依模組的插槽順序（見說明）；留空＝示意圖' },
+        images: { type: 'array', items: { type: 'string' }, description: '圖片網址或本機相對路徑，依模組的插槽順序（見說明）；留空＝示意圖。collage 的剪報及 occlude 的前景請先準備去背 PNG／WebP，不會自動去背；occlude 的前景會疊在不透明底板上以遮住換景接縫' },
         params: { type: 'object', description: '模組參數，見回傳的 params_doc；位置類參數皆為 0–1 的畫面比例' },
         caption: {
           type: 'object',

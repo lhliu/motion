@@ -1,6 +1,7 @@
 import type { Fx } from './types';
 import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
 import { fontPack } from './fonts';
+import { MODULE_INFO, photoSceneFromWords, type PModule } from './photokit';
 
 export type Ratio = '16:9' | '9:16' | '1:1';
 export type PromptMode = 'web' | 'en' | 'video' | 'code';
@@ -19,6 +20,33 @@ const quoteWords = (w: string[]) => w.map((t) => `「${t}」`).join('、');
 const quoteWordsEn = (w: string[]) => w.map((t) => `"${t}"`).join(', ');
 
 export const buildPrompt = (fx: Fx, mode: PromptMode, words: string[], v: Vars, ratio: Ratio): string => {
+  if (fx.id.startsWith('photo-') && mode !== 'code') {
+    const module = fx.id.slice(6) as PModule;
+    const info = MODULE_INFO[module];
+    const scene = photoSceneFromWords(words, module);
+    const settings = JSON.stringify({ ...scene, images: scene.images.map((_, i) => info.names[i]) }, null, 2);
+    if (mode === 'en') return `Create a ${ratioEn[ratio]} image animation: ${info.en}.
+Use the supplied images in this slot order: ${info.names.join(' / ')}. Preserve transparent PNG/WebP alpha. Use placeholders when images are not supplied; do not invent or regenerate the user's images. No added title or text entrance animation.
+
+MOTION
+${fx.motionEn}
+
+SETTINGS
+${settings}
+
+Use Motion Atlas build_photo_scene with module "${module}" and these parameters, or its shared /r/photo.js renderer for local frame export. Use the same deterministic timeline for preview and export. Return a preview and an editable scene. Respect reduced motion by showing the resolved final frame.`;
+    if (mode === 'video') return `${ratioEn[ratio]} image animation, ${info.en}. Animate the supplied reference images: ${fx.motionEn} Preserve the source content and composition. Do not add titles, captions, or typography unless explicitly supplied. Duration ${scene.loop} seconds.\n\n精準裁切、透明輪廓與換景請優先使用圖片工作室或 build_photo_scene；影片生成模型不保證能忠實保留原圖與遮罩。`;
+    return `請製作「${info.zh}（${info.en}）」圖片動畫，比例 ${ratioZh[ratio]}。
+圖片插槽依序為：${info.names.join('、')}。請使用我提供的照片，保留 PNG／WebP 的透明輪廓；沒有圖片時先顯示示意圖，不要自行重繪照片，也不要另加文字入場。
+
+【動態】
+${fx.motion}
+
+【場景設定】
+${settings}
+
+請優先使用 Motion Atlas 的 build_photo_scene，module 填 "${module}"，沿用上述參數；本機逐格渲染使用同一套 /r/photo.js 引擎，不要另外重寫動畫。提供預覽與圖片工作室的編輯連結，之後可存成預設或加入 Combo。減少動態模式直接顯示完成畫面。`;
+  }
   const dur = loopSeconds(fx);
   if (mode === 'web')
     return `請幫我用 HTML + CSS（必要時加少量原生 JavaScript）做一張「${fx.zh}（${fx.en}）」文字動態字卡。
