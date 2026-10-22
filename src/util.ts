@@ -12,11 +12,14 @@ export const chars = (t: string, cls = 'c', offset = 0): string => {
     .join('');
 };
 
-/** 取 n 個詞；不足時用預設補 */
+/** 取 n 個詞；沒給文字時用範例，給了但不足時重複使用者的詞 */
 export const pick = (w: string[], n: number, fallback: string[]): string[] => {
-  const out = w.filter(Boolean).slice(0, n);
+  const given = w.filter(Boolean).slice(0, n);
+  // 有給文字時，不足的位置重複使用者自己的詞，不混入範例文字
+  const src = given.length ? given : fallback;
+  const out = [...given];
   let k = 0;
-  while (out.length < n) out.push(fallback[k++ % fallback.length]);
+  while (out.length < n) out.push(src[k++ % src.length]);
   return out;
 };
 

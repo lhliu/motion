@@ -53,16 +53,17 @@ export const impact: Fx[] = [
     motionEn: 'Three rubber stamps slam down in sequence from 2.6x scale to 1x with a tiny screen shake on impact; red thick-bordered, slightly rotated, with ink grain texture; hold, then fade out.',
     css: `
 .S{animation:K_shake 3.6s infinite}
+.S .s.one{font-size:min(11cqw,8cqh);translate:-50% -50%}
+.S .s{white-space:nowrap}
 .S .s{position:absolute;font-size:calc(var(--u)*7.5);color:var(--ac);border:calc(var(--u)*.9) solid var(--ac);padding:calc(var(--u)*1.2) calc(var(--u)*2.4);border-radius:calc(var(--u)*1.4);transform:rotate(var(--r));opacity:0;animation:K_st 3.6s cubic-bezier(.3,1.4,.5,1) infinite both;animation-delay:calc(var(--i)*.5s);-webkit-mask:radial-gradient(circle at 30% 40%,#000 60%,#000a 61%,#000 75%)}
 @keyframes K_st{0%{transform:rotate(var(--r)) scale(2.6);opacity:0}10%{transform:rotate(var(--r)) scale(.94);opacity:1}14%,80%{transform:rotate(var(--r)) scale(1);opacity:1}92%,100%{opacity:0;transform:rotate(var(--r)) scale(1)}}
 @keyframes K_shake{0%,9%,13%,23%,27%,37%,41%,100%{transform:none}10%,24%,38%{transform:translate(1%,1%)}11%,25%,39%{transform:translate(-1%,-.5%)}}`,
-    html: (w) =>
-      pick(w, 3, ['核准', '通過', '定案'])
-        .map(
-          (t, i) =>
-            `<div class="s" style="--i:${i};--r:${[-10, 6, -4][i]}deg;left:${[8, 38, 64][i]}%;top:${[18, 46, 20][i]}%">${esc(t)}</div>`,
-        )
-        .join(''),
+    html: (w) => {
+      const list = w.filter(Boolean).length ? w.filter(Boolean).slice(0, 3) : ['核准', '通過', '定案'];
+      // 依數量決定落點：一個置中、兩個斜對角、三個散開
+      const pos = [[[50, 50]], [[12, 22], [46, 50]], [[8, 18], [38, 46], [64, 20]]][list.length - 1];
+      return list.map((t, i) => `<div class="s${list.length === 1 ? ' one' : ''}" style="--i:${i};--r:${[-10, 6, -4][i]}deg;left:${pos[i][0]}%;top:${pos[i][1]}%">${esc(t)}</div>`).join('');
+    },
   },
   {
     id: 'punch-zoom',
