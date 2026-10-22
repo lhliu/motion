@@ -44,6 +44,9 @@
         <kbd>/</kbd>
       </label>
       <div class="top-actions">
+        <button class="ic map-btn" id="mapBtn" title="地圖工作室" aria-label="打開地圖工作室">
+          <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z" /><path d="M9 4v14M15 6v14" /></svg>
+        </button>
         <button class="ic drop-btn" id="dropBtn" title="水滴工作室" aria-label="打開水滴工作室">
           <svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /><path d="M9.5 14.5a2.6 2.6 0 0 0 2.5 2.5" /></svg>
         </button>
@@ -213,6 +216,7 @@
               <pre id="dPrompt" tabindex="0"></pre>
               <div class="d-actions">
                 <button class="ma-btn" id="dCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg><span>複製提示詞</span></button>
+                <button class="btn-ghost" id="dMapStudio" hidden><svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z" /></svg>用自己的底圖做（地圖工作室）</button>
                 <button class="btn-ghost" id="dStudio" hidden><svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /></svg>在水滴工作室調整</button>
                 <button class="btn-ghost" id="dAddCombo"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>加入 Combo</button>
                 <button class="btn-ghost" id="dDownload"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>下載 HTML</button>
@@ -363,6 +367,56 @@
             <p class="st-note">疊進影片：剪映、Premiere、Final Cut 都能匯入「PNG 序列」並保留透明；WebM 透明影片需用 Chrome 錄製，部分剪輯軟體不支援透明 WebM。</p>
           </div>
           <div class="st-panel" id="stPanel"></div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="mapstudio" class="detail st ms" aria-labelledby="msTitle">
+      <div class="d-inner">
+        <header class="d-head">
+          <div class="d-title">
+            <span class="ma-num cb-badge">🗺</span>
+            <div>
+              <h2 id="msTitle" tabindex="-1" autofocus>地圖工作室</h2>
+              <p>上傳自己的底圖，拖曳擺放基地框、路名、資訊卡，輸出透明素材疊進影片</p>
+            </div>
+          </div>
+          <div class="d-nav"><button class="ic" id="msClose" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg></button></div>
+        </header>
+        <div class="st-body">
+          <div class="st-left">
+            <div class="st-stage ms-stage" id="msStage" data-ratio="9:16"><canvas id="msCanvas"></canvas></div>
+            <div class="d-controls">
+              <div class="seg" id="msRatio" role="radiogroup" aria-label="比例"><button data-v="9:16">9:16 手機</button><button data-v="16:9">16:9</button><button data-v="1:1">1:1</button></div>
+              <button class="btn-ghost" id="msPlay">▶ 播放進場</button>
+              <label class="ms-loop">長度 <input type="range" id="msLoop" min="2" max="15" step="0.5" /> <output id="msLoopV"></output></label>
+            </div>
+            <div class="st-out">
+              <button class="ma-btn" id="msPng"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>PNG</button>
+              <button class="btn-ghost" id="msSeq">PNG 序列（ZIP）</button>
+              <button class="btn-ghost" id="msWebm">WebM 影片</button>
+            </div>
+            <p class="st-status" id="msStatus" hidden></p>
+            <p class="st-note">底圖只存在你的瀏覽器，不會上傳。疊在影片上時，取消「輸出包含底圖」即可得到透明素材。正射影像與地籍圖請照原規定標示出處。</p>
+          </div>
+          <div class="st-panel">
+            <fieldset><legend>範本</legend><div class="st-presets" id="msTpl"></div></fieldset>
+            <fieldset id="msBg"><legend>底圖</legend>
+              <div class="st-presets"><button type="button" class="btn-ghost" id="msUpload">上傳底圖</button><button type="button" class="btn-ghost" id="msClearBg">移除底圖</button><input type="file" id="msFile" accept="image/*" hidden /></div>
+              <label class="st-row"><span>縮放</span><input type="range" data-bg="bgZoom" min="1" max="3" step="0.01" /></label>
+              <label class="st-row"><span>左右</span><input type="range" data-bg="bgX" min="0" max="1" step="0.01" /></label>
+              <label class="st-row"><span>上下</span><input type="range" data-bg="bgY" min="0" max="1" step="0.01" /></label>
+              <label class="st-row"><span>調暗</span><input type="range" data-bg="bgDim" min="0" max="0.7" step="0.01" /></label>
+              <label class="st-row"><span>輸出包含底圖</span><input type="checkbox" id="msWithBg" checked /></label>
+            </fieldset>
+            <fieldset><legend>新增元件</legend>
+              <div class="st-presets" id="msAdd">
+                <button type="button" class="btn-ghost" data-add="tag">標題籤</button><button type="button" class="btn-ghost" data-add="site">基地框</button><button type="button" class="btn-ghost" data-add="label">基地標籤</button><button type="button" class="btn-ghost" data-add="road">道路標籤</button><button type="button" class="btn-ghost" data-add="pin">定位針</button><button type="button" class="btn-ghost" data-add="info">資訊卡</button><button type="button" class="btn-ghost" data-add="stat">數據卡</button><button type="button" class="btn-ghost" data-add="compass">指北針</button><button type="button" class="btn-ghost" data-add="text">文字</button>
+              </div>
+            </fieldset>
+            <fieldset><legend>圖層（下方的蓋在上面）</legend><ol class="ms-list" id="msList"></ol></fieldset>
+            <fieldset><legend>屬性</legend><div id="msProps"></div></fieldset>
+          </div>
         </div>
       </div>
     </dialog>

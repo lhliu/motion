@@ -6,6 +6,7 @@ import type { CatId, Fx, Palette, Tone } from './types';
 import { esc } from './util';
 import { initCombos } from './combo-ui';
 import { initStudio } from './drop-studio';
+import { initMapStudio } from './map-studio';
 
 /* ───────── 小工具 ───────── */
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -553,6 +554,7 @@ const renderDetail = () => {
   $('#dTags').innerHTML = `<span class="cat-pill">${c.code}</span>${fx.tags.map((t) => `<span>#${esc(t)}</span>`).join('')}${fx.run ? '<span>JS 驅動</span>' : '<span>純 CSS</span>'}`;
   $('#dFav').setAttribute('aria-pressed', String(state.favs.has(fx.id)));
   $('#dStudio').hidden = fx.cat !== 'liquid';
+  $('#dMapStudio').hidden = fx.cat !== 'map';
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
   syncSegs();
   renderStage();
@@ -716,7 +718,7 @@ const toast = (msg: string) => {
   const host = topLayer();
   if (t.parentElement !== host) host.appendChild(t);
 };
-const topLayer = (): HTMLElement => (detail.open ? detail : document.querySelector<HTMLDialogElement>('#studio[open]') ?? document.querySelector<HTMLDialogElement>('#combos[open]') ?? document.body);
+const topLayer = (): HTMLElement => (detail.open ? detail : document.querySelector<HTMLDialogElement>('#studio[open]') ?? document.querySelector<HTMLDialogElement>('#mapstudio[open]') ?? document.querySelector<HTMLDialogElement>('#combos[open]') ?? document.body);
 
 /* ───────── 鍵盤 ───────── */
 document.addEventListener('keydown', (e) => {
@@ -767,6 +769,12 @@ $('#dAddCombo').addEventListener('click', () => {
 
 const studio = initStudio({ toast, copy, addScene: (sc) => combos.addScene(sc), store });
 $('#dropBtn').addEventListener('click', () => studio.open());
+const mapStudio = initMapStudio({ toast, store });
+$('#mapBtn').addEventListener('click', () => mapStudio.open());
+$('#dMapStudio').addEventListener('click', () => {
+  closeDetail();
+  mapStudio.open();
+});
 $('#dStudio').addEventListener('click', () => {
   const words = d.fx.id === 'crisp-drop' ? d.words : ['好好', '~just savor', '生活'];
   closeDetail();

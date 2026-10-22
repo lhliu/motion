@@ -2122,3 +2122,121 @@ pre.code {
     overflow: visible;
   }
 }
+
+/* ───────── 地圖工作室 ───────── */
+.map-btn svg {
+  color: #e2673f;
+}
+.ms-stage canvas {
+  cursor: grab;
+  touch-action: none;
+}
+.ms-stage canvas:active {
+  cursor: grabbing;
+}
+.ms-loop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.ms-loop input {
+  width: 110px;
+  accent-color: var(--brand);
+}
+.ms-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow: auto;
+}
+.ms-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+}
+.ms-list li.on {
+  border-color: #3b82f6;
+  background: color-mix(in srgb, #3b82f6 8%, transparent);
+}
+.ms-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 13px;
+}
+.ms-pick b {
+  flex: none;
+}
+.ms-pick span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink-3);
+}
+.ms-pick small {
+  font-family: var(--mono);
+  color: var(--ink-3);
+}
+.ms-ops {
+  display: flex;
+  flex: none;
+}
+.ms-ops .ic {
+  height: 26px;
+  min-width: 26px;
+  font-size: 12px;
+}
+.ms-ops .ic:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+#msProps h4 {
+  margin: 2px 0 6px;
+  font-size: 14px;
+}
+.ms-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.ms-col textarea,
+#msProps input[type='text'] {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--page);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 13px;
+  width: 100%;
+  min-width: 0;
+}
+#msProps .st-row input[type='text'] {
+  grid-column: 2 / 4;
+}
+.ms-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+#msTitle:focus {
+  outline: none;
+}
