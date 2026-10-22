@@ -53,7 +53,9 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     const r = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>;
     const fx = findEffect(str(r.effect, 40));
     if (!fx) errors.push(`scenes[${i}].effect「${String(r.effect)}」不存在，請先用 search_effects 查 id`);
-    const words = Array.isArray(r.words) ? r.words.map((w) => str(w, 60)).filter(Boolean).slice(0, 12) : typeof r.words === 'string' ? str(r.words, 200).split(/\s*\/\s*|\n/).filter(Boolean) : undefined;
+    const long = fx?.id === 'map-overlay' || fx?.id === 'crisp-drop';
+    const max = long ? 900_000 : 60;
+    const words = Array.isArray(r.words) ? r.words.map((w) => str(w, max)).filter(Boolean).slice(0, 12) : typeof r.words === 'string' ? (long ? [str(r.words, max)] : str(r.words, 200).split(/\s*\/\s*|\n/).filter(Boolean)) : undefined;
     const sec = Number(r.seconds);
     const tone = TONES.includes(r.tone as Tone) ? (r.tone as Tone) : undefined;
     return {
@@ -85,6 +87,30 @@ export const comboPalette = (c: Combo): Palette => {
   return c.accent ? { ...base, accent: c.accent } : base;
 };
 
+/** 段落文字摘要：地圖場景與水滴設定不直接印出 JSON */
+export const sceneSummary = (effect: string, words: string[], quote = false): string => {
+  const q = (x: string) => (quote ? `「${x}」` : x);
+  if (effect === 'map-overlay') {
+    const j = words.find((x) => x.trim().startsWith('{'));
+    try {
+      const sc = JSON.parse(j ?? '') as { els?: { type: string; text?: string; lines?: string[]; fg?: string }[]; bgUrl?: string };
+      const name: Record<string, string> = { tag: '標題', label: '基地標籤', road: '道路', info: '資訊卡', stat: '數據卡', text: '文字' };
+      const parts = (sc.els ?? [])
+        .filter((e) => name[e.type])
+        .map((e) => `${name[e.type]}${q(e.type === 'info' || e.type === 'stat' ? [e.text, ...(e.lines ?? [])].filter(Boolean).join(' ').replace(/[*|]/g, ' ').replace(/\s+/g, ' ').trim() : (e.text ?? ''))}`);
+      return `地圖場景（${sc.els?.length ?? 0} 個元件${sc.bgUrl ? '、含底圖' : '、無底圖'}）：${parts.join('、')}`;
+    } catch {
+      return '地圖場景（預設範本）';
+    }
+  }
+  if (effect === 'crisp-drop') {
+    const lines = words.filter((x) => !x.startsWith('@')).map((x) => x.replace(/^~/, ''));
+    const opts = words.filter((x) => x.startsWith('@')).join(' ');
+    return `${lines.map(q).join(quote ? '、' : ' / ')}${opts ? `（水滴設定 ${opts}）` : ''}`;
+  }
+  return quote ? words.map(q).join('、') : words.join(' / ');
+};
+
 export const sceneSeconds = (s: ComboScene): number => {
   if (s.seconds) return s.seconds;
   const fx = findEffect(s.effect);
@@ -98,7 +124,7 @@ export const comboOutline = (c: Combo): string =>
   c.scenes
     .map((s, i) => {
       const fx = findEffect(s.effect);
-      const w = (s.words ?? fx?.sample ?? []).join(' / ');
+      const w = sceneSummary(s.effect, s.words ?? fx?.sample ?? []);
       return `${i + 1}. ${fx ? `#${String(NUM.get(fx.id)).padStart(2, '0')} ${fx.zh}（${fx.id}）` : s.effect}｜${sceneSeconds(s)} 秒｜${w}${s.note ? `｜${s.note}` : ''}`;
     })
     .join('\n');
@@ -202,7 +228,7 @@ export const comboPrompt = (c: Combo): string => {
   const parts = c.scenes.map((s, i) => {
     const fx = findEffect(s.effect);
     if (!fx) return '';
-    const w = (s.words?.length ? s.words : fx.sample).map((x) => `「${x}」`).join('、');
+    const w = sceneSummary(fx.id, s.words?.length ? s.words : fx.sample, true);
     return `${i + 1}.【${fx.zh} ${fx.en}】約 ${sceneSeconds(s)} 秒｜文字：${w}\n   動態：${fx.motion}${s.note ? `\n   備註：${s.note}` : ''}`;
   });
   return `請用 HTML + CSS（必要時加少量原生 JavaScript）做一段連續播放的文字動態影片「${c.title}」，比例 ${c.ratio ?? '16:9'}，總長約 ${totalSeconds(c)} 秒，播完後循環。

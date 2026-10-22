@@ -5,7 +5,7 @@ import { zip } from './export-kit';
 export interface StudioDeps {
   toast: (msg: string) => void;
   copy: (text: string, msg: string) => Promise<void>;
-  addScene: (s: { effect: string; words: string[]; seconds?: number }) => void;
+  addScene: (s: { effect: string; words: string[]; seconds?: number; ratio?: DropOpts['ratio'] }) => void;
   store: { get<T>(k: string, d: T): T; set(k: string, v: unknown): void };
 }
 
@@ -335,7 +335,7 @@ export const initStudio = (deps: StudioDeps) => {
   });
 
   dlg.querySelector('#stCopyWords')!.addEventListener('click', () => deps.copy(dropToWords(o, lines).join('\n'), '已複製設定，可貼到特效文字或給 AI'));
-  dlg.querySelector('#stCombo')!.addEventListener('click', () => deps.addScene({ effect: 'crisp-drop', words: dropToWords(o, lines), seconds: o.loop }));
+  dlg.querySelector('#stCombo')!.addEventListener('click', () => deps.addScene({ effect: 'crisp-drop', words: dropToWords(o, lines), seconds: o.loop, ratio: o.ratio }));
 
   /* ───────── 開關 ───────── */
   const open = () => {

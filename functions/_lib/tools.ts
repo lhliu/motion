@@ -3,6 +3,8 @@ import { comboOutline, comboPrompt, comboHtml, encodeCombo, findEffect, normaliz
 import { loopSeconds, toneVars } from '../../src/engine';
 import { buildPrompt, type PromptMode, type Ratio } from '../../src/prompts';
 import type { Fx } from '../../src/types';
+import { buildMapScene, type MapSceneInput } from '../../src/mapkit';
+import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
 import type { Env } from './env';
 import { deleteCombo, getCombo, listCombos, saveCombo } from './store';
 
@@ -196,6 +198,105 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    name: 'build_map_scene',
+    title: '組地圖場景',
+    description:
+      '依頻道既有的地圖片段樣式組出「地圖疊加場景」（標題籤、基地框、基地標籤、道路名、資訊卡或數據卡、字幕、底圖出處），回傳可放進 Combo 的 combo_scene 與預覽連結。aerial 範本＝鳥瞰正射影像風（黃色基地框＋資訊卡）；street 範本＝街道圖風（橘色基地範圍＋定位針＋三欄數據卡）。座標皆為 0–1 的畫面比例。數字與面積請用使用者提供、可查證的資料。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        template: { type: 'string', enum: ['aerial', 'street', 'blank'], description: '預設 aerial' },
+        ratio: { type: 'string', enum: ['9:16', '16:9', '1:1'], description: '預設 9:16' },
+        duration: { type: 'number', description: '整段秒數，預設 6' },
+        tag: { type: 'string', description: '左上標題籤，例如「區域｜案名」；空字串＝移除' },
+        legend: { type: 'string', description: '圖例文字（aerial），例如「紅線：公有土地地籍界線」' },
+        site_label: { type: 'string', description: '基地標籤文字' },
+        site_color: { type: 'string', description: '基地框與標籤顏色 #RRGGBB' },
+        roads: {
+          type: 'array',
+          description: '道路名；沒給 x/y 時依序放在基地的上、下、左、右（左右會直排）',
+          items: { type: 'object', required: ['text'], properties: { text: { type: 'string' }, x: { type: 'number' }, y: { type: 'number' }, vertical: { type: 'boolean' }, light: { type: 'boolean', description: 'true＝白底黑字' } } },
+        },
+        info_lines: { type: 'array', items: { type: 'string' }, description: '資訊卡每行一句，* 開頭用強調色（黃）' },
+        stat: {
+          type: 'object',
+          description: '數據卡（street 範本預設有）',
+          properties: { title: { type: 'string' }, subtitle: { type: 'string' }, items: { type: 'array', items: { type: 'string' }, description: '「標籤|數字|單位|附註」，最多 4 欄' } },
+        },
+        subtitle: { type: 'string', description: '字幕；空字串＝移除' },
+        credit: { type: 'string', description: '底圖出處' },
+        handle: { type: 'string', description: '頻道署名；空字串＝移除' },
+        bg_url: { type: 'string', description: '底圖圖片網址（選填）；沒有時預覽會用風格化底圖，正式使用建議在網站地圖工作室上傳自己的底圖' },
+        bg_dim: { type: 'number', description: '底圖調暗 0–0.7' },
+        elements: { type: 'array', items: { type: 'object' }, description: '進階：額外元件 {type: tag|road|site|label|pin|info|stat|compass|text, x, y, text, lines, color, fg, size, delay, pts}' },
+        title: { type: 'string', description: '預覽用名稱' },
+      },
+    },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const sc = buildMapScene(a as MapSceneInput);
+      const scene = { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sc.loop + 1 };
+      const { combo } = normalizeCombo({ title: String(a.title ?? '地圖場景預覽'), ratio: sc.ratio, transition: 'cut', scenes: [scene] });
+      return {
+        combo_scene: scene,
+        elements: sc.els.map((e) => ({ type: e.type, role: e.role ?? null, text: e.text ?? null, lines: e.lines ?? null, x: +e.x.toFixed(3), y: +e.y.toFixed(3), delay: e.delay })),
+        preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`,
+        ratio: sc.ratio,
+        next: `把 combo_scene 原封不動放進 compose_combo 或 save_combo 的 scenes，並把 ratio 設為 ${sc.ratio}，否則元件位置會跑掉；要微調位置可請使用者到網站的地圖工作室（/?view=map）調整後再加入 Combo。`,
+      };
+    },
+  },
+  {
+    name: 'build_drop_scene',
+    title: '組水滴場景',
+    description:
+      '產生「銳利水滴」段落（邊緣零模糊，適合疊進影片）：可指定形狀、顏色、光澤、外框、文字版型與位置、點綴小水滴。回傳可放進 Combo 的 combo_scene 與預覽連結。',
+    inputSchema: {
+      type: 'object',
+      required: ['lines'],
+      properties: {
+        lines: { type: 'array', items: { type: 'string' }, description: '文字，一行一句；~ 開頭為字距寬的英文小字' },
+        layout: { type: 'string', enum: ['inside', 'beside', 'above', 'below'], description: '字在水滴裡｜字旁點綴小水滴｜水滴在上｜水滴在下' },
+        shape: { type: 'string', enum: ['circle', 'cloud', 'flower', 'pebble', 'random'] },
+        seed: { type: 'number', description: '隨機形狀的種子，同一個數字形狀相同' },
+        size: { type: 'number', description: '主水滴大小 0–0.95（佔短邊比例），0＝不畫主水滴' },
+        color: { type: 'string', description: '水滴上方顏色 #RRGGBB' },
+        color2: { type: 'string', description: '水滴下方顏色 #RRGGBB' },
+        alpha: { type: 'number', description: '透明度 0.1–1' },
+        gloss: { type: 'number', description: '光澤 0–1' },
+        gloss_style: { type: 'string', enum: ['both', 'crescent', 'dot', 'none'] },
+        rim: { type: 'string', description: '外框顏色' },
+        rim_width: { type: 'number', description: '外框粗細 0–16' },
+        text_color: { type: 'string' },
+        text_size: { type: 'number', description: '字級（以短邊 1080 為基準），預設 150' },
+        stroke: { type: 'string', description: '文字描邊顏色' },
+        stroke_width: { type: 'number' },
+        x: { type: 'number' },
+        y: { type: 'number' },
+        tx: { type: 'number', description: '文字中心 0–1' },
+        ty: { type: 'number' },
+        sats: { type: 'number', description: '點綴小水滴數量 0–16' },
+        sat_size: { type: 'number' },
+        sat_spread: { type: 'number' },
+        bg: { type: 'string', description: 'transparent（預設）、#hex，或 #hex,#hex 漸層' },
+        duration: { type: 'number', description: '秒數，預設 6' },
+        title: { type: 'string' },
+      },
+    },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const lines = Array.isArray(a.lines) ? a.lines.map(String).filter(Boolean).slice(0, 6) : ['水滴'];
+      const { o } = parseDrop(a.layout ? [`@pos=${String(a.layout)}`] : []);
+      const map: Record<string, keyof DropOpts> = { shape: 'shape', seed: 'seed', size: 'size', color: 'color', color2: 'color2', alpha: 'alpha', gloss: 'gloss', gloss_style: 'glossStyle', rim: 'rim', rim_width: 'rimWidth', text_color: 'textColor', text_size: 'textSize', stroke: 'stroke', stroke_width: 'strokeWidth', x: 'x', y: 'y', tx: 'tx', ty: 'ty', sats: 'sats', sat_size: 'satSize', sat_spread: 'satSpread', bg: 'bg', duration: 'loop' };
+      const rec = o as unknown as Record<string, unknown>;
+      for (const [k, key] of Object.entries(map)) if (a[k] !== undefined && a[k] !== null) rec[key] = typeof rec[key] === 'number' ? Number(a[k]) : String(a[k]);
+      const words = dropToWords(o, lines);
+      const scene = { effect: 'crisp-drop', words, seconds: o.loop };
+      const { combo } = normalizeCombo({ title: String(a.title ?? '水滴預覽'), ratio: '9:16', transition: 'cut', scenes: [scene] });
+      return { combo_scene: scene, ratio: '9:16', preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`, studio_url: `${ctx.origin}/?view=drop`, next: '把 combo_scene 放進 compose_combo 或 save_combo 的 scenes；水滴以短邊為基準，9:16、16:9 都能用。' };
+    },
+  },
+  {
     name: 'compose_combo',
     title: '組合 Combo（預覽，不儲存）',
     description:
@@ -283,7 +384,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是 ${EFFECTS
 2. 用 search_effects 依每段的目的挑特效，留意 word_hint 的文字格式。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
-銳利水滴（crisp-drop）可在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+地圖片段請用 build_map_scene、水滴請用 build_drop_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

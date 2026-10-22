@@ -4,6 +4,8 @@ import { esc } from './util';
 
 export interface MapStudioDeps {
   toast: (msg: string) => void;
+  copy: (text: string, msg: string) => Promise<void>;
+  addScene: (s: { effect: string; words: string[]; seconds?: number; ratio?: MScene['ratio'] }) => void;
   store: { get<T>(k: string, d: T): T; set(k: string, v: unknown): void };
 }
 
@@ -358,6 +360,32 @@ export const initMapStudio = (deps: MapStudioDeps) => {
     busy('');
     deps.toast('已輸出 WebM');
   });
+  /** 底圖壓成 JPEG（長邊 1280），讓 Combo 能帶著底圖存進資料庫 */
+  const compressBg = (): string | undefined => {
+    if (!bg) return undefined;
+    const k = Math.min(1, 1280 / Math.max(bg.width, bg.height));
+    const c = canvasOf(Math.round(bg.width * k), Math.round(bg.height * k));
+    c.getContext('2d')!.drawImage(bg, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.82);
+  };
+  const sceneForExport = (): MScene => {
+    const out: MScene = structuredClone(sc);
+    const url = withBg ? compressBg() : undefined;
+    if (url) out.bgUrl = url;
+    else delete out.bgUrl;
+    return out;
+  };
+  $('#msCombo').addEventListener('click', () => {
+    const out = sceneForExport();
+    deps.addScene({ effect: 'map-overlay', words: [JSON.stringify(out)], seconds: out.loop + 1, ratio: out.ratio });
+    if (bg && !withBg) deps.toast('已加入 Combo（未含底圖，勾選「輸出包含底圖」可一起帶入）');
+  });
+  $('#msJson').addEventListener('click', () => {
+    const out: MScene = structuredClone(sc);
+    delete out.bgUrl;
+    deps.copy(JSON.stringify(out), '已複製場景 JSON（不含底圖），可貼給 AI 修改');
+  });
+
   $('#msLoop').addEventListener('input', (e) => {
     sc.loop = parseFloat((e.target as HTMLInputElement).value);
     $('#msLoopV').textContent = `${sc.loop}s`;
@@ -401,5 +429,15 @@ export const initMapStudio = (deps: MapStudioDeps) => {
   });
   $('#msClose').addEventListener('click', () => dlg.close());
   if (new URLSearchParams(location.search).get('view') === 'map') open();
-  return { open };
+  return {
+    open,
+    /** 載入外部場景（例如 AI 產生的），底圖網址會一併載入 */
+    load: (scene: MScene) => {
+      sc = { ...scene, els: scene.els.map((e) => ({ ...e })) };
+      if (scene.bgUrl) loadBg(scene.bgUrl);
+      sel = null;
+      persist();
+      open();
+    },
+  };
 };

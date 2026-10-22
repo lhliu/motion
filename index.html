@@ -323,6 +323,8 @@
                 <tr><td><code>list_categories</code></td><td>分類、情境標籤、配色</td><td>讀取</td></tr>
                 <tr><td><code>search_effects</code></td><td>用關鍵字、分類、標籤找特效</td><td>讀取</td></tr>
                 <tr><td><code>get_effect</code></td><td>單一特效的動態拆解、提示詞、HTML 原始碼</td><td>讀取</td></tr>
+                <tr><td><code>build_map_scene</code></td><td>組地圖場景（基地框、路名、資訊卡、數據卡），回傳可放進 Combo 的段落</td><td>讀取</td></tr>
+                <tr><td><code>build_drop_scene</code></td><td>組銳利水滴段落（形狀、顏色、光澤、文字位置）</td><td>讀取</td></tr>
                 <tr><td><code>compose_combo</code></td><td>組合多段特效並產生預覽連結（不儲存）</td><td>讀取</td></tr>
                 <tr><td><code>save_combo</code></td><td>存進 Combo 庫；帶 id 代表更新</td><td>需金鑰</td></tr>
                 <tr><td><code>list_combos</code> / <code>get_combo</code></td><td>查詢 Combo 庫，當作新需求的參考</td><td>讀取</td></tr>
@@ -395,6 +397,8 @@
               <button class="ma-btn" id="msPng"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>PNG</button>
               <button class="btn-ghost" id="msSeq">PNG 序列（ZIP）</button>
               <button class="btn-ghost" id="msWebm">WebM 影片</button>
+              <button class="btn-ghost" id="msCombo">加入 Combo</button>
+              <button class="btn-ghost" id="msJson">複製場景 JSON</button>
             </div>
             <p class="st-status" id="msStatus" hidden></p>
             <p class="st-note">底圖只存在你的瀏覽器，不會上傳。疊在影片上時，取消「輸出包含底圖」即可得到透明素材。正射影像與地籍圖請照原規定標示出處。</p>

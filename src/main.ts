@@ -7,6 +7,7 @@ import { esc } from './util';
 import { initCombos } from './combo-ui';
 import { initStudio } from './drop-studio';
 import { initMapStudio } from './map-studio';
+import { sceneFromWords } from './effects/map';
 
 /* ───────── 小工具 ───────── */
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -759,6 +760,7 @@ const combos = initCombos({
   toast,
   copy,
   openDetail,
+  openStudio: (effect, words) => (effect === 'map-overlay' ? mapStudio.load(sceneFromWords(words)) : studio.load(words)),
   palette: () => ({ id: state.pal, accent: state.custom ?? undefined }),
   store,
 });
@@ -769,7 +771,7 @@ $('#dAddCombo').addEventListener('click', () => {
 
 const studio = initStudio({ toast, copy, addScene: (sc) => combos.addScene(sc), store });
 $('#dropBtn').addEventListener('click', () => studio.open());
-const mapStudio = initMapStudio({ toast, store });
+const mapStudio = initMapStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc) });
 $('#mapBtn').addEventListener('click', () => mapStudio.open());
 $('#dMapStudio').addEventListener('click', () => {
   closeDetail();

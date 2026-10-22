@@ -1,5 +1,22 @@
 import type { Fx } from '../types';
 import { blobPath, esc, lobes, pick, rand, range, rep } from '../util';
+import { fnSource } from '../engine';
+import { buildMapScene, mapRenderer, type MScene } from '../mapkit';
+
+const MAP_GLOBALS = `window.MA_MAP=${fnSource(mapRenderer)}();`;
+
+/** words 裡第一個以 { 開頭的字串視為場景 JSON；沒有就用鳥瞰範本 */
+export const sceneFromWords = (w: string[]): MScene => {
+  const j = w.find((x) => String(x).trim().startsWith('{'));
+  if (j) {
+    try {
+      return JSON.parse(j) as MScene;
+    } catch {
+      /* 格式錯誤時退回範本 */
+    }
+  }
+  return buildMapScene({ tag: w[0] && !w[0].startsWith('{') ? w[0] : undefined });
+};
 
 /* ───────── 共用：風格化底圖（1600×900） ───────── */
 const W = 1600;
@@ -66,6 +83,52 @@ const emojiFor = (s: string) => EMOJI.find(([r]) => r.test(s))?.[1] ?? '📍';
 const split = (s: string) => (s.includes('｜') ? s.split('｜') : s.includes('|') ? s.split('|') : [s, '']);
 
 export const map: Fx[] = [
+  {
+    id: 'map-overlay',
+    cat: 'map',
+    zh: '地圖疊加場景',
+    en: 'Map Overlay Scene',
+    desc: '基地框、路名、資訊卡依序進場，可換成自己的底圖',
+    tags: ['建案', '區位', 'Shorts'],
+    tone: 'paper',
+    sample: [],
+    hint: '在地圖工作室編輯後加入 Combo；或由 AI 透過 MCP 的 build_map_scene 產生',
+    motion: '在地圖底圖上依序進場：左上深色膠囊標題籤（含黃點）滑入、指北針旋轉出現、黃色粗框沿基地邊界描繪後填入半透明黃色、黃底黑字基地標籤彈出、深色膠囊道路名依序彈出（南北向道路直排）、下方深色半透明資訊卡帶左側黃條由下滑入、文字黃白交錯逐行出現；全部硬邊，不使用陰影或模糊。',
+    motionEn: 'Elements enter over a map base in sequence: a dark pill title tag with a yellow dot slides in at top left, a compass spins in, a thick yellow outline traces the site boundary then fills with translucent yellow, a yellow site label pops, dark pill street names pop one by one (north–south streets set vertically), and a translucent dark info card with a yellow side bar slides up as alternating yellow and white lines appear; all hard-edged, with no shadows or blur.',
+    css: `${MAP_CSS}
+.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`,
+    html: (w) => `${svg(base(true))}<canvas data-scene="${esc(JSON.stringify(sceneFromWords(w)))}"></canvas>`,
+    globals: MAP_GLOBALS,
+    run: (root) => {
+      const R = (globalThis as unknown as { MA_MAP: { drawScene: (...a: unknown[]) => unknown } }).MA_MAP;
+      const cv = root.querySelector('canvas')!;
+      const ctx = cv.getContext('2d')!;
+      let sc: { loop: number; bgUrl?: string };
+      try {
+        sc = JSON.parse(cv.dataset.scene || '{}');
+      } catch {
+        return;
+      }
+      let img: HTMLImageElement | undefined;
+      if (sc.bgUrl) {
+        const im = new Image();
+        im.onload = () => (img = im);
+        im.src = sc.bgUrl;
+      }
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
+      const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
+      const t0 = performance.now();
+      const loop = Math.max(2, sc.loop || 6) + 1.5;
+      let raf = 0;
+      const f = (now: number) => {
+        raf = requestAnimationFrame(f);
+        R.drawScene(ctx, W, H, sc, ((now - t0) / 1000) % loop, img);
+      };
+      raf = requestAnimationFrame(f);
+      return () => cancelAnimationFrame(raf);
+    },
+  },
   {
     id: 'map-pin-drop',
     cat: 'map',
