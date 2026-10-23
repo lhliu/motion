@@ -62,7 +62,7 @@ export function transportEngine(){
     });return{bodyY,legs};
   }
   type Asset={image:HTMLImageElement;box:[number,number,number,number];ratio:number};
-  function createRenderer(canvas:HTMLCanvasElement,overlay:HTMLCanvasElement,initial:unknown,origin:string){
+  function createRenderer(canvas:HTMLCanvasElement,overlay:HTMLCanvasElement,initial:unknown,origin:string,opts:{lite?:boolean}={}){
     const ctx=canvas.getContext('2d')!,top=overlay.getContext('2d')!;
     let scene=normalize(initial),disposed=false,loaded=false,revision=0,assetKey='';
     const images=new Map<string,Asset>(),pending=new Map<string,Promise<Asset>>(),tints=new Map<string,HTMLCanvasElement>();
@@ -79,7 +79,7 @@ export function transportEngine(){
           if(r>l&&b>t)box=[Math.max(0,l-1),Math.max(0,t-1),Math.min(w-l,r-l+3),Math.min(h-t,b-t+3)];c.width=c.height=1;
         }
         const asset={image,box,ratio:box[3]/box[2]};if(!disposed)images.set(file,asset);resolve(asset);
-      }catch(error){reject(error);}};image.onerror=()=>reject(new Error('精修插畫素材暫時無法載入，請確認網路後重試。'));image.src=origin.replace(/\/$/,'')+'/media/transport-illustrated/'+file;});pending.set(file,promise);promise.catch(()=>pending.delete(file));return promise;
+      }catch(error){reject(error);}};image.onerror=()=>reject(new Error('精修插畫素材暫時無法載入，請確認網路後重試。'));image.src=origin.replace(/\/$/,'')+'/media/transport-illustrated/'+file.replace(/\.png$/,opts.lite&&!file.startsWith('horse-complete')?'-s.webp':'.webp');});pending.set(file,promise);promise.catch(()=>pending.delete(file));return promise;
     }
     function required(sc:TScene){
       const base=sc.mode==='carriage'?['carriage','carriage-wheel','horse-complete']:sc.mode==='car'?['car','car-wheel']:sc.mode==='train'?['train','coach']:[sc.mode];

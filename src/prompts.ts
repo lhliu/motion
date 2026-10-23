@@ -3,7 +3,8 @@ import { isNatureFx, natureFromWords, NATURE } from './nature';
 import { isTransportFx, transportFromWords, TRANSPORT } from './transport';
 import { illustrationFromWords, isIllustrationFx, ILLUSTRATION } from './illustration';
 import type { Fx } from './types';
-import { BASE_FX_CSS, fnSource, FONT_LINK, fwAttr, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
+import { fontLink, familiesFor } from './fonts';
+import { BASE_FX_CSS, fnSource, fwAttr, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
 import { faceOf, fontPack, weightOf } from './fonts';
 
 const faceZh = (v: Vars) => {
@@ -152,7 +153,7 @@ export const exportHtml = (fx: Fx, words: string[], v: Vars, ratio: Ratio): stri
 <title>${fx.zh} ${fx.en} — Motion Atlas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="${FONT_LINK}" rel="stylesheet">
+<link href="${fontLink(familiesFor({ font: v.font, face: v.face, css: fx.css }))}" rel="stylesheet">
 <style>
 /* 從 motion.leichthub.com 匯出：${fx.zh}（${fx.en}） */
 :root{${varsCss(v)}}

@@ -18,9 +18,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/brand/motion-atlas-logo-180.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- 只先載入介面與預設字型（不擋住畫面）；其他字型在選用或特效需要時才載入 -->
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chiron+Hei+HK:wght@300;400;500;700;800;900&family=Chiron+GoRound+TC:wght@400;500;700;900&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@300;500;700;900&family=LXGW+WenKai+TC:wght@400;700&family=Huninn&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chiron+Hei+HK:wght@300;500;700;900&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
     <script>
       try {

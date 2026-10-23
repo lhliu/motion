@@ -22,7 +22,7 @@ export const illustratedNature:Fx[]=(Object.entries(NATURE.modes) as [NMode,type
     const snow=root.querySelector<HTMLCanvasElement>('.nv-overlay')!;
     const status=root.querySelector<HTMLElement>('.nv-status')!;
     let renderer: ReturnType<typeof R.createRenderer>;
-    try{renderer=R.createRenderer(canvas,snow,JSON.parse(canvas.dataset.scene||'{}'),canvas.dataset.origin||'https://motion.leichthub.com');}
+    try{renderer=R.createRenderer(canvas,snow,JSON.parse(canvas.dataset.scene||'{}'),canvas.dataset.origin||'https://motion.leichthub.com',{lite:canvas.clientWidth*canvas.clientHeight*Math.min(4,(devicePixelRatio||1)**2)<=1e6});}
     catch(e){status.textContent=e instanceof Error?e.message:'無法載入動畫';return;}
     const host=root as HTMLElement & {motionReady?: Promise<boolean>;motionSeek?:(t:number)=>void};
     let disposed=false,ready=false,elapsed=0,previous=performance.now(),raf=0,seek:number|undefined,last=-1;

@@ -4,11 +4,11 @@ import { isTransportFx, transportFromWords, TRANSPORT } from './transport';
 import { isIllustrationFx, illustrationFromWords, ILLUSTRATION } from './illustration';
 // Combo：把多個特效依序串成一段動畫。網站、MCP、分享頁共用這支檔案，不可在載入時碰 DOM。
 import { ALL_EFFECTS, EFFECTS, NUM, PALETTES } from './data';
-import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, toneVars, varsCss } from './engine';
+import { BASE_FX_CSS, fnSource, loopSeconds, scopeCss, toneVars, varsCss } from './engine';
 import type { Ratio } from './prompts';
 import type { Fx, Palette, Tone } from './types';
 import { esc } from './util';
-import { FACE_IDS, FONT_IDS, fontPack, WEIGHT_IDS } from './fonts';
+import { FACE_IDS, FONT_IDS, familiesFor, fontLink, fontPack, WEIGHT_IDS } from './fonts';
 import { isPhotoFx, MODULE_INFO, type PScene } from './photokit';
 import { isObjFx, OBJ_INFO, type OScene } from './objkit';
 
@@ -302,7 +302,7 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean; safe?
 <title>${esc(c.title)} — Motion Atlas Combo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="${FONT_LINK}" rel="stylesheet">
+<link href="${fontLink([...c.scenes.flatMap((s) => familiesFor({ font: s.font ?? c.font, face: s.face, css: findEffect(s.effect)?.css })), ...ovs.flatMap((x) => familiesFor({ font: c.font, css: x.fx.css }))])}" rel="stylesheet">
 <style>
 /* Motion Atlas Combo：${esc(c.title)}｜${scenes.length} 段｜約 ${totalSeconds(c)} 秒 */
 html,body{margin:0;height:100%;background:#0b0b0b;display:grid;place-items:center;overflow:hidden;font-family:"Chiron Hei HK","Noto Sans TC",system-ui,sans-serif}

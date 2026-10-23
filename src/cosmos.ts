@@ -37,7 +37,7 @@ export function cosmicEngine(){
  }
  function fromWords(words:string[]=[],fallback:CosmicMode='orbit'){try{return normalize(JSON.parse(words.find(w=>w.trim().startsWith('{'))||'{}'),fallback);}catch{return normalize({},fallback);}}
  const assetPath=(name:string)=>name==='earth-terrain'?'/media/cosmos-illustrated/earth-terrain-v2.png':name==='cloud'?'/media/transport-illustrated/cloud-v1.png':['nebula','dust'].includes(name)?'/media/nature-illustrated/'+name+'-v1.png':'/media/cosmos-illustrated/'+name+'-v1.png';
- function createRenderer(canvas:HTMLCanvasElement,overlay:HTMLCanvasElement,initial:unknown,origin:string){
+ function createRenderer(canvas:HTMLCanvasElement,overlay:HTMLCanvasElement,initial:unknown,origin:string,opts:{lite?:boolean}={}){
   const ctx=canvas.getContext('2d')!,top=overlay.getContext('2d')!;let scene=normalize(initial),loaded=false,disposed=false,revision=0,key='';
   const assets=new Map<string,HTMLImageElement>(),pending=new Map<string,Promise<HTMLImageElement>>();
   const cv=(w:number,h:number)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
@@ -45,7 +45,7 @@ export function cosmicEngine(){
   type GroundMap={width:number;height:number;levels:Map<string,{canvas:HTMLCanvasElement;pattern:CanvasPattern}>};
   const terrain=cv(1,1),terrainCtx=terrain.getContext('2d')!;
   const materials=new Map<string,Material>(),floors=new Map<string,GroundMap>();let cloudData:Uint8ClampedArray|undefined;
-  function load(name:string){if(assets.has(name))return Promise.resolve(assets.get(name)!);if(pending.has(name))return pending.get(name)!;const p=new Promise<HTMLImageElement>((resolve,reject)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>{if(!disposed)assets.set(name,i);resolve(i);};i.onerror=()=>reject(Error('精修星球素材載入失敗，請確認網路後重試'));i.src=origin.replace(/\/$/,'')+assetPath(name);});pending.set(name,p);p.catch(()=>pending.delete(name));return p;}
+  function load(name:string){if(assets.has(name))return Promise.resolve(assets.get(name)!);if(pending.has(name))return pending.get(name)!;const p=new Promise<HTMLImageElement>((resolve,reject)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>{if(!disposed)assets.set(name,i);resolve(i);};i.onerror=()=>reject(Error('精修星球素材載入失敗，請確認網路後重試'));i.src=origin.replace(/\/$/,'')+assetPath(name).replace(/\.png$/,opts.lite?'-s.webp':'.webp');});pending.set(name,p);p.catch(()=>pending.delete(name));return p;}
   function update(raw:unknown){scene=normalize(raw);const names=[scene.body==='gas'?'gas':scene.body==='earth'?(scene.mode==='flyover'?'earth-terrain':'earth'):'surfaces',...(scene.mode!=='flyover'&&scene.moons>0?['surfaces']:[]),...(['space','nebula','dust'].includes(scene.background)?[scene.background]:[]),...(scene.body==='earth'&&scene.clouds>0?[scene.mode==='flyover'?'cloud':'cloudmap']:[])];if(scene.mode==='flyover'&&scene.body==='moon')names.push('earth');const next=[...new Set(names)].join('/');if(loaded&&key===next)return Promise.resolve(true);const token=++revision;loaded=false;return Promise.all([...new Set(names)].map(load)).then(()=>{if(disposed||token!==revision)return false;key=next;loaded=true;return true;});}
   function material(body:CosmicBody,ground=false):Material{
    const k=body+'/'+ground+'/'+scene.tint+'/'+scene.color;if(materials.has(k))return materials.get(k)!;

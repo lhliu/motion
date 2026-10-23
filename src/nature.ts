@@ -53,7 +53,7 @@ export function natureEngine(){
  function fromWords(words:string[]=[],fallback:NMode='meteor'){try{return normalize(JSON.parse(words.find(w=>w.trim().startsWith('{'))||'{}'),fallback);}catch{return normalize({},fallback);}}
  const assetPath=(name:string)=>name==='space'?'/media/transport-illustrated/space-v1.png':name==='cloud'?'/media/transport-illustrated/cloud-v1.png':'/media/nature-illustrated/'+name+'-v1.png';
  type Asset={image:HTMLImageElement;box:[number,number,number,number];ratio:number};
- function createRenderer(canvas:HTMLCanvasElement,overlay:HTMLCanvasElement,initial:unknown,origin:string){
+ function createRenderer(canvas:HTMLCanvasElement,overlay:HTMLCanvasElement,initial:unknown,origin:string,opts:{lite?:boolean}={}){
   const ctx=canvas.getContext('2d')!,top=overlay.getContext('2d')!;let scene=normalize(initial),disposed=false,loaded=false,revision=0,key='';
   const assets=new Map<string,Asset>(),pending=new Map<string,Promise<Asset>>(),tints=new Map<string,HTMLCanvasElement>();
   const cv=(w:number,h:number)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
@@ -67,7 +67,7 @@ export function natureEngine(){
      if(r>l&&b>t)box=[l,t,r-l+1,b-t+1];c.width=c.height=1;
     }
     const a={image,box,ratio:box[3]/box[2]};if(!disposed)assets.set(name,a);resolve(a);
-   }catch(e){reject(e);}};image.onerror=()=>reject(new Error('精修素材暫時無法載入，請確認網路後重試'));image.src=origin.replace(/\/$/,'')+assetPath(name);});pending.set(name,p);p.catch(()=>pending.delete(name));return p;
+   }catch(e){reject(e);}};image.onerror=()=>reject(new Error('精修素材暫時無法載入，請確認網路後重試'));image.src=origin.replace(/\/$/,'')+assetPath(name).replace(/\.png$/,opts.lite?'-s.webp':'.webp');});pending.set(name,p);p.catch(()=>pending.delete(name));return p;
   }
   function required(s:NScene){
    if(s.mode==='meteor')return[s.style,...(['space','nebula','dust'].includes(s.background)?[s.background]:[])];

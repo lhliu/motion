@@ -87,7 +87,7 @@ export function illustrationEngine() {
     const a=poses[i],b=poses[i+1],before=poses[Math.max(0,i-1)],after=poses[Math.min(poses.length-1,i+2)],dt=b[0]-a[0],p=(t-a[0])/dt,p2=p*p,p3=p2*p;
     return a.slice(1).map((v,k)=>{const c=k+1,m0=(b[c]-before[c])/(b[0]-before[0]),m1=(after[c]-a[c])/(after[0]-a[0]);return(2*p3-3*p2+1)*v+(p3-2*p2+p)*dt*m0+(-2*p3+3*p2)*b[c]+(p3-p2)*dt*m1;});
   }
-  function createRenderer(canvas:HTMLCanvasElement,particles:HTMLCanvasElement,initial:unknown,origin:string){
+  function createRenderer(canvas:HTMLCanvasElement,particles:HTMLCanvasElement,initial:unknown,origin:string,opts:{lite?:boolean}={}){
     let scene=normalize(initial),disposed=false,loaded=false,request=0,assetKey='';
     const context=canvas.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:true,preserveDrawingBuffer:true});
     if(!context)throw new Error('瀏覽器無法啟動 WebGL，請改用支援 WebGL 的瀏覽器。');
@@ -213,7 +213,7 @@ export function illustrationEngine() {
     const imageCache=new Map<string,Promise<HTMLImageElement>>();
     function image(file:string){
       if(imageCache.has(file))return imageCache.get(file)!;
-      const promise=new Promise<HTMLImageElement>((resolve,reject)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('插畫素材暫時無法載入，請確認網路後重試。'));im.src=origin.replace(/\/$/,'')+'/media/whale-illustrated/'+file;});imageCache.set(file,promise);promise.catch(()=>imageCache.delete(file));return promise;
+      const promise=new Promise<HTMLImageElement>((resolve,reject)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('插畫素材暫時無法載入，請確認網路後重試。'));im.src=origin.replace(/\/$/,'')+'/media/whale-illustrated/'+file.replace(/\.png$/,opts.lite?'-s.webp':'.webp');});imageCache.set(file,promise);promise.catch(()=>imageCache.delete(file));return promise;
     }
     function update(raw:unknown){
       scene=normalize(raw);const chosenFiles=requiredFiles(scene),key=chosenFiles.join('/');if(key===assetKey&&loaded)return Promise.resolve(true);

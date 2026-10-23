@@ -1,8 +1,5 @@
 import type { Fx, Palette, Tone } from './types';
-import { faceOf, FONT_FAMILIES_QS, fontStack, NUM_FONT_CSS, weightOf } from './fonts';
-
-export const FONT_LINK =
-  `https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&${FONT_FAMILIES_QS}&display=swap`;
+import { ensureFonts, faceOf, familiesFor, fontStack, NUM_FONT_CSS, weightOf } from './fonts';
 
 /** 每個特效根節點共用的基礎樣式 */
 export const BASE_FX_CSS = `${NUM_FONT_CSS}
@@ -80,6 +77,7 @@ export interface Mounted {
 /** 把特效掛到容器上；回傳停止函式 */
 export const mount = (host: HTMLElement, fx: Fx, words: string[], vars: Vars, speed = 1): Mounted => {
   ensureCss(fx);
+  ensureFonts(familiesFor({ font: vars.font, face: vars.face, css: fx.css }));
   host.replaceChildren();
   const root = document.createElement('div');
   root.className = `fx fx-${fx.id}`;

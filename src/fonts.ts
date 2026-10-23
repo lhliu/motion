@@ -84,9 +84,41 @@ export const fontStack = (id?: string) => fontPack(id).stack;
 /** 預設的字型順序：數字 → 昭源黑體 → 思源黑體 */
 export const FONT_STACK = fontStack('sharp');
 
-/** Google Fonts 載入網址（所有字型組合） */
-export const FONT_FAMILIES_QS =
-  'family=Chiron+Hei+HK:wght@300;400;500;700;800;900&family=Chiron+GoRound+TC:wght@400;500;700;900&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@300;500;700;900&family=LXGW+WenKai+TC:wght@400;700&family=Huninn';
+/** 各字型在 Google Fonts 的查詢字串；字重只留實際會用到的（缺的字重瀏覽器會就近取用） */
+const FAMILY_QS: Record<string, string> = {
+  'JetBrains Mono': 'JetBrains+Mono:wght@400;700',
+  'Chiron Hei HK': 'Chiron+Hei+HK:wght@300;500;700;900',
+  'Chiron GoRound TC': 'Chiron+GoRound+TC:wght@400;500;700;900',
+  'Noto Sans TC': 'Noto+Sans+TC:wght@300;500;700;900',
+  'Noto Serif TC': 'Noto+Serif+TC:wght@300;500;700;900',
+  'LXGW WenKai TC': 'LXGW+WenKai+TC:wght@400;700',
+  Huninn: 'Huninn',
+};
+/** 只載入用得到的字型：中文字型每套的 CSS 就有數百 KB，全部一起載會拖慢頁面又吃記憶體 */
+export const fontLink = (families: Iterable<string>) =>
+  `https://fonts.googleapis.com/css2?${[...new Set(['JetBrains Mono', 'Chiron Hei HK', ...families])]
+    .filter((f) => FAMILY_QS[f])
+    .map((f) => 'family=' + FAMILY_QS[f])
+    .join('&')}&display=swap`;
+/** 一段畫面需要哪些字型：字型組合、字體選擇、特效 CSS 裡直接用到的宋體 */
+export const familiesFor = (o: { font?: string; face?: string; css?: string }): string[] => [
+  ...fontPack(o.font).families,
+  ...(o.face ? [faceOf(o.face)?.family ?? ''] : []),
+  ...(o.css && /var\(--serif\)|Noto Serif/.test(o.css) ? ['Noto Serif TC'] : []),
+].filter((f) => FAMILY_QS[f]);
+const loadedFamilies = new Set(['JetBrains Mono', 'Chiron Hei HK']);
+/** 瀏覽器端：第一次需要某套字型時才插入它的樣式表 */
+export const ensureFonts = (families: Iterable<string>) => {
+  if (typeof document === 'undefined') return;
+  for (const f of families) {
+    if (loadedFamilies.has(f) || !FAMILY_QS[f]) continue;
+    loadedFamilies.add(f);
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = `https://fonts.googleapis.com/css2?family=${FAMILY_QS[f]}&display=swap`;
+    document.head.appendChild(l);
+  }
+};
 
 /** 畫布在自給自足的 run 裡用字型組合代碼查字型（匯出 HTML 時一起內嵌） */
 export const FONTS_GLOBALS = `window.MA_FONTS=${JSON.stringify(Object.fromEntries(FONT_PACKS.map((f) => [f.id, f.stack])))};`;
