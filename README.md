@@ -41,13 +41,13 @@ Combo 存的是預設當下的內容（快照）；預設更新後，請 AI 重�
 
 ### 隕石與俯瞰・精修插畫
 
-隕石分類只顯示一招 `meteor-illustrated`（#244），在編輯器切換岩石、冰晶、熔岩、金屬四種樣式。可調自轉、漂浮、碎石數量與散布、飛行方向、火焰尾跡，熔岩另有熱度脈動，冰晶與金屬另有切面反光。五種背景為深空、星雲、塵帶、星夜與暖白圖鑑，另可去背輸出。
+隕石分類只顯示一招 `meteor-illustrated`（#244），在編輯器切換岩石、冰晶、熔岩、金屬四種樣式。可調自轉、漂浮、碎石數量與散布、飛行方向，熔岩另有熱度脈動，冰晶與金屬另有切面反光。五種背景為深空、星雲、塵帶、星夜與暖白圖鑑，另可去背輸出。
 
 俯瞰分類有八招 `aerial-illustrated-*`（#245–252）：城市車流、河流船隻、山川雲層、草原牛馬、農田農車、海岸浪線、森林樹冠、交流道主線車流。各招有獨立設定記憶與專屬參數，共用視野推近、平移幅度與方向、整體位置、大小、旋轉、速度及配色；五種環境為自然、暖色、清冷、夜色與墨色。可選滿版、圓角圖卡或圓形視窗。所有地景都是虛構插畫，不代表實際地點；透明模式輸出地景圖卡，卡片外透明，地景本身保留。
 
-工作室 `/?view=nature`；各卡片「編輯精修插畫」開啟本招。支援 PNG、透明 WebM、PNG 序列、JSON、編輯連結、預設及 Combo。共用引擎 `src/nature.ts` 自給自足，素材位於 `public/media/nature-illustrated/`，只載入當前場景需要的素材，保留原始檔並提供 CORS。動態圖層採同一地景座標：車流沿車道、下穿橋面處遮擋、船隻沿河道、牛馬避開池塘與柵欄、前景樹冠避開林間小路。
+隕石工作室 `/?view=meteor` 與俯瞰工作室 `/?view=aerial` 分開，各自記住設定並只列出同類預設；舊的 `/?view=nature` 與編輯連結仍相容。各卡片「編輯精修插畫」開啟本招。支援 PNG、透明 WebM、PNG 序列、JSON、編輯連結、預設及 Combo。共用引擎 `src/nature.ts` 自給自足，素材位於 `public/media/nature-illustrated/`，只載入當前場景需要的素材，保留原始檔並提供 CORS。動態圖層採同一地景座標：車流沿車道、下穿橋面處遮擋、船隻沿河道、牛馬避開池塘與柵欄、前景樹冠避開林間小路。
 
-MCP `build_nature_scene` 使用 `mode=meteor|city|river|mountain|grass|farm|coast|forest|highway`，隕石另用 `style=rock|ice|lava|gold`，會回傳專屬參數與編輯連結。`/r/nature.js` 提供 `MA_NATURE.createRenderer(canvas,overlayCanvas,scene,assetOrigin)`；先 `await renderer.ready` 再 `renderer.render(t,W,H)`，結束時 `renderer.dispose()`。`/tests/nature-refined.html` 驗證單一隕石、多樣式、八招俯瞰、專屬控制、三種比例、透明度、MCP、預設、Combo、獨立 HTML 與原版相容。
+MCP `build_nature_scene` 使用 `mode=meteor|city|river|mountain|grass|farm|coast|forest|highway`，隕石另用 `style=rock|ice|lava|gold`，會回傳專屬參數與編輯連結。`/r/nature.js` 提供 `MA_NATURE.createRenderer(canvas,overlayCanvas,scene,assetOrigin)`；先 `await renderer.ready` 再 `renderer.render(t,W,H)`，結束時 `renderer.dispose()`。`/tests/nature-refined.html` 驗證單一隕石、多樣式、八招俯瞰、專屬控制、三種比例、透明度、MCP、預設、Combo、獨立 HTML 與原版相容。`/tests/nature-editors.html` 驗證編輯器拆分、舊設定移轉、場景記憶、預設過濾與尾焰移除。
 
 原有四招隕石 `obj-meteor-*`（#158–161）及八招俯瞰 `obj-aerial-*`（#170–177）只標記隱藏，完整保留代碼、編號、原動畫與舊連結／預設／Combo。原有交通工具隱藏設定保持不變。
 

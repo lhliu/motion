@@ -4,13 +4,13 @@ export type NStyle='rock'|'ice'|'lava'|'gold';
 export interface NScene{
  version:1;mode:NMode;style:NStyle;ratio:'9:16'|'16:9'|'1:1';background:string;frame:'full'|'card'|'circle';
  size:number;speed:number;loop:number;x:number;y:number;angle:number;color:string;tint:number;opacity:number;brightness:number;seed:number;
- path:'hover'|'pass';direction:'right'|'left';spin:number;float:number;debris:number;orbit:number;trail:number;heat:number;shine:number;
+ path:'hover'|'pass';direction:'right'|'left';spin:number;float:number;debris:number;orbit:number;heat:number;shine:number;
  zoom:number;pan:number;heading:number;traffic:number;flow:number;boats:number;waves:number;clouds:number;wind:number;herd:number;horseRatio:number;grazing:number;harvest:number;trees:number;
 }
 export interface NField{key:keyof NScene;label:string;min:number;max:number;step:number}
 export function natureEngine(){
  const modes:Record<NMode,{zh:string;en:string;id:string;no:number;cat:'meteor'|'aerial';desc:string}>={
-  meteor:{zh:'精修隕石',en:'Illustrated Meteor Collection',id:'meteor-illustrated',no:244,cat:'meteor',desc:'一招切換岩石、冰晶、熔岩、金屬；可調自轉、漂浮、碎石與尾跡'},
+  meteor:{zh:'精修隕石',en:'Illustrated Meteor Collection',id:'meteor-illustrated',no:244,cat:'meteor',desc:'一招切換岩石、冰晶、熔岩、金屬；可調自轉、漂浮、碎石散布'},
   city:{zh:'俯瞰城市',en:'Illustrated City Overhead',id:'aerial-illustrated-city',no:245,cat:'aerial',desc:'精細屋頂、街廓與植栽，車流沿十字道路行駛'},
   river:{zh:'俯瞰河流',en:'Illustrated River Overhead',id:'aerial-illustrated-river',no:246,cat:'aerial',desc:'蜿蜒河道與河岸綠地，船隻順流移動並留下細微尾波'},
   mountain:{zh:'俯瞰山川',en:'Illustrated Mountains Overhead',id:'aerial-illustrated-mountain',no:247,cat:'aerial',desc:'精細稜線、山谷與溪流，鏡頭巡航，分層雲朵緩慢掠過'},
@@ -20,15 +20,15 @@ export function natureEngine(){
   forest:{zh:'俯瞰森林',en:'Illustrated Forest Overhead',id:'aerial-illustrated-forest',no:251,cat:'aerial',desc:'細密林冠與林間小路，獨立前景樹冠輕擺，可調數量與風力'},
   highway:{zh:'俯瞰交流道',en:'Illustrated Interchange Overhead',id:'aerial-illustrated-highway',no:252,cat:'aerial',desc:'精細交流道與道路標線，車流沿主線行駛，可調密度與速度'},
  };
- const styles:Record<NStyle,{zh:string;desc:string}>={rock:{zh:'岩石',desc:'坑洞與礦物紋理'},ice:{zh:'冰晶',desc:'六向晶簇與刻紋切面'},lava:{zh:'熔岩',desc:'玄武岩裂隙與火焰尾跡'},gold:{zh:'金屬',desc:'金色錘紋與硬邊反光'}};
+ const styles:Record<NStyle,{zh:string;desc:string}>={rock:{zh:'岩石',desc:'坑洞與礦物紋理'},ice:{zh:'冰晶',desc:'六向晶簇與刻紋切面'},lava:{zh:'熔岩',desc:'玄武岩裂隙與熔岩紋理'},gold:{zh:'金屬',desc:'金色錘紋與硬邊反光'}};
  const meteorBackgrounds:Record<string,{zh:string}>={space:{zh:'深空星際'},nebula:{zh:'靛紫星雲'},dust:{zh:'赤褐塵帶'},night:{zh:'深藍星夜'},paper:{zh:'暖白圖鑑'},transparent:{zh:'透明背景'}};
  const aerialBackgrounds:Record<string,{zh:string}>={natural:{zh:'自然日光'},warm:{zh:'暖色夕照'},cool:{zh:'清冷晨色'},night:{zh:'靜謐夜色'},ink:{zh:'墨色圖鑑'},transparent:{zh:'透明地景卡'}};
  const backgrounds={...meteorBackgrounds,...aerialBackgrounds};
- const stylePresets:Record<NStyle,Partial<NScene>>={rock:{color:'#8a7660',trail:0,heat:0,shine:0,path:'hover',angle:0},ice:{color:'#80c3d1',trail:0,heat:0,shine:.7,path:'hover',angle:0},lava:{color:'#b75230',trail:1,heat:1,shine:0,path:'pass',angle:-28},gold:{color:'#c49a49',trail:0,heat:0,shine:.7,path:'hover',angle:0}};
- const defaults:NScene={version:1,mode:'meteor',style:'rock',ratio:'9:16',background:'space',frame:'full',size:1,speed:1,loop:12,x:.5,y:.5,angle:0,color:'#8a7660',tint:0,opacity:1,brightness:1,seed:244,path:'hover',direction:'right',spin:6,float:.7,debris:5,orbit:1,trail:0,heat:0,shine:0,zoom:1.15,pan:.6,heading:25,traffic:1,flow:.7,boats:2,waves:.7,clouds:.35,wind:.6,herd:10,horseRatio:.35,grazing:.6,harvest:.7,trees:16};
+ const stylePresets:Record<NStyle,Partial<NScene>>={rock:{color:'#8a7660',heat:0,shine:0,path:'hover',angle:0},ice:{color:'#80c3d1',heat:0,shine:.7,path:'hover',angle:0},lava:{color:'#b75230',heat:1,shine:0,path:'pass',angle:-28},gold:{color:'#c49a49',heat:0,shine:.7,path:'hover',angle:0}};
+ const defaults:NScene={version:1,mode:'meteor',style:'rock',ratio:'9:16',background:'space',frame:'full',size:1,speed:1,loop:12,x:.5,y:.5,angle:0,color:'#8a7660',tint:0,opacity:1,brightness:1,seed:244,path:'hover',direction:'right',spin:6,float:.7,debris:5,orbit:1,heat:0,shine:0,zoom:1.15,pan:.6,heading:25,traffic:1,flow:.7,boats:2,waves:.7,clouds:.35,wind:.6,herd:10,horseRatio:.35,grazing:.6,harvest:.7,trees:16};
  const field=(key:keyof NScene,label:string,min:number,max:number,step=.05):NField=>({key,label,min,max,step});
  const fields:Record<NMode,NField[]>={
-  meteor:[field('spin','自轉速度',-25,25,1),field('float','漂浮幅度',0,2),field('debris','伴飛碎石',0,16,1),field('orbit','碎石散布',.5,1.7),field('trail','火焰尾跡',0,1.5)],
+  meteor:[field('spin','自轉速度',-25,25,1),field('float','漂浮幅度',0,2),field('debris','伴飛碎石',0,16,1),field('orbit','碎石散布',.5,1.7)],
   city:[field('traffic','街道車流量',0,2),field('flow','車流速度',0,2)],
   river:[field('boats','河面船隻',0,6,1),field('flow','順流速度',0,2),field('waves','船尾波紋',0,2)],
   mountain:[field('clouds','山腰雲量',0,1),field('wind','雲層風速',0,2)],
@@ -48,7 +48,7 @@ export function natureEngine(){
   const speed=typeof o.speed==='number'&&Number.isFinite(o.speed)?clamp(o.speed,.6,2.5):typeof o.loop==='number'&&o.loop>0?clamp(12/o.loop,.6,2.5):1;
   return{version:1,mode,style,ratio:['9:16','16:9','1:1'].includes(String(o.ratio))?o.ratio as NScene['ratio']:'9:16',background:Object.hasOwn(environments(mode),String(o.background))?String(o.background):base.background,frame:['full','card','circle'].includes(String(o.frame))?o.frame as NScene['frame']:'full',
    size:num('size',.4,2.2),speed,loop:12/speed,x:num('x',-.5,1.5),y:num('y',0,1),angle:num('angle',-180,180),color:typeof o.color==='string'&&/^#[0-9a-f]{6}$/i.test(o.color)?o.color.toLowerCase():base.color,tint:num('tint',0,1),opacity:num('opacity',0,1),brightness:num('brightness',.3,1.5),seed:Math.round(num('seed',0,999999)),path:o.path==='pass'?'pass':o.path==='hover'?'hover':base.path,direction:o.direction==='left'?'left':'right',
-   spin:num('spin',-25,25),float:num('float',0,2),debris:Math.round(num('debris',0,16)),orbit:num('orbit',.5,1.7),trail:num('trail',0,1.5),heat:num('heat',0,1.5),shine:num('shine',0,1),zoom:num('zoom',1,2.6),pan:num('pan',0,1.5),heading:num('heading',-180,180),traffic:num('traffic',0,2),flow:num('flow',0,2),boats:Math.round(num('boats',0,6)),waves:num('waves',0,2),clouds:num('clouds',0,1),wind:num('wind',0,2),herd:Math.round(num('herd',0,24)),horseRatio:num('horseRatio',0,1),grazing:num('grazing',0,1),harvest:num('harvest',0,1),trees:Math.round(num('trees',0,30))};
+   spin:num('spin',-25,25),float:num('float',0,2),debris:Math.round(num('debris',0,16)),orbit:num('orbit',.5,1.7),heat:num('heat',0,1.5),shine:num('shine',0,1),zoom:num('zoom',1,2.6),pan:num('pan',0,1.5),heading:num('heading',-180,180),traffic:num('traffic',0,2),flow:num('flow',0,2),boats:Math.round(num('boats',0,6)),waves:num('waves',0,2),clouds:num('clouds',0,1),wind:num('wind',0,2),herd:Math.round(num('herd',0,24)),horseRatio:num('horseRatio',0,1),grazing:num('grazing',0,1),harvest:num('harvest',0,1),trees:Math.round(num('trees',0,30))};
  }
  function fromWords(words:string[]=[],fallback:NMode='meteor'){try{return normalize(JSON.parse(words.find(w=>w.trim().startsWith('{'))||'{}'),fallback);}catch{return normalize({},fallback);}}
  const assetPath=(name:string)=>name==='space'?'/media/transport-illustrated/space-v1.png':name==='cloud'?'/media/transport-illustrated/cloud-v1.png':'/media/nature-illustrated/'+name+'-v1.png';
@@ -70,7 +70,7 @@ export function natureEngine(){
    }catch(e){reject(e);}};image.onerror=()=>reject(new Error('精修素材暫時無法載入，請確認網路後重試'));image.src=origin.replace(/\/$/,'')+assetPath(name);});pending.set(name,p);p.catch(()=>pending.delete(name));return p;
   }
   function required(s:NScene){
-   if(s.mode==='meteor')return[s.style,...(['space','nebula','dust'].includes(s.background)?[s.background]:[]),...(s.trail>0?['flame']:[])];
+   if(s.mode==='meteor')return[s.style,...(['space','nebula','dust'].includes(s.background)?[s.background]:[])];
    return[s.mode,...(['city','farm','highway'].includes(s.mode)&&s.traffic>0?['car-top']:[]),...(['river','coast'].includes(s.mode)&&s.boats>0?['boat-top']:[]),...(s.mode==='grass'&&s.herd>0?['cow-top','horse-top']:[]),...(s.mode==='farm'&&s.harvest>0?['tractor-top']:[]),...(s.mode==='forest'&&s.trees>0?['tree-top']:[]),...(['mountain','forest'].includes(s.mode)&&s.clouds>0?['cloud']:[])];
   }
   function update(raw:unknown){scene=normalize(raw);const names=required(scene),next=names.join('/');if(loaded&&key===next)return Promise.resolve(true);const token=++revision;loaded=false;return Promise.all(names.map(load)).then(()=>{if(disposed||token!==revision)return false;key=next;loaded=true;for(const name of assets.keys())if(assets.size>16&&!names.includes(name)){assets.delete(name);pending.delete(name);}return true;});}
@@ -96,7 +96,6 @@ export function natureEngine(){
     const d=Math.min(W*.72,H*.48)*s.size,flip=s.direction==='left'?-1:1,a=s.angle*Math.PI/180,travel=s.path==='pass'?(t/12-.5)*(W+d*2):0;
     const x=s.x*W+Math.cos(a)*travel*flip,y=s.y*H+Math.sin(a)*travel+Math.sin(t*.8)*s.float*18*s.size;
     ctx.save();ctx.globalAlpha=s.opacity;ctx.translate(x,y);ctx.rotate(a);ctx.scale(flip,1);
-    if(s.trail>0){const w=d*(1+s.trail)*(.94+.06*Math.sin(t*15));image('flame',-d*.24-w*.5,0,w,0,.9,false);}
     for(let i=0;i<s.debris;i++){const theta=rand(i)*Math.PI*2+t*(.12+rand(i,1)*.12),r=d*(.7+rand(i,2)*.35)*s.orbit,z=.045+rand(i,3)*.075;image(s.style,Math.cos(theta)*r,Math.sin(theta)*r*.65,d*z,theta+t*.25,.65+rand(i,4)*.35);}
     ctx.save();ctx.rotate(t*s.spin*Math.PI/180);ctx.scale(.94+.06*Math.cos(t*.22),1);
     if(s.style==='lava')ctx.filter=`brightness(${1+s.heat*(.10+.08*Math.sin(t*2.5))})`;image(s.style,0,0,d);ctx.filter='none';
