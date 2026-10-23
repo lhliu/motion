@@ -1,0 +1,21 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>馬匹步態與船隻吃水</title><style>body{margin:20px;background:#eee8da;color:#15394a;font:14px system-ui}.gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:1500px}figure{margin:0}canvas{width:100%;display:block;background:repeating-conic-gradient(#ddd 0 25%,#eee 0 50%) 0/16px 16px}pre{white-space:pre-wrap}button{padding:10px}</style><h1>連續馬匹關節／船隻水線</h1><button id="play">播放</button><div class="gallery" id="gallery"></div><pre id="results">檢查中…</pre>
+<script type="module">
+import{TRANSPORT as R}from'/src/transport.ts';
+const results=[],items=[],check=(ok,msg)=>{if(!ok)throw Error(msg)};
+async function test(name,fn){try{await fn();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}}
+await test('四拍步態：關節連接、骨長固定、接地及抬腳',()=>{
+ for(const gait of [0,.6,1,2])for(let t=0;t<4;t+=.031){const pose=R.horsePose(t,gait);for(const leg of pose.legs){check(Math.abs(Math.hypot(leg.b[0]-leg.a[0],leg.b[1]-leg.a[1])-leg.l1)<.01,'Upper bone stretched');check(Math.abs(Math.hypot(leg.c[0]-leg.b[0],leg.c[1]-leg.b[1])-leg.l2)<.01,'Lower bone stretched');check(leg.a[1]===leg.root[1]+pose.bodyY,'Detached root');check(leg.c[1]<=992.001,'Foot under ground');if(leg.stance||!gait)check(leg.c[1]===992,'Planted foot drifting vertically');}}
+});
+for(const [mode,time]of[['carriage',0],['carriage',.32],['carriage',.64],['carriage',.96],['ship',0],['ship',3]]){
+ const c=document.createElement('canvas'),o=document.createElement('canvas');c.width=1000;c.height=800;const scene=R.normalize({mode,camera:0,background:mode==='ship'?'sea':'country',ratio:'16:9',size:1}),r=R.createRenderer(c,o,scene,location.origin);await r.ready;r.render(time);const f=document.createElement('figure');f.innerHTML=`<figcaption>${mode} · ${time}s</figcaption>`;f.append(c);document.querySelector('#gallery').append(f);items.push({c,o,r,time,mode});
+}
+await test('船身水線：透明輸出不露出船底，吃水控制確實遮擋',async()=>{
+ const c=document.createElement('canvas'),o=document.createElement('canvas');c.width=1080;c.height=1920;const scene=R.normalize({mode:'ship',background:'transparent',camera:0,wake:0,smoke:0,waves:0,rocking:0,y:.5}),r=R.createRenderer(c,o,scene,location.origin);await r.ready;
+ const bottom=()=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let b=0;for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++)if(d[(y*c.width+x)*4+3]>128)b=y;return b};r.render(0);const expected=scene.y*1920+1080*.84*(.19-.06*scene.draft);check(Math.abs(bottom()-expected)<3,'Underwater hull visible');const before=bottom();await r.update({...scene,draft:1});r.render(0);check(bottom()<before-20,'Draft ignored');r.dispose();
+});
+await test('馬匹可靜止、時間可重現，透明度與換色有效',async()=>{
+ const c=document.createElement('canvas'),o=document.createElement('canvas');c.width=700;c.height=700;const scene=R.normalize({mode:'carriage',background:'transparent',camera:0,gait:0,wheel:0,suspension:0}),r=R.createRenderer(c,o,scene,location.origin);await r.ready;r.render(0);const a=c.toDataURL();r.render(2);check(a===c.toDataURL(),'Rest pose not stationary');await r.update({...scene,gait:1});r.render(.32);const b=c.toDataURL();check(a!==b,'Gait ignored');r.render(.64);r.render(.32);check(b===c.toDataURL(),'Nondeterministic');await r.update({...scene,tint:1,color:'#2f849f'});r.render(0);check(a!==c.toDataURL(),'Tint ignored');r.dispose();
+});
+let playing=false,start=0;document.querySelector('#play').onclick=()=>{playing=!playing;start=performance.now();if(playing)requestAnimationFrame(tick)};function tick(now){if(!playing)return;for(const it of items)it.r.render(((now-start)/1000+it.time)%12);requestAnimationFrame(tick)}
+window.anatomyResults=results;window.anatomyItems=items;document.querySelector('#results').textContent=JSON.stringify(results,null,2);
+</script></html>

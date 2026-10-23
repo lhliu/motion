@@ -46,16 +46,16 @@ Combo 存的是預設當下的內容（快照）；預設更新後，請 AI 重�
 專用編輯器 `/?view=transport`，各卡片的「編輯精修插畫」會開啟本招並記住各自設定：
 
 - 汽車：獨立輪胎轉速、懸吊起伏、道路、車燈。
-- 馬車：分層馬腿步態、木輪轉速、車身起伏、道路。
+- 馬車：完整馬匹插畫綁定膝／飛節、四拍接地步態、木輪轉速、車身起伏、道路。
 - 客機：爬升幅度、飛行浮動、凝結尾、前景雲。
 - 太空船：推力、噴焰長度、震動、尾焰火星、爬升。
 - 火車：1–5 節車廂、間距、輪速、行進起伏、軌道。
-- 輪船：波浪幅度、船身搖晃、煙囪煙量、船尾浪。
+- 輪船：吃水深度、水線遮擋、波浪幅度、船身搖晃、煙囪煙量、船尾浪。
 - 熱氣球：升降幅度、擺動、風力漂移、燃燒器與雲量。
 
 共用大小、速度（連動片長 4.8–20 秒）、位置拖曳、方向、角度、保留紋理的換色、透明度、鏡頭視差；五種背景為城市、田野、高空、海岸與宇宙，另支援透明背景。可輸出 PNG、WebM、PNG 序列，儲存預設、JSON、編輯連結與加入 Combo。透明時不繪道路／軌道，可另外關閉煙、尾焰等取得乾淨物件。
 
-`src/transport.ts` 是所有預覽、輸出與獨立 HTML 共用的自給自足 Canvas 引擎，只載入所選場景素材。素材在 `public/media/transport-illustrated/`，保留原圖並提供 CORS。MCP 使用 `build_transport_scene`（mode=car|carriage|plane|rocket|train|ship|balloon），回傳本招 `params_doc` 與編輯連結。`/r/transport.js` 提供 `MA_TRANSPORT.createRenderer(canvas, overlayCanvas, scene, assetOrigin)`；先 `await renderer.ready`，再 `renderer.render(t,W,H)`，最後 `renderer.dispose()`。可在 Vite 開啟 `/tests/transport-refined.html` 檢查動畫、專屬參數、透明度、比例、MCP、預設、Combo、獨立 HTML 與舊版相容性。
+`src/transport.ts` 是所有預覽、輸出與獨立 HTML 共用的自給自足 Canvas 引擎，只載入所選場景素材。素材在 `public/media/transport-illustrated/`，保留原圖並提供 CORS。MCP 使用 `build_transport_scene`（mode=car|carriage|plane|rocket|train|ship|balloon），回傳本招 `params_doc` 與編輯連結。`/r/transport.js` 提供 `MA_TRANSPORT.createRenderer(canvas, overlayCanvas, scene, assetOrigin)`；先 `await renderer.ready`，再 `renderer.render(t,W,H)`，最後 `renderer.dispose()`。馬匹使用新版完整插畫 `horse-complete-v2.png`，原本的分離身體／腿部素材保留。馬腿採連續蒙皮與固定骨長，四蹄交替接地，輪速與路面預設配合步態；船隻的船底由世界座標的水線遮住，搖晃穿過水面，透明輸出也保留正確水線。`/tests/transport-anatomy.html` 提供四個步態時間點及船隻預覽，驗證骨長、接地、吃水與透明度。可在 Vite 開啟 `/tests/transport-refined.html` 檢查動畫、專屬參數、透明度、比例、MCP、預設、Combo、獨立 HTML 與舊版相容性。
 
 ### 海底世界・精修插畫
 
