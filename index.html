@@ -275,7 +275,7 @@
                 <label class="dr-field"><span>需求說明（選填，之後搜尋用）</span><textarea id="drBrief" rows="2" maxlength="1000" placeholder="例如：YouTube 建案開箱前 10 秒，要有衝擊感、帶出通勤優勢"></textarea></label>
                 <div class="dr-row">
                   <div class="seg" id="drRatio" role="radiogroup" aria-label="比例"><button data-v="16:9">16:9</button><button data-v="9:16">9:16</button><button data-v="1:1">1:1</button></div>
-                  <div class="seg" id="drTrans" role="radiogroup" aria-label="轉場"><button data-v="cut">硬切</button><button data-v="fade">淡入</button><button data-v="slide">推移</button><button data-v="zoom">放大</button></div>
+                  <select id="drTrans" aria-label="整支的段落轉場"></select>
                   <select id="drFont" aria-label="整支的字型"></select>
                 </div>
                 <label class="dr-field"><span>標籤（用空白分隔）</span><input id="drTags" type="text" placeholder="片頭 建案" /></label>

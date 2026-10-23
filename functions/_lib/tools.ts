@@ -3,7 +3,7 @@ import { normalizeNature, natureFxId, NATURE, type NScene } from '../../src/natu
 import { normalizeTransport, transportFxId, TRANSPORT, type TScene } from '../../src/transport';
 import { normalizeIllustration, illustrationFxId, ILLUSTRATION, type IScene } from '../../src/illustration';
 import { ALL_TAGS, CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from '../../src/data';
-import { comboOutline, comboPrompt, comboHtml, encodeCombo, findEffect, normalizeCombo, totalSeconds, type Combo } from '../../src/combo';
+import { comboOutline, comboPrompt, comboHtml, encodeCombo, findEffect, normalizeCombo, totalSeconds, TRANSITIONS, TRANSITION_INFO, type Combo } from '../../src/combo';
 import { loopSeconds, toneVars } from '../../src/engine';
 import { buildPrompt, type PromptMode, type Ratio } from '../../src/prompts';
 import type { Fx } from '../../src/types';
@@ -157,6 +157,7 @@ const comboInput = {
         seconds: { type: 'number', description: '這段播放秒數，預設依特效循環長度（2.4–6 秒）' },
         tone: { type: 'string', enum: ['ink', 'paper', 'accent'], description: '底色：深、淺、主色；省略用特效預設' },
         font: { type: 'string', enum: FONT_IDS, description: '這段的字型組合，省略＝跟整支的 font；依段落情緒挑選' },
+        transition: { type: 'string', enum: TRANSITIONS, description: '進入這段的轉場（第一段無效），省略＝跟整支的 transition。適合在換章節時用 push／door／page，卡點用 flash／whip／glitch' },
         note: { type: 'string', description: '這段的用意或剪輯備註' },
       },
     },
@@ -164,7 +165,7 @@ const comboInput = {
   palette: { type: 'string', enum: PALETTES.map((p) => p.id), description: '配色組，預設 leicht（光寓橘）' },
   accent: { type: 'string', description: '自訂主色 #RRGGBB，會覆蓋配色組的主色' },
   ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'], description: '影片比例，Shorts 用 9:16' },
-  transition: { type: 'string', enum: ['cut', 'fade', 'slide', 'zoom'], description: '段落轉場，預設 fade' },
+  transition: { type: 'string', enum: TRANSITIONS, description: `整支的段落轉場，預設 fade：${TRANSITIONS.map((t) => `${t}＝${TRANSITION_INFO[t].zh}`).join('、')}；個別段落可用 scenes[].transition 覆蓋` },
   font: { type: 'string', enum: FONT_IDS, description: `整支的字型組合。${FONT_HELP}` },
   tags: { type: 'array', items: { type: 'string' }, description: '分類標籤，例如 片頭、建案、Shorts' },
   notes: { type: 'string', description: '給未來參考的備註' },
@@ -184,7 +185,7 @@ const resolvePresets = async (a: Args, env: Env): Promise<string[]> => {
         return sc;
       }
       const base = presetToScene(p, Array.isArray(sc.images) ? { images: (sc.images as unknown[]).map(String) } : {});
-      return { ...base, ...(sc.seconds ? { seconds: sc.seconds } : {}), ...(FONT_IDS.includes(sc.font as never) ? { font: sc.font as string } : {}), ...(sc.note ? { note: sc.note } : { note: base.note }) };
+      return { ...base, ...(sc.seconds ? { seconds: sc.seconds } : {}), ...(FONT_IDS.includes(sc.font as never) ? { font: sc.font as string } : {}), ...(sc.note ? { note: sc.note } : { note: base.note }), ...(sc.transition ? { transition: sc.transition } : {}) };
     }),
   );
   return errors;

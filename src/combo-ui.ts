@@ -2,7 +2,7 @@ import { isCosmicFx } from './cosmos';
 import { isNatureFx } from './nature';
 import { isTransportFx } from './transport';
 import { isIllustrationFx } from './illustration';
-import { comboHtml, comboOutline, comboPrompt, sceneSummary, decodeCombo, encodeCombo, findEffect, normalizeCombo, sceneSeconds, totalSeconds, type Combo, type ComboScene, type Transition } from './combo';
+import { comboHtml, comboOutline, comboPrompt, sceneSummary, decodeCombo, encodeCombo, findEffect, normalizeCombo, sceneSeconds, totalSeconds, TRANSITIONS, TRANSITION_INFO, type Combo, type ComboScene, type Transition } from './combo';
 import { NUM } from './data';
 import type { Ratio } from './prompts';
 import type { Tone } from './types';
@@ -73,6 +73,7 @@ export const initCombos = (deps: ComboDeps) => {
         ${long ? `<label><span>內容</span><input value="${esc(sceneSummary(s.effect, s.words ?? fx?.sample ?? []))}" readonly title="這段的內容請在工作室編輯後重新加入"></label>` : diagram ? `<label><span>部位文字（每行一項，保留空行）</span><textarea data-k="words" rows="4" aria-label="圖解部位文字" placeholder="${esc(fx?.hint ?? '')}">${esc((s.words ?? fx?.sample ?? []).join('\n'))}</textarea></label>` : `<label><span>文字（/ 分隔）</span><input data-k="words" value="${esc(words)}" placeholder="${esc(fx?.hint ?? '')}"></label>`}
         <label class="sm"><span>秒數</span><input data-k="seconds" type="number" min="0.8" max="20" step="0.1" value="${sceneSeconds(s)}"></label>
         <label class="sm"><span>字型</span><select data-k="font"><option value="">跟整支</option>${FONT_PACKS.map((f) => `<option value="${f.id}"${s.font === f.id ? ' selected' : ''}>${f.zh}</option>`).join('')}</select></label>
+        ${i ? `<label class="sm"><span>進場轉場</span><select data-k="transition"><option value="">跟整支</option>${TRANSITIONS.map((t) => `<option value="${t}"${s.transition === t ? ' selected' : ''}>${TRANSITION_INFO[t].zh}</option>`).join('')}</select></label>` : ''}
         <label class="sm"><span>底色</span><select data-k="tone"><option value="">預設</option>${(['ink', 'paper', 'accent'] as Tone[]).map((t) => `<option value="${t}"${s.tone === t ? ' selected' : ''}>${{ ink: '深', paper: '淺', accent: '主色' }[t]}</option>`).join('')}</select></label>
       </div>
     </li>`;
@@ -95,7 +96,7 @@ export const initCombos = (deps: ComboDeps) => {
     $<HTMLTextAreaElement>('#drBrief').value = draft.brief ?? '';
     $<HTMLInputElement>('#drTags').value = (draft.tags ?? []).join(' ');
     $('#drRatio').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === (draft.ratio ?? '16:9'))));
-    $('#drTrans').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === (draft.transition ?? 'fade'))));
+    $<HTMLSelectElement>('#drTrans').value = draft.transition ?? 'fade';
     $<HTMLSelectElement>('#drFont').value = draft.font ?? 'sharp';
     $('#drScenes').innerHTML = draft.scenes.map(sceneRow).join('');
     $('#drEmpty').hidden = draft.scenes.length > 0;
@@ -132,7 +133,13 @@ export const initCombos = (deps: ComboDeps) => {
       renderDraft();
     });
   seg('#drRatio', (v) => (draft.ratio = v as Ratio));
-  seg('#drTrans', (v) => (draft.transition = v as Transition));
+  const drTrans = $<HTMLSelectElement>('#drTrans');
+  drTrans.innerHTML = TRANSITIONS.map((t) => `<option value="${t}">整支轉場：${TRANSITION_INFO[t].zh}</option>`).join('');
+  drTrans.addEventListener('change', () => {
+    draft.transition = drTrans.value as Transition;
+    saveDraft();
+    renderPreview();
+  });
 
   const scenesEl = $('#drScenes');
   scenesEl.addEventListener('click', (e) => {
@@ -168,6 +175,9 @@ export const initCombos = (deps: ComboDeps) => {
     } else if (el.dataset.k === 'tone') {
       if (el.value) s.tone = el.value as Tone;
       else delete s.tone;
+    } else if (el.dataset.k === 'transition') {
+      if (el.value) s.transition = el.value as Transition;
+      else delete s.transition;
     } else if (el.dataset.k === 'font') {
       if (el.value) s.font = el.value;
       else delete s.font;

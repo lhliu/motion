@@ -12,8 +12,22 @@ import { FACE_IDS, FONT_IDS, fontPack, WEIGHT_IDS } from './fonts';
 import { isPhotoFx, MODULE_INFO, type PScene } from './photokit';
 import { isObjFx, OBJ_INFO, type OScene } from './objkit';
 
-export type Transition = 'cut' | 'fade' | 'slide' | 'zoom';
-export const TRANSITIONS: Transition[] = ['cut', 'fade', 'slide', 'zoom'];
+export type Transition = 'cut' | 'fade' | 'slide' | 'zoom' | 'push' | 'iris' | 'door' | 'page' | 'flash' | 'whip' | 'glitch';
+/** 段落轉場：zh 給介面，desc 給提示詞與 MCP */
+export const TRANSITION_INFO: Record<Transition, { zh: string; desc: string }> = {
+  cut: { zh: '硬切', desc: '直接硬切' },
+  fade: { zh: '淡入', desc: '0.45 秒交叉淡入淡出' },
+  slide: { zh: '推移', desc: '0.55 秒由右往左推移' },
+  zoom: { zh: '放大', desc: '0.5 秒放大穿越' },
+  push: { zh: '色塊推擠', desc: '0.9 秒：字色、輔色、主色三層全幅色塊由右推入蓋滿，再往左推走露出下一段' },
+  iris: { zh: '圓形擦除', desc: '0.9 秒：主色圓形從中央長大蓋滿，下一段再以圓形從中央展開' },
+  door: { zh: '開門', desc: '1.2 秒：兩扇主色門板關上再往外 3D 打開，露出下一段' },
+  page: { zh: '翻頁', desc: '0.8 秒：上一段像書頁以左邊為軸 3D 翻走，露出下面的下一段' },
+  flash: { zh: '閃白', desc: '0.5 秒：全白閃兩下，第二下硬切到下一段' },
+  whip: { zh: '甩鏡', desc: '0.6 秒：上一段斜切甩出、硬邊速度線掃過，下一段從右甩進回正' },
+  glitch: { zh: '故障', desc: '0.55 秒：畫面階梯錯位加色條閃爍，錯位中換段後歸零' },
+};
+export const TRANSITIONS = Object.keys(TRANSITION_INFO) as Transition[];
 export const RATIOS: Ratio[] = ['16:9', '9:16', '1:1'];
 const TONES: Tone[] = ['ink', 'paper', 'accent'];
 
@@ -28,6 +42,8 @@ export interface ComboScene {
   face?: string;
   /** 字重：bold｜medium｜light，省略＝特效原字重 */
   weight?: string;
+  /** 進入這段的轉場，省略＝跟著整支的 transition */
+  transition?: Transition;
   note?: string;
 }
 
@@ -93,6 +109,7 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
       ...(font ? { font } : {}),
       ...(FACE_IDS.includes(r.face as never) ? { face: r.face as string } : {}),
       ...(WEIGHT_IDS.includes(r.weight as never) ? { weight: r.weight as string } : {}),
+      ...(TRANSITIONS.includes(r.transition as Transition) ? { transition: r.transition as Transition } : {}),
       ...(str(r.note, 200) ? { note: str(r.note, 200) } : {}),
     };
   });
@@ -214,11 +231,11 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean } = {}
       const fx = findEffect(s.effect);
       if (!fx) return null;
       const words = s.words?.length ? s.words : fx.sample;
-      return { fx, words, ms: Math.round(sceneSeconds(s) * 1000), vars: varsCss(toneVars(pal, s.tone ?? fx.tone, s.font ?? c.font, { face: s.face, weight: s.weight })) };
+      return { fx, words, ms: Math.round(sceneSeconds(s) * 1000), tr: s.transition, vars: varsCss(toneVars(pal, s.tone ?? fx.tone, s.font ?? c.font, { face: s.face, weight: s.weight })) };
     })
     .filter((s): s is NonNullable<typeof s> => !!s);
   const templates = scenes.map((s, i) => `<template id="t${i}">${s.fx.html(s.words)}</template>`).join('\n');
-  const data = JSON.stringify(scenes.map((s) => ({ id: s.fx.id, words: s.words, ms: s.ms, vars: s.vars, name: s.fx.zh })));
+  const data = JSON.stringify(scenes.map((s) => ({ id: s.fx.id, words: s.words, ms: s.ms, vars: s.vars, name: s.fx.zh, ...(s.tr ? { tr: s.tr } : {}) })));
   const t = c.transition ?? 'fade';
   return `<!doctype html>
 <html lang="zh-Hant-TW">
@@ -232,7 +249,7 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean } = {}
 <style>
 /* Motion Atlas Combo：${esc(c.title)}｜${scenes.length} 段｜約 ${totalSeconds(c)} 秒 */
 html,body{margin:0;height:100%;background:#0b0b0b;display:grid;place-items:center;overflow:hidden;font-family:"Chiron Hei HK","Noto Sans TC",system-ui,sans-serif}
-.stage{position:relative;${ratioCss[c.ratio ?? '16:9']};container-type:size;overflow:hidden;background:${pal.ink}}
+.stage{position:relative;${ratioCss[c.ratio ?? '16:9']};container-type:size;overflow:hidden;background:${pal.ink};--c1:${pal.paper};--c2:${pal.accent2};--c3:${pal.accent};--ci:${pal.ink}}
 .stage>.fx{will-change:opacity,transform}
 .in-fade{animation:cIn .45s ease both}.out-fade{animation:cOut .45s ease both}
 .in-slide{animation:cSlideIn .55s cubic-bezier(.7,0,.2,1) both}.out-slide{animation:cSlideOut .55s cubic-bezier(.7,0,.2,1) both}
@@ -240,6 +257,32 @@ html,body{margin:0;height:100%;background:#0b0b0b;display:grid;place-items:cente
 @keyframes cIn{from{opacity:0}}@keyframes cOut{to{opacity:0}}
 @keyframes cSlideIn{from{transform:translateX(100%)}}@keyframes cSlideOut{to{transform:translateX(-100%)}}
 @keyframes cZoomIn{from{transform:scale(.6);opacity:0}}@keyframes cZoomOut{to{transform:scale(1.6);opacity:0}}
+.tc{position:absolute;inset:0;z-index:50;pointer-events:none;overflow:hidden}
+.tc-push i{position:absolute;inset:0;transform:translateX(101%);animation:tPush .9s cubic-bezier(.75,0,.25,1) both}
+.tc-push i:nth-child(1){background:var(--c1)}.tc-push i:nth-child(2){background:var(--c2);animation-delay:.05s}.tc-push i:nth-child(3){background:var(--c3);animation-delay:.1s}
+@keyframes tPush{0%{transform:translateX(101%)}40%,50%{transform:none}100%{transform:translateX(-101%)}}
+.tc-iris i{position:absolute;left:50%;top:50%;width:300cqmax;height:300cqmax;margin:-150cqmax 0 0 -150cqmax;border-radius:50%;background:var(--c3);transform:scale(0);animation:tIris .9s cubic-bezier(.7,0,.3,1) both}
+@keyframes tIris{0%{transform:scale(0)}46%,100%{transform:scale(1)}}
+.in-iris{z-index:60;animation:cIris .48s cubic-bezier(.7,0,.3,1) both}@keyframes cIris{from{clip-path:circle(0 at 50% 50%)}to{clip-path:circle(75% at 50% 50%)}}
+.tc-door i{position:absolute;top:0;bottom:0;width:50%;background:var(--c3);border:1.2cqmin solid var(--c1);backface-visibility:hidden}
+.tc-door i:nth-child(1){left:0;transform-origin:0 50%;animation:tDoorL 1.2s cubic-bezier(.6,0,.3,1) both}
+.tc-door i:nth-child(2){right:0;transform-origin:100% 50%;animation:tDoorR 1.2s cubic-bezier(.6,0,.3,1) both}
+.tc-door i::after{content:'';position:absolute;top:50%;width:1.6cqmin;height:7cqmin;border-radius:1cqmin;background:var(--c1)}
+.tc-door i:nth-child(1)::after{right:6%}.tc-door i:nth-child(2)::after{left:6%}
+@keyframes tDoorL{0%{transform:perspective(1600px) rotateY(-100deg)}38%,56%{transform:none}100%{transform:perspective(1600px) rotateY(-100deg)}}
+@keyframes tDoorR{0%{transform:perspective(1600px) rotateY(100deg)}38%,56%{transform:none}100%{transform:perspective(1600px) rotateY(100deg)}}
+.out-page{z-index:5;transform-origin:0 50%;backface-visibility:hidden;animation:cPage .8s cubic-bezier(.6,0,.3,1) both}@keyframes cPage{to{transform:perspective(2400px) rotateY(-110deg)}}
+.tc-flash{background:#fff;opacity:0;animation:tFlash .52s steps(1) both}
+@keyframes tFlash{0%,14%{opacity:0}15%,28%{opacity:1}29%,40%{opacity:0}41%,62%{opacity:1}63%,100%{opacity:0}}
+.out-whip{animation:cWhipOut .18s cubic-bezier(.7,0,.9,.4) both}@keyframes cWhipOut{to{transform:translateX(-130%) skewX(25deg)}}
+.in-whip{animation:cWhipIn .42s cubic-bezier(.1,.6,.3,1.15) both}@keyframes cWhipIn{from{transform:translateX(130%) skewX(25deg)}}
+.tc-whip i{position:absolute;left:0;height:var(--h);top:var(--y);width:var(--l);background:var(--c);transform:translateX(110cqw);animation:tWhip .5s linear both;animation-delay:var(--d)}
+@keyframes tWhip{to{transform:translateX(-110cqw)}}
+.out-glitch{animation:cGlitch .26s steps(1) both}.in-glitch{animation:cGlitch .3s steps(1) reverse both}
+@keyframes cGlitch{0%{transform:none}20%{transform:translateX(3%) skewX(-6deg)}40%{transform:translateX(-4%)}60%{transform:translate(2%,1%) skewX(8deg)}80%{transform:translateX(-2%)}100%{transform:none}}
+.tc-glitch i{position:absolute;left:0;right:0;opacity:0;animation:tGlitch .56s steps(1) both}
+.tc-glitch i:nth-child(1){top:22%;height:2cqh;background:var(--c3)}.tc-glitch i:nth-child(2){top:51%;height:1cqh;background:var(--c1);animation-delay:.04s}.tc-glitch i:nth-child(3){top:74%;height:3cqh;background:var(--c2);animation-delay:.08s}
+@keyframes tGlitch{0%,100%{opacity:0}10%,30%,55%,75%{opacity:1}20%,45%,65%{opacity:0}}
 .hud{position:absolute;left:0;right:0;bottom:0;z-index:99;display:flex;gap:4px;padding:8px;pointer-events:none}
 .hud i{flex:1;height:3px;border-radius:3px;background:#fff4;overflow:hidden}.hud i b{display:block;height:100%;width:0;background:#fff}
 .hud i.done b{width:100%}
@@ -261,21 +304,33 @@ const stage=document.querySelector('.stage');
 let i=0,cur=null,curClean=null,timer=0;
 let hud=null;
 if(stage.hasAttribute('data-hud')){hud=document.createElement('div');hud.className='hud';hud.innerHTML=SCENES.map(()=>'<i><b></b></i>').join('');stage.appendChild(hud);}
+// 遮幕型轉場：先蓋住畫面，到 MID 毫秒才換段；END 後移除遮幕
+const MID={push:400,iris:420,door:560,flash:230,whip:170,glitch:260};
+const END={push:950,iris:950,door:1250,flash:560,whip:650,glitch:600,page:850,fade:600,slide:600,zoom:600};
+const CURTAIN={push:'<i></i><i></i><i></i>',iris:'<i></i>',door:'<i></i><i></i>',flash:'',glitch:'<i></i><i></i><i></i>',whip:Array.from({length:14},(_,k)=>'<i style="--y:'+(8+(k*37)%84)+'%;--l:'+(30+(k*53)%60)+'cqw;--h:'+(.4+((k*7)%4)*.3)+'cqmin;--d:'+((k*29)%12)*.012+'s;--c:var('+(k%3?'--c3':'--c1')+')"></i>').join('')};
 function show(){
-  const sc=SCENES[i];
-  const el=document.createElement('div');
-  el.className='fx fx-'+sc.id;
-  el.setAttribute('style',sc.vars);var fw=/--fw:(\\d+)/.exec(sc.vars);if(fw)el.dataset.fw=fw[1];
-  el.innerHTML=document.getElementById('t'+i).innerHTML;
-  if(cur&&TRANSITION!=='cut')el.classList.add('in-'+TRANSITION);
+  const sc=SCENES[i],idx=i;
+  const t=cur?(sc.tr||TRANSITION):'cut';
   const prev=cur,prevClean=curClean;
-  stage.insertBefore(el,hud);
-  cur=el;curClean=null;
-  requestAnimationFrame(()=>{const r=RUNS[sc.id];if(r&&el.isConnected){try{curClean=r(el,sc.words)||null}catch(e){console.error(e)}}});
-  if(prev){
-    if(TRANSITION==='cut'){prevClean&&prevClean();prev.remove();}
-    else{prev.classList.add('out-'+TRANSITION);setTimeout(()=>{prevClean&&prevClean();prev.remove();},600);}
+  const drop=(ms)=>{if(!prev)return;const f=()=>{prevClean&&prevClean();prev.remove();};ms?setTimeout(f,ms):f();};
+  const mount=(cls,below)=>{
+    const el=document.createElement('div');
+    el.className='fx fx-'+sc.id+(cls?' '+cls:'');
+    el.setAttribute('style',sc.vars);var fw=/--fw:(\\d+)/.exec(sc.vars);if(fw)el.dataset.fw=fw[1];
+    el.innerHTML=document.getElementById('t'+idx).innerHTML;
+    stage.insertBefore(el,below&&prev&&prev.isConnected?prev:(stage.querySelector('.ov')||hud));
+    cur=el;curClean=null;
+    requestAnimationFrame(()=>{const r=RUNS[sc.id];if(r&&el.isConnected){try{curClean=r(el,sc.words)||null}catch(e){console.error(e)}}});
+    return el;
+  };
+  if(!prev||t==='cut'){mount();drop(0);}
+  else if(MID[t]!==undefined){
+    const c=document.createElement('div');c.className='tc tc-'+t;c.innerHTML=CURTAIN[t];stage.insertBefore(c,stage.querySelector('.ov')||hud);setTimeout(()=>c.remove(),END[t]);
+    if(t==='whip'||t==='glitch')prev.classList.add('out-'+t);
+    setTimeout(()=>{mount(t==='iris'||t==='whip'||t==='glitch'?'in-'+t:'');drop(0);},MID[t]);
   }
+  else if(t==='page'){prev.classList.add('out-page');mount('',true);drop(END.page);}
+  else{mount('in-'+t);prev.classList.add('out-'+t);drop(600);}
   if(hud){[...hud.children].forEach((b,k)=>{b.className=k<i?'done':'';const bar=b.firstChild;bar.getAnimations().forEach(a=>a.cancel());if(k===i)bar.animate([{width:'0%'},{width:'100%'}],{duration:sc.ms,easing:'linear',fill:'forwards'});});}
   timer=setTimeout(()=>{i++;if(i>=SCENES.length){if(!LOOP)return;i=0;}show();},sc.ms);
 }
@@ -294,12 +349,12 @@ export const comboPrompt = (c: Combo): string => {
     const fx = findEffect(s.effect);
     if (!fx) return '';
     const w = sceneSummary(fx.id, s.words?.length ? s.words : fx.sample, true);
-    return `${i + 1}.【${fx.zh} ${fx.en}】約 ${sceneSeconds(s)} 秒｜文字：${w}${s.font && s.font !== (c.font ?? 'sharp') ? `\n   字體：${fontPack(s.font).promptZh}` : ''}\n   動態：${fx.motion}${s.note ? `\n   備註：${s.note}` : ''}`;
+    return `${i + 1}.【${fx.zh} ${fx.en}】約 ${sceneSeconds(s)} 秒${i && s.transition ? `｜進場轉場：${TRANSITION_INFO[s.transition].desc}` : ''}｜文字：${w}${s.font && s.font !== (c.font ?? 'sharp') ? `\n   字體：${fontPack(s.font).promptZh}` : ''}\n   動態：${fx.motion}${s.note ? `\n   備註：${s.note}` : ''}`;
   });
   return `請用 HTML + CSS（必要時加少量原生 JavaScript）做一段連續播放的文字動態影片「${c.title}」，比例 ${c.ratio ?? '16:9'}，總長約 ${totalSeconds(c)} 秒，播完後循環。
 ${c.brief ? `\n【需求】${c.brief}\n` : ''}
 【配色】深色 ${pal.ink}、淺色 ${pal.paper}、主色 ${pal.accent}、輔色 ${pal.accent2}；字體：${fontPack(c.font).promptZh}
-【段落轉場】${{ cut: '直接硬切', fade: '0.45 秒交叉淡入淡出', slide: '0.55 秒由右往左推移', zoom: '0.5 秒放大穿越' }[c.transition ?? 'fade']}
+【段落轉場】${TRANSITION_INFO[c.transition ?? 'fade'].desc}${c.scenes.some((s) => s.transition) ? '；個別段落另有指定，見分鏡' : ''}
 
 【分鏡】
 ${parts.join('\n')}
