@@ -2,12 +2,12 @@
 
 https://motion.leichthub.com
 
-短影音動態素材庫，分六個工作區（目前 223 招）＋套組：
+短影音動態素材庫，分六個工作區（目前前台 222 招，另保留 7 招隱藏原版）＋套組：
 
 - **文字特效**（121 招）：依用途分 6 類（開場標題、字幕標註、資訊字卡、轉場切換、強調情緒、風格氛圍），原本的 13 個技法分類改當「風格」篩選；首頁最上方是建案片常用 12 招（`src/uses.ts`）
 - **圖片運鏡**（21 個模組）：單張運鏡（推拉、甩入、3D 卡片、視窗彈出、分層視差、手機框）、多張組合（前後對比、翻卡、拍立得、宮格、分割畫面）、標註轉場（放大鏡、影片定格標註、縮放穿越）、裁切與遮罩（遮罩揭露、切片錯位、拼塊組圖、撕紙揭露、剪報拼貼、形狀變換、前景遮擋換景）
 - **地圖區位**（15 招）：捷運鐵路路網（單線路網、路線條、多線路網：轉乘站、焦點站、鐵路黑白線、規劃中虛線、區域圈，文字行描述 `src/transit.ts`，本機渲染 `/r/transit.js`）；基地框（可加減角點做 L 形）、路名、資訊卡、資訊條、圓形標記（A棟/B棟）、通勤路線、放射路線；場景可加「太空降落」開場
-- **物件特效**（50 招）：水滴泡泡、隕石（隨機／對稱／圓潤／碎片 × 岩石／冰晶／熔岩／金屬）、魔術方塊（2–4 階 × 塑膠／金屬／花色／單色）、星空宇宙（星空／光速／星系／行星／太陽／月球／地球／低空飛越地球・月球・火星・太陽，可推近拉遠）、俯瞰空拍（城市／河流／山川／草原牛馬／農田／海岸／森林／交流道，含建築陰影、頂樓水塔、斑馬線、河濱、三合院、消波塊等細節）、交通工具（汽車／馬車／飛機／太空船／火車／輪船／熱氣球）、海底世界（魚群／海豚／巨鯨／迎面鯊魚／珊瑚／深海／潛水艇）；物件工作室 `/?view=object`，MCP `build_object_scene`，本機渲染 `/r/obj.js`
+- **物件特效**（49 招）：水滴泡泡、隕石（隨機／對稱／圓潤／碎片 × 岩石／冰晶／熔岩／金屬）、魔術方塊（2–4 階 × 塑膠／金屬／花色／單色）、星空宇宙（星空／光速／星系／行星／太陽／月球／地球／低空飛越地球・月球・火星・太陽，可推近拉遠）、俯瞰空拍（城市／河流／山川／草原牛馬／農田／海岸／森林／交流道，含建築陰影、頂樓水塔、斑馬線、河濱、三合院、消波塊等細節）、交通工具（汽車／馬車／飛機／太空船／火車／輪船／熱氣球）、海底世界（魚群／海豚／巨鯨／迎面鯊魚／珊瑚／深海／潛水艇）；物件工作室 `/?view=object`，MCP `build_object_scene`，本機渲染 `/r/obj.js`
 - **圖表特效**（20 招）：直條、堆疊直條、橫條、排名、瀑布、折線、區域、組合（雙軸）、圓餅、環圈、儀表板、進度環、象形圖、樹狀、旭日、漏斗、盒鬚、XY 散佈、泡泡、雷達；數據一行一筆「標籤 數值」（`src/chart.ts`，本機渲染 `/r/chart.js`），全站預覽文字只換標題
 - **套組**：獨立分頁 `/?ws=kits`，常見段落順序的現成 Combo（`src/uses.ts` 的 KITS）
 - **圖解動畫**：工法剖面與流程等一支一支客製的示意圖（樓板剖面層疊、同層排水剖面、預鑄工法流程），文字可換、構圖交給 AI 改寫（`src/effects/diagram.ts`）
@@ -37,22 +37,29 @@ https://motion.leichthub.com
 
 Combo 存的是預設當下的內容（快照）；預設更新後，請 AI 重新以 `{ "preset": 代碼 }` 存一次 Combo。
 
-### 海底世界
+### 海底世界・精修插畫
 
-物件工作區新增「海底世界」（`ocean`，#188–194）：魚群穿梭、海豚同行、巨鯨經過、鯊魚迎面衝刺、珊瑚花園、深海下潛、潛水艇探索。預設為 9:16、8 秒、無文字；也支援 16:9 與 1:1。套組頁有「珊瑚生態」「巨物相遇」「深海探險」。
+海底分類前台只顯示七招精修插畫，原有向量版隱藏保留：魚群穿梭（#224）、海豚同行（#225）、海洋巨物（#200）、鯊魚迎面衝刺（#226）、珊瑚花園（#227）、深海下潛（#228）、潛水艇探索（#229）。六招新精修動畫使用新的 `ocean-illustrated-*` 代碼。原有七招 `obj-ocean-*`（#188–194）只標記 `hidden: true`，保留原始動畫、編號與編輯功能，舊連結、Combo、object 預設及舊 MCP 呼叫仍播放原版，沒有轉換或刪除。`ALL_EFFECTS` 保留全部效果，`EFFECTS` 是前台可見清單；搜尋、分類、API 目錄只列可見清單，`get_effect` 和 `findEffect` 可讀取隱藏原版。
 
-在物件工作室選海底世界，切換主角後可調配色、大小、數量、速度、路線、水流與深海明暗。鯊魚可調衝刺起點（片長比例）、張嘴、震動與擦身／遮滿結尾；潛水艇可開關探照燈。勾透明背景、將海底場景切成「只有主角」，可輸出去背 PNG、PNG 序列或 WebM。深海下潛本身是全景動畫，透明輸出保留岩壁與顆粒。
+每招有獨立的編輯面板與記憶設定，專用編輯器 `/?view=illustration`，也可從各卡片按「編輯精修插畫」：
 
-MCP 使用 `build_object_scene`，`module: "ocean"`，`params.mode` 為 `fish | dolphins | whale | shark | coral | deep | submarine`。卡片、工作室、預設、Combo 與 `/r/obj.js` 共用自給自足的 Canvas 引擎；種子與時間相同即輸出相同畫面。所有物件均為硬邊向量，不使用陰影、模糊或光暈。鯊魚衝刺與巨鯨經過是有起訖的片段，循環播放會重新開始；需要完整動作時請保留場景設定的片長。
+| 場景 | 專屬編輯 |
+| --- | --- |
+| 魚群 | 數量、波浪／平行／V 字／環繞隊形、疏密、遠近、游動弧度 |
+| 海豚 | 數量、隊形、隊伍間距、起伏、遠近 |
+| 海洋巨物 | 座頭鯨／抹香鯨／大白鯊／巨大烏賊／原創海怪、掠過／停留 |
+| 迎面鯊魚 | 衝刺起點、力度、近身震動、擦身／遮滿收尾 |
+| 珊瑚 | 群落數量、間距、前後層次、水流與枝梢擺動 |
+| 深海 | 下潛速度、前景岩柱、岩壁視差、深暗程度 |
+| 潛水艇 | 航行起伏、探照燈強度／角度、螺旋槳速度、氣泡拖尾 |
 
-啟動 Vite 後開啟 `/tests/ocean.html`，可預覽七種動畫並檢查三種比例、透明度、時間變化、匯出一致性、MCP、預設及套組。結果為 `window.oceanResults`。
+共用大小、速度、位置（拖曳）、角度、方向、紋理換色、透明度、鏡頭視差、懸浮顆粒／種子、背景亮度與五種背景（珊瑚礁、開闊藍海、深海海溝、沉船遺址、海底洞穴），另可選透明背景。深海的海溝選項使用無海面的深淵底圖。速度 0.6–2.5 倍連動片長 `12 / speed`（4.8–20 秒），預設 9:16，支援 16:9、1:1。無文字入場；不加陰影、模糊或光暈。原創海怪為幻想插畫。支援 PNG、WebM、PNG 序列、JSON 匯入／匯出、編輯連結、預設與 Combo；透明 WebM 需由支援 alpha 的剪輯軟體讀取，PNG 序列保留透明度。
 
-「海洋巨物・精修插畫」（`whale-illustrated`，#200）位於物件特效的「精修插畫」分類，原始 id 與連結維持相容，向量版 `obj-ocean-whale`（#190）與既有七招海底動畫保留。專用編輯器 `/?view=illustration` 提供五種主角（座頭鯨、抹香鯨、大白鯊、巨大烏賊、原創海怪）及五種背景（珊瑚礁、開闊藍海、深海海溝、沉船遺址、海底洞穴），另可選透明背景。可調大小、位置（拖曳）、角度、方向、掠過／停留、擺動幅度、紋理換色、透明度、鏡頭視差、顆粒量／水流／種子及背景亮度。速度 0.6–2.5 倍連動片長 `12 / speed`（4.8–20 秒）；預設 9:16，支援等比裁切的 16:9、1:1。支援 PNG、WebM、PNG 序列、JSON 匯入／匯出、編輯連結、預設與 Combo。透明 WebM 需由支援 alpha 的剪輯軟體讀取，PNG 序列保留透明度。
+`src/illustration.ts` 是卡片、編輯器、輸出、MCP、獨立 HTML 共用的自給自足 WebGL／Canvas 引擎。MCP 使用 `build_illustration_scene`，`mode=fish|dolphins|whale|shark|coral|deep|submarine`，會回傳本招的 `params_doc` 與編輯連結。引擎端點 `/r/illustration.js`：`MA_ILLUSTRATION.createRenderer(glCanvas, particleCanvas, scene, assetOrigin)` 後先 `await renderer.ready`，再 `renderer.render(t,W,H)`，依序合成兩張 canvas，最後 `renderer.dispose()`。Fx 掛載後也可等待 `root.motionReady`，用 `root.motionSeek(tSeconds)` 逐格渲染。群體使用逐物件範圍繪製，避免每條魚都重繪整張海景；種子與時間相同即可重現畫面。
 
-`src/illustration.ts` 是網站、輸出、MCP 與獨立 HTML 共用的自給自足 WebGL／Canvas 引擎；不同主角有各自的尾鰭、胸鰭、觸腕或蛇行變形。MCP 使用 `build_illustration_scene`，引擎端點 `/r/illustration.js`；`MA_ILLUSTRATION.createRenderer(glCanvas, particleCanvas, scene, assetOrigin)` 後先 `await renderer.ready`，再 `renderer.render(t, W, H)`，依序合成兩張 canvas，結束時 `renderer.dispose()`。僅載入所選主角與背景；素材位於 `public/media/whale-illustrated/`，有 CORS，下載的 HTML 與 sandbox Combo 播放時需要連線載入素材。原始 `whale-v1.png`、`ocean-v1.png` 不覆寫。
+只載入所選場景需要的素材。素材位於 `public/media/whale-illustrated/`，提供 CORS，下載 HTML 與 sandbox Combo 播放時需要連線載入。既有素材檔不覆寫。三個套組「珊瑚生態」「巨物相遇」「深海探險」也已改用精修版。
 
-本招可直接加入 Combo：`{ "effect": "whale-illustrated", "seconds": 12 }`，完整原始碼透過 MCP `get_effect` 取得；不走 `build_object_scene` 的向量海底模組。逐格輸出時，掛載後等待 `root.motionReady`，再呼叫 `root.motionSeek(tSeconds)`。使用 `prefers-reduced-motion` 或初始暫停卡片時顯示演出進度第 5 秒的主視覺，卸載會釋放 WebGL 資源。瀏覽器回歸測試為 `/tests/illustrated-whale.html`（`window.illustratedWhaleResults`）及 `/tests/illustration-editor.html`（`window.illustrationEditorResults`）。
-
+啟動 Vite 後開啟 `/tests/ocean.html`，可預覽原版，`/tests/ocean-refined.html` 可預覽七種精修動畫並檢查獨立參數、三種比例、透明度、時間變化、匯出、MCP、預設、套組及隱藏原版的保留，結果為 `window.oceanResults`。另有 `/tests/illustrated-whale.html` 與 `/tests/illustration-editor.html`，驗證巨物造型、換色與共用編輯器。
 
 ### 圖片運鏡與本機渲染
 
@@ -140,7 +147,7 @@ npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 
 在對應分類檔加一筆 `Fx`：
 
-- `no`：**固定編號**，用目前最大編號 +1（`grep -rhoE "no: [0-9]+" src/effects | sort -k2 -n | tail -1` 可查）。編號一旦公開就不再變動、刪除特效也不回收，AI 與 Combo 會用「#編號」引用；重複時瀏覽器 console 會報錯
+- `no`：**固定編號**，用目前最大編號 +1（`rg -o --no-filename "no: *[0-9]+" src | sort -V | tail -1` 可查）。編號一旦公開就不再變動、刪除特效也不回收，AI 與 Combo 會用「#編號」引用；重複時瀏覽器 console 會報錯
 - `css`：用 `.S` 代表特效根節點、`K_` 當 keyframes 前綴，會自動範圍化成 `.fx-<id>`
 - 可用變數：`--bg` `--fg` `--ac` `--ac2` `--mu`、字體 `--sans` `--serif` `--mono`；尺寸用 `cqw`／`cqh`／`cqmin`
 - `html(words)`：回傳特效 DOM；`run(root, words)`（選填）處理 JS 動畫並回傳清除函式。`run` 必須自給自足、不可引用模組變數，因為匯出時會用 `toString()` 內嵌

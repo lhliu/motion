@@ -39,6 +39,8 @@ export interface Fx {
   id: string;
   /** 固定編號：一旦給了就不再變動、不重複使用；新增特效用目前最大值 +1 */
   no: number;
+  /** Hide from the public catalog while keeping saved links and Combo playback available. */
+  hidden?: boolean;
   cat: CatId;
   /** 中文名稱 */
   zh: string;

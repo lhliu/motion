@@ -1,5 +1,5 @@
 import { initIllustrationStudio } from './illustration-studio';
-import { isIllustrationFx, illustrationFromWords } from './illustration';
+import { isIllustrationFx, illustrationMode, illustrationFromWords } from './illustration';
 import './styles.css';
 import { CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from './data';
 import { mount, setSpeed, toneVars, type Mounted } from './engine';
@@ -300,7 +300,7 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
     lede: '水滴、隕石、魔術方塊、星空宇宙、海底世界……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用；一行一句用 / 分隔',
-    hero: ['obj-ocean-whale', 'obj-ocean-shark', 'obj-ocean-fish', 'obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
+    hero: ['whale-illustrated', 'ocean-illustrated-shark', 'ocean-illustrated-fish', 'obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
   },
   chart: {
     small: '一行一筆數據就會動',
@@ -497,7 +497,7 @@ const cardHtml = (f: Fx, k: number) => {
   const n = NUM.get(f.id)!;
   const fav = state.favs.has(f.id);
   return `<article class="ma-card" tabindex="0" role="button" data-id="${f.id}" style="--k:${k}" aria-label="${pad(n)} ${esc(f.zh)}：${esc(f.desc)}">
-  <div class="card-stage"><div class="stage"></div>${f.cat === 'illustration' ? '<span class="ill-badge">精修插畫</span>' : ''}<span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
+  <div class="card-stage"><div class="stage"></div>${isIllustrationFx(f.id) ? '<span class="ill-badge">精修插畫</span>' : ''}<span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
   <div class="card-meta"><span class="ma-num">${pad(n)}</span><div class="card-txt"><h3>${highlight(f.zh)}</h3><p>${highlight(f.desc)}</p></div>
   <button class="heart" data-fav="${f.id}" aria-pressed="${fav}" aria-label="收藏 ${esc(f.zh)}"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.3-9C1 8.4 3.2 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.8 0 6 3.9 4.3 7.5C19 16.6 12 21 12 21z"/></svg></button></div>
 </article>`;
@@ -847,7 +847,7 @@ const renderDetail = () => {
   $('#dStudio').hidden = fx.cat !== 'liquid';
   $('#dMapStudio').hidden = fx.cat !== 'map';
   $('#dPhotoStudio').hidden = !isPhotoFx(fx.id);
-  $('#dObjStudio').hidden = !isObjFx(fx.id);
+  $('#dObjStudio').hidden = !isObjFx(fx.id)||isIllustrationFx(fx.id);
   $('#dIllustrationStudio').hidden = !isIllustrationFx(fx.id);
   dWords.closest('label')!.hidden = isIllustrationFx(fx.id);
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
@@ -864,7 +864,7 @@ const syncSegs = () => {
 };
 
 const openDetail = (id: string, push = true) => {
-  const fx = EFFECTS.find((f) => f.id === id);
+  const fx = findEffect(id);
   if (!fx) return;
   d.fx = fx;
   if (fx.preferredRatio) d.ratio = fx.preferredRatio;
@@ -1069,7 +1069,7 @@ const combos = initCombos({
       return meta ? photoStudio.loadPreset({ ...meta, data }) : photoStudio.load(data);
     }
     if (isIllustrationFx(effect)) {
-      const data=illustrationFromWords(words);
+      const data=illustrationFromWords(words,effect);
       return meta ? illustrationStudio.loadPreset({...meta,data}) : illustrationStudio.load(data);
     }
     if (isObjFx(effect)) {
@@ -1099,8 +1099,8 @@ $('#dPhotoStudio').addEventListener('click', () => {
   photoStudio.open(m);
 });
 const illustrationStudio=initIllustrationStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
-$('#dIllustrationStudio').addEventListener('click',()=>{const sc=illustrationFromWords(d.words);sc.ratio=d.ratio;closeDetail();illustrationStudio.load(sc);});
-const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open() });
+$('#dIllustrationStudio').addEventListener('click',()=>{const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
+const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open(), openIllustration: data => data ? illustrationStudio.load(data) : illustrationStudio.open() });
 $('#dObjStudio').addEventListener('click', () => {
   const fx = d.fx;
   const html = fx.html(d.words);
@@ -1149,7 +1149,7 @@ renderSwatches();
 renderPlay();
 // 直接打開某一招時，切到它所在的工作區
 const initial = new URLSearchParams(location.search).get('fx');
-const initialFx = initial ? EFFECTS.find((f) => f.id === initial || String(NUM.get(f.id)) === initial) : undefined;
+const initialFx = initial ? findEffect(initial) : undefined;
 if (initialFx) state.sec = secOf(initialFx);
 renderWs();
 renderHeroCopy();
@@ -1161,7 +1161,7 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'explain') return copy(EXPLAIN_PROMPT, '已複製，貼給 Claude Code 並附上草圖');
   if (state.sec === 'chart') return copy(CHART_PROMPT, '已複製，貼給 Claude 並附上數據');
   if (state.sec === 'text') return showKits(true);
-  if(state.sec==='object'&&state.cat==='illustration')return illustrationStudio.open();
+  if(state.sec==='object'&&state.cat==='ocean')return illustrationStudio.open();
   return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : objStudio.open();
 });
 // 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊

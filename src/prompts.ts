@@ -1,4 +1,4 @@
-import { illustrationFromWords, ILLUSTRATION } from './illustration';
+import { illustrationFromWords, isIllustrationFx, ILLUSTRATION } from './illustration';
 import type { Fx } from './types';
 import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
 import { fontPack } from './fonts';
@@ -22,10 +22,10 @@ const quoteWords = (w: string[]) => w.map((t) => `「${t}」`).join('、');
 const quoteWordsEn = (w: string[]) => w.map((t) => `"${t}"`).join(', ');
 
 export const buildPrompt = (fx: Fx, mode: PromptMode, words: string[], v: Vars, ratio: Ratio): string => {
-  if (fx.id === 'whale-illustrated' && mode !== 'code') {
-    const sc={...illustrationFromWords(words),ratio},settings=JSON.stringify(sc,null,2);
-    if (mode === 'en' || mode === 'video') return `Create a ${ratioEn[ratio]}, ${sc.loop.toFixed(2)}-second refined illustration animation using whale-illustrated. ${fx.motionEn} Preserve the supplied textures and settings. For exact rendering use build_illustration_scene and /r/illustration.js; generative video can only approximate it. No added typography.\nSETTINGS\n${settings}`;
-    return `請使用 whale-illustrated（精修插畫）：${ILLUSTRATION.animals[sc.animal].zh} × ${ILLUSTRATION.backgrounds[sc.background].zh}，${ratioZh[ratio]}，完整 ${sc.loop.toFixed(2)} 秒。\n${fx.motion}\n用 build_illustration_scene 產生設定與編輯連結，將 combo_scene 放進 compose_combo／save_combo。使用 get_effect 或 /r/illustration.js 的共用引擎與既有插畫素材；逐格輸出須 await renderer.ready 再 render(t)。透明背景保留 alpha，不加文字。\n場景設定：\n${settings}`;
+  if (isIllustrationFx(fx.id) && mode !== 'code') {
+    const sc={...illustrationFromWords(words,fx.id),ratio},settings=JSON.stringify(sc,null,2),subject=sc.mode==='whale'?ILLUSTRATION.animals[sc.animal].zh:ILLUSTRATION.modes[sc.mode].zh;
+    if (mode === 'en' || mode === 'video') return `Create a ${ratioEn[ratio]}, ${sc.loop.toFixed(2)}-second refined ocean illustration animation using ${fx.id}. ${fx.motionEn} Preserve the supplied textures and species-specific motion. For exact rendering use build_illustration_scene with mode="${sc.mode}" and /r/illustration.js. No added typography.\nSETTINGS\n${settings}`;
+    return `請使用 ${fx.id}（精修插畫）：${subject} × ${ILLUSTRATION.backgrounds[sc.background].zh}，${ratioZh[ratio]}，完整 ${sc.loop.toFixed(2)} 秒。\n${fx.motion}\n用 build_illustration_scene，mode="${sc.mode}"，產生專屬設定與編輯連結，將 combo_scene 放進 compose_combo／save_combo。使用 get_effect 或 /r/illustration.js 的共用引擎與既有插畫素材；逐格輸出須 await renderer.ready 再 render(t)。透明背景保留 alpha，不加文字。\n場景設定：\n${settings}`;
   }
   if (fx.cat === 'ocean' && mode !== 'code') {
     const sc = objSceneFromWords(words, 'ocean', { mode: fx.id.replace('obj-ocean-', '') });

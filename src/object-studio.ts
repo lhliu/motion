@@ -11,6 +11,7 @@ export interface ObjectStudioDeps {
   copy: (text: string, msg: string) => Promise<void>;
   addScene: (s: { effect: string; words: string[]; seconds?: number; font?: string; ratio?: OScene['ratio'] }) => void;
   openDrop: () => void;
+  openIllustration: (data?: unknown) => void;
   store: { get<T>(k: string, d: T): T; set(k: string, v: unknown): void };
 }
 
@@ -23,6 +24,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
   const stage = $('#osStage');
   const ctx = cv.getContext('2d')!;
   let sc: OScene = normalizeObjScene(deps.store.get<Partial<OScene>>('objscene', { ...defaultObjScene(), text: { ...defaultObjScene().text, lines: ['重磅登場'] } }));
+  if(sc.module==='ocean')sc=defaultObjScene('meteor');
   const memo: Partial<Record<OModule, Record<string, number | string>>> = deps.store.get('objmemo', {});
   let playing = false;
   let t0 = 0;
@@ -121,13 +123,14 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
   /* ───────── 模組、參數、文字 ───────── */
   const modEl = $('#osMod');
   modEl.innerHTML =
-    OBJ_MODULES.map((m) => `<button type="button" data-m="${m}" title="${esc(OBJ_INFO[m].desc)}"><b>${OBJ_INFO[m].zh}</b></button>`).join('') +
-    '<button type="button" data-drop><b>水滴 ↗</b></button><p class="ps-mod-desc" id="osModDesc"></p>';
+    OBJ_MODULES.filter(m=>m!=='ocean').map((m) => `<button type="button" data-m="${m}" title="${esc(OBJ_INFO[m].desc)}"><b>${OBJ_INFO[m].zh}</b></button>`).join('') +
+    '<button type="button" data-illustration><b>海底・精修插畫 ↗</b></button><button type="button" data-drop><b>水滴 ↗</b></button><p class="ps-mod-desc" id="osModDesc"></p>';
   const syncMod = () => {
     modEl.querySelectorAll<HTMLElement>('[data-m]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === sc.module)));
     $('#osModDesc').textContent = `${OBJ_INFO[sc.module].zh}：${OBJ_INFO[sc.module].desc}`;
   };
   modEl.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('[data-illustration]')) {dlg.close();deps.openIllustration();return;}
     if ((e.target as HTMLElement).closest('[data-drop]')) {
       dlg.close();
       deps.openDrop();

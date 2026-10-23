@@ -1,6 +1,6 @@
 import { isIllustrationFx, illustrationFromWords, ILLUSTRATION } from './illustration';
 // Combo：把多個特效依序串成一段動畫。網站、MCP、分享頁共用這支檔案，不可在載入時碰 DOM。
-import { EFFECTS, NUM, PALETTES } from './data';
+import { ALL_EFFECTS, EFFECTS, NUM, PALETTES } from './data';
 import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, toneVars, varsCss } from './engine';
 import type { Ratio } from './prompts';
 import type { Fx, Palette, Tone } from './types';
@@ -42,8 +42,8 @@ export interface Combo {
   updated_at?: string;
 }
 
-const byId = new Map(EFFECTS.map((f) => [f.id, f]));
-export const findEffect = (id: string): Fx | undefined => byId.get(id) ?? EFFECTS.find((f) => String(NUM.get(f.id)) === String(id).replace(/^#/, '').replace(/^0+/, ''));
+const byId = new Map(ALL_EFFECTS.map((f) => [f.id, f]));
+export const findEffect = (id: string): Fx | undefined => byId.get(id) ?? ALL_EFFECTS.find((f) => String(NUM.get(f.id)) === String(id).replace(/^#/, '').replace(/^0+/, ''));
 
 const isHex = (s: unknown): s is string => typeof s === 'string' && /^#[0-9a-f]{6}$/i.test(s);
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -105,7 +105,7 @@ export const comboPalette = (c: Combo): Palette => {
 
 /** 段落文字摘要：地圖場景與水滴設定不直接印出 JSON */
 export const sceneSummary = (effect: string, words: string[], quote = false): string => {
-  if (isIllustrationFx(effect)) { const sc=illustrationFromWords(words);return `精修插畫「${ILLUSTRATION.animals[sc.animal].zh}」 · ${ILLUSTRATION.backgrounds[sc.background].zh} · ${sc.speed} 倍速`; }
+  if (isIllustrationFx(effect)) { const sc=illustrationFromWords(words,effect);return `精修插畫「${sc.mode==='whale'?ILLUSTRATION.animals[sc.animal].zh:ILLUSTRATION.modes[sc.mode].zh}」 · ${ILLUSTRATION.backgrounds[sc.background].zh} · ${sc.speed} 倍速`; }
   const q = (x: string) => (quote ? `「${x}」` : x);
   if (effect === 'map-overlay') {
     const j = words.find((x) => x.trim().startsWith('{'));
@@ -151,7 +151,7 @@ export const sceneSummary = (effect: string, words: string[], quote = false): st
 
 export const sceneSeconds = (s: ComboScene): number => {
   if (s.seconds) return s.seconds;
-  if (isIllustrationFx(s.effect)) return illustrationFromWords(s.words).loop;
+  if (isIllustrationFx(s.effect)) return illustrationFromWords(s.words,s.effect).loop;
   // 圖片運鏡預設 6 秒動畫＋1 秒停留
   if (isPhotoFx(s.effect)) return 7;
   if (isObjFx(s.effect)) return 6;

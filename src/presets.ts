@@ -1,4 +1,4 @@
-import { normalizeIllustration, illustrationFromWords, isIllustrationFx, type IScene } from './illustration';
+import { normalizeIllustration, illustrationFxId, illustrationFromWords, isIllustrationFx, type IScene } from './illustration';
 // 預設（preset）：工作室調好的一份設定，有短代碼，AI 與網站來回修改都用它。網站與伺服器共用，不可在載入時碰 DOM。
 import { parseDrop } from './drop';
 import { sceneLength, type MScene } from './mapkit';
@@ -36,7 +36,7 @@ export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, 
   const note = p.id ? `預設 ${p.id}${p.name ? `「${p.name}」` : ''}` : undefined;
   if (p.kind === 'illustration') {
     const sc=normalizeIllustration(p.data);
-    return {effect:'whale-illustrated', words:[JSON.stringify(sc)], seconds:sc.loop, note};
+    return {effect:illustrationFxId(sc.mode), words:[JSON.stringify(sc)], seconds:sc.loop, note};
   }
   if (p.kind === 'map') {
     const sc = p.data as MScene;
@@ -57,7 +57,7 @@ export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, 
 
 /** Combo 段落 → 預設資料（反向，用於從 Combo 打開工作室） */
 export const sceneToPresetData = (effect: string, words: string[]): { kind: PresetKind; data: PresetData } | null => {
-  if (isIllustrationFx(effect)) return {kind:'illustration',data:illustrationFromWords(words)};
+  if (isIllustrationFx(effect)) return {kind:'illustration',data:illustrationFromWords(words,effect)};
   if (effect === 'map-overlay') {
     const j = words.find((w) => w.trim().startsWith('{'));
     try {
@@ -90,7 +90,7 @@ export const sceneToPresetData = (effect: string, words: string[]): { kind: Pres
 export const checkPresetData = (kind: unknown, data: unknown): string => {
   if (!PRESET_KINDS.includes(kind as PresetKind)) return `kind 必須是 ${PRESET_KINDS.join('｜')}`;
   if (!data || typeof data !== 'object') return 'data 必須是物件';
-  if (kind === 'illustration' && !('animal' in data)) return '精修插畫缺少 animal';
+  if (kind === 'illustration' && !('animal' in data)&&!('mode' in data)) return '精修插畫缺少 animal';
   if (kind === 'map') {
     const d = data as Partial<MScene>;
     if (!Array.isArray(d.els)) return '地圖場景缺少 els（元件清單）';

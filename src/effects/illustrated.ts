@@ -1,13 +1,13 @@
 import type { Fx } from '../types';
 import { esc } from '../util';
 import { fnSource } from '../engine';
-import { illustrationEngine, illustrationFromWords, type ILLUSTRATION } from '../illustration';
+import { illustrationEngine, illustrationFromWords, ILLUSTRATION, type IMode } from '../illustration';
 
 export const ILLUSTRATION_GLOBALS = `globalThis.MA_ILLUSTRATION=${fnSource(illustrationEngine)}();`;
 
-/** #200 keeps its original id; vector ocean effects remain independent. */
+/** Seven visible refined scenes; original vector scenes remain hidden and available. */
 export const illustratedWhale: Fx = {
-  id: 'whale-illustrated', no: 200, cat: 'illustration',
+  id: 'whale-illustrated', no: 200, cat: 'ocean',
   zh: '海洋巨物・精修插畫', en: 'Illustrated Ocean Giants',
   desc: '座頭鯨、抹香鯨、大白鯊、巨大烏賊與原創海怪，搭配五種海景；可編輯大小、動作與配色',
   tags: ['精修插畫','海底','可疊影片','療癒'], tone: 'ink', sample: [], duration: 12, preferredRatio: '9:16', added: '2026-10-23',
@@ -33,7 +33,7 @@ export const illustratedWhale: Fx = {
     let disposed=false,ready=false,elapsed=0,previous=performance.now(),raf=0,seek:number|undefined,last=-1;
     const reduced=matchMedia('(prefers-reduced-motion: reduce)');
     const draw=()=>{
-      const time=seek??(reduced.matches||Number(root.dataset.motionSpeed??1)===0&&elapsed===0?5/renderer.scene.speed:elapsed%renderer.scene.loop);
+      const time=seek??(reduced.matches||Number(root.dataset.motionSpeed??1)===0&&elapsed===0?(renderer.scene.mode==='shark'?9.3:5)/renderer.scene.speed:elapsed%renderer.scene.loop);
       if(time!==last&&ready){renderer.render(time);last=time;}
     };
     const resize=()=>{const w=Math.max(1,canvas.clientWidth),h=Math.max(1,canvas.clientHeight),dpr=Math.min(2,devicePixelRatio||1,Math.sqrt(1080*1920/(w*h)));canvas.width=snow.width=Math.round(w*dpr);canvas.height=snow.height=Math.round(h*dpr);last=-1;draw();};
@@ -44,3 +44,19 @@ export const illustratedWhale: Fx = {
     return ()=>{disposed=true;cancelAnimationFrame(raf);observer.disconnect();renderer.dispose();delete host.motionSeek;delete host.motionReady;};
   },
 };
+
+
+export const illustratedOcean: Fx[] = (Object.entries(ILLUSTRATION.modes) as [IMode, typeof ILLUSTRATION.modes[IMode]][]).map(([mode, info]) => ({
+  ...illustratedWhale,
+  id: info.id, no: info.no, cat: 'ocean',
+  zh: `${info.zh}・精修插畫`,
+  en: ({fish:'Illustrated Fish School',dolphins:'Illustrated Dolphin Pod',whale:'Illustrated Ocean Giants',shark:'Illustrated Shark Rush',coral:'Illustrated Coral Garden',deep:'Illustrated Abyss Descent',submarine:'Illustrated Submarine Explorer'})[mode],
+  desc: info.desc,
+  hint: `按「編輯精修插畫」調整「${info.zh}」專屬設定、配色與五種背景，也可透明輸出。`,
+  motion: `${info.desc}。使用精細去背插畫與分層海景、局部紋理形變及懸浮顆粒。每招有專屬編輯參數，共用大小、速度、位置、顏色、五種背景與透明輸出。無文字入場，不加陰影、模糊或光暈。`,
+  motionEn: `${info.desc}. Detailed marine illustration assets with distinct procedural motion and editable controls. Use the supplied shared renderer and scene settings. No typography, blur, shadows or glow.`,
+  html: words => {
+    const origin=typeof location!=='undefined'&&/^https?:$/.test(location.protocol)?location.origin:'https://motion.leichthub.com';
+    return `<canvas class="iw-ocean" data-origin="${esc(origin)}" data-scene="${esc(JSON.stringify(illustrationFromWords(words,info.id)))}"></canvas><canvas class="iw-snow"></canvas><div class="iw-status" role="status">載入精修插畫…</div>`;
+  },
+}));

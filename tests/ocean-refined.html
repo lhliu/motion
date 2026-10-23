@@ -1,0 +1,66 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>七種精修海底世界</title>
+<style>*{box-sizing:border-box}body{margin:24px;background:#eee8da;color:#12394a;font:14px system-ui}h1{font-size:28px}.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1180px}.preview{position:relative;aspect-ratio:9/16;background:repeating-conic-gradient(#ccc 0 25%,#eee 0 50%) 0 0/12px 12px}.preview canvas{position:absolute;inset:0;width:100%;height:100%}figure{margin:0}figcaption{padding:8px;font-weight:600}pre{white-space:pre-wrap}button{padding:9px 18px;margin-bottom:16px}@media(max-width:700px){.gallery{grid-template-columns:repeat(2,1fr)}}</style>
+<h1>海底世界 · 七種精修插畫</h1><button id="play">▶ 播放全部</button><div class="gallery" id="gallery"></div><pre id="results">驗證中…</pre>
+<script type="module">
+import { ILLUSTRATION as R,normalizeIllustration as norm,illustrationFxId,illustrationFromWords,isIllustrationFx } from '/src/illustration.ts';
+import { ALL_EFFECTS,EFFECTS,CATEGORIES,PALETTES } from '/src/data.ts';
+import { findEffect,normalizeCombo,sceneSeconds,comboHtml } from '/src/combo.ts';
+import { presetToScene,sceneToPresetData } from '/src/presets.ts';
+import { TOOLS } from '/functions/_lib/tools.ts';
+import { KITS } from '/src/uses.ts';
+import { buildPrompt,exportHtml } from '/src/prompts.ts';
+import { toneVars,fnSource } from '/src/engine.ts';
+import { defaultObjScene,drawObj,objRenderer } from '/src/objkit.ts';
+const results=[],items=[];const check=(v,m)=>{if(!v)throw new Error(m)};
+async function test(name,fn){try{await fn();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}}
+const cv=(w=270,h=480)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+const px=c=>{const a=cv(c.width,c.height),x=a.getContext('2d');x.drawImage(c,0,0);return x.getImageData(0,0,c.width,c.height).data};
+const visible=c=>{const p=px(c);let n=0;for(let i=3;i<p.length;i+=4)if(p[i]>100)n++;return n};
+const shot=item=>item.a.toDataURL()+'|'+item.b.toDataURL();
+await test('目錄恰好七招精修插畫，編號唯一，隱藏原版仍可播放',()=>{
+ const ocean=EFFECTS.filter(f=>f.cat==='ocean');check(ocean.length===7,'Wrong ocean count');check(!CATEGORIES.some(c=>c.id==='illustration'),'Duplicate refined category');check(new Set(EFFECTS.map(f=>f.no)).size===EFFECTS.length,'Duplicate numbers');
+ for(const m of Object.keys(R.modes)){const f=findEffect(illustrationFxId(m));check(f.no===R.modes[m].no&&f.tags.includes('精修插畫')&&f.globals.includes('MA_ILLUSTRATION'),'Not refined '+m);check(illustrationFromWords([],f.id).mode===m,'Wrong card mode');}
+ check(findEffect('190').id==='obj-ocean-whale'&&findEffect('obj-ocean-whale').hidden,'Hidden original missing');
+ check(ALL_EFFECTS.filter(f=>f.hidden&&f.cat==='ocean').length===7,'Originals deleted');
+});
+for(const mode of Object.keys(R.modes))await test(`${mode}：載入、播放、三種比例與透明度`,async()=>{
+ const a=cv(),b=cv(),sc=norm({mode}),engine=R.createRenderer(a,b,sc,location.origin),item={a,b,engine,mode};await engine.ready;engine.render(4);const before=shot(item);engine.render(6);check(before!==shot(item),'Static');engine.render(4);check(before===shot(item),'Seek not deterministic');
+ for(const [w,h] of [[320,180],[220,220],[270,480]]){engine.render(5,w,h);check(px(a).some((v,i)=>i%4!==3&&v>50),'Blank aspect ratio');}
+ await engine.update({...sc,background:'transparent',particles:0});engine.render(mode==='shark'?9.3:5);const data=px(a);check(data.some((v,i)=>i%4===3&&v===0)&&visible(a)>20,'Missing transparent subject');
+ await engine.update(sc);engine.render(mode==='shark'?9.3:5);
+ const f=document.createElement('figure');f.innerHTML=`<div class="preview"></div><figcaption>#${R.modes[mode].no} ${R.modes[mode].zh}・精修插畫</figcaption>`;f.firstElementChild.append(a,b);document.querySelector('#gallery').append(f);items.push(item);
+});
+const get=mode=>items.find(i=>i.mode===mode);
+for(const mode of Object.keys(R.modes))await test(`${mode}：專屬參數會改變實際畫面`,async()=>{
+ const item=get(mode),base=norm({mode,background:'transparent',particles:0,path:'hover'}),time=mode==='shark'?9.3:5;
+ const edits={fish:{count:4,formation:'orbit'},dolphins:{count:2,arc:2},whale:{animal:'squid'},shark:{strike:.8,rush:.5},coral:{count:3,current:1.5},deep:{descent:0,darkness:1},submarine:{beam:0,propeller:0,bubbles:0}};
+ await item.engine.update(base);item.engine.render(time);const a=shot(item);await item.engine.update({...base,...edits[mode]});item.engine.render(time);check(a!==shot(item),'Controls ignored');
+ await item.engine.update(norm({mode}));item.engine.render(mode==='shark'?9.3:5);
+});
+await test('每招各自的設定、預設、編輯連結及 Combo 保持主角與片長',()=>{
+ for(const mode of Object.keys(R.modes)){const sc=norm({mode,speed:.6,size:1.5}),cs=presetToScene({kind:'illustration',data:sc,name:mode}),pd=sceneToPresetData(cs.effect,cs.words);check(cs.effect===illustrationFxId(mode)&&pd.data.mode===mode&&cs.seconds===20,'Wrong roundtrip '+mode);const c=normalizeCombo({title:mode,scenes:[cs]});check(!c.errors.length&&c.combo.scenes[0].words[0]===cs.words[0]&&sceneSeconds(c.combo.scenes[0])===20,'Combo lost config');}
+});
+await test('隱藏原版的 object 預設與 #190 Combo 維持原動畫',()=>{
+ const old={module:'ocean',ratio:'9:16',loop:8,bg:'transparent',params:{mode:'dolphins',count:7,size:.9},text:{layout:'none',lines:[]}};
+ const cs=presetToScene({kind:'object',name:'legacy',data:old});check(cs.effect==='obj-ocean-fish'&&JSON.parse(cs.words[0]).params.mode==='dolphins'&&cs.seconds===8,'Old preset changed');
+ const whale=normalizeCombo({title:'legacy',scenes:[{effect:'obj-ocean-whale',words:[JSON.stringify({...old,params:{...old.params,mode:'whale'}})]}]});check(whale.combo.scenes[0].effect==='obj-ocean-whale','Old ID changed');check(comboHtml(whale.combo).includes('MA_OBJ'),'Original renderer missing');
+});
+await test('三個海底套組全部使用精修版，只有七種場景',()=>{
+ const kits=KITS.filter(k=>k.id.startsWith('kit-ocean-'));check(kits.length===3,'Missing kits');for(const k of kits){const c=normalizeCombo(k.combo);check(!c.errors.length,'Invalid kit');for(const s of c.combo.scenes)check(isIllustrationFx(s.effect)&&JSON.parse(s.words[0]).mode,'Vector kit remains');}
+});
+await test('MCP 七招專用模式與隱藏原版均可取用',async()=>{
+ const ctx={origin:location.origin,request:new Request(location.origin+'/mcp'),env:{}},tool=TOOLS.find(t=>t.name==='build_illustration_scene');
+ for(const mode of Object.keys(R.modes)){const r=await tool.run({mode,speed:.6,count:7},ctx);check(r.scene.mode===mode&&r.combo_scene.effect===illustrationFxId(mode)&&r.edit_url.includes('edit=illustration')&&r.combo_scene.seconds===20,'MCP wrong '+mode);}
+ const old=await TOOLS.find(t=>t.name==='build_object_scene').run({module:'ocean',params:{mode:'shark',strike:.7,exit:'cover'},duration:8},ctx);check(old.scene.module==='ocean'&&old.scene.params.mode==='shark'&&old.combo_scene.seconds===8,'Original MCP changed');
+});
+await test('每招 HTML 自給自足、提示詞指向本招專屬工具',async()=>{
+ for(const mode of Object.keys(R.modes)){const fx=findEffect(illustrationFxId(mode)),sc=norm({mode}),words=[JSON.stringify(sc)],html=exportHtml(fx,words,toneVars(PALETTES[0],'ink'),'9:16');check(html.includes('MA_ILLUSTRATION')&&html.includes('data-scene='),'Missing engine');for(const language of ['web','en','video']){const p=buildPrompt(fx,language,words,toneVars(PALETTES[0],'ink'),'9:16');check(p.includes('build_illustration_scene')&&p.includes(`mode="${mode}"`),'Wrong prompt');}}
+ const mode='submarine',fx=findEffect(illustrationFxId(mode)),frame=document.createElement('iframe');frame.style.cssText='width:270px;height:480px;border:0';frame.sandbox='allow-scripts allow-same-origin';document.body.append(frame);const done=new Promise(r=>frame.onload=r);frame.srcdoc=exportHtml(fx,[],toneVars(PALETTES[0],'ink'),'9:16');await done;const root=frame.contentDocument.querySelector('.fx');check(await root.motionReady,'Export not ready');root.motionSeek(5);check(root.querySelector('canvas').toDataURL()===get(mode).a.toDataURL(),'Export/preview mismatch');frame.remove();
+});
+await test('其他五個物件模組維持一致',()=>{
+ const other=(0,eval)(`(${fnSource(objRenderer)})`)();for(const module of ['meteor','cube','cosmos','aerial','vehicle']){const sc=defaultObjScene(module),a=cv(180,320),b=cv(180,320);drawObj(a.getContext('2d'),180,320,sc,3);other.drawObj(b.getContext('2d'),180,320,sc,3);check(a.toDataURL()===b.toDataURL(),'Changed '+module);}
+});
+let playing=false,start=0;document.querySelector('#play').onclick=()=>{playing=!playing;start=performance.now();document.querySelector('#play').textContent=playing?'Ⅱ 暫停':'▶ 播放全部';if(playing)requestAnimationFrame(tick)};
+function tick(now){if(!playing)return;for(const item of items)item.engine.render(((now-start)/1000)%12);requestAnimationFrame(tick)}
+window.oceanRenderAt=t=>items.forEach(i=>i.engine.render(t));window.oceanResults=results;document.querySelector('#results').textContent=results.map(r=>`${r.passed?'PASS':'FAIL'} ${r.name}${r.error?' — '+r.error:''}`).join('\n');document.documentElement.dataset.result=results.every(r=>r.passed)?'pass':'fail';
+</script></html>

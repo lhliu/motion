@@ -9,7 +9,7 @@
 <div class="gallery" id="gallery"></div><pre id="results">檢查中…</pre>
 <script type="module">
 import { defaultObjScene, normalizeObjScene, drawObj, objRenderer, objSceneFromWords, objFxModule, objFxId } from '/src/objkit.ts';
-import { EFFECTS, CATEGORIES, PALETTES } from '/src/data.ts';
+import { ALL_EFFECTS as EFFECTS, CATEGORIES, PALETTES } from '/src/data.ts';
 import { fnSource, toneVars, loopSeconds, mount, setSpeed } from '/src/engine.ts';
 import { buildPrompt } from '/src/prompts.ts';
 import { KITS } from '/src/uses.ts';
@@ -73,7 +73,7 @@ test('預設與 Combo 來回保留主角、透明度與片長',()=>{
 });
 test('三個海底套組通過驗證，沒有文字入場',()=>{
  const kits=KITS.filter(k=>k.id.startsWith('kit-ocean-'));check(kits.length===3,'Missing kits');
- for(const k of kits){const c=normalizeCombo(k.combo);check(!c.errors.length,c.errors.join(';'));for(const s of c.combo.scenes){check(JSON.parse(s.words[0]).text.layout==='none','Kit has text');check(sceneSeconds(s)===8,'Kit clipped')}}
+ for(const k of kits){const c=normalizeCombo(k.combo);check(!c.errors.length,c.errors.join(';'));for(const s of c.combo.scenes){check(JSON.parse(s.words[0]).mode,'Kit has no refined scene');check(sceneSeconds(s)===12,'Kit clipped')}}
 });
 test('海底提示詞使用物件引擎與正確設定',()=>{for(const mode of ['web','en','video']){const p=buildPrompt(fx('shark'),mode,[],toneVars(PALETTES[0],'ink'),'9:16');check(p.includes('build_object_scene')&&p.includes('shark')&&!p.includes('kinetic typography'),'Wrong prompt')}});
 for(const module of ['meteor','cube','cosmos','aerial','vehicle'])test(`舊模組 ${module} 匯出維持一致`,()=>{const sc=defaultObjScene(module);check(eq(render(sc,2.5),render(sc,2.5,180,320,exported)),'Legacy export failed')});

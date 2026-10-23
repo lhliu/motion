@@ -1,7 +1,7 @@
 // 文字特效的「用途」分類（剪片時怎麼找），原本的技法分類改當「風格」篩選。網站與 MCP 共用。
 import type { Combo } from './combo';
 import { buildMapScene, sceneLength } from './mapkit';
-import { normalizeObjScene } from './objkit';
+import { normalizeIllustration, illustrationFxId, type IMode } from './illustration';
 
 export type UseId = 'open' | 'caption' | 'info' | 'trans' | 'emph' | 'mood';
 
@@ -39,8 +39,8 @@ export const MOOD_PREVIEW = 8;
 
 /** 套組：常見段落順序，帶進 Combo 草稿後換字即可（文字皆為示意，請換成可查證的內容） */
 const oceanScene = (mode: string, note: string, params: Record<string, number | string> = {}) => {
-  const sc = normalizeObjScene({ module: 'ocean', params: { mode, ...params } });
-  return { effect: `obj-ocean-${mode}`, words: [JSON.stringify(sc)], seconds: sc.loop, note };
+  const sc = normalizeIllustration({mode:mode as IMode,...params});
+  return { effect: illustrationFxId(sc.mode), words: [JSON.stringify(sc)], seconds: sc.loop, note };
 };
 export const KITS: { id: string; zh: string; desc: string; combo: Combo }[] = [
   {

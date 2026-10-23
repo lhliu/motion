@@ -16,7 +16,7 @@ import { liquid } from './effects/liquid';
 import { photo } from './effects/photo';
 import { diagram } from './effects/diagram';
 import { objects } from './effects/object';
-import { illustratedWhale } from './effects/illustrated';
+import { illustratedOcean } from './effects/illustrated';
 import { transit } from './effects/transit';
 import { charts } from './effects/chart';
 import { canonTags, USE_OF, USES } from './uses';
@@ -55,8 +55,7 @@ export const CATEGORIES: Category[] = [
   { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '星空、光速、星系、行星' },
   { id: 'aerial', sec: 'object', code: 'AERIAL', zh: '俯瞰', tagline: '城市、河流、山川、草原牛馬' },
   { id: 'vehicle', sec: 'object', code: 'VEHICLE', zh: '交通工具', tagline: '飛機、太空船、汽車、馬車' },
-  { id: 'illustration', sec: 'object', code: 'ILLUSTRATION', zh: '精修插畫', tagline: '細緻海洋巨物、五種海景、可編輯與透明輸出' },
-  { id: 'ocean', sec: 'object', code: 'OCEAN', zh: '海底世界', tagline: '魚群、海豚、巨鯨、鯊魚與深海探索' },
+  { id: 'ocean', sec: 'object', code: 'OCEAN', zh: '海底世界・精修插畫', tagline: '七種精修海底場景，各有專屬編輯與透明輸出' },
   { id: 'cbar', sec: 'chart', code: 'BAR', zh: '直條橫條', tagline: '直條、堆疊、橫條、排名、瀑布' },
   { id: 'cline', sec: 'chart', code: 'LINE', zh: '折線區域', tagline: '走勢、量體、雙軸組合' },
   { id: 'cpie', sec: 'chart', code: 'PIE', zh: '圓形比例', tagline: '圓餅、環圈、儀表、進度環、象形圖' },
@@ -67,7 +66,7 @@ export const CATEGORIES: Category[] = [
 
 const order = CATEGORIES.map((c) => c.id);
 
-export const EFFECTS: Fx[] = [
+export const ALL_EFFECTS: Fx[] = [
   ...impact,
   ...reveal,
   ...kinetic,
@@ -85,7 +84,7 @@ export const EFFECTS: Fx[] = [
   ...photo,
   ...diagram,
   ...objects,
-  illustratedWhale,
+  ...illustratedOcean,
   ...transit,
   ...charts,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
@@ -95,21 +94,24 @@ const secIdx = (f: Fx) => ['text', 'photo', 'map', 'object', 'chart', 'explain']
 const useIdx = (f: Fx) => USES.findIndex((u) => u.id === f.use);
 // 同一用途內依 uses.ts 列出的順序（常用的在前）
 const useRank = new Map(Object.keys(USE_OF).map((id, i) => [id, i]));
-EFFECTS.forEach((f) => {
+ALL_EFFECTS.forEach((f) => {
   if (secIdx(f) !== 0) return;
   f.use = USE_OF[f.id] ?? 'mood';
   f.kw = f.tags;
   f.tags = canonTags(f.tags);
 });
-EFFECTS.sort((a, b) => secIdx(a) - secIdx(b) || (secIdx(a) === 0 ? useIdx(a) - useIdx(b) || useRank.get(a.id)! - useRank.get(b.id)! : 0) || order.indexOf(a.cat) - order.indexOf(b.cat));
+ALL_EFFECTS.sort((a, b) => secIdx(a) - secIdx(b) || (secIdx(a) === 0 ? useIdx(a) - useIdx(b) || useRank.get(a.id)! - useRank.get(b.id)! : 0) || order.indexOf(a.cat) - order.indexOf(b.cat));
+
+/** Public catalog: hidden originals still live in ALL_EFFECTS for saved references. */
+export const EFFECTS = ALL_EFFECTS.filter(f=>!f.hidden);
 
 export const secOf = (f: Fx): SecId => CATEGORIES.find((c) => c.id === f.cat)!.sec;
 
 /** 編號固定寫在各特效的 no，不隨排序或新增而改變 */
-export const NUM = new Map(EFFECTS.map((f) => [f.id, f.no]));
+export const NUM = new Map(ALL_EFFECTS.map((f) => [f.id, f.no]));
 {
   const seen = new Map<number, string>();
-  for (const f of EFFECTS) {
+  for (const f of ALL_EFFECTS) {
     if (seen.has(f.no)) console.error(`特效編號重複：#${f.no} 同時給了 ${seen.get(f.no)} 與 ${f.id}`);
     seen.set(f.no, f.id);
   }
