@@ -32,7 +32,12 @@ export type CatId =
   | 'chier'
   | 'cstat'
   | 'punit'
-  | 'pfloor';
+  | 'pfloor'
+  | 'twipe'
+  | 'tflash'
+  | 'social'
+  | 'hook'
+  | 'estate';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';
@@ -83,7 +88,7 @@ export interface Fx {
 }
 
 /** 網站的工作區：文字特效、圖片運鏡、地圖區位、物件特效、圖表、圖解動畫 */
-export type SecId = 'text' | 'photo' | 'map' | 'object' | 'illus' | 'chart' | 'plan' | 'explain';
+export type SecId = 'text' | 'cut' | 'ui' | 'photo' | 'map' | 'object' | 'illus' | 'chart' | 'plan' | 'explain';
 
 export interface Section {
   id: SecId;

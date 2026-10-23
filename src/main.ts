@@ -281,6 +281,8 @@ const EXPLAIN_PROMPT = `請幫我做一支新的「圖解動畫」，收進 Moti
 const secFx = (id: SecId = state.sec) => EFFECTS.filter((f) => secOf(f) === id);
 const SEC_ICON: Record<SecId, string> = {
   text: '<svg viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16M9 20h6"/></svg>',
+  cut: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 5 7 19M17 5l-3 14"/></svg>',
+  ui: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M7 9h6M7 12h9"/></svg>',
   photo: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 8"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
   object: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M5.5 9.5c3 2 10 2 13 0M8 4.5l1.5 2M16 19.5l-1.5-2"/></svg>',
@@ -298,6 +300,22 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
     wb: '預覽文字',
     ph: '輸入你的文字，全部卡片即時套用；多個詞用 / 分隔',
     hero: ['punch-zoom', 'text-tunnel', 'split-flap', 'neon-flicker', 'particle-form', 'glitch-slices', 'text-cube', 'diagonal-bands', 'synthwave', 'long-shadow'],
+  },
+  cut: {
+    small: '段落之間換個場',
+    big: '轉場',
+    lede: '色塊推擠、形狀擦除、開門、翻頁、閃白、甩鏡、故障……每一招都是<strong>完整一次換場</strong>：蓋過畫面、再露出下一段標題。可直接放進 <strong>Combo</strong> 當段落之間的過場，也能輸出素材疊在剪接點上。',
+    wb: '下一段標題',
+    ph: '輸入下一段標題，全部卡片即時套用；前一個詞 / 下一個詞用 / 分隔',
+    hero: ['cut-color-push', 'cut-door-open', 'cut-shape-wipe', 'cut-whip', 'cut-page-flip', 'cut-glitch', 'cut-flash'],
+  },
+  ui: {
+    small: '短影音常用的疊加介面',
+    big: '元件',
+    lede: '留言回覆、通知橫幅、搜尋框、片尾推薦卡、通勤碼錶、優缺點、日照方位……介面都是<strong>中性示意</strong>，不放任何平台標誌。數字、評分、進度請用<strong>自己查證或實測的資料</strong>，資料來源條可以一起疊上。',
+    wb: '預覽文字',
+    ph: '輸入文字，全部卡片即時套用；多個欄位用 / 分隔，格式見各招的建議',
+    hero: ['ui-comment-reply', 'estate-commute', 'ui-search', 'estate-proscons', 'hook-endscreen', 'estate-sun', 'ui-notify', 'estate-rating', 'hook-teaser', 'estate-elevator'],
   },
   photo: {
     small: '照片放進來就會動',
@@ -372,8 +390,8 @@ const renderHeroCopy = () => {
   $('#heroLede').innerHTML = h.lede;
   $('#wbLabel').textContent = h.wb;
   $<HTMLInputElement>('#userText').placeholder = h.ph;
-  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件編輯器', illus: '打開插畫編輯', chart: '複製「請 AI 用我的數據做圖表」的指令', plan: '打開格局工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
-  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '魔術方塊、星空宇宙、水滴各有編輯器', illus: '先選分類：星空物件、俯瞰、天空物件或海洋世界', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
+  $('#heroStudio').textContent = { text: '看套組', cut: '看套組', ui: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件編輯器', illus: '打開插畫編輯', chart: '複製「請 AI 用我的數據做圖表」的指令', plan: '打開格局工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
+  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', cut: '轉場可直接放進套組的段落之間', ui: '把元件和字卡組成一支短影音', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '魔術方塊、星空宇宙、水滴各有編輯器', illus: '先選分類：星空物件、俯瞰、天空物件或海洋世界', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
   const n = secFx().length;
   $('#statFx').textContent = String(n);
   $('#statCat').textContent = String(CATEGORIES.filter((c) => c.sec === state.sec).length);
@@ -1235,7 +1253,7 @@ renderGrid();
 $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'explain') return copy(EXPLAIN_PROMPT, '已複製，貼給 Claude Code 並附上草圖');
   if (state.sec === 'chart') return copy(CHART_PROMPT, '已複製，貼給 Claude 並附上數據');
-  if (state.sec === 'text') return showKits(true);
+  if (state.sec === 'text' || state.sec === 'cut' || state.sec === 'ui') return showKits(true);
   if (state.sec === 'plan') return planStudio.open();
   if(state.sec==='illus'){if(state.cat==='vehicle')return transportStudio.open();if(state.cat==='ocean')return illustrationStudio.open();return natureStudio.openMode(state.cat==='aerial'?'city':'meteor');}
   if (state.sec === 'object') return state.cat === 'liquid' ? studio.open() : objStudio.open(state.cat === 'cosmos' ? 'cosmos' : state.cat === 'cube' ? 'cube' : undefined);

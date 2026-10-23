@@ -23,10 +23,14 @@ import { illustratedOcean } from './effects/illustrated';
 import { transit } from './effects/transit';
 import { charts } from './effects/chart';
 import { plans } from './effects/plan';
+import { cuts } from './effects/cut';
+import { ui } from './effects/ui';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
   { id: 'text', code: 'TEXT', zh: '文字', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字' },
+  { id: 'cut', code: 'CUT', zh: '轉場', en: 'Transitions', desc: '段落之間的換場：色塊推擠、形狀擦除、開門、翻頁、閃白、甩鏡、故障' },
+  { id: 'ui', code: 'UI', zh: '元件', en: 'Overlay Kit', desc: '社群介面、開場收尾、房產資訊：留言回覆、通知、搜尋框、片尾卡、通勤碼錶、優缺點、日照方位……' },
   { id: 'photo', code: 'PHOTO', zh: '圖片', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
   { id: 'map', code: 'MAP', zh: '地圖', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
   { id: 'object', code: 'OBJECT', zh: '物件', en: 'Object Motion', desc: '水滴、魔術方塊、星空宇宙；一系列可調形狀材質的主角物件', studio: 'object' },
@@ -49,6 +53,11 @@ export const CATEGORIES: Category[] = [
   { id: 'caption', sec: 'text', code: 'CAPTION', zh: '字幕資訊條', tagline: '影片最常用的那幾條' },
   { id: 'card', sec: 'text', code: 'CARD', zh: '字卡版型', tagline: '直接拿來當段落字卡' },
   { id: 'retro', sec: 'text', code: 'RETRO', zh: '復古懷舊', tagline: '一秒回到那個年代' },
+  { id: 'twipe', sec: 'cut', code: 'WIPE', zh: '擦除推擠', tagline: '色塊、形狀、開門、翻頁，把畫面蓋過去再掀開' },
+  { id: 'tflash', sec: 'cut', code: 'FLASH', zh: '節奏閃切', tagline: '閃白閃黑、甩鏡、故障，跟著節拍切' },
+  { id: 'social', sec: 'ui', code: 'SOCIAL', zh: '社群介面', tagline: '留言回覆、通知、搜尋、愛心、點擊、瀏覽器、聲波、子母畫面' },
+  { id: 'hook', sec: 'ui', code: 'HOOK', zh: '開場收尾', tagline: '系列角標、結果先講、POV、片尾推薦卡' },
+  { id: 'estate', sec: 'ui', code: 'ESTATE', zh: '房產資訊', tagline: '通勤碼錶、資料來源、優缺點、日照、樓層、規格、評分、工程進度' },
   { id: 'photo', sec: 'photo', code: 'MOVE', zh: '單張運鏡', tagline: '一張照片也能有鏡頭感' },
   { id: 'pmulti', sec: 'photo', code: 'MULTI', zh: '多張組合', tagline: '前後對比、宮格、並排' },
   { id: 'pmark', sec: 'photo', code: 'FOCUS', zh: '標註轉場', tagline: '圈重點、定格、穿越' },
@@ -99,6 +108,8 @@ export const ALL_EFFECTS: Fx[] = [
   ...transit,
   ...charts,
   ...plans,
+  ...cuts,
+  ...ui,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 從前台隱藏（代碼、編號保留，舊 Combo 與預設仍可用）
@@ -121,7 +132,7 @@ ALL_EFFECTS.forEach((f) => {
 });
 
 // 文字特效：指定用途、標籤收斂成固定詞彙，並依用途重新排序（編號跟著用途走）
-const secIdx = (f: Fx) => ['text', 'photo', 'map', 'object', 'illus', 'chart', 'plan', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
+const secIdx = (f: Fx) => ['text', 'cut', 'ui', 'photo', 'map', 'object', 'illus', 'chart', 'plan', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
 const useIdx = (f: Fx) => USES.findIndex((u) => u.id === f.use);
 // 同一用途內依 uses.ts 列出的順序（常用的在前）
 const useRank = new Map(Object.keys(USE_OF).map((id, i) => [id, i]));

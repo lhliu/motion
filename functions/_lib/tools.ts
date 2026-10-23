@@ -218,7 +218,7 @@ export const TOOLS: ToolDef[] = [
       type: 'object',
       properties: {
         query: { type: 'string', description: '關鍵字，空白分隔多個詞' },
-        section: { type: 'string', enum: SECTIONS.map((x) => x.id), description: 'text＝文字特效、photo＝圖片運鏡、map＝地圖區位' },
+        section: { type: 'string', enum: SECTIONS.map((x) => x.id), description: 'text＝文字特效、cut＝轉場、ui＝元件（社群介面、開場收尾、房產資訊）、photo＝圖片運鏡、map＝地圖區位' },
         use: { type: 'string', enum: USES.map((u) => u.id), description: `文字特效的用途：${USES.map((u) => `${u.id}＝${u.zh}`).join('、')}` },
         category: { type: 'string', enum: CATEGORIES.map((c) => c.id), description: '技法分類（文字區的「風格」）' },
         tag: { type: 'string', description: '情境標籤，例如 轉場、片頭、數據' },
@@ -788,7 +788,7 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
-export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分八個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位（含捷運／鐵路路網 transit-*）、物件特效（水滴、魔術方塊、星空宇宙）、插畫（星空物件系列：天體／飛越／推近地球用 build_cosmos_scene，隕石與俯瞰用 build_nature_scene、交通工具用 build_transport_scene、海底世界用 build_illustration_scene）、格局（plan-*：戶別定位、逐間高亮、看屋動線、單房聚焦、公設導覽、戶型比較、平面立體傾斜，用 build_plan_scene）、圖表特效（chart-* 共 20 種，words 一行一筆「標籤 數值」，格式見 get_effect 的 word_hint）、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
+export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分十個工作區：文字特效、轉場（cut-*：色塊推擠、形狀擦除、開門、翻頁、閃白閃黑、甩鏡、故障；整段就是一次換場，放在兩段之間）、元件（ui-* 社群介面、hook-* 開場收尾、estate-* 房產資訊；數字、評分、工程進度只用使用者提供或可查證的資料，資料來源用 estate-source 標註）、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位（含捷運／鐵路路網 transit-*）、物件特效（水滴、魔術方塊、星空宇宙）、插畫（星空物件系列：天體／飛越／推近地球用 build_cosmos_scene，隕石與俯瞰用 build_nature_scene、交通工具用 build_transport_scene、海底世界用 build_illustration_scene）、格局（plan-*：戶別定位、逐間高亮、看屋動線、單房聚焦、公設導覽、戶型比較、平面立體傾斜，用 build_plan_scene）、圖表特效（chart-* 共 20 種，words 一行一筆「標籤 數值」，格式見 get_effect 的 word_hint）、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
 你可以：查特效（search_effects / get_effect）、把多個特效組成 Combo 動畫（compose_combo），並存進 Combo 庫（save_combo）當作日後參考（list_combos / get_combo）。
 
 組 Combo 的建議流程：
