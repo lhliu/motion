@@ -11,6 +11,7 @@ import { isPhotoFx } from './photokit';
 import { isObjFx } from './objkit';
 import { FONT_PACKS } from './fonts';
 import { unpackJson } from './presets';
+import { scriptToCombo } from './script-combo';
 import { detectBeat, fitToBeat, parseSrt, srtScenes, type Beat } from './combo-tools';
 
 export interface ComboDeps {
@@ -198,6 +199,17 @@ export const initCombos = (deps: ComboDeps) => {
     deps.toast(`已把 ${fit.length} 段對齊拍點（每段為整數拍）`);
   });
   dlg.addEventListener('close', () => audio?.pause());
+  $('#drScriptGo').addEventListener('click', () => {
+    const text = $<HTMLTextAreaElement>('#drScript').value;
+    if (!text.trim()) return deps.toast('先貼上腳本');
+    if (draft.scenes.length && !confirm(`目前草稿有 ${draft.scenes.length} 段，要換成腳本產生的草稿嗎？`)) return;
+    const { combo, skipped } = scriptToCombo(text, { title: draft.title, ratio: draft.ratio });
+    draft = combo;
+    editingId = undefined;
+    saveDraft();
+    renderDraft();
+    deps.toast(skipped ? `已產生 20 段草稿（後面 ${skipped} 段超過上限，可拆成兩支）` : `已產生 ${combo.scenes.length} 段草稿，逐段檢查特效與數字`);
+  });
 
   let previewTimer = 0;
   const renderPreview = () => {

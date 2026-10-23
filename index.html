@@ -288,6 +288,11 @@
                   <label class="btn-ghost dr-file">配樂卡點<input id="drAudio" type="file" accept="audio/*" hidden /></label>
                   <button class="btn-ghost" id="drBeatFit" hidden>段落秒數對齊拍點</button>
                   <p class="dr-tool-note" id="drBeatNote" hidden></p>
+                  <details class="dr-script">
+                    <summary class="btn-ghost">腳本轉 Combo</summary>
+                    <textarea id="drScript" rows="7" placeholder="一行一句貼上口播腳本。&#10;#第一章 通勤 → 章節卡；含「12 分鐘」這類數字 → 數字大字報；- 開頭 → 清單；+／- 開頭 → 優缺點；POV：… → POV 標籤；其他 → 大字幕"></textarea>
+                    <button class="ma-btn" id="drScriptGo">轉成 Combo 草稿</button>
+                  </details>
                 </div>
                 <ol class="dr-scenes" id="drScenes"></ol>
                 <p class="dr-empty" id="drEmpty">草稿還是空的。打開任何特效，按「加入 Combo」就會出現在這裡。</p>

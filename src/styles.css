@@ -1761,6 +1761,26 @@ pre.code {
 .dr-file {
   cursor: pointer;
 }
+.dr-script {
+  flex-basis: 100%;
+}
+.dr-script summary {
+  display: inline-flex;
+  cursor: pointer;
+  list-style: none;
+}
+.dr-script summary::-webkit-details-marker {
+  display: none;
+}
+.dr-script textarea {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
 .dr-tool-note {
   flex-basis: 100%;
   margin: 0;

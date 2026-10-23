@@ -10,6 +10,7 @@ import type { Fx } from '../../src/types';
 import { buildMapScene, sceneLength, type MapSceneInput } from '../../src/mapkit';
 import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
 import { KITS, USES } from '../../src/uses';
+import { scriptToCombo } from '../../src/script-combo';
 import { FONT_IDS, FONT_PACKS } from '../../src/fonts';
 import { defaultObjScene, normalizeObjScene, objFxId, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from '../../src/objkit';
 
@@ -732,6 +733,33 @@ export const TOOLS: ToolDef[] = [
       if (bad) return { ok: false, error: bad };
       const saved = await savePreset(ctx.env, { kind: kind!, name: String(a.name).slice(0, 60), note: a.note ? String(a.note).slice(0, 500) : undefined, data: data as never, source: 'mcp' }, typeof a.id === 'string' && a.id ? a.id : undefined);
       return { ok: true, id: saved.id, kind: saved.kind, name: saved.name, edit_url: `${ctx.origin}/?edit=${saved.id}`, next: '把 edit_url 給使用者微調；使用者存回後代碼不變，之後用 get_preset 或在 scenes 寫 { "preset": 代碼 } 取用最新版本。' };
+    },
+  },
+  {
+    name: 'draft_combo_from_script',
+    title: '腳本轉 Combo 草稿',
+    description: '把口播腳本（一行一句）自動配上特效，產生 Combo 初稿：章節→章節卡、數字→數字大字報、地點→地點標記、比較→對決、POV／留言開頭→對應元件、- 開頭清單→清單字卡、+／- 優缺點→優缺點對照，其他用短影音大字幕。數字與地名照腳本原文，不會自行補資料。拿到後逐段檢查、用 compose_combo 調整。腳本可先從 CreatorFlow 等地方取得再傳進來。',
+    inputSchema: {
+      type: 'object',
+      required: ['script'],
+      properties: {
+        script: { type: 'string', description: '腳本全文，一行一句；- 開頭是清單項目、+／- 開頭是優缺點' },
+        title: { type: 'string' },
+        ratio: { type: 'string', enum: ['9:16', '16:9', '1:1'], description: '預設 9:16' },
+      },
+    },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const { combo: draft, skipped } = scriptToCombo(String(a.script ?? '').slice(0, 20000), { title: typeof a.title === 'string' ? a.title : undefined, ratio: ['9:16', '16:9', '1:1'].includes(String(a.ratio)) ? (a.ratio as Ratio) : '9:16' });
+      if (!draft.scenes.length) return { ok: false, error: '腳本是空的' };
+      const { combo, errors } = normalizeCombo(draft);
+      return {
+        ok: !errors.length,
+        ...(errors.length ? { errors } : {}),
+        ...comboView(combo, ctx.origin),
+        ...(skipped ? { skipped_lines: skipped, warning: `Combo 最多 20 段，後面 ${skipped} 段沒放進來，可拆成兩支` } : {}),
+        next: '這是自動配對的初稿：請逐段確認特效是否合適（可用 search_effects 換招），數字要有使用者提供的來源，再用 compose_combo 調整、save_combo 儲存。',
+      };
     },
   },
   {
