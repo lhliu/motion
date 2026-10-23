@@ -1,3 +1,4 @@
+import { NATURE_GLOBALS } from '../../src/effects/nature';
 import { TRANSPORT_GLOBALS } from '../../src/effects/transport';
 import { ILLUSTRATION_GLOBALS } from '../../src/effects/illustrated';
 // 繪製引擎：讓本機（例如 Claude Code + Playwright）逐格渲染，跟網站畫出來的一模一樣
@@ -17,6 +18,7 @@ const ENGINES: Record<string, { usage: string; code: string }> = {
     code: PHOTO_GLOBALS,
   },
   'map.js': { usage: 'MA_MAP.drawScene(ctx, W, H, scene, tSeconds, bgImage?)', code: MAP_GLOBALS },
+  'nature.js':{usage:'const renderer=MA_NATURE.createRenderer(canvas,overlayCanvas,scene,assetOrigin); await renderer.ready; renderer.render(t,W,H); renderer.dispose();',code:NATURE_GLOBALS},
   'transport.js': {usage:'const renderer=MA_TRANSPORT.createRenderer(canvas,overlayCanvas,scene,assetOrigin); await renderer.ready; renderer.render(t,W,H); // dispose when done',code:TRANSPORT_GLOBALS},
   'illustration.js': {usage:'const renderer=MA_ILLUSTRATION.createRenderer(glCanvas,particleCanvas,scene,assetOrigin); await renderer.ready; renderer.render(t,W,H); // composite both canvases; dispose when done',code:ILLUSTRATION_GLOBALS},
   'obj.js': { usage: 'MA_OBJ.drawObj(ctx, W, H, scene, tSeconds) — scene 為 build_object_scene 的 scene', code: OBJ_GLOBALS },

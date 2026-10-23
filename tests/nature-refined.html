@@ -1,0 +1,45 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>精修隕石與俯瞰</title><style>body{margin:24px;background:#eee8da;color:#12394a;font:14px system-ui}.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-width:1300px}figure{margin:0}canvas{width:100%;display:block;aspect-ratio:9/16;background:repeating-conic-gradient(#ccc 0 25%,#eee 0 50%) 0/12px 12px}figcaption{padding:8px}pre{white-space:pre-wrap}button{padding:10px}@media(max-width:700px){.gallery{grid-template-columns:repeat(2,1fr)}}</style><h1>一招精修隕石・四種樣式／八招精修俯瞰</h1><button id="play">播放全部</button><div id="gallery" class="gallery"></div><pre id="results">檢查中…</pre>
+<script type="module">
+import{NATURE as R,normalizeNature as norm,natureFxId,natureFromWords}from'/src/nature.ts';
+import{ALL_EFFECTS,EFFECTS,PALETTES,CATEGORIES}from'/src/data.ts';
+import{findEffect,normalizeCombo,sceneSeconds,comboHtml}from'/src/combo.ts';
+import{presetToScene,sceneToPresetData}from'/src/presets.ts';
+import{TOOLS}from'/functions/_lib/tools.ts';
+import{exportHtml}from'/src/prompts.ts';import{toneVars}from'/src/engine.ts';
+const results=[],items=[],check=(v,m)=>{if(!v)throw Error(m)},cv=()=>{const c=document.createElement('canvas');c.width=270;c.height=480;return c},pixels=c=>c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+async function test(name,fn){try{await fn();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}}
+await test('目錄一招隕石／八招俯瞰，十二招原版隱藏保留，編號唯一',()=>{
+ check(EFFECTS.filter(f=>f.cat==='meteor').length===1,'Meteor duplicated');check(EFFECTS.filter(f=>f.cat==='aerial').length===8,'Aerial count');for(const cat of ['meteor','aerial'])check(CATEGORIES.find(c=>c.id===cat).sec==='illus','Wrong workspace');check(ALL_EFFECTS.filter(f=>f.hidden&&['meteor','aerial'].includes(f.cat)).length===12,'Original deleted');check(new Set(ALL_EFFECTS.map(f=>f.no)).size===ALL_EFFECTS.length,'Duplicate no');check(findEffect('158').id==='obj-meteor-rock'&&findEffect('170').id==='obj-aerial-city','Old IDs changed');
+});
+for(const mode of Object.keys(R.modes))await test(mode+'：載入、動態、時間重現、三種比例與透明輸出',async()=>{
+ const a=cv(),b=cv(),scene=norm({mode}),r=R.createRenderer(a,b,scene,location.origin);await r.ready;r.render(4);const p=a.toDataURL();r.render(7);check(p!==a.toDataURL(),'Static');r.render(4);check(p===a.toDataURL(),'Nondeterministic');
+ for(const [w,h]of[[320,180],[220,220],[270,480]]){r.render(5,w,h);check(pixels(a).some((v,i)=>i%4!==3&&v>50),'Blank aspect');}
+ await r.update({...scene,background:'transparent'});r.render(5);const px=pixels(a);check(px.some((v,i)=>i%4===3&&v===0)&&px.some((v,i)=>i%4===3&&v>200),'Alpha missing');await r.update(scene);r.render(5);
+ const f=document.createElement('figure');f.innerHTML=`<figcaption>#${R.modes[mode].no} ${R.modes[mode].zh}</figcaption>`;f.prepend(a);document.querySelector('#gallery').append(f);items.push({mode,a,b,r,scene});
+});
+await test('四種隕石在同一招切換，保留不同材質與專屬效果',async()=>{
+ const r=items[0].r,shots=new Set();for(const style of Object.keys(R.styles)){const scene=norm({mode:'meteor',style});await r.update(scene);r.render(5);shots.add(items[0].a.toDataURL());check(natureFxId(scene.mode)==='meteor-illustrated','Duplicate card');const f=document.createElement('figure'),c=cv();c.getContext('2d').drawImage(items[0].a,0,0);f.innerHTML=`<figcaption>隕石樣式：${R.styles[style].zh}</figcaption>`;f.prepend(c);document.querySelector('#gallery').append(f);}check(shots.size===4,'Style ignored');await r.update(norm({mode:'meteor'}));r.render(5);
+});
+for(const mode of Object.keys(R.modes))await test(mode+'：專屬編輯會改變實際畫面',async()=>{
+ const i=items.find(x=>x.mode===mode),base=norm({mode,pan:0,clouds:1}),edits={meteor:{spin:0,float:0,debris:0},city:{traffic:0},river:{boats:0,waves:0},mountain:{clouds:0},grass:{herd:0},farm:{traffic:0,harvest:0},coast:{boats:0,waves:0},forest:{trees:0,clouds:0},highway:{traffic:0}};
+ await i.r.update(base);i.r.render(5);const p=i.a.toDataURL();await i.r.update({...base,...edits[mode]});i.r.render(5);check(p!==i.a.toDataURL(),'Controls ignored');await i.r.update(i.scene);i.r.render(5);
+});
+await test('每招預設與 Combo 保留樣式、參數及速度片長',()=>{
+ for(const mode of Object.keys(R.modes)){const sc=norm({mode,style:'lava',speed:.6}),cs=presetToScene({kind:'nature',data:sc,name:mode}),pd=sceneToPresetData(cs.effect,cs.words),c=normalizeCombo({title:mode,scenes:[cs]});check(pd.kind==='nature'&&pd.data.mode===mode&&pd.data.style==='lava','Preset loss');check(c.combo.scenes[0].words[0]===cs.words[0]&&sceneSeconds(c.combo.scenes[0])===20,'Config truncated');}
+ const old=presetToScene({kind:'object',name:'old',data:{module:'meteor',params:{material:'ice'},loop:8}});check(old.effect==='obj-meteor-rock'&&JSON.parse(old.words[0]).params.material==='ice','Legacy converted');
+});
+await test('MCP 工具與舊版相容，隕石四樣式只有一個 effect',async()=>{
+ const ctx={origin:location.origin,request:new Request(location.origin+'/mcp'),env:{}},tool=TOOLS.find(t=>t.name==='build_nature_scene');for(const mode of Object.keys(R.modes)){const r=await tool.run({mode,speed:.6},ctx);check(r.scene.mode===mode&&r.combo_scene.effect===natureFxId(mode)&&r.edit_url.includes('edit=nature')&&r.combo_scene.seconds===20,'Builder wrong');}
+ for(const style of Object.keys(R.styles)){const r=await tool.run({mode:'meteor',style},ctx);check(r.scene.style===style&&r.combo_scene.effect==='meteor-illustrated','Material created card');}
+ const old=await TOOLS.find(t=>t.name==='build_object_scene').run({module:'aerial',params:{mode:'forest'},duration:8},ctx);check(old.scene.module==='aerial'&&old.scene.params.mode==='forest','Old MCP changed');
+});
+await test('兩類獨立 HTML 的實際輸出與預覽一致',async()=>{
+ for(const mode of ['meteor','river','grass']){const frame=document.createElement('iframe');frame.style.cssText='width:270px;height:480px;border:0';frame.sandbox='allow-scripts allow-same-origin';document.body.append(frame);const loaded=new Promise(r=>frame.onload=r);frame.srcdoc=exportHtml(findEffect(natureFxId(mode)),[],toneVars(PALETTES[0],'ink'),'9:16');await loaded;const root=frame.contentDocument.querySelector('.fx');check(await root.motionReady,'Export load failed');root.motionSeek(5);check(root.querySelector('canvas').toDataURL()===items.find(i=>i.mode===mode).a.toDataURL(),'Different export '+mode);frame.remove();}
+});
+await test('五種背景／環境及換色、快速換場、清理',async()=>{
+ const a=cv(),b=cv(),r=R.createRenderer(a,b,norm({mode:'meteor'}),location.origin);await r.ready;for(const mode of ['meteor','city']){const shots=new Set();for(const background of Object.keys(R.environments(mode)).filter(k=>k!=='transparent')){await r.update(norm({mode,background}));r.render(5);shots.add(a.toDataURL());}check(shots.size===5,'Environment ignored');}
+ await r.update(norm({mode:'grass',tint:0}));r.render(5);const original=a.toDataURL();await r.update({...r.scene,tint:1,color:'#4a6db2'});r.render(5);check(original!==a.toDataURL(),'Tint ignored');await Promise.all([r.update(norm({mode:'river'})),r.update(norm({mode:'forest'})),r.update(norm({mode:'meteor',style:'gold'}))]);check(r.loaded&&r.scene.mode==='meteor'&&r.scene.style==='gold','Stale assets');r.dispose();check(a.width===1&&b.width===1,'Dispose leaked');
+});
+let playing=false,start=0;document.querySelector('#play').onclick=()=>{playing=!playing;start=performance.now();if(playing)requestAnimationFrame(tick)};function tick(now){if(!playing)return;for(const i of items)i.r.render(((now-start)/1000)%12);requestAnimationFrame(tick)}
+window.natureResults=results;window.natureItems=items;document.querySelector('#results').textContent=results.map(x=>`${x.passed?'PASS':'FAIL'} ${x.name}${x.error?' — '+x.error:''}`).join('\n');
+</script></html>

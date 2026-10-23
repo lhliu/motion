@@ -1,3 +1,4 @@
+import { isNatureFx, natureFromWords, NATURE } from './nature';
 import { isTransportFx, transportFromWords, TRANSPORT } from './transport';
 import { illustrationFromWords, isIllustrationFx, ILLUSTRATION } from './illustration';
 import type { Fx } from './types';
@@ -23,6 +24,7 @@ const quoteWords = (w: string[]) => w.map((t) => `「${t}」`).join('、');
 const quoteWordsEn = (w: string[]) => w.map((t) => `"${t}"`).join(', ');
 
 export const buildPrompt = (fx: Fx, mode: PromptMode, words: string[], v: Vars, ratio: Ratio): string => {
+  if(isNatureFx(fx.id)&&mode!=='code'){const sc={...natureFromWords(words,fx.id),ratio},settings=JSON.stringify(sc,null,2);if(mode==='en'||mode==='video')return `Create a ${ratioEn[ratio]}, ${sc.loop.toFixed(2)}-second refined illustration using ${fx.id}. ${fx.motionEn} Use build_nature_scene with mode=${sc.mode}, style=${sc.style} and the shared /r/nature.js renderer. Await renderer.ready before rendering frames. Aerial artwork is fictional; transparent aerial output retains the landscape card. No added text.\nSETTINGS\n${settings}`;return `製作「${NATURE.modes[sc.mode].zh}」精修插畫，${ratio}，${sc.loop} 秒。${fx.motion}\n使用 build_nature_scene（mode=${sc.mode}, style=${sc.style}）及 /r/nature.js 共用引擎。先 await renderer.ready 再逐格 render(t,W,H)，不要重畫素材。隕石透明模式去背；俯瞰透明模式保留地景圖卡、卡片外透明，所有地景均為虛構示意。把 combo_scene 放入 compose_combo / save_combo。\nSETTINGS\n${settings}`;}
   if(isTransportFx(fx.id)&&mode!=='code'){
     const sc={...transportFromWords(words,fx.id),ratio},settings=JSON.stringify(sc,null,2);
     if(mode==='en'||mode==='video')return `Create a ${ratioEn[ratio]}, ${sc.loop.toFixed(2)}-second refined transport illustration animation using ${fx.id}. ${fx.motionEn} Use build_transport_scene with mode=${sc.mode} and the shared /r/transport.js renderer and supplied assets. Await renderer.ready before rendering frames; preserve alpha for transparent output. No added typography.\nSETTINGS\n${settings}`;

@@ -1,3 +1,5 @@
+import { isNatureFx, natureMode, natureFromWords } from './nature';
+import { initNatureStudio } from './nature-studio';
 import { isTransportFx, transportMode, transportFromWords } from './transport';
 import { initTransportStudio } from './transport-studio';
 import { initIllustrationStudio } from './illustration-studio';
@@ -303,18 +305,18 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
   object: {
     small: '一系列可調的主角物件',
     big: '物件特效',
-    lede: '水滴、隕石、魔術方塊、星空宇宙、俯瞰空拍……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
+    lede: '水滴、魔術方塊、星空宇宙……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用；一行一句用 / 分隔',
-    hero: ['obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
+    hero: ['obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
   },
   illus: {
     small: '精修插畫主角',
     big: '插畫',
-    lede: '交通工具、海底世界……每一招都是<strong>精修插畫</strong>，主角、背景、配色都有<strong>專屬編輯</strong>，背景可透明直接疊進影片。',
+    lede: '隕石、俯瞰、交通工具、海底世界……每一招都是<strong>精修插畫</strong>，主角、背景、配色都有<strong>專屬編輯</strong>，背景可透明直接疊進影片。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用',
-    hero: ['whale-illustrated', 'vehicle-illustrated-plane', 'ocean-illustrated-shark', 'vehicle-illustrated-ship', 'ocean-illustrated-fish'],
+    hero: ['meteor-illustrated','aerial-illustrated-city','aerial-illustrated-grass','whale-illustrated', 'vehicle-illustrated-plane', 'ocean-illustrated-shark', 'vehicle-illustrated-ship', 'ocean-illustrated-fish'],
   },
   chart: {
     small: '一行一筆數據就會動',
@@ -358,7 +360,7 @@ const renderHeroCopy = () => {
   $('#wbLabel').textContent = h.wb;
   $<HTMLInputElement>('#userText').placeholder = h.ph;
   $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件工作室', illus: '打開插畫編輯', chart: '複製「請 AI 用我的數據做圖表」的指令', plan: '打開格局工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
-  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '隕石、魔術方塊、星空；水滴在工作室裡切換', illus: '先選分類：交通工具或海底世界', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
+  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '魔術方塊、星空；水滴在工作室裡切換', illus: '先選分類：隕石、俯瞰、交通工具或海底世界', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
   const n = secFx().length;
   $('#statFx').textContent = String(n);
   $('#statCat').textContent = String(CATEGORIES.filter((c) => c.sec === state.sec).length);
@@ -519,7 +521,7 @@ const cardHtml = (f: Fx, k: number) => {
   const n = NUM.get(f.id)!;
   const fav = state.favs.has(f.id);
   return `<article class="ma-card" tabindex="0" role="button" data-id="${f.id}" style="--k:${k}" aria-label="${pad(n)} ${esc(f.zh)}：${esc(f.desc)}">
-  <div class="card-stage"><div class="stage"></div>${(isIllustrationFx(f.id)||isTransportFx(f.id)) ? '<span class="ill-badge">精修插畫</span>' : ''}<span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
+  <div class="card-stage"><div class="stage"></div>${(isIllustrationFx(f.id)||isTransportFx(f.id)||isNatureFx(f.id)) ? '<span class="ill-badge">精修插畫</span>' : ''}<span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
   <div class="card-meta"><span class="ma-num">${pad(n)}</span><div class="card-txt"><h3>${highlight(f.zh)}</h3><p>${highlight(f.desc)}</p></div>
   <button class="heart" data-fav="${f.id}" aria-pressed="${fav}" aria-label="收藏 ${esc(f.zh)}"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.3-9C1 8.4 3.2 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.8 0 6 3.9 4.3 7.5C19 16.6 12 21 12 21z"/></svg></button></div>
 </article>`;
@@ -871,8 +873,8 @@ const renderDetail = () => {
   $('#dPhotoStudio').hidden = !isPhotoFx(fx.id);
   $('#dPlanStudio').hidden = !isPlanFx(fx.id);
   $('#dObjStudio').hidden = !isObjFx(fx.id)||isIllustrationFx(fx.id);
-  $('#dIllustrationStudio').hidden = !isIllustrationFx(fx.id)&&!isTransportFx(fx.id);
-  dWords.closest('label')!.hidden = isIllustrationFx(fx.id)||isTransportFx(fx.id);
+  $('#dIllustrationStudio').hidden = !isIllustrationFx(fx.id)&&!isTransportFx(fx.id)&&!isNatureFx(fx.id);
+  dWords.closest('label')!.hidden = isIllustrationFx(fx.id)||isTransportFx(fx.id)||isNatureFx(fx.id);
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
   syncSegs();
   renderStage();
@@ -1095,6 +1097,7 @@ const combos = initCombos({
       const data = photoSceneFromWords(words, effect.slice(6) as PModule);
       return meta ? photoStudio.loadPreset({ ...meta, data }) : photoStudio.load(data);
     }
+    if(isNatureFx(effect)){const data=natureFromWords(words,effect);return meta?natureStudio.loadPreset({...meta,data}):natureStudio.load(data);}
     if(isTransportFx(effect)){const data=transportFromWords(words,effect);return meta?transportStudio.loadPreset({...meta,data}):transportStudio.load(data);}
     if (isIllustrationFx(effect)) {
       const data=illustrationFromWords(words,effect);
@@ -1134,10 +1137,11 @@ $('#dPlanStudio').addEventListener('click', () => {
   if (words.some((w) => w.trim().startsWith('{'))) planStudio.load(planSceneFromWords(words, mode));
   else planStudio.open(mode);
 });
+const natureStudio=initNatureStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
 const transportStudio=initTransportStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
 const illustrationStudio=initIllustrationStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
-$('#dIllustrationStudio').addEventListener('click',()=>{if(isTransportFx(d.fx.id)){const mode=transportMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=transportFromWords(words,d.fx.id);sc.ratio=ratio;transportStudio.load(sc);}else transportStudio.openMode(mode,ratio);return;}const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
-const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open(), openTransport:()=>transportStudio.open(), openIllustration: data => data ? illustrationStudio.load(data) : illustrationStudio.open() });
+$('#dIllustrationStudio').addEventListener('click',()=>{if(isNatureFx(d.fx.id)){const mode=natureMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=natureFromWords(words,d.fx.id);sc.ratio=ratio;natureStudio.load(sc);}else natureStudio.openMode(mode,ratio);return;}if(isTransportFx(d.fx.id)){const mode=transportMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=transportFromWords(words,d.fx.id);sc.ratio=ratio;transportStudio.load(sc);}else transportStudio.openMode(mode,ratio);return;}const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
+const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open(), openNature:mode=>natureStudio.openMode(mode), openTransport:()=>transportStudio.open(), openIllustration: data => data ? illustrationStudio.load(data) : illustrationStudio.open() });
 $('#dObjStudio').addEventListener('click', () => {
   const fx = d.fx;
   const html = fx.html(d.words);
@@ -1159,8 +1163,8 @@ const openEdit = async () => {
   const edit = q.get('edit');
   if (!edit) return;
   const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) =>
-    p.kind === 'transport' ? transportStudio.loadPreset(p) : p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : studio.loadPreset(p);
-  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan' || edit === 'transport') {
+    p.kind === 'nature' ? natureStudio.loadPreset(p) : p.kind === 'transport' ? transportStudio.loadPreset(p) : p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : studio.loadPreset(p);
+  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan' || edit === 'transport' || edit === 'nature') {
     try {
       route({ kind: edit, name: '', data: decodeJson<PresetData>(q.get('d') ?? '') });
       toast('已載入 AI 產生的設定，調好後按「存成預設」');
@@ -1199,7 +1203,7 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'chart') return copy(CHART_PROMPT, '已複製，貼給 Claude 並附上數據');
   if (state.sec === 'text') return showKits(true);
   if (state.sec === 'plan') return planStudio.open();
-  if (state.sec === 'illus') return state.cat === 'ocean' ? illustrationStudio.open() : transportStudio.open();
+  if(state.sec==='illus'){if(state.cat==='vehicle')return transportStudio.open();if(state.cat==='ocean')return illustrationStudio.open();return natureStudio.openMode(state.cat==='aerial'?'city':'meteor');}
   return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : objStudio.open();
 });
 // 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊

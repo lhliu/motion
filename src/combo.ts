@@ -1,3 +1,4 @@
+import { isNatureFx, natureFromWords, NATURE } from './nature';
 import { isTransportFx, transportFromWords, TRANSPORT } from './transport';
 import { isIllustrationFx, illustrationFromWords, ILLUSTRATION } from './illustration';
 // Combo：把多個特效依序串成一段動畫。網站、MCP、分享頁共用這支檔案，不可在載入時碰 DOM。
@@ -62,7 +63,7 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     const r = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>;
     const fx = findEffect(str(r.effect, 40));
     if (!fx) errors.push(`scenes[${i}].effect「${String(r.effect)}」不存在，請先用 search_effects 查 id`);
-    const long = isTransportFx(fx?.id??'') || isIllustrationFx(fx?.id ?? '') || fx?.id === 'map-overlay' || fx?.id === 'crisp-drop' || isPhotoFx(fx?.id ?? '') || isObjFx(fx?.id ?? '');
+    const long = isNatureFx(fx?.id??'') || isTransportFx(fx?.id??'') || isIllustrationFx(fx?.id ?? '') || fx?.id === 'map-overlay' || fx?.id === 'crisp-drop' || isPhotoFx(fx?.id ?? '') || isObjFx(fx?.id ?? '');
     const diagram = fx?.cat === 'diagram';
     const max = long ? 900_000 : diagram ? 180 : 60;
     const rows = Array.isArray(r.words) ? r.words.map((w) => str(w, max)) : typeof r.words === 'string' ? (long ? [str(r.words, max)] : diagram ? str(r.words, 4320).split('\n').map((w) => str(w, max)) : str(r.words, 200).split(/\s*\/\s*|\n/)) : undefined;
@@ -106,6 +107,7 @@ export const comboPalette = (c: Combo): Palette => {
 
 /** 段落文字摘要：地圖場景與水滴設定不直接印出 JSON */
 export const sceneSummary = (effect: string, words: string[], quote = false): string => {
+  if(isNatureFx(effect)){const sc=natureFromWords(words,effect);return `精修插畫「${NATURE.modes[sc.mode].zh}${sc.mode==='meteor'?'・'+NATURE.styles[sc.style].zh:''}」 · ${NATURE.environments(sc.mode)[sc.background].zh} · ${sc.speed} 倍速`;}
   if(isTransportFx(effect)){const sc=transportFromWords(words,effect);return `精修插畫「${TRANSPORT.modes[sc.mode].zh}」 · ${TRANSPORT.backgrounds[sc.background].zh} · ${sc.speed} 倍速`;}
   if (isIllustrationFx(effect)) { const sc=illustrationFromWords(words,effect);return `精修插畫「${sc.mode==='whale'?ILLUSTRATION.animals[sc.animal].zh:ILLUSTRATION.modes[sc.mode].zh}」 · ${ILLUSTRATION.backgrounds[sc.background].zh} · ${sc.speed} 倍速`; }
   const q = (x: string) => (quote ? `「${x}」` : x);
@@ -153,6 +155,7 @@ export const sceneSummary = (effect: string, words: string[], quote = false): st
 
 export const sceneSeconds = (s: ComboScene): number => {
   if (s.seconds) return s.seconds;
+  if(isNatureFx(s.effect))return natureFromWords(s.words,s.effect).loop;
   if(isTransportFx(s.effect))return transportFromWords(s.words,s.effect).loop;
   if (isIllustrationFx(s.effect)) return illustrationFromWords(s.words,s.effect).loop;
   // 圖片運鏡預設 6 秒動畫＋1 秒停留

@@ -2,13 +2,13 @@
 
 https://motion.leichthub.com
 
-短影音動態素材庫，分八個工作區（目前前台 229 招，另保留 14 招隱藏原版）＋套組：
+短影音動態素材庫，分八個工作區（目前前台 223 招，另保留 29 招隱藏原版）＋套組：
 
-- **文字特效**（121 招）：依用途分 6 類（開場標題、字幕標註、資訊字卡、轉場切換、強調情緒、風格氛圍），原本的 13 個技法分類改當「風格」篩選；首頁最上方是建案片常用 12 招（`src/uses.ts`）
+- **文字特效**（114 招）：依用途分 6 類（開場標題、字幕標註、資訊字卡、轉場切換、強調情緒、風格氛圍），原本的 13 個技法分類改當「風格」篩選；首頁最上方是建案片常用 12 招（`src/uses.ts`）
 - **圖片運鏡**（21 個模組）：單張運鏡（推拉、甩入、3D 卡片、視窗彈出、分層視差、手機框）、多張組合（前後對比、翻卡、拍立得、宮格、分割畫面）、標註轉場（放大鏡、影片定格標註、縮放穿越）、裁切與遮罩（遮罩揭露、切片錯位、拼塊組圖、撕紙揭露、剪報拼貼、形狀變換、前景遮擋換景）
 - **地圖區位**（15 招）：捷運鐵路路網（單線路網、路線條、多線路網：轉乘站、焦點站、鐵路黑白線、規劃中虛線、區域圈，文字行描述 `src/transit.ts`，本機渲染 `/r/transit.js`）；基地框（可加減角點做 L 形）、路名、資訊卡、資訊條、圓形標記（A棟/B棟）、通勤路線、放射路線；場景可加「太空降落」開場
-- **物件特效**（49 招）：水滴泡泡、隕石（隨機／對稱／圓潤／碎片 × 岩石／冰晶／熔岩／金屬）、魔術方塊（2–4 階 × 塑膠／金屬／花色／單色）、星空宇宙（星空／光速／星系／行星／太陽／月球／地球／低空飛越地球・月球・火星・太陽，可推近拉遠）、俯瞰空拍（城市／河流／山川／草原牛馬／農田／海岸／森林／交流道，含建築陰影、頂樓水塔、斑馬線、河濱、三合院、消波塊等細節）、交通工具（汽車／馬車／飛機／太空船／火車／輪船／熱氣球）、海底世界（魚群／海豚／巨鯨／迎面鯊魚／珊瑚／深海／潛水艇）；物件工作室 `/?view=object`，MCP `build_object_scene`，本機渲染 `/r/obj.js`
-- **插畫**（11 招）：精修插畫主角，交通工具 4 招（開車上路 #237、馬車旅行 #238、火車捷運 #241 已隱藏）（`src/transport.ts`，MCP `build_transport_scene`）與海底世界 7 招（`src/illustration.ts`，MCP `build_illustration_scene`），每招有專屬編輯，可透明輸出；原本放在物件特效，已移到獨立工作區
+- **物件特效**（23 招）：水滴泡泡、魔術方塊、星空宇宙；工作室 `/?view=object`，MCP `build_object_scene`，本機渲染 `/r/obj.js`。隕石與俯瞰原版已隱藏保留，精修版移入插畫工作區。
+- **插畫**（20 招）：精修隕石 1 招（編輯器切換四種樣式）、俯瞰 8 招（`src/nature.ts`，MCP `build_nature_scene`）、交通工具 4 招（開車上路 #237、馬車旅行 #238、火車捷運 #241 依既有設定隱藏保留，`src/transport.ts`，MCP `build_transport_scene`）、海底世界 7 招（`src/illustration.ts`，MCP `build_illustration_scene`）；每招有獨立編輯設定。
 - **圖表特效**（20 招）：直條、堆疊直條、橫條、排名、瀑布、折線、區域、組合（雙軸）、圓餅、環圈、儀表板、進度環、象形圖、樹狀、旭日、漏斗、盒鬚、XY 散佈、泡泡、雷達；數據一行一筆「標籤 數值」（`src/chart.ts`，本機渲染 `/r/chart.js`），全站預覽文字只換標題
 - **格局**（7 招）：戶別定位、公設導覽、逐間高亮、看屋動線、單房聚焦、戶型比較、平面立體傾斜；格局工作室 `/?view=plan` 放入建商平面圖、拉框或多邊形標房間、點動線，自動抓平面圖範圍（去掉 DM 留白與 Logo），可手動調整；MCP `build_plan_scene`，本機渲染 `/r/plan.js`（`src/plankit.ts`）。網站示範為程式畫的虛構戶型，真實 DM 只存在使用者自己的預設與 Combo
 - **套組**：獨立分頁 `/?ws=kits`，常見段落順序的現成 Combo（`src/uses.ts` 的 KITS）
@@ -27,7 +27,7 @@ https://motion.leichthub.com
 
 - MCP 端點：`https://motion.leichthub.com/mcp`（Streamable HTTP、無狀態）
 - 寫入（儲存／刪除 Combo）需要金鑰：網址加 `?key=金鑰`，或 `Authorization: Bearer 金鑰`
-- 工具：`list_categories`、`search_effects`、`get_effect`、`build_map_scene`、`build_drop_scene`、`build_photo_scene`、`build_object_scene`、`build_illustration_scene`、`build_transport_scene`、`list_presets`、`get_preset`、`save_preset`、`compose_combo`、`save_combo`、`list_combos`、`get_combo`、`delete_combo`
+- 工具：`list_categories`、`search_effects`、`get_effect`、`build_map_scene`、`build_drop_scene`、`build_photo_scene`、`build_object_scene`、`build_illustration_scene`、`build_transport_scene`、`build_nature_scene`、`list_presets`、`get_preset`、`save_preset`、`compose_combo`、`save_combo`、`list_combos`、`get_combo`、`delete_combo`
 
 ### 與 AI 來回修改（預設）
 
@@ -39,9 +39,21 @@ https://motion.leichthub.com
 
 Combo 存的是預設當下的內容（快照）；預設更新後，請 AI 重新以 `{ "preset": 代碼 }` 存一次 Combo。
 
+### 隕石與俯瞰・精修插畫
+
+隕石分類只顯示一招 `meteor-illustrated`（#244），在編輯器切換岩石、冰晶、熔岩、金屬四種樣式。可調自轉、漂浮、碎石數量與散布、飛行方向、火焰尾跡，熔岩另有熱度脈動，冰晶與金屬另有切面反光。五種背景為深空、星雲、塵帶、星夜與暖白圖鑑，另可去背輸出。
+
+俯瞰分類有八招 `aerial-illustrated-*`（#245–252）：城市車流、河流船隻、山川雲層、草原牛馬、農田農車、海岸浪線、森林樹冠、交流道主線車流。各招有獨立設定記憶與專屬參數，共用視野推近、平移幅度與方向、整體位置、大小、旋轉、速度及配色；五種環境為自然、暖色、清冷、夜色與墨色。可選滿版、圓角圖卡或圓形視窗。所有地景都是虛構插畫，不代表實際地點；透明模式輸出地景圖卡，卡片外透明，地景本身保留。
+
+工作室 `/?view=nature`；各卡片「編輯精修插畫」開啟本招。支援 PNG、透明 WebM、PNG 序列、JSON、編輯連結、預設及 Combo。共用引擎 `src/nature.ts` 自給自足，素材位於 `public/media/nature-illustrated/`，只載入當前場景需要的素材，保留原始檔並提供 CORS。動態圖層採同一地景座標：車流沿車道、下穿橋面處遮擋、船隻沿河道、牛馬避開池塘與柵欄、前景樹冠避開林間小路。
+
+MCP `build_nature_scene` 使用 `mode=meteor|city|river|mountain|grass|farm|coast|forest|highway`，隕石另用 `style=rock|ice|lava|gold`，會回傳專屬參數與編輯連結。`/r/nature.js` 提供 `MA_NATURE.createRenderer(canvas,overlayCanvas,scene,assetOrigin)`；先 `await renderer.ready` 再 `renderer.render(t,W,H)`，結束時 `renderer.dispose()`。`/tests/nature-refined.html` 驗證單一隕石、多樣式、八招俯瞰、專屬控制、三種比例、透明度、MCP、預設、Combo、獨立 HTML 與原版相容。
+
+原有四招隕石 `obj-meteor-*`（#158–161）及八招俯瞰 `obj-aerial-*`（#170–177）只標記隱藏，完整保留代碼、編號、原動畫與舊連結／預設／Combo。原有交通工具隱藏設定保持不變。
+
 ### 交通工具・精修插畫
 
-交通分類只列七招精修插畫（#237–243）：汽車、馬車、客機、太空船、火車捷運、輪船與熱氣球。舊 `obj-vehicle-*`（#178–184）只隱藏，保留原始程式、編號、連結、object 預設及 Combo。
+交通分類保留七招精修插畫（#237–243），其中 #237／#238／#241 依既有設定隱藏，前台列出四招：汽車、馬車、客機、太空船、火車捷運、輪船與熱氣球。舊 `obj-vehicle-*`（#178–184）只隱藏，保留原始程式、編號、連結、object 預設及 Combo。
 
 專用編輯器 `/?view=transport`，各卡片的「編輯精修插畫」會開啟本招並記住各自設定：
 

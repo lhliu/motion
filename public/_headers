@@ -5,3 +5,7 @@
 /media/transport-illustrated/*
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=31536000, immutable
+
+/media/nature-illustrated/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=31536000, immutable

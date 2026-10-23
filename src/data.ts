@@ -1,3 +1,4 @@
+import { illustratedNature } from './effects/nature';
 import { illustratedVehicles } from './effects/transport';
 import type { Category, Fx, Palette, Section, SecId } from './types';
 import { impact } from './effects/impact';
@@ -27,8 +28,8 @@ export const SECTIONS: Section[] = [
   { id: 'text', code: 'TEXT', zh: '文字', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字' },
   { id: 'photo', code: 'PHOTO', zh: '圖片', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
   { id: 'map', code: 'MAP', zh: '地圖', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
-  { id: 'object', code: 'OBJECT', zh: '物件', en: 'Object Motion', desc: '水滴、隕石、魔術方塊、星空宇宙、俯瞰；一系列可調形狀材質的主角物件', studio: 'object' },
-  { id: 'illus', code: 'ILLUS', zh: '插畫', en: 'Illustration', desc: '精修插畫主角：交通工具、海底世界；每招有專屬編輯，可透明疊進影片' },
+  { id: 'object', code: 'OBJECT', zh: '物件', en: 'Object Motion', desc: '水滴、魔術方塊、星空宇宙；一系列可調形狀材質的主角物件', studio: 'object' },
+  { id: 'illus', code: 'ILLUS', zh: '插畫', en: 'Illustration', desc: '精修插畫主角：隕石、俯瞰、交通工具、海底世界；每招有專屬編輯，可透明疊進影片' },
   { id: 'chart', code: 'CHART', zh: '圖表', en: 'Chart Motion', desc: '直條、折線、圓餅、階層、統計、瀑布……一行一筆數據就會動' },
   { id: 'plan', code: 'PLAN', zh: '格局', en: 'Floor Plan', desc: '平面圖、單房、戶別定位、公設、立體傾斜；放建商平面圖就能動', studio: 'plan' },
   { id: 'explain', code: 'EXPLAIN', zh: '圖解', en: 'Explainer', desc: '工法、剖面、流程示意；一支一支客製，改圖請交給 AI' },
@@ -54,10 +55,10 @@ export const CATEGORIES: Category[] = [
   { id: 'map', sec: 'map', code: 'MAP', zh: '地圖區位', tagline: '把位置、距離、通勤講清楚' },
   { id: 'transit', sec: 'map', code: 'METRO', zh: '捷運鐵路路網', tagline: '路網圖、路線條、轉乘與規劃中路線' },
   { id: 'liquid', sec: 'object', code: 'DROP', zh: '水滴泡泡', tagline: '柔軟、透明、會呼吸' },
-  { id: 'meteor', sec: 'object', code: 'METEOR', zh: '隕石', tagline: '隨機、對稱、熔岩、冰晶' },
+  { id: 'meteor', sec: 'illus', code: 'METEOR', zh: '隕石', tagline: '一招精修隕石，編輯器切換四種樣式' },
   { id: 'cube', sec: 'object', code: 'CUBE', zh: '魔術方塊', tagline: '塑膠、金屬、花色、單色' },
   { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '星空、光速、星系、行星' },
-  { id: 'aerial', sec: 'object', code: 'AERIAL', zh: '俯瞰', tagline: '城市、河流、山川、草原牛馬' },
+  { id: 'aerial', sec: 'illus', code: 'AERIAL', zh: '俯瞰', tagline: '八種精修地景，各有專屬動態與運鏡' },
   { id: 'vehicle', sec: 'illus', code: 'VEHICLE', zh: '交通工具', tagline: '七種精修插畫，各有專屬編輯功能' },
   { id: 'ocean', sec: 'illus', code: 'OCEAN', zh: '海底世界', tagline: '七種精修海底場景，各有專屬編輯與透明輸出' },
   { id: 'cbar', sec: 'chart', code: 'BAR', zh: '直條橫條', tagline: '直條、堆疊、橫條、排名、瀑布' },
@@ -92,6 +93,7 @@ export const ALL_EFFECTS: Fx[] = [
   ...objects,
   ...illustratedOcean,
   ...illustratedVehicles,
+  ...illustratedNature,
   ...transit,
   ...charts,
   ...plans,
