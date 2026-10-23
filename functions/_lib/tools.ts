@@ -26,7 +26,7 @@ const transportResult = (raw:unknown,ctx:ToolCtx,title='交通工具・精修插
   return {scene:sc,combo_scene,modes:TRANSPORT.modes,backgrounds:TRANSPORT.backgrounds,
     params_doc:TRANSPORT.fields[sc.mode],edit_url:editUrl(ctx.origin,{kind:'transport',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,
     local_render:`載入 ${ctx.origin}/r/transport.js；const renderer=MA_TRANSPORT.createRenderer(canvas,overlayCanvas,scene,"${ctx.origin}");await renderer.ready;逐格呼叫 renderer.render(i/fps,W,H)，依序 drawImage 兩張 canvas，最後 renderer.dispose()。`,
-    next:`交通工具目前只有七種精修插畫；將 combo_scene 放進 compose_combo / save_combo，ratio=${sc.ratio}，用 edit_url 進入本招專屬編輯面板。`};
+    next:`交通工具目前開放飛機、太空船、輪船、熱氣球四種精修插畫；將 combo_scene 放進 compose_combo / save_combo，ratio=${sc.ratio}，用 edit_url 進入本招專屬編輯面板。`};
 };
 const natureResult = (raw:unknown,ctx:ToolCtx,title='隕石與俯瞰・精修插畫') => {
   const sc=normalizeNature(raw),combo_scene={effect:natureFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop};
@@ -586,10 +586,10 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'build_transport_scene', title: '組交通精修插畫',
-    description:'七種精修交通插畫：car 汽車、carriage 馬車、plane 客機、rocket 太空船、train 火車、ship 輪船、balloon 熱氣球。獨立動作控制、配色、五種背景與透明輸出。',
+    description:'精修交通插畫：plane 客機、rocket 太空船、ship 輪船、balloon 熱氣球。獨立動作控制、配色、五種背景與透明輸出。',
     inputSchema: {type:'object',properties:{
       scene:{type:'object',description:'完整設定；也可直接提供下列欄位。speed 優先於 duration，片長為 12/speed'},
-      mode:{type:'string',enum:Object.keys(TRANSPORT.modes),description:'預設 car；各招專屬參數見回傳 params_doc'},
+      mode:{type:'string',enum:Object.keys(TRANSPORT.modes).filter(m=>!['car','carriage','train'].includes(m)),description:'預設 plane；各招專屬參數見回傳 params_doc'},
       ...Object.fromEntries(Object.values(TRANSPORT.fields).flat().map(f=>[f.key,{type:'number',description:f.label,minimum:Math.min(...Object.values(TRANSPORT.fields).flat().filter(g=>g.key===f.key).map(g=>g.min)),maximum:Math.max(...Object.values(TRANSPORT.fields).flat().filter(g=>g.key===f.key).map(g=>g.max))}])),
       ratio:{type:'string',enum:['9:16','16:9','1:1']}, size:{type:'number',minimum:.4,maximum:2.2}, speed:{type:'number',minimum:.6,maximum:2.5},duration:{type:'number',minimum:4.8,maximum:20},
       x:{type:'number',minimum:-.5,maximum:1.5}, y:{type:'number',minimum:0,maximum:1}, angle:{type:'number',minimum:-60,maximum:60},
@@ -602,6 +602,7 @@ export const TOOLS: ToolDef[] = [
       const raw={...(a.scene&&typeof a.scene==='object'?a.scene:{}),...Object.fromEntries(Object.entries(a).filter(([k])=>k!=='scene'&&k!=='duration'&&k!=='title'))} as Partial<TScene>;
       if(a.duration!==undefined){delete raw.speed;raw.loop=Number(a.duration);if(a.speed!==undefined)raw.speed=Number(a.speed);}
       if(raw.color&&raw.tint===undefined)raw.tint=1;
+      if(!raw.mode)raw.mode='plane';
       return transportResult(raw,ctx,String(a.title??'交通工具・精修插畫'));
     },
   },

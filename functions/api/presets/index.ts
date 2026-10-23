@@ -1,3 +1,4 @@
+import { normalizeNature } from '../../../src/nature';
 import { checkPresetData, type Preset } from '../../../src/presets';
 import { canWrite, json, preflight, type Ctx } from '../../_lib/env';
 import { listPresets, savePreset, StoreError } from '../../_lib/store';
@@ -8,8 +9,8 @@ export const onRequestGet = async ({ request, env }: Ctx) => {
   const u = new URL(request.url);
   try {
     const presets = await listPresets(env, u.searchParams.get('kind') ?? '', u.searchParams.get('q') ?? '', Number(u.searchParams.get('limit')) || 100);
-    // 清單不回傳完整資料（地圖可能含底圖），需要時再讀單筆
-    return json({ ok: true, count: presets.length, presets: presets.map(({ data: _d, ...p }) => p) });
+    // 清單不回傳完整資料（地圖可能含底圖）；nature 附上 mode，讓兩類編輯器分開列預設。
+    return json({ ok: true, count: presets.length, presets: presets.map(({ data, ...p }) => ({...p,...(p.kind==='nature'?{mode:normalizeNature(data).mode}:{})})) });
   } catch (e) {
     return err(e);
   }

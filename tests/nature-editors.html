@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>隕石與俯瞰分開編輯</title><link rel="stylesheet" href="/src/styles.css"><h1>隕石與俯瞰分開編輯</h1><pre id="results">檢查中…</pre>
+<script type="module">
+import {initNatureStudio} from '/src/nature-studio.ts';
+import {NATURE as R} from '/src/nature.ts';
+const results=[],check=(v,m)=>{if(!v)throw Error(m)},$=s=>document.querySelector(s);
+async function test(name,fn){try{await fn();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}}
+async function wait(fn){for(let i=0;i<300;i++){if(fn())return;await new Promise(r=>setTimeout(r,20));}throw Error('Timed out');}
+const ready=p=>wait(()=>$(`#${p}Loading`).hidden),value=(p,k)=>Number($(`#${p}Controls [data-k="${k}"]`).value);
+const memory=new Map([['nature',{mode:'river',boats:5}],['nature-modes',{meteor:{mode:'meteor',style:'lava',size:1.4,trail:1},river:{mode:'river',boats:5},forest:{mode:'forest',trees:23}}]]);
+const store={get:(k,d)=>structuredClone(memory.has(k)?memory.get(k):d),set:(k,v)=>memory.set(k,structuredClone(v))};
+const originalFetch=window.fetch;window.fetch=(url,...args)=>String(url).startsWith('/api/presets?')?Promise.resolve({ok:true,headers:new Headers({'content-type':'application/json'}),json:async()=>({ok:true,presets:[{id:'pm',kind:'nature',name:'Meteor',mode:'meteor'},{id:'pr',kind:'nature',name:'River',mode:'river'}]})}):originalFetch(url,...args);
+const studio=initNatureStudio({store,toast:()=>{},copy:async()=>{},addScene:()=>{}});
+await test('兩個獨立對話框，隕石四樣式、俯瞰八場景',async()=>{
+ studio.openMode('meteor');await ready('ns');check($('#meteorstudio').open&&!$('#aerialstudio').open,'Wrong dialog');check($('#nsModesGroup').hidden,'Mixed categories');check($('#nsStyles').children.length===4,'Missing styles');check($('#asModes').children.length===8&&!$('#asModes [data-mode="meteor"]'),'Mixed modes');check(!$('#nsControls [data-k="trail"]'),'Tail control remains');const ids=[...document.querySelectorAll('[id]')].map(e=>e.id);check(new Set(ids).size===ids.length,'Duplicate IDs');
+});
+await test('移轉舊設定，兩類與八種場景各自記憶',async()=>{
+ check(value('ns','size')===1.4,'Lost old meteor');check(!Object.hasOwn(memory.get('nature-meteor'),'trail'),'Old tail survives');
+ studio.openMode('river');await ready('as');check(value('as','boats')===5,'Lost river');studio.openMode('forest');await ready('as');check(value('as','trees')===23,'Lost forest');
+ const fields={city:['traffic',1.5],river:['boats',4],mountain:['clouds',.8],grass:['herd',16],farm:['harvest',.4],coast:['waves',1.4],forest:['trees',24],highway:['traffic',1.6]};
+ for(const [mode,[key,v]] of Object.entries(fields)){studio.openMode(mode);await ready('as');const input=$(`#asControls [data-k="${key}"]`);input.value=v;input.dispatchEvent(new Event('input',{bubbles:true}));}
+ for(const [mode,[key,v]] of Object.entries(fields)){studio.openMode(mode);await ready('as');check(value('as',key)===v,'Lost '+mode);}
+ studio.openMode('meteor');await ready('ns');check(value('ns','size')===1.4,'Aerial overwrote meteor');
+});
+await test('舊編輯設定與預設依內容路由到對應編輯器',async()=>{
+ studio.load({mode:'forest',trees:19});await ready('as');check($('#aerialstudio').open&&!$('#meteorstudio').open&&value('as','trees')===19,'Wrong aerial route');
+ studio.loadPreset({id:'ptest',name:'Lava',data:{mode:'meteor',style:'lava',trail:1.5}});await ready('ns');check($('#meteorstudio').open&&!$('#aerialstudio').open,'Wrong meteor route');check($('#nsPreset .pb-id').textContent==='ptest','Lost preset identity');
+});
+await test('預設清單只列出各自分類',async()=>{
+ $('#nsPreset .pb-load').dispatchEvent(new Event('focus'));await wait(()=>$('#nsPreset .pb-load').options.length===2);check($('#nsPreset option[value="pm"]')&&!$('#nsPreset option[value="pr"]'),'Meteor list mixed');
+ studio.openMode('river');await ready('as');$('#asPreset .pb-load').dispatchEvent(new Event('focus'));await wait(()=>$('#asPreset .pb-load').options.length===2);check($('#asPreset option[value="pr"]')&&!$('#asPreset option[value="pm"]'),'Aerial list mixed');
+});
+await test('舊尾焰設定無效，熔岩材質仍保留',async()=>{
+ const a=document.createElement('canvas'),b=document.createElement('canvas');a.width=270;a.height=480;const r=R.createRenderer(a,b,{mode:'meteor',style:'lava',trail:1.5,background:'transparent'},location.origin);await r.ready;r.render(5);const original=a.toDataURL();check(!Object.hasOwn(r.scene,'trail'),'Tail normalized');await r.update({...r.scene,trail:0});r.render(5);check(original===a.toDataURL(),'Tail still affects image');const d=a.getContext('2d').getImageData(0,0,270,480).data;check(d.some((v,i)=>i%4===0&&v>200&&d[i+1]>40&&d[i+1]<180&&d[i+2]<80&&d[i+3]>200),'Molten cracks missing');r.dispose();
+});
+$('#asClose').click();window.natureEditorResults=results;$('#results').textContent=results.map(x=>`${x.passed?'PASS':'FAIL'} ${x.name}${x.error?' — '+x.error:''}`).join('\n');
+</script></html>

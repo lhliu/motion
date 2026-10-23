@@ -65,7 +65,7 @@
     <main>
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow"><span id="heroCode">TEXT MOTION</span> <span>／</span> 光寓科技收藏版</p>
+          <p class="eyebrow"><span id="heroCode">TEXT MOTION</span></p>
           <h1>
             <span class="h-small" id="heroSmall">影片用得到的</span>
             <span class="h-big"><span id="heroBig">文字動態</span> <em><b id="countUp">0</b> 招</em></span>
@@ -226,7 +226,7 @@
                 <button class="btn-ghost" id="dPhotoStudio" hidden><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m21 16-5-5-8 8" /></svg>放自己的照片（圖片工作室）</button>
                 <button class="ma-btn" id="dIllustrationStudio" hidden>編輯精修插畫</button>
                 <button class="btn-ghost" id="dPlanStudio" hidden><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1" /><path d="M3 12h9V3M12 12v9" /></svg>放自己的平面圖（格局工作室）</button>
-                <button class="btn-ghost" id="dObjStudio" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /></svg>在物件工作室調整形狀材質</button>
+                <button class="btn-ghost" id="dObjStudio" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /></svg>打開專屬編輯器調整</button>
                 <button class="btn-ghost" id="dStudio" hidden><svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /></svg>在水滴工作室調整</button>
                 <button class="btn-ghost" id="dAddCombo"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>加入 Combo</button>
                 <button class="btn-ghost" id="dDownload"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>下載 HTML</button>
@@ -550,7 +550,7 @@
             <span class="ma-num cb-badge">◎</span>
             <div>
               <h2 id="osTitle" tabindex="-1" autofocus>物件工作室</h2>
-              <p>方塊、星空宇宙可直接編輯；隕石、俯瞰、交通工具與海底世界提供精修插畫入口，可調整動作、配色與場景</p>
+              <p id="osDesc"></p>
             </div>
           </div>
           <div class="d-nav"><button class="ic" id="osClose" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg></button></div>
@@ -576,7 +576,6 @@
             <p class="st-note">背景勾選「透明」可輸出疊加用素材。全部硬邊，不使用陰影、模糊或光暈。</p>
           </div>
           <div class="st-panel">
-            <fieldset><legend>物件</legend><div class="ps-mod ps-mod-g" id="osMod"></div></fieldset>
             <fieldset><legend>參數</legend><div id="osParams" class="ps-fields"></div></fieldset>
             <fieldset><legend>文字</legend><div id="osText" class="ps-fields"></div></fieldset>
             <fieldset><legend>背景與字型</legend>

@@ -59,7 +59,7 @@ export const CATEGORIES: Category[] = [
   { id: 'cube', sec: 'object', code: 'CUBE', zh: '魔術方塊', tagline: '塑膠、金屬、花色、單色' },
   { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '星空、光速、星系、行星' },
   { id: 'aerial', sec: 'illus', code: 'AERIAL', zh: '俯瞰', tagline: '八種精修地景，各有專屬動態與運鏡' },
-  { id: 'vehicle', sec: 'illus', code: 'VEHICLE', zh: '交通工具', tagline: '七種精修插畫，各有專屬編輯功能' },
+  { id: 'vehicle', sec: 'illus', code: 'VEHICLE', zh: '交通工具', tagline: '飛機、太空船、輪船、熱氣球，各有專屬編輯' },
   { id: 'ocean', sec: 'illus', code: 'OCEAN', zh: '海底世界', tagline: '七種精修海底場景，各有專屬編輯與透明輸出' },
   { id: 'cbar', sec: 'chart', code: 'BAR', zh: '直條橫條', tagline: '直條、堆疊、橫條、排名、瀑布' },
   { id: 'cline', sec: 'chart', code: 'LINE', zh: '折線區域', tagline: '走勢、量體、雙軸組合' },

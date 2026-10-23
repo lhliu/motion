@@ -8,13 +8,13 @@ const dimensions: Record<IScene['ratio'],[number,number]>={'9:16':[1080,1920],'1
 const poster=(scene:IScene)=>(scene.mode==='shark'?9.3:5)/scene.speed;
 export const initIllustrationStudio = (deps: Omit<ObjectStudioDeps,'openDrop'|'openIllustration'|'openTransport'>) => {
   document.body.insertAdjacentHTML('beforeend',`<dialog id="illstudio" class="detail st ms ps" aria-labelledby="isTitle"><div class="d-inner">
-    <header class="d-head"><div class="d-title"><span class="ma-num cb-badge">200</span><div><h2 id="isTitle" tabindex="-1" autofocus>海底世界・精修插畫</h2><p>七種海底場景 × 個別編輯面板 × 五種海景，保留插畫紋理；調整後可直接輸出或加入 Combo</p></div></div><div class="d-nav"><button class="ic" id="isClose" aria-label="關閉">✕</button></div></header>
+    <header class="d-head"><div class="d-title"><span class="ma-num cb-badge">200</span><div><h2 id="isTitle" tabindex="-1" autofocus>海底世界・精修插畫</h2><p>專屬編輯面板 × 五種海景，保留插畫紋理；調整後可直接輸出或加入 Combo</p></div></div><div class="d-nav"><button class="ic" id="isClose" aria-label="關閉">✕</button></div></header>
     <div class="st-body"><div class="st-left"><div id="isStage" class="st-stage ms-stage" data-ratio="9:16"><canvas id="isCanvas"></canvas><canvas id="isSnow"></canvas><div id="isLoading" role="status">載入精修插畫…</div></div>
       <div class="d-controls"><div class="seg" id="isRatio" aria-label="比例"><button data-v="9:16">9:16 手機</button><button data-v="16:9">16:9</button><button data-v="1:1">1:1</button></div><button id="isPlay" class="btn-ghost">▶ 播放</button><label class="ms-loop">時間 <input type="range" id="isTime" min="0" max="12" step="0.02"></label><output id="isClock"></output></div>
       <div id="isPreset"></div><div class="st-out"><button id="isPng" class="ma-btn" data-export>PNG</button><button id="isWebm" class="btn-ghost" data-export>WebM 影片</button><button id="isSeq" class="btn-ghost" data-export>PNG 序列（ZIP）</button><button id="isCombo" class="btn-ghost">加入 Combo</button><button id="isLink" class="btn-ghost">複製編輯連結</button><button id="isJson" class="btn-ghost">下載設定</button><button id="isImport" class="btn-ghost">匯入設定</button><input id="isFile" type="file" accept="application/json,.json" hidden></div>
       <p id="isStatus" role="status" class="st-status" hidden></p><p class="st-note">可拖曳預覽調整主角位置。速度連動片長（4.8–20 秒）；停留巡游適合持續展示。透明背景可疊進影片，建議關閉顆粒以取得乾淨素材。WebM 透明度需由支援 alpha 的剪輯軟體讀取；PNG 序列保留透明度。</p>
     </div><div class="st-panel" id="isControls">
-      <fieldset><legend>七種海底場景</legend><div class="ps-mod ps-mod-g" id="isModes"></div></fieldset>
+      <fieldset hidden><legend>七種海底場景</legend><div class="ps-mod ps-mod-g" id="isModes"></div></fieldset>
       <fieldset id="isSpecific"><legend id="isSpecificTitle">專屬編輯</legend><div id="isSpecificFields"></div></fieldset>
       <fieldset id="isAnimalGroup"><legend>巨物造型 · 精修插畫</legend><div class="ps-mod ps-mod-g" id="isAnimals"></div><p class="ms-hint">原創海怪為幻想造型。各主角有獨立的鰭、尾或觸腕擺動。</p></fieldset>
       <fieldset><legend>構圖</legend><div id="isComposition"></div></fieldset>

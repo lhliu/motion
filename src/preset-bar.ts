@@ -3,6 +3,7 @@ import { esc } from './util';
 
 export interface PresetBarOpts {
   kind: PresetKind;
+  filter?: (preset: Omit<Preset,'data'> & { mode?: string }) => boolean;
   getData: () => PresetData;
   onLoad: (p: Preset) => void;
   toast: (msg: string) => void;
@@ -92,7 +93,8 @@ export const presetBar = (host: HTMLElement, o: PresetBarOpts) => {
     sel.dataset.loaded = '1';
     try {
       const j = await api(`/api/presets?kind=${o.kind}`);
-      sel.innerHTML = `<option value="">載入已存的預設⋯（${j.presets!.length}）</option>${j.presets!.map((p) => `<option value="${esc(p.id!)}">${esc(p.id!)}　${esc(p.name)}</option>`).join('')}`;
+      const presets=o.filter?j.presets!.filter(o.filter):j.presets!;
+      sel.innerHTML = `<option value="">載入已存的預設⋯（${presets.length}）</option>${presets.map((p) => `<option value="${esc(p.id!)}">${esc(p.id!)}　${esc(p.name)}</option>`).join('')}`;
     } catch (e) {
       sel.innerHTML = `<option value="">${esc(e instanceof Error ? e.message : '讀取失敗')}</option>`;
     }
