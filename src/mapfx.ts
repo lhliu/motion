@@ -22,9 +22,11 @@ export const MAPFX_HELP: Record<string, string> = {
   nav: '目的地 / 剩餘時間 / 剩餘距離 / 指示一 / 指示二',
   compass: '比例尺文字（例如 500 m）',
   oldnew: '舊年份 / 新年份',
+  drive: '目的地 / 一行一個轉彎指示（2–3 個，例如「右轉 忠孝路」） / 剩餘時間（例如 9 分） / 總距離（例如 2.4 公里）',
+  amenity: '一行一個設施：「類別 名稱 步行分鐘」，例如「超市 某某超市 4」；類別用超市、學校、公園、醫院、捷運、餐飲、銀行等，分鐘請用實測',
 };
 
-export const MAPFX_LOOP: Record<string, number> = { taiwan: 6, split: 6, race: 7, tour: 7, spot: 8, phase: 6, future: 7, zoning: 6, parcel: 5, choro: 6, bubble: 6, bars: 6, nuisance: 6, flood: 7, school: 6, radar: 6, nav: 8, compass: 4, oldnew: 6 };
+export const MAPFX_LOOP: Record<string, number> = { drive: 9, amenity: 7, taiwan: 6, split: 6, race: 7, tour: 7, spot: 8, phase: 6, future: 7, zoning: 6, parcel: 5, choro: 6, bubble: 6, bars: 6, nuisance: 6, flood: 7, school: 6, radar: 6, nav: 8, compass: 4, oldnew: 6 };
 
 export const mapfxRenderer = () => {
   const TAU = Math.PI * 2;
@@ -111,13 +113,9 @@ export const mapfxRenderer = () => {
     old: { land: '#e8dcc0', block: '#dccca6', block2: '#d6c49c', road: '#f3ead6', casing: '#b9a682', water: '#b7cfc4', park: '#c9d3a5' },
     dark: { land: '#1c2533', block: '#253042', block2: '#2b3850', road: '#3a4860', casing: '#151c27', water: '#16324a', park: '#1f3a33' },
   };
-  const drawBase = (x: CanvasRenderingContext2D, W: number, H: number, cam: Cam, seed: number, style = 'normal', density = 1) => {
-    const S = STYLES[style] ?? STYLES.normal, w = world(seed), { k } = projector(W, H, cam);
-    x.save();
-    x.fillStyle = S.land;
-    x.fillRect(0, 0, W, H);
-    x.translate(W / 2 - cam.x * k, H / 2 - cam.y * k);
-    x.scale(k, k);
+  /** 在目前的變換下用世界座標畫底圖（不鋪底色） */
+  const drawWorld = (x: CanvasRenderingContext2D, seed: number, style = 'normal', density = 1) => {
+    const S = STYLES[style] ?? STYLES.normal, w = world(seed);
     x.fillStyle = S.park;
     for (const p of w.parks) x.fillRect(p[0], p[1], p[2], p[3]);
     for (const b of w.blocks) {
@@ -150,6 +148,15 @@ export const mapfxRenderer = () => {
       x.lineWidth = lw;
       x.stroke();
     }
+  };
+  const drawBase = (x: CanvasRenderingContext2D, W: number, H: number, cam: Cam, seed: number, style = 'normal', density = 1) => {
+    const { k } = projector(W, H, cam);
+    x.save();
+    x.fillStyle = (STYLES[style] ?? STYLES.normal).land;
+    x.fillRect(0, 0, W, H);
+    x.translate(W / 2 - cam.x * k, H / 2 - cam.y * k);
+    x.scale(k, k);
+    drawWorld(x, seed, style, density);
     x.restore();
   };
 
@@ -504,6 +511,7 @@ export const mapfxRenderer = () => {
     // 橫式畫面圖例放右上，避開左下的區塊
     const lx = W > H ? W - w - u * 0.05 : u * 0.05, ly = W > H ? u * 0.05 : y0;
     x.translate(lx - u * 0.05, ly - y0);
+    x.globalAlpha = clamp(Math.max(...items.map((i) => i.a)) * 1.5);
     x.fillStyle = 'rgba(255,255,255,.92)';
     x.beginPath();
     x.roundRect(u * 0.05, y0, w, h, px * 0.4);
@@ -1051,10 +1059,196 @@ export const mapfxRenderer = () => {
     note(x, W, H, '新舊對照為示意；實際航照請用圖片的前後對比', o);
   };
 
-  const MODES: Record<string, (x: CanvasRenderingContext2D, W: number, H: number, w: string[], t: number, L: number, o: Opt) => void> = {
-    taiwan, split, race, tour, spot, phase, future, zoning, parcel, choro: dataMap('choro'), bubble: dataMap('bubble'), bars: dataMap('bars'), nuisance, flood, school, radar, nav, compass, oldnew,
+  /* ───────── 20 地圖導航（行車視角） ───────── */
+  const drive = (x: CanvasRenderingContext2D, W: number, H: number, w: string[], t: number, L: number, o: Opt) => {
+    const [dest = '捷運站', ...rest] = w.length ? w : ['捷運林口站', '直行 文化一路', '右轉 忠孝路', '左轉 站前路', '9 分', '2.4 公里'];
+    const steps = rest.filter((s) => !/^\d/.test(s.trim())).slice(0, 3), nums = rest.filter((s) => /^\d/.test(s.trim()));
+    const eta = nums[0] ?? '9 分', distTxt = nums[1] ?? '2.4 公里', totalKm = Number(/[\d.]+/.exec(distTxt)?.[0] ?? 2.4) * (/公尺|m\b/.test(distTxt) ? 0.001 : 1);
+    const u = Math.min(W, H);
+    // 路線沿著底圖的街道格線（格線間距 0.075）
+    const route = [[0.3, 0.9], [0.3, 0.525], [0.6, 0.525], [0.6, 0.225], [0.825, 0.225]].slice(0, Math.max(2, steps.length) + 1);
+    const lens = route.slice(1).map((p, i) => Math.hypot(p[0] - route[i][0], p[1] - route[i][1])), total = lens.reduce((a, b) => a + b, 0);
+    const prog = inout(seg(t, L * 0.04, L * 0.94)), at = along(route, prog), me = at.p;
+    // 車頭方向：轉角前後平滑轉向
+    const dirOf = (i: number) => Math.atan2(route[i + 1][1] - route[i][1], route[i + 1][0] - route[i][0]);
+    let done = 0;
+    for (let i = 0; i < at.i; i++) done += lens[i];
+    const inSeg = prog * total - done, left = lens[at.i] - inSeg, turnZone = 0.05;
+    let heading = dirOf(at.i);
+    if (left < turnZone && at.i + 1 < lens.length) {
+      let d = dirOf(at.i + 1) - heading;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      heading += d * inout(1 - left / turnZone) * 0.5;
+    }
+    if (inSeg < turnZone && at.i > 0) {
+      let d = heading - dirOf(at.i - 1);
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      heading -= d * (1 - inout(inSeg / turnZone)) * 0.5;
+    }
+    x.fillStyle = STYLES.normal.land;
+    x.fillRect(0, 0, W, H);
+    const k = Math.max(W, H) * 2.2, carX = W / 2, carY = H * 0.7;
+    x.save();
+    x.translate(carX, carY);
+    x.scale(1, 0.6);
+    x.rotate(-heading - Math.PI / 2);
+    x.scale(k, k);
+    x.translate(-me[0], -me[1]);
+    drawWorld(x, 141);
+    // 路線：未走的亮藍、走過的灰
+    const line = (pts: number[][], c: string, lw: number) => {
+      x.beginPath();
+      pts.forEach(([a, b], i) => (i ? x.lineTo(a, b) : x.moveTo(a, b)));
+      x.strokeStyle = c;
+      x.lineWidth = lw;
+      x.lineCap = 'round';
+      x.lineJoin = 'round';
+      x.stroke();
+    };
+    line(route, '#ffffff', 0.03);
+    line(route, '#4285f4', 0.02);
+    line([...route.slice(0, at.i + 1), me], '#9aa6b2', 0.02);
+    const end = route[route.length - 1];
+    x.restore();
+    // 終點定位針（投影到畫面）
+    const proj = (px: number, py: number) => {
+      const dx = (px - me[0]) * k, dy = (py - me[1]) * k, a = -heading - Math.PI / 2;
+      return [carX + dx * Math.cos(a) - dy * Math.sin(a), carY + (dx * Math.sin(a) + dy * Math.cos(a)) * 0.6];
+    };
+    const [EX, EY] = proj(end[0], end[1]);
+    if (EY > -u * 0.2 && EY < H) pin(x, EX, EY, u * 0.04, '#e53935', 1);
+    // 車：藍色箭頭
+    x.save();
+    x.translate(carX, carY);
+    dot(x, 0, 0, u * 0.065, 'rgba(66,133,244,.22)');
+    x.beginPath();
+    x.moveTo(0, -u * 0.05);
+    x.lineTo(u * 0.035, u * 0.035);
+    x.lineTo(0, u * 0.018);
+    x.lineTo(-u * 0.035, u * 0.035);
+    x.closePath();
+    x.fillStyle = '#ffffff';
+    x.fill();
+    x.lineWidth = u * 0.012;
+    x.strokeStyle = '#ffffff';
+    x.stroke();
+    x.fillStyle = '#4285f4';
+    x.fill();
+    x.restore();
+    // 上方指示：下一個轉彎與剩餘公尺
+    const step = steps[Math.min(steps.length - 1, at.i)] ?? '直行', next = steps[Math.min(steps.length - 1, at.i + 1)];
+    const m = Math.max(0, Math.round((left / total) * totalKm * 1000 / 10) * 10);
+    const turn = at.i >= lens.length - 1 ? 0 : /右/.test(next ?? '') ? 1 : /左/.test(next ?? '') ? -1 : 0;
+    const bh = u * 0.2;
+    x.fillStyle = '#1e6e45';
+    x.beginPath();
+    x.roundRect(u * 0.04, u * 0.04, W - u * 0.08, bh, u * 0.04);
+    x.fill();
+    x.save();
+    x.translate(u * 0.14, u * 0.04 + bh / 2);
+    x.rotate((turn * Math.PI) / 2);
+    x.fillStyle = '#ffffff';
+    x.beginPath();
+    x.moveTo(0, -u * 0.06);
+    x.lineTo(u * 0.045, -u * 0.01);
+    x.lineTo(u * 0.016, -u * 0.01);
+    x.lineTo(u * 0.016, u * 0.06);
+    x.lineTo(-u * 0.016, u * 0.06);
+    x.lineTo(-u * 0.016, -u * 0.01);
+    x.lineTo(-u * 0.045, -u * 0.01);
+    x.closePath();
+    x.fill();
+    x.restore();
+    x.fillStyle = '#ffffff';
+    x.textAlign = 'left';
+    x.textBaseline = 'middle';
+    const last = at.i >= lens.length - 1;
+    x.font = fontOf(o, u * 0.075);
+    x.fillText(last ? `${m} 公尺` : `${m} 公尺後`, u * 0.24, u * 0.04 + bh * 0.33);
+    x.font = fontOf(o, u * 0.05, 700);
+    x.fillText(last ? `抵達 ${dest}` : next ?? step, u * 0.24, u * 0.04 + bh * 0.7);
+    // 下方預估列
+    const fh = u * 0.15, fy = H - fh - u * 0.04;
+    x.fillStyle = '#ffffff';
+    x.beginPath();
+    x.roundRect(u * 0.04, fy, W - u * 0.08, fh, u * 0.035);
+    x.fill();
+    const remainMin = Math.max(0, Math.round(Number(/[\d.]+/.exec(eta)?.[0] ?? 9) * (1 - prog)));
+    x.fillStyle = '#1e6e45';
+    x.font = fontOf(o, u * 0.07);
+    x.fillText(`${remainMin} 分`, u * 0.09, fy + fh * 0.42);
+    x.fillStyle = '#555555';
+    x.font = fontOf(o, u * 0.04, 500);
+    x.fillText(`${(totalKm * (1 - prog)).toFixed(1)} 公里 · 前往 ${dest}`, u * 0.09, fy + fh * 0.76);
+    note(x, W, H - fh - u * 0.05, '導航畫面為示意', o);
   };
-  const LOOPS: Record<string, number> = { taiwan: 6, split: 6, race: 7, tour: 7, spot: 8, phase: 6, future: 7, zoning: 6, parcel: 5, choro: 6, bubble: 6, bars: 6, nuisance: 6, flood: 7, school: 6, radar: 6, nav: 8, compass: 4, oldnew: 6 };
+
+  /* ───────── 21 生活機能地圖 ───────── */
+  const AMENITY: [RegExp, string, string][] = [
+    [/超市|量販|賣場|便利/, '#e67e22', '購'],
+    [/學|校|幼兒|托/, '#4e79a7', '學'],
+    [/公園|綠地|運動|河濱/, '#2f9e6f', '園'],
+    [/醫院|診所|藥/, '#e53935', '醫'],
+    [/捷運|車站|公車|轉運|交通/, '#8e44ad', '交'],
+    [/餐|美食|商圈|市場|百貨/, '#c0392b', '食'],
+    [/銀行|郵局|公所|圖書/, '#16a085', '公'],
+  ];
+  const amenity = (x: CanvasRenderingContext2D, W: number, H: number, w: string[], t: number, L: number, o: Opt) => {
+    const lines = (w.length ? w : ['超市 某某超市 4', '學校 某某國小 6', '公園 中央公園 3', '醫院 某某醫院 9', '捷運 某某站 8', '餐飲 美食街 5']).slice(0, 10);
+    const items = lines.map((l, i) => {
+      const parts = l.trim().split(/\s+/), mins = /^\d+(\.\d+)?$/.test(parts[parts.length - 1] ?? '') ? Number(parts.pop()) : 5;
+      const cat = parts[0] ?? '', name = parts.slice(1).join(' ') || cat;
+      const def = AMENITY.find(([re]) => re.test(cat)) ?? [/./, PAL(o)[i % 8], [...cat][0] ?? '・'];
+      return { cat, name, mins, c: def[1], g: def[2] };
+    });
+    const cam = { x: W > H ? 0.62 : 0.5, y: H > W ? 0.6 : 0.5, z: 1.05 }, { P, k } = projector(W, H, cam), u = Math.min(W, H);
+    drawBase(x, W, H, cam, 151);
+    const [CX, CY] = P(0.5, 0.5), per = (Math.min(W, H) / 2 / k) * (W > H ? 0.5 : 0.42);
+    // 步行 5／10 分鐘圈
+    [5, 10].forEach((mm, i) => {
+      const g = ease(seg(t, L * (0.06 + i * 0.08), L * (0.2 + i * 0.08))), R = (mm / 10) * per * 2 * k * g;
+      x.beginPath();
+      x.arc(CX, CY, R, 0, TAU);
+      x.fillStyle = rgba(o.ac, i ? 0.06 : 0.1);
+      x.fill();
+      x.setLineDash([u * 0.018, u * 0.012]);
+      x.strokeStyle = rgba(o.ac, 0.8);
+      x.lineWidth = u * 0.005;
+      x.stroke();
+      x.setLineDash([]);
+      if (g > 0.9) label(x, CX, CY - R, `步行 ${mm} 分`, u * 0.03, o, '#ffffff', o.ac, g, 'center');
+    });
+    pin(x, CX, CY, u * 0.03, o.ac, back(seg(t, 0, L * 0.1)));
+    // 設施：方向平均分布，距離依分鐘
+    items.forEach((it, i) => {
+      const a = (i / items.length) * TAU - Math.PI / 2 + 0.3, d = Math.max(0.42, Math.min(1.15, it.mins / 10)) * per * 2 * k;
+      const X = CX + Math.cos(a) * d, Y = CY + Math.sin(a) * d * (H > W ? 1.2 : 0.85), s = back(seg(t, L * (0.25 + i * 0.06), L * (0.33 + i * 0.06)));
+      if (s <= 0) return;
+      x.beginPath();
+      x.moveTo(CX, CY);
+      x.lineTo(CX + (X - CX) * Math.min(1, s), CY + (Y - CY) * Math.min(1, s));
+      x.strokeStyle = rgba(it.c, 0.45);
+      x.lineWidth = u * 0.004;
+      x.stroke();
+      dot(x, X, Y, u * 0.04 * s, '#ffffff');
+      dot(x, X, Y, u * 0.033 * s, it.c);
+      x.fillStyle = '#ffffff';
+      x.font = fontOf(o, u * 0.034 * s);
+      x.textAlign = 'center';
+      x.textBaseline = 'middle';
+      x.fillText(it.g, X, Y + u * 0.002);
+      label(x, X, Y - u * 0.04, `${it.name} · ${it.mins} 分`, u * 0.03, o, INK, '#ffffff', seg(t, L * (0.3 + i * 0.06), L * (0.38 + i * 0.06)));
+    });
+    // 分類摘要
+    const cats = [...new Map(items.map((it) => [it.g, it])).values()];
+    legend(x, W, H, cats.map((c, i) => ({ c: c.c, n: `${c.cat} ${items.filter((v) => v.g === c.g).length} 處 · 最近 ${Math.min(...items.filter((v) => v.g === c.g).map((v) => v.mins))} 分`, a: seg(t, L * (0.72 + i * 0.03), L * (0.8 + i * 0.03)) })), o);
+    note(x, W, H, '位置為示意，步行時間請以實測為準', o);
+  };
+
+  const MODES: Record<string, (x: CanvasRenderingContext2D, W: number, H: number, w: string[], t: number, L: number, o: Opt) => void> = {
+    taiwan, split, race, tour, spot, phase, future, zoning, parcel, choro: dataMap('choro'), bubble: dataMap('bubble'), bars: dataMap('bars'), nuisance, flood, school, radar, nav, compass, oldnew, drive, amenity,
+  };
+  const LOOPS: Record<string, number> = { drive: 9, amenity: 7, taiwan: 6, split: 6, race: 7, tour: 7, spot: 8, phase: 6, future: 7, zoning: 6, parcel: 5, choro: 6, bubble: 6, bars: 6, nuisance: 6, flood: 7, school: 6, radar: 6, nav: 8, compass: 4, oldnew: 6 };
   /** 畫一格；回傳循環秒數 */
   const draw = (ctx: CanvasRenderingContext2D, W: number, H: number, mode: string, words: string[], t: number, o: Opt): number => {
     const L = LOOPS[mode] ?? 6, f = MODES[mode];
