@@ -10,3 +10,4 @@
   - `src/prompts.ts`：下載 HTML 帶 `data-fw`；提示詞寫出所選字體與字重。
   - `src/effects/texture.ts`、`switch.ts`：canvas 文字改讀 `--fw`。
 - 驗證：`npm run build` 通過；Playwright 截圖 7 張（原狀＋2 字體×3 字重）於 `out/font-picker/`，確認瀏覽器只下載所選字重（例：明體細只載 Noto Serif TC 300）。
+- 補強（主代理）：Combo 場景加 `face`／`weight`（驗證、加入 Combo、播放與匯出 HTML 的 `data-fw`）；截圖移出 git。

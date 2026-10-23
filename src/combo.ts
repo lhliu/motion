@@ -7,7 +7,7 @@ import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, toneVars, vars
 import type { Ratio } from './prompts';
 import type { Fx, Palette, Tone } from './types';
 import { esc } from './util';
-import { FONT_IDS, fontPack } from './fonts';
+import { FACE_IDS, FONT_IDS, fontPack, WEIGHT_IDS } from './fonts';
 import { isPhotoFx, MODULE_INFO, type PScene } from './photokit';
 import { isObjFx, OBJ_INFO, type OScene } from './objkit';
 
@@ -23,6 +23,10 @@ export interface ComboScene {
   tone?: Tone;
   /** 字型組合代碼，省略＝跟著 Combo 的 font */
   font?: string;
+  /** 字體選擇器：hei｜ming，省略＝跟字型組合 */
+  face?: string;
+  /** 字重：bold｜medium｜light，省略＝特效原字重 */
+  weight?: string;
   note?: string;
 }
 
@@ -79,6 +83,8 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
       ...(Number.isFinite(sec) && sec > 0 ? { seconds: Math.min(20, Math.max(0.8, Math.round(sec * 10) / 10)) } : {}),
       ...(tone ? { tone } : {}),
       ...(font ? { font } : {}),
+      ...(FACE_IDS.includes(r.face as never) ? { face: r.face as string } : {}),
+      ...(WEIGHT_IDS.includes(r.weight as never) ? { weight: r.weight as string } : {}),
       ...(str(r.note, 200) ? { note: str(r.note, 200) } : {}),
     };
   });
@@ -198,7 +204,7 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean } = {}
       const fx = findEffect(s.effect);
       if (!fx) return null;
       const words = s.words?.length ? s.words : fx.sample;
-      return { fx, words, ms: Math.round(sceneSeconds(s) * 1000), vars: varsCss(toneVars(pal, s.tone ?? fx.tone, s.font ?? c.font)) };
+      return { fx, words, ms: Math.round(sceneSeconds(s) * 1000), vars: varsCss(toneVars(pal, s.tone ?? fx.tone, s.font ?? c.font, { face: s.face, weight: s.weight })) };
     })
     .filter((s): s is NonNullable<typeof s> => !!s);
   const templates = scenes.map((s, i) => `<template id="t${i}">${s.fx.html(s.words)}</template>`).join('\n');
@@ -249,7 +255,7 @@ function show(){
   const sc=SCENES[i];
   const el=document.createElement('div');
   el.className='fx fx-'+sc.id;
-  el.setAttribute('style',sc.vars);
+  el.setAttribute('style',sc.vars);var fw=/--fw:(\\d+)/.exec(sc.vars);if(fw)el.dataset.fw=fw[1];
   el.innerHTML=document.getElementById('t'+i).innerHTML;
   if(cur&&TRANSITION!=='cut')el.classList.add('in-'+TRANSITION);
   const prev=cur,prevClean=curClean;

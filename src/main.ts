@@ -1144,7 +1144,7 @@ const combos = initCombos({
 });
 $('#dAddCombo').addEventListener('click', () => {
   const same = d.words.join('\n') === d.fx.sample.join('\n');
-  combos.addScene({ effect: d.fx.id, ...(d.fx.cat === 'diagram' || d.fx.preferredRatio ? { ratio: d.ratio } : {}), ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}), ...(state.font !== 'sharp' ? { font: state.font } : {}) });
+  combos.addScene({ effect: d.fx.id, ...(d.fx.cat === 'diagram' || d.fx.preferredRatio ? { ratio: d.ratio } : {}), ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}), ...(state.font !== 'sharp' ? { font: state.font } : {}), ...(state.face ? { face: state.face } : {}), ...(state.weight ? { weight: state.weight } : {}) });
 });
 
 const studio = initStudio({ toast, copy, addScene: (sc) => combos.addScene(sc), store });
