@@ -136,6 +136,8 @@ const comboView = (c: Combo, origin: string, withHtml = false) => ({
   }).filter(Boolean),
   notes: c.notes ?? null,
   play_url: linkFor(origin, c),
+  render_url: `${origin}/c/${c.id ?? '_'}?hud=0&loop=0${c.id ? '' : `&d=${encodeCombo(c)}`}`,
+  local_render: `整支輸出影片：在使用者電腦用 Playwright 開 render_url（無進度條、不循環），viewport 設成 ${c.ratio === '9:16' ? '1080×1920' : c.ratio === '1:1' ? '1080×1080' : '1920×1080'}，context 開 recordVideo（size 同 viewport），等 ${Math.ceil(totalSeconds(c) + 1.5)} 秒後關閉 context 取得 WebM；要逐格 PNG 就改成每 1/30 秒截圖。不要自己重寫動畫。`,
   created_at: c.created_at ?? null,
   updated_at: c.updated_at ?? null,
   ...(withHtml ? { html: comboHtml(c) } : {}),

@@ -13,6 +13,7 @@ import { FONT_PACKS } from './fonts';
 import { unpackJson } from './presets';
 import { scriptToCombo } from './script-combo';
 import { detectBeat, fitToBeat, parseSrt, srtScenes, type Beat } from './combo-tools';
+import { saveBlob, stamp } from './export-kit';
 
 export interface ComboDeps {
   toast: (msg: string) => void;
@@ -209,6 +210,65 @@ export const initCombos = (deps: ComboDeps) => {
     saveDraft();
     renderDraft();
     deps.toast(skipped ? `已產生 20 段草稿（後面 ${skipped} 段超過上限，可拆成兩支）` : `已產生 ${combo.scenes.length} 段草稿，逐段檢查特效與數字`);
+  });
+
+  /* 錄製整支：分頁擷取裁切到播放框（Chrome 的 Region Capture），有配樂就一起錄進去 */
+  $('#drRecord').addEventListener('click', async () => {
+    if (!draft.scenes.length) return deps.toast('草稿還是空的');
+    const md = navigator.mediaDevices as MediaDevices & { getDisplayMedia?: MediaDevices['getDisplayMedia'] };
+    const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+    if (!md?.getDisplayMedia || !mime) return deps.toast('這個瀏覽器不支援錄製，請用電腦版 Chrome');
+    const combo = draftCombo().combo;
+    const total = totalSeconds(combo);
+    const [rw, rh] = { '16:9': [16, 9], '9:16': [9, 16], '1:1': [1, 1] }[combo.ratio ?? '16:9'];
+    const k = Math.min((innerWidth - 32) / rw, (innerHeight - 64) / rh);
+    const wrap = document.createElement('div');
+    wrap.className = 'rec-wrap';
+    wrap.innerHTML = `<iframe title="錄製中" sandbox="allow-scripts" style="width:${Math.floor(rw * k)}px;height:${Math.floor(rh * k)}px"></iframe><p>錄製中，約 ${total} 秒；畫面解析度跟視窗大小有關，視窗開越大越清楚</p><button class="btn-ghost">停止</button>`;
+    document.body.appendChild(wrap);
+    const frame = wrap.querySelector('iframe')!;
+    let stream: MediaStream | null = null;
+    const cleanup = () => {
+      stream?.getTracks().forEach((t) => t.stop());
+      wrap.remove();
+    };
+    try {
+      stream = await md.getDisplayMedia({ video: { frameRate: 30 }, audio: false, preferCurrentTab: true, selfBrowserSurface: 'include' } as DisplayMediaStreamOptions);
+      const [track] = stream.getVideoTracks();
+      const CT = (window as unknown as { CropTarget?: { fromElement: (el: Element) => Promise<unknown> } }).CropTarget;
+      if (CT && 'cropTo' in track) await (track as unknown as { cropTo: (t: unknown) => Promise<void> }).cropTo(await CT.fromElement(frame));
+      else deps.toast('這個瀏覽器無法只錄播放框，會錄到整個分頁');
+      const tracks = [...stream.getVideoTracks()];
+      let actx: AudioContext | null = null;
+      if (audio) {
+        actx = new AudioContext();
+        const dest = actx.createMediaStreamDestination();
+        const el = new Audio(audio.src);
+        actx.createMediaElementSource(el).connect(dest);
+        el.currentTime = beat?.offset ?? 0;
+        tracks.push(...dest.stream.getAudioTracks());
+        frame.addEventListener('load', () => void el.play(), { once: true });
+      }
+      const rec = new MediaRecorder(new MediaStream(tracks), { mimeType: mime, videoBitsPerSecond: 16_000_000 });
+      const chunks: Blob[] = [];
+      rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+      const done = new Promise<void>((res) => (rec.onstop = () => res()));
+      rec.start(250);
+      frame.srcdoc = comboHtml(combo, { hud: false, loop: false });
+      const stopAt = setTimeout(() => rec.state !== 'inactive' && rec.stop(), total * 1000 + 900);
+      wrap.querySelector('button')!.addEventListener('click', () => rec.state !== 'inactive' && rec.stop());
+      track.addEventListener('ended', () => rec.state !== 'inactive' && rec.stop());
+      await done;
+      clearTimeout(stopAt);
+      void actx?.close();
+      saveBlob(new Blob(chunks, { type: 'video/webm' }), `combo-${stamp()}.webm`);
+      deps.toast('已輸出整支 WebM');
+    } catch (e) {
+      console.error(e);
+      deps.toast(e instanceof Error && e.name === 'NotAllowedError' ? '已取消錄製' : '錄製失敗，請用電腦版 Chrome 再試一次');
+    } finally {
+      cleanup();
+    }
   });
 
   let previewTimer = 0;

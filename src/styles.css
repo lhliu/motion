@@ -1749,6 +1749,32 @@ pre.code {
 .dr-s-body > label:first-child {
   grid-column: 1 / -1;
 }
+.rec-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  display: grid;
+  place-items: center;
+}
+.rec-wrap iframe {
+  border: 0;
+  display: block;
+  background: #000;
+}
+.rec-wrap p {
+  position: absolute;
+  left: 16px;
+  bottom: 12px;
+  margin: 0;
+  color: #999;
+  font-size: 12px;
+}
+.rec-wrap button {
+  position: absolute;
+  right: 16px;
+  bottom: 10px;
+}
 .dr-tools {
   display: flex;
   flex-wrap: wrap;
