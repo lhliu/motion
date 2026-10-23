@@ -457,7 +457,7 @@ export const TOOLS: ToolDef[] = [
           loop: a.duration as number,
           bg: a.bg as string,
           params: (a.params ?? {}) as OScene['params'],
-          text: { ...defaultObjScene(module).text, lines: Array.isArray(a.lines) ? a.lines.map(String) : [], layout: (a.layout as OScene['text']['layout']) ?? (module === 'ocean' ? (Array.isArray(a.lines) && a.lines.length ? 'below' : 'none') : ((module === 'cosmos' && !['planet', 'sun', 'moon', 'earth'].includes(String((a.params as { mode?: string } | undefined)?.mode))) || module === 'aerial' ? 'over' : 'below')), ...(a.text_color ? { color: String(a.text_color) } : {}), size: Number(a.text_size ?? 1) },
+          text: { ...defaultObjScene(module).text, lines: Array.isArray(a.lines) ? a.lines.map(String) : [], layout: (a.layout as OScene['text']['layout']) ?? (module === 'ocean' ? (Array.isArray(a.lines) && a.lines.length ? 'below' : 'none') : ((module === 'cosmos' && (!['planet', 'sun', 'moon', 'earth'].includes(String((a.params as { mode?: string } | undefined)?.mode)) || (a.params as { cam?: string } | undefined)?.cam === 'in')) || module === 'aerial' ? 'over' : 'below')), ...(a.text_color ? { color: String(a.text_color) } : {}), size: Number(a.text_size ?? 1) },
           ...(FONT_IDS.includes(a.font as never) && a.font !== 'sharp' ? { font: String(a.font) } : {}),
         },
         module,
@@ -624,7 +624,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
-地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、隕石／魔術方塊／星空宇宙（含太陽、月球、地球）／俯瞰空拍／交通工具／海底世界請用 build_object_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、隕石／魔術方塊／星空宇宙（含太陽、月球、地球、低空飛越；cam=in/out 推近拉遠）／俯瞰空拍／交通工具／海底世界請用 build_object_scene 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 字型：Combo 的 font（整支）與 scenes[].font（單段）可選字型組合，依段落情緒挑：數據、資訊、標題用 sharp（預設）；開箱、生活、通勤用 round；質感建案、片頭大標用 serif；旁白金句、心得用 hand；俏皮吐槽用 cute。一支影片以 2–3 組為限，同類段落維持同一組，避免每段都換。\n手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;
