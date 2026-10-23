@@ -321,15 +321,15 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
     lede: '水滴、魔術方塊、星空宇宙……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用；一行一句用 / 分隔',
-    hero: ['obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
+    hero: ['obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-cube-metal', 'obj-cosmos-stars', 'obj-cosmos-warp'],
   },
   illus: {
     small: '精修插畫主角',
     big: '插畫',
-    lede: '隕石、俯瞰、交通工具、海底世界……每一招都是<strong>精修插畫</strong>，主角、背景、配色都有<strong>專屬編輯</strong>，背景可透明直接疊進影片。',
+    lede: '星空物件、俯瞰、交通工具、海底世界……每一招都是<strong>精修插畫</strong>，主角、背景、配色都有<strong>專屬編輯</strong>，背景可透明直接疊進影片。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用',
-    hero: ['meteor-illustrated','aerial-illustrated-city','aerial-illustrated-grass','whale-illustrated', 'vehicle-illustrated-plane', 'ocean-illustrated-shark', 'vehicle-illustrated-ship', 'ocean-illustrated-fish'],
+    hero: ['cosmos-illustrated-orbit','cosmos-illustrated-flyover','cosmos-illustrated-earthzoom','meteor-illustrated','aerial-illustrated-city','aerial-illustrated-grass','whale-illustrated', 'vehicle-illustrated-plane', 'ocean-illustrated-shark', 'vehicle-illustrated-ship', 'ocean-illustrated-fish'],
   },
   chart: {
     small: '一行一筆數據就會動',
@@ -1238,7 +1238,6 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'text') return showKits(true);
   if (state.sec === 'plan') return planStudio.open();
   if(state.sec==='illus'){if(state.cat==='vehicle')return transportStudio.open();if(state.cat==='ocean')return illustrationStudio.open();return natureStudio.openMode(state.cat==='aerial'?'city':'meteor');}
-  if (state.sec === 'object'&&state.cat==='cosmos')return cosmicStudio.openMode('orbit');
   if (state.sec === 'object') return state.cat === 'liquid' ? studio.open() : objStudio.open(state.cat === 'cosmos' ? 'cosmos' : state.cat === 'cube' ? 'cube' : undefined);
   return state.sec === 'photo' ? photoStudio.open() : mapStudio.open();
 });

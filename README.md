@@ -7,8 +7,8 @@ https://motion.leichthub.com
 - **文字特效**（114 招）：依用途分 6 類（開場標題、字幕標註、資訊字卡、轉場切換、強調情緒、風格氛圍），原本的 13 個技法分類改當「風格」篩選；首頁最上方是建案片常用 12 招（`src/uses.ts`）
 - **圖片運鏡**（21 個模組）：單張運鏡（推拉、甩入、3D 卡片、視窗彈出、分層視差、手機框）、多張組合（前後對比、翻卡、拍立得、宮格、分割畫面）、標註轉場（放大鏡、影片定格標註、縮放穿越）、裁切與遮罩（遮罩揭露、切片錯位、拼塊組圖、撕紙揭露、剪報拼貼、形狀變換、前景遮擋換景）
 - **地圖區位**（15 招）：捷運鐵路路網（單線路網、路線條、多線路網：轉乘站、焦點站、鐵路黑白線、規劃中虛線、區域圈，文字行描述 `src/transit.ts`，本機渲染 `/r/transit.js`）；基地框（可加減角點做 L 形）、路名、資訊卡、資訊條、圓形標記（A棟/B棟）、通勤路線、放射路線；場景可加「太空降落」開場
-- **物件特效**（17 招）：水滴泡泡、魔術方塊、星空宇宙；工作室 `/?view=object`，MCP `build_object_scene`，本機渲染 `/r/obj.js`。隕石與俯瞰原版已隱藏保留，精修版移入插畫工作區。
-- **插畫**（20 招）：精修隕石 1 招（編輯器切換四種樣式）、俯瞰 8 招（`src/nature.ts`，MCP `build_nature_scene`）、交通工具 4 招（開車上路 #237、馬車旅行 #238、火車捷運 #241 依既有設定隱藏保留，`src/transport.ts`，MCP `build_transport_scene`）、海底世界 7 招（`src/illustration.ts`，MCP `build_illustration_scene`）；每招有獨立編輯設定。
+- **物件特效**（14 招）：水滴泡泡、魔術方塊、星空宇宙；工作室 `/?view=object`，MCP `build_object_scene`，本機渲染 `/r/obj.js`。隕石與俯瞰原版已隱藏保留，精修版移入插畫工作區。
+- **插畫**（23 招）：星空物件系列 4 招（天體 #169、星球飛越 #195、推近地球 #199、精修隕石 #244；隕石在編輯器切換四種樣式）、俯瞰 8 招（`src/nature.ts`，MCP `build_nature_scene`）、交通工具 4 招（開車上路 #237、馬車旅行 #238、火車捷運 #241 依既有設定隱藏保留，`src/transport.ts`，MCP `build_transport_scene`）、海底世界 7 招（`src/illustration.ts`，MCP `build_illustration_scene`）；每招有獨立編輯設定。
 - **圖表特效**（20 招）：直條、堆疊直條、橫條、排名、瀑布、折線、區域、組合（雙軸）、圓餅、環圈、儀表板、進度環、象形圖、樹狀、旭日、漏斗、盒鬚、XY 散佈、泡泡、雷達；數據一行一筆「標籤 數值」（`src/chart.ts`，本機渲染 `/r/chart.js`），全站預覽文字只換標題
 - **格局**（7 招）：戶別定位、公設導覽、逐間高亮、看屋動線、單房聚焦、戶型比較、平面立體傾斜；格局工作室 `/?view=plan` 放入建商平面圖、拉框或多邊形標房間、點動線，自動抓平面圖範圍（去掉 DM 留白與 Logo），可手動調整；MCP `build_plan_scene`，本機渲染 `/r/plan.js`（`src/plankit.ts`）。網站示範為程式畫的虛構戶型，真實 DM 只存在使用者自己的預設與 Combo
 - **套組**：獨立分頁 `/?ws=kits`，常見段落順序的現成 Combo（`src/uses.ts` 的 KITS）
@@ -39,17 +39,17 @@ https://motion.leichthub.com
 
 Combo 存的是預設當下的內容（快照）；預設更新後，請 AI 重新以 `{ "preset": 代碼 }` 存一次 Combo。
 
-### 星空宇宙・精修插畫
+### 星空物件系列・精修插畫
 
-星空宇宙保留三招星空背景，新增三招精修（仍在物件／星空宇宙）：
+三招精修宇宙效果與 #244 精修隕石合為「插畫 → 星空物件」系列（分類代碼沿用 `meteor`，共四招）。「物件 → 星空宇宙」只保留三招原有星空背景：
 
-- #253 `cosmos-illustrated-orbit`：行星光環、太陽、月球、地球在單一編輯器切換。球面材質自轉、地軸傾角與日照方向，環帶與衛星正確前後遮擋；依天體顯示環帶、雲層或日珥控制。
-- #254 `cosmos-illustrated-flyover`：地球、月球、火星、太陽地表在單一編輯器切換。細緻材質以地面透視投影推進，可調前進速度、飛行高度、地平線、弧度與鏡頭傾斜；月面天邊有地球，地球可加低雲。地表為示意插畫，太陽飛越為視覺想像。
-- #255 `cosmos-illustrated-earthzoom`：獨立推近地球，可調起訖倍率、聚焦位置、推近／拉遠、自轉、雲層及衛星。
+- #169 `cosmos-illustrated-orbit`：行星光環、太陽、月球、地球在單一編輯器切換。球面材質自轉、地軸傾角與日照方向，環帶與衛星正確前後遮擋；依天體顯示環帶、雲層或日珥控制。
+- #195 `cosmos-illustrated-flyover`：地球、月球、火星、太陽地表在單一編輯器切換。細緻材質以地面透視投影推進，可調前進速度、飛行高度、地平線、弧度與鏡頭傾斜；月面天邊有地球，地球可加低雲。地表為示意插畫，太陽飛越為視覺想像。
+- #199 `cosmos-illustrated-earthzoom`：獨立推近地球，可調起訖倍率、聚焦位置、推近／拉遠、自轉、雲層及衛星。
 
 三個編輯器 `/?view=cosmic-orbit|cosmic-flyover|cosmic-earthzoom` 各自記憶設定，前兩招的四種樣式也各自記憶，預設清單依編輯器分開。支援換色、五種背景、透明、比例、PNG、WebM、PNG 序列、JSON、編輯連結、預設及 Combo。透明飛越保留地面、天空透明。MCP `build_cosmos_scene` 使用 `mode=orbit|flyover|earthzoom`、`body=gas|sun|moon|earth|mars`（依 mode 限制），回傳設定、專屬參數與編輯連結。共用引擎 `/r/cosmos.js`：`MA_COSMOS.createRenderer(canvas,overlay,scene,assetOrigin)`，先 `await renderer.ready` 再逐格 `render(t,W,H)`；結束 `dispose()`。素材位於 `public/media/cosmos-illustrated/`，保留原始圖檔，材質由 Canvas 取樣，不加文字、投影、模糊或光暈。
 
-原版 #169、#185–187、#195–199 隱藏保留，編號、程式、舊連結、預設與 Combo 都維持相容。`/tests/cosmos-refined.html` 驗證目錄、九樣式、動態、時間重現、比例、透明度、控制項、MCP、預設、Combo 與獨立 HTML 一致。`python tests/cosmos-ui.py` 在本機 Pages 預覽驗證三個編輯器、樣式記憶、預設分類、Combo 返回、透明 PNG 與 WebM；預設網址為 `http://127.0.0.1:8793`。
+前台沿用 #169、#195、#199，各自有專屬編輯器；#185–187、#196–198 併入樣式切換。九招原版程式與明確 ID 引用保留，舊預設與 Combo 相容。前一版 #253–255 數字入口仍可開啟對應精修效果，但不再作為前台編號；已分配的內部 `no` 保留，`catalogNo` 與 `NUM` 提供前台編號，新增效果仍從內部最大編號 +1 分配。`/tests/cosmos-refined.html` 驗證目錄、九樣式、動態、時間重現、比例、透明度、控制項、MCP、預設、Combo 與獨立 HTML 一致。`python tests/cosmos-ui.py` 在本機 Pages 預覽驗證三個編輯器、樣式記憶、預設分類、Combo 返回、透明 PNG 與 WebM；預設網址為 `http://127.0.0.1:8793`。
 
 ### 隕石與俯瞰・精修插畫
 

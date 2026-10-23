@@ -11,8 +11,10 @@ def api(path,data=None,method=None):
 def rpc(name,args):
  r=api('/mcp',{'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':name,'arguments':args}})['result'];assert not r.get('isError'),r;return r['structuredContent']
 mode_bodies={'orbit':['gas','sun','moon','earth'],'flyover':['earth','moon','mars','sun'],'earthzoom':['earth']};prefixes={'orbit':'cs','flyover':'fs','earthzoom':'ez'}
-catalog=api('/api/effects?v='+str(time.time_ns()))['effects'];assert len(catalog)==217 and len([x for x in catalog if x['category']=='cosmos'])==6
-for no in [169,185,186,187,195,196,197,198,199]:assert rpc('get_effect',{'id':str(no),'format':'code'})['hidden'] is True
+catalog_response=api('/api/effects?v='+str(time.time_ns()));catalog=catalog_response['effects'];assert len([x for x in catalog if x['category']=='cosmos'])==3 and len([x for x in catalog if x['category']=='meteor'])==4;assert next(c for c in catalog_response['categories'] if c['id']=='meteor')['sec']=='illus'
+for mode,no in [('orbit',169),('flyover',195),('earthzoom',199)]:
+ r=rpc('get_effect',{'id':str(no),'format':'code'});assert r['id']=='cosmos-illustrated-'+mode and r['number']==no and not r.get('hidden')
+for no in [185,186,187,196,197,198]:assert rpc('get_effect',{'id':str(no),'format':'code'})['hidden'] is True
 for mode,bodies in mode_bodies.items():
  for body in bodies:
   r=rpc('build_cosmos_scene',{'mode':mode,'body':body,'speed':.6});assert r['scene']['mode']==mode and r['scene']['body']==body and r['combo_scene']['seconds']==20 and 'edit=cosmos' in r['edit_url']
@@ -28,7 +30,7 @@ try:
   def ready(prefix):page.wait_for_function('(p)=>document.querySelector("#"+p+"Loading")?.hidden',arg=prefix,timeout=45000)
   def field(prefix,key,v):page.locator('#'+prefix+'Controls [data-k="'+key+'"]').evaluate('(e,v)=>{e.value=String(v);e.dispatchEvent(new Event("input",{bubbles:true}))}',v)
   for mode,bodies in mode_bodies.items():
-   prefix=prefixes[mode];fx='cosmos-illustrated-'+mode;page.goto(base+'/?fx='+fx,wait_until='networkidle');page.locator('#dIllustrationStudio').click();ready(prefix);assert page.locator('#cosmic-'+mode+'-studio').is_visible();assert page.locator('#dObjStudio').is_hidden();assert page.locator('#'+prefix+'Styles [data-body]').count()==len(bodies)
+   prefix=prefixes[mode];fx='cosmos-illustrated-'+mode;page.goto(base+'/?fx='+str({'orbit':169,'flyover':195,'earthzoom':199}[mode]),wait_until='networkidle');page.locator('#dIllustrationStudio').click();ready(prefix);assert page.locator('#cosmic-'+mode+'-studio').is_visible();assert page.locator('#cosmic-'+mode+'-studio .cb-badge').inner_text()==str({'orbit':169,'flyover':195,'earthzoom':199}[mode]);assert page.locator('#dObjStudio').is_hidden();assert page.locator('#'+prefix+'Styles [data-body]').count()==len(bodies)
    for body in bodies:
     if len(bodies)>1:page.locator('#'+prefix+'Styles [data-body="'+body+'"]').click();ready(prefix)
     if mode=='orbit':
@@ -47,6 +49,9 @@ try:
   for mode,pid in pids:
    prefix=prefixes[mode];page.goto(base+'/?edit='+pid,wait_until='networkidle');ready(prefix);assert page.locator('#'+prefix+'Preset .pb-id').inner_text()==pid
    page.locator('#'+prefix+'Preset .pb-load').focus();page.wait_for_function('(p)=>document.querySelector("#"+p+"Preset .pb-load").options.length>1',arg=prefix);ids=page.locator('#'+prefix+'Preset option').evaluate_all('(xs)=>xs.map(x=>x.value).filter(Boolean)');assert pid in ids and all(other not in ids for other_mode,other in pids if other_mode!=mode);page.locator('#'+prefix+'Close').click()
+  page.goto(base+'/?ws=illus',wait_until='networkidle');page.locator('.cat[data-cat="meteor"]').click();assert '星空物件' in page.locator('.cat[data-cat="meteor"]').inner_text();cards=page.locator('.ma-card').evaluate_all('(xs)=>xs.map(x=>({id:x.dataset.id,no:x.querySelector(".ma-num").textContent}))');assert [(c['id'],c['no']) for c in cards]==[('cosmos-illustrated-orbit','169'),('cosmos-illustrated-flyover','195'),('cosmos-illustrated-earthzoom','199'),('meteor-illustrated','244')]
+  page.screenshot(path=str(out/'space-object-series.png'))
+  page.goto(base+'/?ws=object',wait_until='networkidle');page.locator('.cat[data-cat="cosmos"]').click();assert page.locator('.ma-card').count()==3 and page.locator('.ma-card[data-id^="cosmos-illustrated-"]').count()==0
   # The existing draft editor opens the correct specialized editor.
   page.goto(base+'/?view=draft',wait_until='networkidle');page.locator('#drScenes [data-act="studio"]').last.click();ready('ez');assert page.locator('#cosmic-earthzoom-studio').is_visible();page.locator('#ezClose').click()
   page.goto(base+'/?view=cosmic-orbit',wait_until='networkidle');ready('cs');field('cs','speed',2.5);page.locator('#csTransparent').check();ready('cs')

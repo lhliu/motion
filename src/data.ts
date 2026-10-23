@@ -30,7 +30,7 @@ export const SECTIONS: Section[] = [
   { id: 'photo', code: 'PHOTO', zh: '圖片', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
   { id: 'map', code: 'MAP', zh: '地圖', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
   { id: 'object', code: 'OBJECT', zh: '物件', en: 'Object Motion', desc: '水滴、魔術方塊、星空宇宙；一系列可調形狀材質的主角物件', studio: 'object' },
-  { id: 'illus', code: 'ILLUS', zh: '插畫', en: 'Illustration', desc: '精修插畫主角：隕石、俯瞰、交通工具、海底世界；每招有專屬編輯，可透明疊進影片' },
+  { id: 'illus', code: 'ILLUS', zh: '插畫', en: 'Illustration', desc: '精修插畫主角：星空物件、俯瞰、交通工具、海底世界；每招有專屬編輯，可透明疊進影片' },
   { id: 'chart', code: 'CHART', zh: '圖表', en: 'Chart Motion', desc: '直條、折線、圓餅、階層、統計、瀑布……一行一筆數據就會動' },
   { id: 'plan', code: 'PLAN', zh: '格局', en: 'Floor Plan', desc: '平面圖、單房、戶別定位、公設、立體傾斜；放建商平面圖就能動', studio: 'plan' },
   { id: 'explain', code: 'EXPLAIN', zh: '圖解', en: 'Explainer', desc: '工法、剖面、流程示意；一支一支客製，改圖請交給 AI' },
@@ -56,9 +56,9 @@ export const CATEGORIES: Category[] = [
   { id: 'map', sec: 'map', code: 'MAP', zh: '地圖區位', tagline: '把位置、距離、通勤講清楚' },
   { id: 'transit', sec: 'map', code: 'METRO', zh: '捷運鐵路路網', tagline: '路網圖、路線條、轉乘與規劃中路線' },
   { id: 'liquid', sec: 'object', code: 'DROP', zh: '水滴泡泡', tagline: '柔軟、透明、會呼吸' },
-  { id: 'meteor', sec: 'illus', code: 'METEOR', zh: '隕石', tagline: '一招精修隕石，編輯器切換四種樣式' },
+  { id: 'meteor', sec: 'illus', code: 'SPACE', zh: '星空物件', tagline: '天體、低空飛越、推近地球與隕石，四招各有獨立編輯器' },
   { id: 'cube', sec: 'object', code: 'CUBE', zh: '魔術方塊', tagline: '塑膠、金屬、花色、單色' },
-  { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '星空、光速、星系、行星' },
+  { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '閃爍星空、光速穿越、旋轉星系' },
   { id: 'aerial', sec: 'illus', code: 'AERIAL', zh: '俯瞰', tagline: '八種精修地景，各有專屬動態與運鏡' },
   { id: 'vehicle', sec: 'illus', code: 'VEHICLE', zh: '交通工具', tagline: '飛機、太空船、輪船、熱氣球，各有專屬編輯' },
   { id: 'ocean', sec: 'illus', code: 'OCEAN', zh: '海底世界', tagline: '七種精修海底場景，各有專屬編輯與透明輸出' },
@@ -131,15 +131,15 @@ ALL_EFFECTS.forEach((f) => {
   f.kw = f.tags;
   f.tags = canonTags(f.tags);
 });
-ALL_EFFECTS.sort((a, b) => secIdx(a) - secIdx(b) || (secIdx(a) === 0 ? useIdx(a) - useIdx(b) || useRank.get(a.id)! - useRank.get(b.id)! : 0) || order.indexOf(a.cat) - order.indexOf(b.cat));
+ALL_EFFECTS.sort((a, b) => secIdx(a) - secIdx(b) || (secIdx(a) === 0 ? useIdx(a) - useIdx(b) || useRank.get(a.id)! - useRank.get(b.id)! : 0) || order.indexOf(a.cat) - order.indexOf(b.cat) || (a.cat==='meteor'&&b.cat==='meteor'?(a.catalogNo??a.no)-(b.catalogNo??b.no):0));
 
 /** Public catalog: hidden originals still live in ALL_EFFECTS for saved references. */
 export const EFFECTS = ALL_EFFECTS.filter(f=>!f.hidden);
 
 export const secOf = (f: Fx): SecId => CATEGORIES.find((c) => c.id === f.cat)!.sec;
 
-/** 編號固定寫在各特效的 no，不隨排序或新增而改變 */
-export const NUM = new Map(ALL_EFFECTS.map((f) => [f.id, f.no]));
+/** 前台編號預設用 no；合併精修可用 catalogNo 沿用原入口，內部 no 永久保留。 */
+export const NUM = new Map(ALL_EFFECTS.map((f) => [f.id, f.catalogNo ?? f.no]));
 {
   const seen = new Map<number, string>();
   for (const f of ALL_EFFECTS) {

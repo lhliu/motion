@@ -3,8 +3,8 @@ import { esc } from '../util';
 import { fnSource } from '../engine';
 import { cosmicEngine, cosmicFromWords, COSMOS, type CosmicMode } from '../cosmos';
 export const COSMOS_GLOBALS=`globalThis.MA_COSMOS=${fnSource(cosmicEngine)}();`;
-export const illustratedCosmos:Fx[]=(Object.entries(COSMOS.modes) as [CosmicMode,typeof COSMOS.modes[CosmicMode]][]).map(([,info])=>({
- id:info.id,no:info.no,cat:'cosmos',zh:info.zh+'・精修插畫',en:info.en,desc:info.desc,
+export const illustratedCosmos:Fx[]=(Object.entries(COSMOS.modes) as [CosmicMode,typeof COSMOS.modes[CosmicMode]][]).map(([mode,info])=>({
+ id:info.id,no:({orbit:253,flyover:254,earthzoom:255})[mode],catalogNo:info.no,cat:'meteor',zh:info.zh+'・精修插畫',en:info.en,desc:info.desc,
  tags:['精修插畫','可疊影片','3D'],tone:'ink',sample:[],duration:12,preferredRatio:'9:16',added:'2026-10-23',
  hint:'按「編輯精修插畫」調整天體或飛越地表樣式、自轉、運鏡、大小、速度與配色；支援透明輸出。',
  motion:info.desc+'。分層精修插畫，各招有獨立編輯參數。可調整大小、速度、位置、方向、角度、配色、透明度與五種背景／環境。無文字入場，不加陰影、模糊或光暈。',

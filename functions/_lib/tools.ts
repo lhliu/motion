@@ -41,7 +41,7 @@ const natureResult = (raw:unknown,ctx:ToolCtx,title='隕石與俯瞰・精修插
 const cosmicResult=(raw:unknown,ctx:ToolCtx,title='星空宇宙・精修插畫')=>{
  const sc=normalizeCosmos(raw),combo_scene={effect:cosmicFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop};
  const {combo}=normalizeCombo({title,ratio:sc.ratio,transition:'cut',scenes:[combo_scene]});
- return{scene:sc,combo_scene,modes:COSMOS.modes,variants:COSMOS.variants(sc.mode).map(id=>({id,...COSMOS.bodies[id]})),backgrounds:COSMOS.backgrounds,params_doc:COSMOS.fieldsFor(sc),edit_url:editUrl(ctx.origin,{kind:'cosmos',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,local_render:`Load ${ctx.origin}/r/cosmos.js; const renderer=MA_COSMOS.createRenderer(canvas,overlayCanvas,scene,"${ctx.origin}"); await renderer.ready; renderer.render(t,W,H); renderer.dispose();`,next:'天體四樣式一招、低空飛越四地表一招、推近地球獨立一招。舊九招隱藏保留，精修地表為示意插畫；太陽飛越為視覺想像。將 combo_scene 放進 compose_combo / save_combo。'};
+ return{scene:sc,combo_scene,modes:COSMOS.modes,variants:COSMOS.variants(sc.mode).map(id=>({id,...COSMOS.bodies[id]})),backgrounds:COSMOS.backgrounds,params_doc:COSMOS.fieldsFor(sc),edit_url:editUrl(ctx.origin,{kind:'cosmos',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,local_render:`Load ${ctx.origin}/r/cosmos.js; const renderer=MA_COSMOS.createRenderer(canvas,overlayCanvas,scene,"${ctx.origin}"); await renderer.ready; renderer.render(t,W,H); renderer.dispose();`,next:'插畫／星空物件系列：#169 天體四樣式一招、#195 低空飛越四地表一招、#199 推近地球獨立一招，另有 #244 精修隕石。舊九招隱藏保留，精修地表為示意插畫；太陽飛越為視覺想像。將 combo_scene 放進 compose_combo / save_combo。'};
 };
 
 const FONT_HELP = `字型組合：${FONT_PACKS.map((f) => `${f.id}＝${f.zh}（${f.use}）`).join('；')}。省略＝sharp`;
@@ -788,7 +788,7 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
-export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分八個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位（含捷運／鐵路路網 transit-*）、物件特效（水滴、魔術方塊、星空宇宙）、插畫（精修插畫：隕石與俯瞰用 build_nature_scene、交通工具用 build_transport_scene、海底世界用 build_illustration_scene）、格局（plan-*：戶別定位、逐間高亮、看屋動線、單房聚焦、公設導覽、戶型比較、平面立體傾斜，用 build_plan_scene）、圖表特效（chart-* 共 20 種，words 一行一筆「標籤 數值」，格式見 get_effect 的 word_hint）、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
+export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分八個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位（含捷運／鐵路路網 transit-*）、物件特效（水滴、魔術方塊、星空宇宙）、插畫（星空物件系列：天體／飛越／推近地球用 build_cosmos_scene，隕石與俯瞰用 build_nature_scene、交通工具用 build_transport_scene、海底世界用 build_illustration_scene）、格局（plan-*：戶別定位、逐間高亮、看屋動線、單房聚焦、公設導覽、戶型比較、平面立體傾斜，用 build_plan_scene）、圖表特效（chart-* 共 20 種，words 一行一筆「標籤 數值」，格式見 get_effect 的 word_hint）、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
 你可以：查特效（search_effects / get_effect）、把多個特效組成 Combo 動畫（compose_combo），並存進 Combo 庫（save_combo）當作日後參考（list_combos / get_combo）。
 
 組 Combo 的建議流程：
