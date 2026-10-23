@@ -94,6 +94,19 @@ export const ALL_EFFECTS: Fx[] = [
   ...plans,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
+// 有 3D 效果（透視、3D 翻轉、立體厚度、等角視角、球體自轉）的招式統一加上「3D」標籤；新增 3D 招式時加進這裡
+const THREE_D = new Set([
+  'text-tunnel', 'ring-tunnel', 'text-orbit', 'text-cylinder', 'extrude', 'star-crawl', 'qa-card', 'flip-cards', 'blinds', 'domino', 'flip-chars', 'text-cube', 'text-corridor', 'paper-cut', 'synthwave',
+  'photo-tilt', 'photo-parallax', 'photo-flip',
+  'map-flyover',
+  'obj-cube-plastic', 'obj-cube-metal', 'obj-cube-pattern', 'obj-cube-mono', 'obj-cosmos-moon', 'obj-cosmos-earth', 'obj-cosmos-zoom-earth', 'obj-cosmos-flyby-earth', 'obj-cosmos-flyby-moon', 'obj-cosmos-flyby-mars', 'obj-cosmos-flyby-sun',
+  'plan-tilt',
+  'layer-section',
+]);
+ALL_EFFECTS.forEach((f) => {
+  if (THREE_D.has(f.id) && !f.tags.includes('3D')) f.tags = [...f.tags, '3D'];
+});
+
 // 文字特效：指定用途、標籤收斂成固定詞彙，並依用途重新排序（編號跟著用途走）
 const secIdx = (f: Fx) => ['text', 'photo', 'map', 'object', 'chart', 'plan', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
 const useIdx = (f: Fx) => USES.findIndex((u) => u.id === f.use);

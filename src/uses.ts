@@ -177,6 +177,7 @@ const TAG_GROUPS: Record<string, string> = {
   品牌: '品牌 Logo 徽章 店招',
   Shorts: 'Shorts Reels 社群',
   長片: '長片 YouTube 章節',
+  '3D': '3D 立體',
   可疊影片: '可疊影片',
 };
 const TAG_CANON = new Map<string, string>();
