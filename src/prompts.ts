@@ -21,6 +21,10 @@ const quoteWords = (w: string[]) => w.map((t) => `「${t}」`).join('、');
 const quoteWordsEn = (w: string[]) => w.map((t) => `"${t}"`).join(', ');
 
 export const buildPrompt = (fx: Fx, mode: PromptMode, words: string[], v: Vars, ratio: Ratio): string => {
+  if (fx.id === 'whale-illustrated' && mode !== 'code') {
+    if (mode === 'en' || mode === 'video') return `Create a ${ratioEn[ratio]}, 12-second illustrated whale encounter. ${fx.motionEn} Use the existing whale-illustrated effect or get_effect source and its supplied illustration assets. For an exact Motion Atlas preview/export, use the HTML implementation; generative video can only approximate the result. No added typography. This is a fixed illustrated scene.`;
+    return `請使用獨立特效 whale-illustrated（巨鯨經過・精修插畫），${ratioZh[ratio]}、完整 12 秒。\n${fx.motion}\n請用 get_effect 取得本招原始碼與既有插畫素材，保留相同動作與細節，不增加文字。這是固定插畫場景，可加入 compose_combo／save_combo；本招不使用 build_object_scene，請直接指定 effect="whale-illustrated"。匯出 HTML 需能載入網站提供的插畫素材。`;
+  }
   if (fx.cat === 'ocean' && mode !== 'code') {
     const sc = objSceneFromWords(words, 'ocean', { mode: fx.id.replace('obj-ocean-', '') });
     sc.ratio = ratio;

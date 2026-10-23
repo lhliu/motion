@@ -46,6 +46,7 @@ const summary = (f: Fx) => ({
   word_hint: f.hint ?? null,
   default_tone: f.tone,
   loop_seconds: loopSeconds(f),
+  ...(f.preferredRatio ? { preferred_ratio: f.preferredRatio } : {}),
   needs_js: !!f.run,
 });
 
@@ -230,7 +231,7 @@ export const TOOLS: ToolDef[] = [
       const pal = typeof a.accent === 'string' && /^#[0-9a-f]{6}$/i.test(a.accent) ? { ...base, accent: a.accent } : base;
       const words = Array.isArray(a.words) && a.words.length ? a.words.map(String) : fx.sample;
       const tone = ['ink', 'paper', 'accent'].includes(String(a.tone)) ? (a.tone as Fx['tone']) : fx.tone;
-      const ratio = (['16:9', '9:16', '1:1'].includes(String(a.ratio)) ? a.ratio : '16:9') as Ratio;
+      const ratio = (['16:9', '9:16', '1:1'].includes(String(a.ratio)) ? a.ratio : (fx.preferredRatio ?? '16:9')) as Ratio;
       const format = (['web', 'en', 'video', 'code'].includes(String(a.format)) ? a.format : 'web') as PromptMode;
       return {
         ...summary(fx),

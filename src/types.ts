@@ -46,6 +46,8 @@ export interface Fx {
   sample: string[];
   /** Canvas 等非 CSS 動畫的完整循環秒數；Combo 預設播放完整一輪。 */
   duration?: number;
+  /** 初次開啟詳細頁與加入空白 Combo 時的建議比例。 */
+  preferredRatio?: '9:16' | '16:9' | '1:1';
   /** 給 AI 的動態描述（中文） */
   motion: string;
   /** 給 AI 的動態描述（英文） */

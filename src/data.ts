@@ -16,6 +16,7 @@ import { liquid } from './effects/liquid';
 import { photo } from './effects/photo';
 import { diagram } from './effects/diagram';
 import { objects } from './effects/object';
+import { illustratedWhale } from './effects/illustrated';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
@@ -74,6 +75,7 @@ export const EFFECTS: Fx[] = [
   ...photo,
   ...diagram,
   ...objects,
+  illustratedWhale,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 文字特效：指定用途、標籤收斂成固定詞彙，並依用途重新排序（編號跟著用途走）

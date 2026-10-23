@@ -1,0 +1,66 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>精修巨鯨：獨立特效檢查</title>
+<style>body{margin:30px;background:#f3efe6;color:#183644;font:15px system-ui,sans-serif}#preview{position:relative;width:360px;height:640px;overflow:hidden}pre{white-space:pre-wrap}iframe{width:360px;height:640px;border:0}</style>
+<h1>巨鯨經過・精修插畫（獨立 #200）</h1><div id="preview"></div><pre id="results">檢查中…</pre>
+<script type="module">
+import { EFFECTS, secOf, PALETTES } from '/src/data.ts';
+import { mount, setSpeed, toneVars, loopSeconds } from '/src/engine.ts';
+import { buildPrompt, exportHtml } from '/src/prompts.ts';
+import { sceneSeconds, normalizeCombo, comboHtml } from '/src/combo.ts';
+import { TOOLS } from '/functions/_lib/tools.ts';
+import { isObjFx } from '/src/objkit.ts';
+const results=[];const check=(ok,m)=>{if(!ok)throw new Error(m)};
+const test=async(name,f)=>{try{await f();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}};
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const vars=toneVars(PALETTES[0],'ink');const fx=EFFECTS.find(f=>f.id==='whale-illustrated');
+let mounted;
+await test('新增獨立 #200，舊 #188–199 與 #190 保留',()=>{
+ check(fx.no===200&&fx.cat==='ocean'&&secOf(fx)==='object','Missing independent effect');
+ check(new Set(EFFECTS.map(f=>f.no)).size===EFFECTS.length,'Duplicate number');
+ check(EFFECTS.find(f=>f.id==='obj-ocean-whale').no===190,'Original whale replaced');
+ const modes=['fish','dolphins','whale','shark','coral','deep','submarine'];
+ modes.forEach((m,i)=>check(EFFECTS.find(f=>f.id===`obj-ocean-${m}`).no===188+i,'Old ocean effect changed'));
+ check(EFFECTS.filter(f=>f.no>=195&&f.no<=199).length===5,'Remote effects lost');
+ check(!isObjFx(fx.id),'Detailed scene incorrectly opens vector studio');
+ check(loopSeconds(fx)===12&&fx.preferredRatio==='9:16'&&!fx.sample.length,'Wrong default');
+});
+await test('素材載入與主視覺：不依賴 GSAP',async()=>{
+ mounted=mount(document.querySelector('#preview'),fx,[],vars,0);await wait(80);
+ check(await mounted.root.motionReady,'Assets or WebGL failed');
+ check(!window.gsap,'Unexpected GSAP dependency');
+ check(!mounted.root.querySelector('.iw-status').textContent,'Error shown');
+ const cv=mounted.root.querySelector('canvas');check(cv.width===360&&cv.height===640,'Bad initial size');
+ mounted.root.motionSeek(5);
+ const data=new Uint8Array(cv.width*cv.height*4);cv.getContext('webgl').readPixels(0,0,cv.width,cv.height,6408,5121,data);
+ check(data.some((v,i)=>i%4!==3&&v>100),'Blank frame');
+});
+await test('逐格 seek 可重現，且尾部與主角會隨時間改變',()=>{
+ const cv=mounted.root.querySelector('canvas'),r=mounted.root;r.motionSeek(3);const a=cv.toDataURL();r.motionSeek(7);const b=cv.toDataURL();r.motionSeek(3);check(a===cv.toDataURL(),'Non-deterministic');check(a!==b,'Static pose');r.motionSeek(5);
+});
+await test('三種比例均等比裁切與調整畫布',async()=>{
+ const host=document.querySelector('#preview');for(const [w,h] of [[320,180],[220,220],[360,640]]){host.style.width=w+'px';host.style.height=h+'px';await wait(60);const cv=mounted.root.querySelector('canvas');check(cv.width===w&&cv.height===h,'Resize failed');mounted.root.motionSeek(5)}
+});
+await test('獨立 HTML 匯出可播放、保留原始動畫細節',async()=>{
+ const html=exportHtml(fx,[],vars,'9:16');window.whaleExportHtml=html;
+ check(html.includes('/media/whale-illustrated/')&&!html.includes('gsap'),'Wrong export');
+ const iframe=document.createElement('iframe');iframe.setAttribute('sandbox','allow-scripts allow-same-origin');document.body.append(iframe);
+ const loaded=new Promise(resolve=>iframe.onload=resolve);iframe.srcdoc=html;await loaded;
+ const r=iframe.contentDocument.querySelector('.fx');check(await r.motionReady,'Export could not load');r.motionSeek(5);
+ check(r.querySelector('canvas').toDataURL()===mounted.root.querySelector('canvas').toDataURL(),'Export differs from live preview');
+ iframe.remove();
+});
+await test('Combo 保留完整十二秒與獨立 id',()=>{
+ const c=normalizeCombo({title:'精修巨鯨',ratio:'9:16',scenes:[{effect:fx.id}]});check(!c.errors.length,c.errors.join(';'));check(sceneSeconds(c.combo.scenes[0])===12,'Clipped duration');
+ window.whaleComboHtml=comboHtml(c.combo);check(window.whaleComboHtml.includes('whale-illustrated'),'Lost independent effect');
+});
+await test('提示詞與 MCP 指向獨立效果，沒有變回 #190',async()=>{
+ for(const mode of ['web','en','video']){const p=buildPrompt(fx,mode,[],vars,'9:16');check(p.includes('whale-illustrated')&&!p.includes('module="ocean"'),'Wrong prompt')}
+ const tool=TOOLS.find(t=>t.name==='get_effect');const r=await tool.run({id:'200',format:'code'},{origin:location.origin,request:new Request(location.origin+'/mcp'),env:{}});
+ check(r.id==='whale-illustrated'&&r.loop_seconds===12&&r.preferred_ratio==='9:16','Wrong MCP metadata');check(r.output.includes('aspect-ratio:9/16'),'Wrong MCP ratio');
+});
+await test('初始暫停、繼續與清理',async()=>{
+ const host=document.createElement('div');host.style.cssText='position:relative;width:180px;height:320px';document.body.append(host);const m=mount(host,fx,[],vars,0);await wait(30);check(await m.root.motionReady,'Load failed');
+ const cv=m.root.querySelector('canvas'),a=cv.toDataURL();await wait(80);check(a===cv.toDataURL(),'Pause ignored');setSpeed(m.root,1);await wait(120);check(a!==cv.toDataURL(),'Resume ignored');setSpeed(m.root,0);await wait(30);const b=cv.toDataURL();await wait(80);check(b===cv.toDataURL(),'Pause failed');
+ const gl=cv.getContext('webgl');m.stop();check(!m.root.motionSeek&&!m.root.motionReady,'Leaked seek API');check(gl.isContextLost(),'WebGL resource leak');host.remove();
+});
+window.illustratedWhaleResults=results;document.querySelector('#results').textContent=results.map(r=>`${r.passed?'PASS':'FAIL'} ${r.name}${r.error?' — '+r.error:''}`).join('\n');document.documentElement.dataset.result=results.every(r=>r.passed)?'pass':'fail';
+</script></html>

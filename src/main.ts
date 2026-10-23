@@ -840,7 +840,8 @@ const openDetail = (id: string, push = true) => {
   const fx = EFFECTS.find((f) => f.id === id);
   if (!fx) return;
   d.fx = fx;
-  if (fx.cat === 'diagram') d.ratio = '9:16';
+  if (fx.preferredRatio) d.ratio = fx.preferredRatio;
+  else if (fx.cat === 'diagram') d.ratio = '9:16';
   d.words = wordsFor(fx);
   d.tone = '';
   dWords.value = d.words.join('\n');
@@ -1051,7 +1052,7 @@ const combos = initCombos({
 });
 $('#dAddCombo').addEventListener('click', () => {
   const same = d.words.join('\n') === d.fx.sample.join('\n');
-  combos.addScene({ effect: d.fx.id, ...(d.fx.cat === 'diagram' ? { ratio: d.ratio } : {}), ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}), ...(state.font !== 'sharp' ? { font: state.font } : {}) });
+  combos.addScene({ effect: d.fx.id, ...(d.fx.cat === 'diagram' || d.fx.preferredRatio ? { ratio: d.ratio } : {}), ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}), ...(state.font !== 'sharp' ? { font: state.font } : {}) });
 });
 
 const studio = initStudio({ toast, copy, addScene: (sc) => combos.addScene(sc), store });

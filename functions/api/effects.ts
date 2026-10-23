@@ -21,6 +21,7 @@ export const onRequestGet = async () =>
         word_hint: f.hint ?? null,
         tone: f.tone,
         loop_seconds: loopSeconds(f),
+        ...(f.preferredRatio ? { preferred_ratio: f.preferredRatio } : {}),
         needs_js: !!f.run,
         motion_zh: f.motion,
         motion_en: f.motionEn,
