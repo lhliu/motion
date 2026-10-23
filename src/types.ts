@@ -81,7 +81,7 @@ export interface Fx {
 }
 
 /** 網站的工作區：文字特效、圖片運鏡、地圖區位、物件特效、圖表、圖解動畫 */
-export type SecId = 'text' | 'photo' | 'map' | 'object' | 'chart' | 'plan' | 'explain';
+export type SecId = 'text' | 'photo' | 'map' | 'object' | 'illus' | 'chart' | 'plan' | 'explain';
 
 export interface Section {
   id: SecId;

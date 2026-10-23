@@ -269,6 +269,7 @@ const SEC_ICON: Record<SecId, string> = {
   photo: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 8"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
   object: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M5.5 9.5c3 2 10 2 13 0M8 4.5l1.5 2M16 19.5l-1.5-2"/></svg>',
+  illus: '<svg viewBox="0 0 24 24"><path d="M4 20c2-1 3-3 3-5 0-2 2-3 3.5-2S12 16 10 18c-1.5 1.5-4 2-6 2z"/><path d="M10.5 13 19 4.5a1.8 1.8 0 0 1 2.5 2.5L13 15.5"/></svg>',
   chart: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   plan: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h9V3M12 12v9M16 12h5"/></svg>',
   explain: '<svg viewBox="0 0 24 24"><path d="M3 8l9-4 9 4-9 4z"/><path d="M3 12l9 4 9-4M3 16l9 4 9-4"/></svg>',
@@ -302,10 +303,18 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
   object: {
     small: '一系列可調的主角物件',
     big: '物件特效',
-    lede: '水滴、隕石、魔術方塊、星空宇宙、海底世界……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
+    lede: '水滴、隕石、魔術方塊、星空宇宙、俯瞰空拍……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用；一行一句用 / 分隔',
-    hero: ['vehicle-illustrated-car', 'vehicle-illustrated-plane', 'vehicle-illustrated-ship', 'whale-illustrated', 'ocean-illustrated-shark', 'ocean-illustrated-fish', 'obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
+    hero: ['obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
+  },
+  illus: {
+    small: '精修插畫主角',
+    big: '插畫',
+    lede: '交通工具、海底世界……每一招都是<strong>精修插畫</strong>，主角、背景、配色都有<strong>專屬編輯</strong>，背景可透明直接疊進影片。',
+    wb: '預覽文字',
+    ph: '輸入標題，全部卡片即時套用',
+    hero: ['vehicle-illustrated-car', 'whale-illustrated', 'vehicle-illustrated-plane', 'ocean-illustrated-shark', 'vehicle-illustrated-ship', 'ocean-illustrated-fish'],
   },
   chart: {
     small: '一行一筆數據就會動',
@@ -348,8 +357,8 @@ const renderHeroCopy = () => {
   $('#heroLede').innerHTML = h.lede;
   $('#wbLabel').textContent = h.wb;
   $<HTMLInputElement>('#userText').placeholder = h.ph;
-  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件工作室', chart: '複製「請 AI 用我的數據做圖表」的指令', plan: '打開格局工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
-  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '隕石、魔術方塊、星空；水滴在工作室裡切換', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
+  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件工作室', illus: '打開插畫編輯', chart: '複製「請 AI 用我的數據做圖表」的指令', plan: '打開格局工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
+  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '隕石、魔術方塊、星空；水滴在工作室裡切換', illus: '先選分類：交通工具或海底世界', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
   const n = secFx().length;
   $('#statFx').textContent = String(n);
   $('#statCat').textContent = String(CATEGORIES.filter((c) => c.sec === state.sec).length);
@@ -1190,8 +1199,7 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'chart') return copy(CHART_PROMPT, '已複製，貼給 Claude 並附上數據');
   if (state.sec === 'text') return showKits(true);
   if (state.sec === 'plan') return planStudio.open();
-  if(state.sec==='object'&&state.cat==='vehicle')return transportStudio.open();
-  if(state.sec==='object'&&state.cat==='ocean')return illustrationStudio.open();
+  if (state.sec === 'illus') return state.cat === 'ocean' ? illustrationStudio.open() : transportStudio.open();
   return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : objStudio.open();
 });
 // 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊
