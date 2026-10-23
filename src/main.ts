@@ -10,7 +10,7 @@ import { mount, setSpeed, toneVars, type Mounted } from './engine';
 import { buildPrompt, exportHtml, PROMPT_MODES, type PromptMode, type Ratio } from './prompts';
 import type { Fx, Palette, SecId, Tone } from './types';
 import { KITS, MOOD_PREVIEW, PICKS, TEXT_TAGS, USES } from './uses';
-import { FONT_IDS, FONT_PACKS, NUM_FONT_CSS, preloadFonts } from './fonts';
+import { FACE_IDS, FACES, FONT_IDS, FONT_PACKS, NUM_FONT_CSS, preloadFace, preloadFonts, WEIGHT_IDS, WEIGHTS } from './fonts';
 
 // 數字字型（Anton）在任何特效掛載前就先註冊，工作室的畫布才用得到
 document.head.insertAdjacentHTML('beforeend', `<style id="ma-num-font">${NUM_FONT_CSS}</style>`);
@@ -72,12 +72,23 @@ const state = {
     const f = store.get('font', 'sharp');
     return FONT_IDS.includes(f as never) ? f : 'sharp';
   })(),
+  /** 字體選擇器：'' ＝跟字型組合 */
+  face: (() => {
+    const f = store.get('face', '');
+    return FACE_IDS.includes(f as never) ? f : '';
+  })(),
+  /** 字重：'' ＝跟特效原設計 */
+  weight: (() => {
+    const w = store.get('weight', '');
+    return WEIGHT_IDS.includes(w as never) ? w : '';
+  })(),
   custom: store.get<string | null>('custom', null),
   play: store.get<PlayMode>('play', reduced ? 'hover' : 'auto'),
   favs: new Set<string>(store.get<string[]>('favs', [])),
 };
 let shuffleSeed = Math.random();
 
+const faceOpts = () => ({ face: state.face || undefined, weight: state.weight || undefined });
 const palette = (): Palette => {
   const base = PALETTES.find((p) => p.id === state.pal) ?? PALETTES[0];
   return state.custom ? { ...base, accent: state.custom } : base;
@@ -191,7 +202,7 @@ const renderSlot = (s: Slot) => {
   s.m?.stop();
   s.m = undefined;
   if (!s.visible) return;
-  const vars = toneVars(palette(), s.fx.tone, state.font);
+  const vars = toneVars(palette(), s.fx.tone, state.font, faceOpts());
   s.m = mount(s.host, s.fx, wordsFor(s.fx), vars);
   if (state.play === 'hover' && !s.hovered) {
     const m = s.m;
@@ -702,6 +713,25 @@ fontEl.addEventListener('change', async () => {
   heroShow(heroIdx, false);
   if (detail.open) renderDetail();
 });
+/* 字體選擇器：黑體／明體 × 粗／中／細，所有文字特效即時套用 */
+const faceEl = $<HTMLSelectElement>('#faceSel');
+const weightEl = $<HTMLSelectElement>('#weightSel');
+faceEl.innerHTML = `<option value="">跟字型組合</option>${FACES.map((f) => `<option value="${f.id}">${f.zh}</option>`).join('')}`;
+weightEl.innerHTML = `<option value="">原字重</option>${WEIGHTS.map((w) => `<option value="${w.id}">${w.zh}（${w.w}）</option>`).join('')}`;
+faceEl.value = state.face;
+weightEl.value = state.weight;
+const onFace = async () => {
+  state.face = faceEl.value;
+  state.weight = weightEl.value;
+  store.set('face', state.face);
+  store.set('weight', state.weight);
+  await preloadFace(state.face, state.weight, state.text.trim() || undefined);
+  refreshAll();
+  heroShow(heroIdx, false);
+  if (detail.open) renderDetail();
+};
+faceEl.addEventListener('change', onFace);
+weightEl.addEventListener('change', onFace);
 const playEl = $('#playMode');
 const renderPlay = () => playEl.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === state.play)));
 playEl.addEventListener('click', (e) => {
@@ -777,7 +807,7 @@ const heroShow = (i: number, advance = true) => {
   heroIdx = (i + list.length) % list.length;
   const fx = EFFECTS.find((f) => f.id === list[heroIdx])!;
   heroM?.stop();
-  heroM = mount(heroStage, fx, wordsFor(fx), toneVars(palette(), fx.tone, state.font));
+  heroM = mount(heroStage, fx, wordsFor(fx), toneVars(palette(), fx.tone, state.font, faceOpts()));
   heroLabel.textContent = `${pad(NUM.get(fx.id)!)} ${fx.zh} ${fx.en}`;
   heroLabel.dataset.id = fx.id;
   if (!advance) return;
@@ -821,7 +851,7 @@ const d = {
   rel: [] as Mounted[],
 };
 
-const dVars = () => toneVars(palette(), d.tone || d.fx.tone, state.font);
+const dVars = () => toneVars(palette(), d.tone || d.fx.tone, state.font, faceOpts());
 
 const renderStage = () => {
   d.m?.stop();
@@ -852,7 +882,7 @@ const renderRelated = () => {
     .join('');
   rel.querySelectorAll<HTMLElement>('button').forEach((b, k) => {
     const f = pick[k];
-    requestAnimationFrame(() => d.rel.push(mount(b.querySelector<HTMLElement>('.stage')!, f, wordsFor(f), toneVars(palette(), f.tone, state.font))));
+    requestAnimationFrame(() => d.rel.push(mount(b.querySelector<HTMLElement>('.stage')!, f, wordsFor(f), toneVars(palette(), f.tone, state.font, faceOpts()))));
   });
 };
 
@@ -1114,7 +1144,7 @@ const combos = initCombos({
 });
 $('#dAddCombo').addEventListener('click', () => {
   const same = d.words.join('\n') === d.fx.sample.join('\n');
-  combos.addScene({ effect: d.fx.id, ...(d.fx.cat === 'diagram' || d.fx.preferredRatio ? { ratio: d.ratio } : {}), ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}), ...(state.font !== 'sharp' ? { font: state.font } : {}) });
+  combos.addScene({ effect: d.fx.id, ...(d.fx.cat === 'diagram' || d.fx.preferredRatio ? { ratio: d.ratio } : {}), ...(same ? {} : { words: [...d.words] }), ...(d.tone ? { tone: d.tone } : {}), ...(state.font !== 'sharp' ? { font: state.font } : {}), ...(state.face ? { face: state.face } : {}), ...(state.weight ? { weight: state.weight } : {}) });
 });
 
 const studio = initStudio({ toast, copy, addScene: (sc) => combos.addScene(sc), store });

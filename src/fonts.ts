@@ -86,7 +86,7 @@ export const FONT_STACK = fontStack('sharp');
 
 /** Google Fonts 載入網址（所有字型組合） */
 export const FONT_FAMILIES_QS =
-  'family=Chiron+Hei+HK:wght@300;400;500;700;800;900&family=Chiron+GoRound+TC:wght@400;500;700;900&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@500;700;900&family=LXGW+WenKai+TC:wght@400;700&family=Huninn';
+  'family=Chiron+Hei+HK:wght@300;400;500;700;800;900&family=Chiron+GoRound+TC:wght@400;500;700;900&family=Noto+Sans+TC:wght@200;300;400;500;700;900&family=Noto+Serif+TC:wght@300;500;700;900&family=LXGW+WenKai+TC:wght@400;700&family=Huninn';
 
 /** 畫布在自給自足的 run 裡用字型組合代碼查字型（匯出 HTML 時一起內嵌） */
 export const FONTS_GLOBALS = `window.MA_FONTS=${JSON.stringify(Object.fromEntries(FONT_PACKS.map((f) => [f.id, f.stack])))};`;
@@ -96,4 +96,30 @@ export const FONTS_GLOBALS = `window.MA_FONTS=${JSON.stringify(Object.fromEntrie
 export const preloadFonts = (text = '基地位置0123456789', id?: string) => {
   const fams = id ? fontPack(id).families : ['MA Num', 'Chiron Hei HK'];
   return Promise.all([400, 500, 700, 900].flatMap((w) => fams.map((f) => document.fonts.load(`${w} 40px "${f}"`, f === 'MA Num' ? '0123456789' : text)))).catch(() => undefined);
+};
+
+/** 字體選擇器（KC 定案）：黑體／明體 × 粗／中／細，套用到所有文字特效 */
+export type FaceId = 'hei' | 'ming';
+export type WeightId = 'bold' | 'medium' | 'light';
+export const FACES: { id: FaceId; zh: string; family: string; stack: string; promptZh: string; promptEn: string }[] = [
+  { id: 'hei', zh: '黑體', family: 'Noto Sans TC', stack: '"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif', promptZh: '思源黑體 Noto Sans TC', promptEn: 'Noto Sans TC' },
+  { id: 'ming', zh: '明體', family: 'Noto Serif TC', stack: '"Noto Serif TC","PingFang TC","PMingLiU",serif', promptZh: '思源宋體 Noto Serif TC', promptEn: 'Noto Serif TC' },
+];
+export const WEIGHTS: { id: WeightId; zh: string; w: number }[] = [
+  { id: 'bold', zh: '粗', w: 900 },
+  { id: 'medium', zh: '中', w: 500 },
+  { id: 'light', zh: '細', w: 300 },
+];
+export const FACE_IDS = FACES.map((f) => f.id);
+export const WEIGHT_IDS = WEIGHTS.map((w) => w.id);
+export const faceOf = (id?: string) => FACES.find((f) => f.id === id);
+export const weightOf = (id?: string) => WEIGHTS.find((w) => w.id === id);
+
+/** 預載選定的字體與字重（Google Fonts 依 unicode-range 分片，只下載用到的字） */
+export const preloadFace = (face?: string, weight?: string, text = '基地位置0123456789') => {
+  const f = faceOf(face);
+  const w = weightOf(weight);
+  const fams = f ? [f.family] : ['Chiron Hei HK'];
+  const ws = w ? [w.w] : [300, 500, 900];
+  return Promise.all(ws.flatMap((x) => fams.map((fam) => document.fonts.load(`${x} 40px "${fam}"`, text)))).catch(() => undefined);
 };

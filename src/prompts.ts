@@ -2,8 +2,19 @@ import { isNatureFx, natureFromWords, NATURE } from './nature';
 import { isTransportFx, transportFromWords, TRANSPORT } from './transport';
 import { illustrationFromWords, isIllustrationFx, ILLUSTRATION } from './illustration';
 import type { Fx } from './types';
-import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
-import { fontPack } from './fonts';
+import { BASE_FX_CSS, fnSource, FONT_LINK, fwAttr, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
+import { faceOf, fontPack, weightOf } from './fonts';
+
+const faceZh = (v: Vars) => {
+  const f = faceOf(v.face);
+  const w = weightOf(v.weight);
+  return f ? `${f.promptZh}${w ? ` 字重 ${w.w}` : ''}（Google Fonts）` : fontPack(v.font).promptZh;
+};
+const faceEn = (v: Vars) => {
+  const f = faceOf(v.face);
+  const w = weightOf(v.weight);
+  return f ? `${f.promptEn}${w ? ` weight ${w.w}` : ''} (Google Fonts)` : fontPack(v.font).promptEn;
+};
 import { MODULE_INFO, photoSceneFromWords, type PModule } from './photokit';
 import { objSceneFromWords } from './objkit';
 
@@ -76,7 +87,7 @@ ${settings}
 【畫面】
 - 比例：${ratioZh[ratio]}，畫面置中、滿版，可以直接螢幕錄影使用
 - 文字內容：${quoteWords(words)}
-- 字體：${fontPack(v.font).promptZh}
+- 字體：${faceZh(v)}
 - 配色：背景 ${v.bg}、文字 ${v.fg}、強調色 ${v.ac}
 
 【動態】
@@ -96,7 +107,7 @@ ${fx.motion}
 SCENE
 - Aspect ratio: ${ratioEn[ratio]}, full-bleed and centered, ready for screen recording
 - Text: ${quoteWordsEn(words)}
-- Typeface: ${fontPack(v.font).promptEn} — the text may be Traditional Chinese
+- Typeface: ${faceEn(v)} — the text may be Traditional Chinese
 - Colors: background ${v.bg}, text ${v.fg}, accent ${v.ac}
 
 MOTION
@@ -151,7 +162,7 @@ ${css}
 </style>
 </head>
 <body>
-<div class="stage"><div class="fx fx-${fx.id}">${fx.html(words)}</div></div>${script}
+<div class="stage"><div class="fx fx-${fx.id}"${fwAttr(v)}>${fx.html(words)}</div></div>${script}
 </body>
 </html>
 `;
