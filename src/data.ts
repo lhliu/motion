@@ -19,6 +19,7 @@ import { objects } from './effects/object';
 import { illustratedOcean } from './effects/illustrated';
 import { transit } from './effects/transit';
 import { charts } from './effects/chart';
+import { plans } from './effects/plan';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
@@ -27,6 +28,7 @@ export const SECTIONS: Section[] = [
   { id: 'map', code: 'MAP', zh: '地圖區位', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
   { id: 'object', code: 'OBJECT', zh: '物件特效', en: 'Object Motion', desc: '水滴、隕石、魔術方塊、星空宇宙、海底世界；一系列可調形狀材質的主角物件', studio: 'object' },
   { id: 'chart', code: 'CHART', zh: '圖表特效', en: 'Chart Motion', desc: '直條、折線、圓餅、階層、統計、瀑布……一行一筆數據就會動' },
+  { id: 'plan', code: 'PLAN', zh: '格局', en: 'Floor Plan', desc: '平面圖、單房、戶別定位、公設、立體傾斜；放建商平面圖就能動', studio: 'plan' },
   { id: 'explain', code: 'EXPLAIN', zh: '圖解動畫', en: 'Explainer', desc: '工法、剖面、流程示意；一支一支客製，改圖請交給 AI' },
 ];
 
@@ -61,6 +63,8 @@ export const CATEGORIES: Category[] = [
   { id: 'cpie', sec: 'chart', code: 'PIE', zh: '圓形比例', tagline: '圓餅、環圈、儀表、進度環、象形圖' },
   { id: 'chier', sec: 'chart', code: 'TREE', zh: '階層流程', tagline: '樹狀、旭日、漏斗' },
   { id: 'cstat', sec: 'chart', code: 'STAT', zh: '統計散佈', tagline: '盒鬚、散佈、泡泡、雷達' },
+  { id: 'punit', sec: 'plan', code: 'UNIT', zh: '戶型導覽', tagline: '逐間高亮、看屋動線、單房聚焦、比較、立體' },
+  { id: 'pfloor', sec: 'plan', code: 'FLOOR', zh: '整層與公設', tagline: '戶別定位、公設導覽' },
   { id: 'diagram', sec: 'explain', code: 'DIAGRAM', zh: '工法剖面', tagline: '建材、管線、結構，一張剖面講清楚' },
 ];
 
@@ -87,10 +91,11 @@ export const ALL_EFFECTS: Fx[] = [
   ...illustratedOcean,
   ...transit,
   ...charts,
+  ...plans,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 文字特效：指定用途、標籤收斂成固定詞彙，並依用途重新排序（編號跟著用途走）
-const secIdx = (f: Fx) => ['text', 'photo', 'map', 'object', 'chart', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
+const secIdx = (f: Fx) => ['text', 'photo', 'map', 'object', 'chart', 'plan', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
 const useIdx = (f: Fx) => USES.findIndex((u) => u.id === f.use);
 // 同一用途內依 uses.ts 列出的順序（常用的在前）
 const useRank = new Map(Object.keys(USE_OF).map((id, i) => [id, i]));

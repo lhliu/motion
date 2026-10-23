@@ -30,7 +30,9 @@ export type CatId =
   | 'cline'
   | 'cpie'
   | 'chier'
-  | 'cstat';
+  | 'cstat'
+  | 'punit'
+  | 'pfloor';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';
@@ -79,7 +81,7 @@ export interface Fx {
 }
 
 /** 網站的工作區：文字特效、圖片運鏡、地圖區位、物件特效、圖表、圖解動畫 */
-export type SecId = 'text' | 'photo' | 'map' | 'object' | 'chart' | 'explain';
+export type SecId = 'text' | 'photo' | 'map' | 'object' | 'chart' | 'plan' | 'explain';
 
 export interface Section {
   id: SecId;
@@ -89,7 +91,7 @@ export interface Section {
   /** 一句話說明 */
   desc: string;
   /** 對應的工作室 */
-  studio?: 'photo' | 'map' | 'drop' | 'object';
+  studio?: 'photo' | 'map' | 'drop' | 'object' | 'plan';
 }
 
 export interface Category {

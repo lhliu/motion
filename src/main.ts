@@ -18,6 +18,8 @@ import { initMapStudio } from './map-studio';
 import { initPhotoStudio } from './photo-studio';
 import { isPhotoFx, photoSceneFromWords, type PModule } from './photokit';
 import { initObjectStudio } from './object-studio';
+import { initPlanStudio } from './plan-studio';
+import { isPlanFx, planFxMode, planSceneFromWords } from './plankit';
 import { isObjFx, objFxModule, objSceneFromWords, type OScene } from './objkit';
 import { comboHtml, findEffect } from './combo';
 import { sceneFromWords } from './effects/map';
@@ -266,6 +268,7 @@ const SEC_ICON: Record<SecId, string> = {
   map: '<svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
   object: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M5.5 9.5c3 2 10 2 13 0M8 4.5l1.5 2M16 19.5l-1.5-2"/></svg>',
   chart: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  plan: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h9V3M12 12v9M16 12h5"/></svg>',
   explain: '<svg viewBox="0 0 24 24"><path d="M3 8l9-4 9 4-9 4z"/><path d="M3 12l9 4 9-4M3 16l9 4 9-4"/></svg>',
 };
 const KITS_ICON = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/></svg>';
@@ -310,6 +313,14 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
     ph: '輸入標題，全部圖表即時套用；數據請在各卡片編輯',
     hero: ['chart-column', 'chart-line', 'chart-donut', 'chart-rank', 'chart-waterfall', 'chart-radar', 'chart-treemap', 'chart-gauge', 'chart-bubble', 'chart-funnel'],
   },
+  plan: {
+    small: '放建商平面圖就能動',
+    big: '格局',
+    lede: '戶別定位、逐間高亮、看屋動線、單房聚焦、戶型比較、立體傾斜……在<strong>格局工作室</strong>放入建商平面圖、拉框標出房間，就能做成動態；平面圖只在你的瀏覽器處理。卡片示範為<strong>虛構戶型</strong>，坪數請以建商資料或權狀為準。',
+    wb: '預覽標題',
+    ph: '輸入標題，全部卡片即時套用；第二行副標用 / 分隔',
+    hero: ['plan-locate', 'plan-tour', 'plan-tilt', 'plan-rooms', 'plan-focus', 'plan-compare', 'plan-amenity'],
+  },
   explain: {
     small: '一張剖面講清楚',
     big: '圖解動畫',
@@ -335,8 +346,8 @@ const renderHeroCopy = () => {
   $('#heroLede').innerHTML = h.lede;
   $('#wbLabel').textContent = h.wb;
   $<HTMLInputElement>('#userText').placeholder = h.ph;
-  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件工作室', chart: '複製「請 AI 用我的數據做圖表」的指令', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
-  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '隕石、魔術方塊、星空；水滴在工作室裡切換', chart: '貼給 Claude，附上數據與來源', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
+  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件工作室', chart: '複製「請 AI 用我的數據做圖表」的指令', plan: '打開格局工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
+  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '隕石、魔術方塊、星空；水滴在工作室裡切換', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
   const n = secFx().length;
   $('#statFx').textContent = String(n);
   $('#statCat').textContent = String(CATEGORIES.filter((c) => c.sec === state.sec).length);
@@ -847,6 +858,7 @@ const renderDetail = () => {
   $('#dStudio').hidden = fx.cat !== 'liquid';
   $('#dMapStudio').hidden = fx.cat !== 'map';
   $('#dPhotoStudio').hidden = !isPhotoFx(fx.id);
+  $('#dPlanStudio').hidden = !isPlanFx(fx.id);
   $('#dObjStudio').hidden = !isObjFx(fx.id)||isIllustrationFx(fx.id);
   $('#dIllustrationStudio').hidden = !isIllustrationFx(fx.id);
   dWords.closest('label')!.hidden = isIllustrationFx(fx.id);
@@ -1064,6 +1076,10 @@ const combos = initCombos({
       const data = sceneFromWords(words);
       return meta ? mapStudio.loadPreset({ ...meta, data }) : mapStudio.load(data);
     }
+    if (isPlanFx(effect)) {
+      const data = planSceneFromWords(words, planFxMode(effect));
+      return meta ? planStudio.loadPreset({ ...meta, data }) : planStudio.load(data);
+    }
     if (isPhotoFx(effect)) {
       const data = photoSceneFromWords(words, effect.slice(6) as PModule);
       return meta ? photoStudio.loadPreset({ ...meta, data }) : photoStudio.load(data);
@@ -1098,6 +1114,14 @@ $('#dPhotoStudio').addEventListener('click', () => {
   closeDetail();
   photoStudio.open(m);
 });
+const planStudio = initPlanStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc) });
+$('#dPlanStudio').addEventListener('click', () => {
+  const mode = planFxMode(d.fx.id);
+  const words = d.words;
+  closeDetail();
+  if (words.some((w) => w.trim().startsWith('{'))) planStudio.load(planSceneFromWords(words, mode));
+  else planStudio.open(mode);
+});
 const illustrationStudio=initIllustrationStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
 $('#dIllustrationStudio').addEventListener('click',()=>{const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
 const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open(), openIllustration: data => data ? illustrationStudio.load(data) : illustrationStudio.open() });
@@ -1122,8 +1146,8 @@ const openEdit = async () => {
   const edit = q.get('edit');
   if (!edit) return;
   const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) =>
-    p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : studio.loadPreset(p);
-  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration') {
+    p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : studio.loadPreset(p);
+  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan') {
     try {
       route({ kind: edit, name: '', data: decodeJson<PresetData>(q.get('d') ?? '') });
       toast('已載入 AI 產生的設定，調好後按「存成預設」');
@@ -1161,6 +1185,7 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'explain') return copy(EXPLAIN_PROMPT, '已複製，貼給 Claude Code 並附上草圖');
   if (state.sec === 'chart') return copy(CHART_PROMPT, '已複製，貼給 Claude 並附上數據');
   if (state.sec === 'text') return showKits(true);
+  if (state.sec === 'plan') return planStudio.open();
   if(state.sec==='object'&&state.cat==='ocean')return illustrationStudio.open();
   return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : objStudio.open();
 });

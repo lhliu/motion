@@ -4,13 +4,14 @@ import { parseDrop } from './drop';
 import { sceneLength, type MScene } from './mapkit';
 import { isPhotoFx, normalizePhotoScene, photoFxId, type PScene } from './photokit';
 import { isObjFx, normalizeObjScene, objFxId, objFxModule, type OScene } from './objkit';
+import { isPlanFx, normalizePlanScene, planFxId, planFxMode, planLength, planSceneFromWords, type PlanScene } from './plankit';
 
-export type PresetKind = 'map' | 'drop' | 'photo' | 'object' | 'illustration';
-export const PRESET_KINDS: PresetKind[] = ['map', 'drop', 'photo', 'object', 'illustration'];
-export const KIND_NAME: Record<PresetKind, string> = { map: '地圖場景', drop: '銳利水滴', photo: '圖片運鏡', object: '物件特效', illustration: '精修插畫' };
+export type PresetKind = 'map' | 'drop' | 'photo' | 'object' | 'illustration' | 'plan';
+export const PRESET_KINDS: PresetKind[] = ['map', 'drop', 'photo', 'object', 'illustration', 'plan'];
+export const KIND_NAME: Record<PresetKind, string> = { map: '地圖場景', drop: '銳利水滴', photo: '圖片運鏡', object: '物件特效', illustration: '精修插畫', plan: '格局' };
 
 /** map：MScene；drop：{ words: string[] }（文字行＋@設定行）；photo：PScene（images 通常留空，渲染時再填） */
-export type PresetData = MScene | { words: string[] } | PScene | OScene | IScene;
+export type PresetData = MScene | { words: string[] } | PScene | OScene | IScene | PlanScene;
 
 export interface Preset {
   id?: string;
@@ -37,6 +38,10 @@ export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, 
   if (p.kind === 'illustration') {
     const sc=normalizeIllustration(p.data);
     return {effect:illustrationFxId(sc.mode), words:[JSON.stringify(sc)], seconds:sc.loop, note};
+  }
+  if (p.kind === 'plan') {
+    const sc = normalizePlanScene({ ...(p.data as PlanScene), ...(o.images ? { images: o.images } : {}) });
+    return { effect: planFxId(sc.mode), words: [JSON.stringify(sc)], seconds: planLength(sc) + 0.5, ...(sc.font ? { font: sc.font } : {}), note };
   }
   if (p.kind === 'map') {
     const sc = p.data as MScene;
@@ -67,6 +72,7 @@ export const sceneToPresetData = (effect: string, words: string[]): { kind: Pres
     }
   }
   if (effect === 'crisp-drop') return { kind: 'drop', data: { words } };
+  if (isPlanFx(effect)) return { kind: 'plan', data: planSceneFromWords(words, planFxMode(effect)) };
   if (isObjFx(effect)) {
     const j = words.find((w) => w.trim().startsWith('{'));
     try {
@@ -97,6 +103,7 @@ export const checkPresetData = (kind: unknown, data: unknown): string => {
     if (!d.ratio) return '地圖場景缺少 ratio';
   }
   if (kind === 'photo' && !(data as Partial<PScene>).module) return '圖片運鏡缺少 module';
+  if (kind === 'plan' && !(data as Partial<PlanScene>).mode) return '格局缺少 mode';
   if (kind === 'object' && !(data as Partial<OScene>).module) return '物件特效缺少 module';
   if (kind === 'drop' && !Array.isArray((data as { words?: unknown }).words)) return '水滴設定缺少 words（文字行與 @設定行）';
   const size = JSON.stringify(data).length;
@@ -126,6 +133,8 @@ export const editUrl = (origin: string, p: { id?: string; kind: PresetKind; data
       ? { ...(p.data as MScene), bgUrl: (p.data as MScene).bgUrl?.startsWith('data:') ? undefined : (p.data as MScene).bgUrl }
       : p.kind === 'photo'
         ? { ...(p.data as PScene), images: (p.data as PScene).images.map((u) => (u.startsWith('data:') ? '' : u)) }
-        : p.data;
+        : p.kind === 'plan'
+          ? { ...(p.data as PlanScene), images: (p.data as PlanScene).images.map((u) => (u.startsWith('data:') ? '' : u)) }
+          : p.data;
   return `${origin}/?edit=${p.kind}&d=${encodeJson(data)}`;
 };

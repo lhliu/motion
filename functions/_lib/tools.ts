@@ -21,6 +21,7 @@ const illustrationResult = (raw:unknown,ctx:ToolCtx,title='海底世界・精修
 
 const FONT_HELP = `字型組合：${FONT_PACKS.map((f) => `${f.id}＝${f.zh}（${f.use}）`).join('；')}。省略＝sharp`;
 import { MODULE_INFO, normalizePhotoScene, PARAMS, photoFxId, PHOTO_MODULES, type PModule, type PScene } from '../../src/photokit';
+import { normalizePlanScene, PLAN_INFO, PLAN_MODES, planFxId, planLength, type PlanMode, type PlanScene } from '../../src/plankit';
 import type { Env } from './env';
 import { deleteCombo, getCombo, getPreset, listCombos, listPresets, saveCombo, savePreset } from './store';
 import { checkPresetData, editUrl, KIND_NAME, presetToScene, sceneToPresetData, type PresetKind } from '../../src/presets';
@@ -168,7 +169,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'list_categories',
     title: '列出分類與配色',
-    description: `列出 Motion Atlas 的工作區（文字特效、圖片運鏡、地圖區位、物件特效、圖表特效、圖解動畫）、${CATEGORIES.length} 個分類（共 ${EFFECTS.length} 招）、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。`,
+    description: `列出 Motion Atlas 的工作區（文字特效、圖片運鏡、地圖區位、物件特效、圖表特效、格局、圖解動畫）、${CATEGORIES.length} 個分類（共 ${EFFECTS.length} 招）、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。`,
     inputSchema: { type: 'object', properties: {} },
     annotations: { readOnlyHint: true },
     run: async () => ({
@@ -438,6 +439,62 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    name: 'build_plan_scene',
+    title: '組格局動態',
+    description: `用平面圖（建商 DM 原圖或內建虛構示意圖）做格局動態。模式：${PLAN_MODES.map((m) => `${m}＝${PLAN_INFO[m].zh}（${PLAN_INFO[m].desc}；圖片：${PLAN_INFO[m].slots.join('、')}）`).join('；')}。房間、動線用 0–1 的圖面座標（左上 0,0、右下 1,1），房間可給 rect [x0,y0,x1,y1] 或多邊形 pts。看得到平面圖時，請依圖估出各房間範圍；之後讓使用者用 edit_url 在格局工作室微調。坪數、尺寸只用建商資料或權狀，不要自己推算。`,
+    inputSchema: {
+      type: 'object',
+      required: ['mode'],
+      properties: {
+        mode: { type: 'string', enum: PLAN_MODES },
+        ratio: { type: 'string', enum: ['9:16', '16:9', '1:1'], description: '預設 9:16' },
+        images: { type: 'array', items: { type: 'string' }, description: '平面圖網址或本機相對路徑，依模式的圖片順序；留空＝內建虛構示意圖（連同示範房間）' },
+        rooms: { type: 'array', description: '第一張圖上的房間（戶別定位：整層的各戶；公設導覽：各區）', items: { type: 'object', required: ['name'], properties: { name: { type: 'string' }, sub: { type: 'string', description: '副標，例如坪數（需有來源）' }, rect: { type: 'array', items: { type: 'number' }, description: '[x0,y0,x1,y1]，0–1' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '多邊形頂點 [[x,y],...]，0–1' } } } },
+        rooms2: { type: 'array', description: '戶型比較：第二張圖上的房間，格式同 rooms；同名的房間會同時亮起', items: { type: 'object' } },
+        path: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '看屋動線 [[x,y],...]，第一點是入口，要經過門口、不要穿牆' },
+        target: { type: 'integer', description: '戶別定位、單房聚焦的目標房間序號（從 0 起）' },
+        title: { type: 'string' },
+        sub: { type: 'string', description: '副標，例如「27.82 坪（建商 DM）」' },
+        labelA: { type: 'string' },
+        labelB: { type: 'string' },
+        dimW: { type: 'string', description: '單房聚焦的寬度文字，例如「約 3.5 m」；沒有可查證數字就留空' },
+        dimH: { type: 'string' },
+        color: { type: 'string', description: '重點色 #RRGGBB' },
+        dim: { type: 'number', description: '壓暗程度 0–0.9，預設 0.55' },
+        speed: { type: 'number', description: '速度 0.4–2.5' },
+        walls: { type: 'number', description: '立體傾斜的牆高 0–2' },
+        note: { type: 'boolean', description: '右下角免責小字，預設 true' },
+        bg: { type: 'string', description: 'transparent 或 #hex；預設 #f4f1ea' },
+        font: { type: 'string', enum: FONT_IDS, description: FONT_HELP },
+      },
+    },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const mode = String(a.mode) as PlanMode;
+      if (!PLAN_MODES.includes(mode)) return { ok: false, error: `mode 必須是 ${PLAN_MODES.join('｜')}` };
+      const imgs = Array.isArray(a.images) ? a.images.map(String) : [];
+      const raw: Partial<PlanScene> & Record<string, unknown> = { mode, ratio: a.ratio as PlanScene['ratio'], bg: a.bg as string };
+      if (imgs.some(Boolean)) raw.images = imgs;
+      for (const k of ['rooms', 'rooms2', 'path', 'target', 'title', 'sub', 'labelA', 'labelB', 'dimW', 'dimH'] as const) if (a[k] !== undefined) raw[k] = a[k] as never;
+      raw.params = { color: a.color, dim: a.dim, speed: a.speed, walls: a.walls, note: a.note === false ? 0 : 1 } as unknown as PlanScene['params'];
+      if (FONT_IDS.includes(a.font as never) && a.font !== 'sharp') raw.font = String(a.font);
+      const sc = normalizePlanScene(raw, mode);
+      const seconds = planLength(sc) + 0.5;
+      const scene = { effect: planFxId(mode), words: [JSON.stringify(sc)], seconds, ...(sc.font ? { font: sc.font } : {}) };
+      const { combo } = normalizeCombo({ title: String(a.title ?? `${PLAN_INFO[mode].zh}預覽`), ratio: sc.ratio, transition: 'cut', scenes: [scene] });
+      const [W, H] = sc.ratio === '16:9' ? [1920, 1080] : sc.ratio === '1:1' ? [1080, 1080] : [1080, 1920];
+      return {
+        combo_scene: scene,
+        scene: sc,
+        seconds,
+        preview_url: `${ctx.origin}/?combo=${encodeCombo(combo)}`,
+        edit_url: editUrl(ctx.origin, { kind: 'plan', data: sc }),
+        local_render: `本機逐格渲染：在 HTML 載入 ${ctx.origin}/r/fonts.css 與 ${ctx.origin}/r/plan.js，等字型載入後用 <img> 載入本機平面圖，建立 ${W}×${H} 的 canvas，對每一格呼叫 MA_PLAN.drawPlan(ctx, W, H, scene, i / fps, [img1, img2])，存成 PNG 序列再用 ffmpeg 合成。動畫長度 ${seconds} 秒。`,
+        next: `把 combo_scene 放進 compose_combo / save_combo（ratio 設 ${sc.ratio}）。房間位置請給使用者 edit_url，在格局工作室上傳同一張平面圖後拖曳微調，存成預設再沿用。`,
+      };
+    },
+  },
+  {
     name: 'build_object_scene',
     title: '組物件特效',
     description: `物件特效（跟水滴同一系列，硬邊零模糊、可透明疊進影片）：${OBJ_MODULES.filter(m=>m!=='ocean').map((m) => `${m}＝${OBJ_INFO[m].zh}（${OBJ_INFO[m].desc}）`).join('；')}。回傳 combo_scene、各參數說明與編輯連結。水滴請用 build_drop_scene。`,
@@ -513,7 +570,7 @@ export const TOOLS: ToolDef[] = [
     name: 'list_presets',
     title: '列出預設',
     description: '列出使用者在網站工作室調好並存起來的預設（地圖場景、銳利水滴、圖片運鏡、物件特效、精修插畫）。使用者說「用 p7k2x」或「用外觀慢推那個」時，用這個查代碼。',
-    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
+    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
       const list = await listPresets(ctx.env, String(a.kind ?? ''), String(a.query ?? ''), Number(a.limit) || 50);
@@ -544,7 +601,7 @@ export const TOOLS: ToolDef[] = [
         name: { type: 'string', description: '好記的名稱，例如「外觀慢推_左到右」' },
         note: { type: 'string' },
         combo_scene: { type: 'object', description: 'build_map_scene / build_drop_scene / build_photo_scene 回傳的 combo_scene（擇一）' },
-        kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration'] },
+        kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan'] },
         data: { type: 'object', description: 'map：場景物件；drop：{ words: [...] }；photo：build_photo_scene 回傳的 scene（擇一）' },
       },
     },
@@ -650,7 +707,7 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
-export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分六個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位（含捷運／鐵路路網 transit-*）、物件特效（水滴、隕石、魔術方塊、星空宇宙、俯瞰空拍、交通工具、海底世界）、圖表特效（chart-* 共 20 種，words 一行一筆「標籤 數值」，格式見 get_effect 的 word_hint）、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
+export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分七個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位（含捷運／鐵路路網 transit-*）、物件特效（水滴、隕石、魔術方塊、星空宇宙、俯瞰空拍、交通工具、海底世界）、格局（plan-*：戶別定位、逐間高亮、看屋動線、單房聚焦、公設導覽、戶型比較、平面立體傾斜，用 build_plan_scene）、圖表特效（chart-* 共 20 種，words 一行一筆「標籤 數值」，格式見 get_effect 的 word_hint）、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
 你可以：查特效（search_effects / get_effect）、把多個特效組成 Combo 動畫（compose_combo），並存進 Combo 庫（save_combo）當作日後參考（list_combos / get_combo）。
 
 組 Combo 的建議流程：
