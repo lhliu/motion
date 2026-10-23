@@ -787,6 +787,55 @@ export const ui: Fx[] = [
   },
   {
     ...base,
+    id: 'estate-payment',
+    no: 312,
+    cat: 'estate',
+    zh: '付款比例表',
+    en: 'Payment Schedule',
+    desc: '預售屋付款階段：比例長條依序填滿，下方逐列列出各階段與比例',
+    tags: ['房產', '預售屋', '付款'],
+    tone: 'ink',
+    sample: ['付款比例（示意）', '訂金 2%', '簽約金 8%', '開工款 5%', '工程期款 5%', '交屋貸款 80%'],
+    hint: '第 1 行標題，之後一行一個階段「名稱 比例%」（可加第三欄金額或時間，例如「簽約金 8% 簽約時」）；比例請用建商提供的付款辦法',
+    motion: '上方標題淡入；下方一條粗框長條，依各階段比例分成幾段不同深淺的主色系色塊，由左到右一段一段填滿，寬的色塊裡標出百分比；長條下方逐列出現每個階段：左邊同色小方塊、階段名稱、補充說明，右邊等寬數字比例；最後一列下方顯示合計。全部硬邊、無陰影。',
+    motionEn: 'The title fades in; below, a thick-outlined bar is split by stage percentages into blocks of graded accent colors that fill one by one left to right, wider blocks labeled with their percentage; under the bar each stage appears row by row — a matching color square, the stage name and note on the left, the monospaced percentage on the right — with a total line at the end. Hard-edged, no shadows.',
+    css: `
+.S .g{width:min(90cqw,150cqh);display:grid;gap:4.4cqw}
+.S .ti{font-size:8.4cqw;line-height:1.2;animation:K_t 7s ease infinite both}
+.S .bar{display:flex;height:13cqw;border:.7cqw solid var(--fg);background:color-mix(in srgb,var(--fg) 8%,transparent)}
+.S .bar i{position:relative;width:var(--w);background:var(--c);transform:scaleX(0);transform-origin:0 50%;animation:K_b 7s cubic-bezier(.6,0,.3,1) infinite both;animation-delay:calc(.35s + var(--i)*.3s);display:grid;place-items:center;font:700 4.4cqw var(--mono);color:var(--bg);font-style:normal;overflow:hidden;white-space:nowrap}
+.S .bar i+i{border-left:.5cqw solid var(--bg)}
+.S .rows{display:grid;gap:3cqw}
+.S .rw{display:grid;grid-template-columns:5cqw 1fr auto;align-items:center;gap:3cqw;font-size:6.2cqw;opacity:0;animation:K_r 7s ease infinite both;animation-delay:calc(.5s + var(--i)*.3s)}
+.S .rw s{width:5cqw;height:5cqw;background:var(--c)}
+.S .rw small{display:block;font-size:3.8cqw;font-weight:500;opacity:.65;margin-top:.6cqw}
+.S .rw b{font:700 6.6cqw var(--mono)}
+.S .sum{border-top:.5cqw solid var(--fg);padding-top:2.6cqw;display:flex;justify-content:space-between;font-size:5.4cqw;opacity:0;animation:K_r 7s ease infinite both;animation-delay:var(--sd)}
+.S .sum b{font:700 6.6cqw var(--mono);color:var(--ac)}
+@container (min-aspect-ratio:1/1){.S .g{zoom:.62}}
+@keyframes K_t{0%{opacity:0}5%,94%{opacity:1}100%{opacity:0}}
+@keyframes K_b{0%{transform:scaleX(0)}6%,94%{transform:none}100%{transform:scaleX(0)}}
+@keyframes K_r{0%{opacity:0;transform:translateY(1.5cqw)}5%,94%{opacity:1;transform:none}100%{opacity:0}}`,
+    html: (w) => {
+      const ws = w.filter(Boolean).length ? w.filter(Boolean) : ['付款比例（示意）', '訂金 2%', '簽約金 8%', '開工款 5%', '工程期款 5%', '交屋貸款 80%'];
+      const head = /\d\s*[%％]/.test(ws[0]) ? '付款比例' : ws[0];
+      // 「名稱 比例%」進長條；「名稱 10萬」這種固定金額只列在清單、不進長條
+      const rows = (head === ws[0] ? ws.slice(1) : ws).slice(0, 7).map((l) => {
+        const m = /^(.*?)\s*(\d+(?:\.\d+)?)\s*[%％]\s*(.*)$/.exec(l.trim());
+        if (m) return { n: m[1], v: Number(m[2]), note: m[3], amt: '' };
+        const a = /^(.*?)\s*([\d.,]+\s*(?:萬|千|元|萬元))\s*(.*)$/.exec(l.trim());
+        return a ? { n: a[1], v: 0, note: a[3], amt: a[2].replace(/\s/g, '') } : { n: l, v: 0, note: '', amt: '' };
+      });
+      const sum = rows.reduce((a, r) => a + r.v, 0) || 1;
+      const cols = ['var(--ac)', 'var(--ac2)', 'color-mix(in srgb,var(--ac) 55%,var(--fg))', 'color-mix(in srgb,var(--ac2) 45%,var(--fg))', 'color-mix(in srgb,var(--ac) 35%,var(--bg))', 'color-mix(in srgb,var(--fg) 75%,var(--bg))', 'color-mix(in srgb,var(--ac2) 40%,var(--bg))'];
+      const pct = (v: number) => `${Math.round(v * 10) / 10}%`;
+      const bar = rows.filter((r) => r.v > 0).map((r, i) => `<i style="--w:${(r.v / sum) * 100}%;--c:${cols[rows.indexOf(r) % cols.length]};--i:${i}">${r.v / sum >= 0.09 ? pct(r.v) : ''}</i>`).join('');
+      const list = rows.map((r, i) => `<div class="rw" style="--i:${i};--c:${cols[i % cols.length]}"><s></s><span>${esc(r.n)}${r.note ? `<small>${esc(r.note)}</small>` : ''}</span><b>${r.amt ? esc(r.amt) : pct(r.v)}</b></div>`).join('');
+      return `<div class="g"><div class="ti">${esc(head)}</div><div class="bar">${bar}</div><div class="rows">${list}</div><div class="sum" style="--sd:${(0.5 + rows.length * 0.3).toFixed(2)}s"><span>合計</span><b>${pct(rows.reduce((a, r) => a + r.v, 0))}</b></div></div>`;
+    },
+  },
+  {
+    ...base,
     id: 'estate-progress',
     no: 282,
     cat: 'estate',

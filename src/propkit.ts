@@ -12,7 +12,7 @@ export const PROP_INFO: Record<PropModule, { zh: string; en: string; desc: strin
   house: { zh: '等角小屋', en: 'Isometric House', desc: '立體小房子從地基、牆面、屋頂依序蓋好，或夜晚窗戶輪流亮燈' },
   contract: { zh: '合約文件', en: 'Contract', desc: '合約滑入、簽名一筆一筆寫出、印章蓋下，或文件一頁頁翻過' },
   skyline: { zh: '城市天際線', en: 'City Skyline', desc: '大樓剪影由左到右長高，或天空由日轉夜、窗戶陸續亮燈' },
-  weather: { zh: '天氣', en: 'Weather', desc: '下雨、晴天、颱風、起霧四種天氣，配通勤、日照、漏水話題' },
+  weather: { zh: '天氣', en: 'Weather', desc: '下雨、晴天、颱風、起霧四種天氣，以及颱風路徑預報示意圖，配通勤、日照、漏水、防颱話題' },
   signal: { zh: '交通號誌', en: 'Traffic Signal', desc: '紅綠燈依序切換並倒數，或行人號誌小綠人走路配斑馬線' },
   plant: { zh: '植物綠地', en: 'Plants', desc: '盆栽發芽長葉，或行道樹春夏秋冬四季變色、落花落葉下雪' },
   clock: { zh: '時間', en: 'Time', desc: '沙漏流沙翻轉、時鐘快轉、日曆一頁頁撕掉' },
@@ -30,7 +30,7 @@ export const PROP_DEFAULTS: Record<PropModule, Record<string, number | string>> 
   house: { mode: 'build', floors: 2, color: '#f3efe6', color2: '#d64541', ...XY, y: 0.42 },
   contract: { mode: 'sign', color: '#ffffff', color2: '#d64541', ...XY, y: 0.42 },
   skyline: { mode: 'grow', count: 12, seed: 5, color: '#2b3a55', color2: '#ffd23f', ...XY, y: 0.42, size: 0.95 },
-  weather: { mode: 'rain', amount: 1, color: '#e9eef3', color2: '#5b9bd5', ...XY, y: 0.38 },
+  weather: { mode: 'rain', amount: 1, track: 'cross', color: '#e9eef3', color2: '#5b9bd5', ...XY, y: 0.38 },
   signal: { mode: 'light', count: 10, color: '#1d2433', color2: '#ffffff', ...XY, y: 0.42 },
   plant: { mode: 'grow', color: '#3aa04a', color2: '#c46a3a', ...XY, y: 0.42 },
   clock: { mode: 'hourglass', start: 1, color: '#f3efe6', color2: '#ff5a36', ...XY, y: 0.42 },
@@ -68,7 +68,7 @@ export const PROP_PARAMS: Record<PropModule, PField[]> = {
   house: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['build', '蓋房子'], ['night', '夜晚亮燈']] }, { k: 'floors', label: '樓層', type: 'range', min: 1, max: 3, step: 1 }, ...common('牆面', '屋頂')],
   contract: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['sign', '簽名蓋章'], ['flip', '翻頁']] }, ...common('紙張', '印章')],
   skyline: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['grow', '大樓長高'], ['daynight', '日夜切換']] }, { k: 'count', label: '大樓數', type: 'range', min: 5, max: 20, step: 1 }, { k: 'seed', label: '天際線變化', type: 'range', min: 1, max: 99, step: 1 }, ...common('大樓', '窗戶燈光')],
-  weather: [{ k: 'mode', label: '天氣', type: 'seg', opts: [['rain', '下雨'], ['sun', '晴天'], ['typhoon', '颱風'], ['fog', '起霧']] }, { k: 'amount', label: '強度', type: 'range', min: 0.3, max: 2, step: 0.05 }, ...common('雲／霧', '雨／陽光')],
+  weather: [{ k: 'mode', label: '天氣', type: 'seg', opts: [['rain', '下雨'], ['sun', '晴天'], ['typhoon', '颱風'], ['fog', '起霧'], ['forecast', '颱風路徑預報']] }, { k: 'track', label: '預報路徑（示意）', type: 'seg', opts: [['cross', '穿過台灣'], ['north', '北轉經東北'], ['south', '巴士海峽'], ['east', '東側北上']] }, { k: 'amount', label: '強度', type: 'range', min: 0.3, max: 2, step: 0.05 }, ...common('雲／霧', '雨／陽光')],
   signal: [{ k: 'mode', label: '號誌', type: 'seg', opts: [['light', '紅綠燈'], ['walk', '行人號誌']] }, { k: 'count', label: '倒數秒數', type: 'range', min: 3, max: 99, step: 1 }, ...common('燈箱', '倒數數字')],
   plant: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['grow', '盆栽發芽'], ['seasons', '四季行道樹']] }, ...common('葉子', '花盆／樹幹')],
   clock: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['hourglass', '沙漏'], ['clock', '時鐘快轉'], ['calendar', '撕日曆']] }, { k: 'start', label: '日曆起始日', type: 'range', min: 1, max: 31, step: 1 }, ...common('本體', '強調色')],
@@ -599,11 +599,167 @@ export const propRenderer = () => {
     return { cx, cy, r: S * 0.45 };
   };
 
+  /* ───────── 颱風路徑預報（示意圖） ───────── */
+  // 台灣本島海岸線概略座標（經度, 緯度），只求輪廓可辨識
+  const TAIWAN = [[121.53, 25.3], [121.75, 25.15], [122.0, 25.01], [121.83, 24.75], [121.86, 24.6], [121.62, 23.98], [121.4, 23.1], [121.15, 22.75], [120.9, 22.35], [120.85, 21.9], [120.74, 21.93], [120.58, 22.35], [120.27, 22.6], [120.12, 23.0], [120.15, 23.45], [120.4, 24.05], [120.53, 24.3], [120.75, 24.62], [120.92, 24.85], [121.1, 25.05], [121.4, 25.18]];
+  // 示意路徑：兩個過去位置、現在位置、24／48／72 小時預報點
+  const TRACKS: Record<string, number[][]> = {
+    cross: [[127.5, 18.6], [126.2, 19.6], [124.8, 20.7], [122.9, 22.3], [121.0, 23.8], [119.0, 25.4]],
+    north: [[127.6, 18.8], [126.6, 20.0], [125.6, 21.3], [124.4, 23.0], [123.6, 25.0], [123.6, 27.0]],
+    south: [[127.4, 18.4], [125.9, 19.1], [124.4, 19.8], [122.4, 20.7], [120.4, 21.4], [118.2, 22.1]],
+    east: [[127.5, 18.5], [126.3, 19.7], [125.2, 21.0], [124.3, 22.8], [124.1, 24.8], [125.0, 26.8]],
+  };
+  const typhoonMark = (x: CanvasRenderingContext2D, X: number, Y: number, r: number, rot: number, c: string) => {
+    x.save();
+    x.translate(X, Y);
+    x.rotate(rot);
+    x.lineWidth = r * 0.42;
+    x.strokeStyle = c;
+    x.lineCap = 'round';
+    for (const s of [1, -1]) {
+      x.beginPath();
+      x.arc(0, 0, r, s > 0 ? -Math.PI / 2 : Math.PI / 2, s > 0 ? 0.35 : Math.PI + 0.35);
+      x.stroke();
+    }
+    x.restore();
+    circle(x, X, Y, r * 0.55, c);
+  };
+  const forecast = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
+    const S = Math.min(W, H) * num(P.size, 0.95), cx = num(P.x, 0.5) * W, cy = num(P.y, 0.42) * H;
+    const side = S * 1.0, x0 = cx - side / 2, y0 = cy - side / 2, q = t / loop;
+    const c2 = String(P.color2 ?? '#ff5a36'), mark = String(P.color ?? '#ffffff');
+    // 經度方向乘上 cos(23.5°) 修正，畫面 side 對應緯度 18–28°
+    const L0 = 116.5, L1 = 116.5 + 10 / 0.917;
+    const pr = (lon: number, lat: number) => [x0 + ((lon - L0) / (L1 - L0)) * side, y0 + ((28 - lat) / 10) * side];
+    const deg = side / 10;
+    x.save();
+    x.beginPath();
+    x.rect(x0, y0, side, side);
+    x.clip();
+    x.fillStyle = '#163a5c';
+    x.fillRect(x0, y0, side, side);
+    x.strokeStyle = 'rgba(255,255,255,.14)';
+    x.lineWidth = Math.max(1, side * 0.002);
+    x.beginPath();
+    for (let lon = 118; lon <= 127; lon += 2) {
+      const [X] = pr(lon, 0);
+      x.moveTo(X, y0);
+      x.lineTo(X, y0 + side);
+    }
+    for (let lat = 18; lat <= 28; lat += 2) {
+      const [, Y] = pr(120, lat);
+      x.moveTo(x0, Y);
+      x.lineTo(x0 + side, Y);
+    }
+    x.stroke();
+    // 台灣
+    const track = TRACKS[String(P.track)] ?? TRACKS.cross;
+    const near = track.slice(2).some(([lo, la]) => Math.hypot((lo - 121) * 0.917, la - 23.7) < 2.2);
+    const warn = near && q > 0.45 && Math.floor(t * 2) % 2 === 0;
+    poly(x, TAIWAN.map(([lo, la]) => pr(lo, la)), warn ? '#ff8a65' : '#d9cfb8');
+    // 70% 機率範圍：各時間點的圓與相鄰圓之間的切線帶，合成一個路徑一次填色
+    const radii = [0, 0, 0.55, 1.05, 1.6, 2.3];
+    const show = (k: number) => back(seg(q, 0.28 + (k - 3) * 0.1, 0.38 + (k - 3) * 0.1));
+    x.beginPath();
+    for (let k = 2; k < track.length; k++) {
+      const s = k === 2 ? 1 : show(k);
+      if (s <= 0) continue;
+      const [X, Y] = pr(track[k][0], track[k][1]), rr2 = radii[k] * deg * s;
+      x.moveTo(X + rr2, Y);
+      x.arc(X, Y, rr2, 0, TAU);
+      if (k > 2) {
+        const [X0, Y0] = pr(track[k - 1][0], track[k - 1][1]), r0 = radii[k - 1] * deg * (k - 1 === 2 ? 1 : show(k - 1));
+        const a = Math.atan2(Y - Y0, X - X0) + Math.PI / 2, nx = Math.cos(a), ny = Math.sin(a);
+        x.moveTo(X0 + nx * r0, Y0 + ny * r0);
+        x.lineTo(X0 - nx * r0, Y0 - ny * r0);
+        x.lineTo(X - nx * rr2, Y - ny * rr2);
+        x.lineTo(X + nx * rr2, Y + ny * rr2);
+        x.closePath();
+      }
+    }
+    x.fillStyle = `rgba(${hex(c2).join(',')},.28)`;
+    x.fill('nonzero');
+    // 過去路徑（實線）→ 現在 → 預報（虛線依序畫出）
+    const P0 = track.map(([lo, la]) => pr(lo, la));
+    x.lineCap = 'round';
+    x.lineWidth = side * 0.008;
+    x.strokeStyle = '#ffffff';
+    x.beginPath();
+    x.moveTo(P0[0][0], P0[0][1]);
+    for (let k = 1; k <= 2; k++) x.lineTo(P0[k][0], P0[k][1]);
+    x.stroke();
+    x.setLineDash([side * 0.02, side * 0.016]);
+    x.strokeStyle = c2;
+    x.beginPath();
+    x.moveTo(P0[2][0], P0[2][1]);
+    const drawn = clamp((q - 0.25) / 0.35) * 3;
+    for (let k = 3; k < 6; k++) {
+      const f = clamp(drawn - (k - 3));
+      if (f <= 0) break;
+      x.lineTo(P0[k - 1][0] + (P0[k][0] - P0[k - 1][0]) * f, P0[k - 1][1] + (P0[k][1] - P0[k - 1][1]) * f);
+    }
+    x.stroke();
+    x.setLineDash([]);
+    for (let k = 0; k < 2; k++) circle(x, P0[k][0], P0[k][1], side * 0.01, '#ffffff');
+    x.font = `700 ${side * 0.032}px "JetBrains Mono",monospace`;
+    x.textAlign = 'left';
+    x.textBaseline = 'middle';
+    for (let k = 3; k < 6; k++) {
+      const s = show(k);
+      if (s <= 0.3) continue;
+      circle(x, P0[k][0], P0[k][1], side * 0.012, c2);
+      x.fillStyle = '#ffffff';
+      x.fillText(`${(k - 2) * 24}h`, P0[k][0] + side * 0.025, P0[k][1] - side * 0.025);
+    }
+    // 颱風符號：現在位置持續旋轉；後段沿預報線再走一次
+    typhoonMark(x, P0[2][0], P0[2][1], side * 0.035 * (1 + 0.06 * Math.sin(q * TAU * 6)), -q * TAU * 3, mark);
+    const g = seg(q, 0.62, 0.95);
+    if (g > 0 && g < 1) {
+      const u = g * 3, k = Math.min(2, Math.floor(u)), f = u - k, a = P0[2 + k], b = P0[3 + k];
+      x.globalAlpha = 0.6;
+      typhoonMark(x, a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, side * 0.028, -q * TAU * 3, mark);
+      x.globalAlpha = 1;
+    }
+    // 圖例與註記
+    x.fillStyle = 'rgba(10,20,35,.75)';
+    x.fillRect(x0, y0, side, side * 0.075);
+    x.fillStyle = '#ffffff';
+    x.font = `700 ${side * 0.034}px system-ui,sans-serif`;
+    x.textBaseline = 'middle';
+    x.textAlign = 'left';
+    typhoonMark(x, x0 + side * 0.045, y0 + side * 0.0375, side * 0.014, 0, mark);
+    x.fillText('颱風中心', x0 + side * 0.075, y0 + side * 0.0375);
+    x.fillStyle = `rgba(${hex(c2).join(',')},.55)`;
+    x.fillRect(x0 + side * 0.33, y0 + side * 0.022, side * 0.04, side * 0.03);
+    x.fillStyle = '#ffffff';
+    x.fillText('70% 機率範圍', x0 + side * 0.385, y0 + side * 0.0375);
+    x.strokeStyle = c2;
+    x.lineWidth = side * 0.006;
+    x.setLineDash([side * 0.012, side * 0.01]);
+    x.beginPath();
+    x.moveTo(x0 + side * 0.66, y0 + side * 0.0375);
+    x.lineTo(x0 + side * 0.72, y0 + side * 0.0375);
+    x.stroke();
+    x.setLineDash([]);
+    x.fillText('預報路徑', x0 + side * 0.735, y0 + side * 0.0375);
+    x.font = `500 ${side * 0.026}px system-ui,sans-serif`;
+    x.textAlign = 'right';
+    x.textBaseline = 'alphabetic';
+    x.fillStyle = 'rgba(255,255,255,.7)';
+    x.fillText('示意圖，實際路徑以中央氣象署預報為準', x0 + side * 0.97, y0 + side * 0.97);
+    x.restore();
+    x.strokeStyle = '#ffffff';
+    x.lineWidth = side * 0.006;
+    x.strokeRect(x0, y0, side, side);
+    return { cx, cy, r: side * 0.55 };
+  };
+
   /* ───────── 天氣 ───────── */
   const weather = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
     const S = Math.min(W, H) * num(P.size, 0.62), cx = num(P.x, 0.5) * W, cy = num(P.y, 0.38) * H;
     const c = String(P.color ?? '#e9eef3'), c2 = String(P.color2 ?? '#5b9bd5'), amt = num(P.amount, 1), sp = num(P.speed, 1);
     const mode = String(P.mode ?? 'rain'), q = t / loop;
+    if (mode === 'forecast') return forecast(x, W, H, P, t, loop);
     if (mode === 'sun') {
       const R = S * 0.24, rot = q * TAU * 0.25 * sp;
       x.save();
