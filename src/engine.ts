@@ -1,5 +1,5 @@
 import type { Fx, Palette, Tone } from './types';
-import { FONT_FAMILIES_QS, fontStack, NUM_FONT_CSS } from './fonts';
+import { faceOf, FONT_FAMILIES_QS, fontStack, NUM_FONT_CSS, weightOf } from './fonts';
 
 export const FONT_LINK =
   `https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&${FONT_FAMILIES_QS}&display=swap`;
@@ -8,7 +8,8 @@ export const FONT_LINK =
 export const BASE_FX_CSS = `${NUM_FONT_CSS}
 .fx{position:absolute;inset:0;overflow:hidden;display:grid;place-items:center;background:var(--bg);color:var(--fg);font-family:var(--sans);font-weight:900;line-height:1;--u:min(1cqw,1.7778cqh);-webkit-font-smoothing:antialiased}
 .fx .c{display:inline-block;white-space:pre}
-.fx *{box-sizing:border-box}`;
+.fx *{box-sizing:border-box}
+.fx[data-fw],.fx[data-fw] *{font-weight:var(--fw)!important}`;
 
 export const scopeCss = (fx: Fx): string =>
   fx.css.replace(/\.S\b/g, `.fx-${fx.id}`).replace(/\bK_/g, `k_${fx.id.replace(/-/g, '_')}_`);
@@ -20,16 +21,39 @@ export interface Vars {
   ac2: string;
   /** 字型組合代碼，省略＝俐落黑體 */
   font?: string;
+  /** 字體選擇器：黑體／明體（省略＝跟字型組合） */
+  face?: string;
+  /** 字重：粗／中／細（省略＝跟特效原設計） */
+  weight?: string;
 }
 
-export const toneVars = (p: Palette, tone: Tone, font?: string): Vars => {
+export interface FaceOpts {
+  face?: string;
+  weight?: string;
+}
+
+export const toneVars = (p: Palette, tone: Tone, font?: string, fo: FaceOpts = {}): Vars => ({ ...toneBase(p, tone, font), ...fo });
+
+const toneBase = (p: Palette, tone: Tone, font?: string): Vars => {
   if (tone === 'ink') return { bg: p.ink, fg: p.paper, ac: p.accent, ac2: p.accent2, font };
   if (tone === 'paper') return { bg: p.paper, fg: p.ink, ac: p.accent, ac2: p.accent2, font };
   return { bg: p.accent, fg: p.ink, ac: p.paper, ac2: p.accent2, font };
 };
 
-export const varsCss = (v: Vars): string =>
-  `--bg:${v.bg};--fg:${v.fg};--ac:${v.ac};--ac2:${v.ac2};--hl:${v.ac2};--mu:color-mix(in srgb,${v.fg} 30%,transparent);--sans:${fontStack(v.font)};--serif:"Noto Serif TC",serif;--mono:"JetBrains Mono",ui-monospace,monospace`;
+export const varsCss = (v: Vars): string => {
+  const f = faceOf(v.face);
+  const w = weightOf(v.weight);
+  // 選了字體：--sans 與 --serif 都換成同一套，讓用 var(--serif) 的特效也一致
+  const sans = f ? f.stack : fontStack(v.font);
+  const serif = f ? f.stack : '"Noto Serif TC",serif';
+  return `--bg:${v.bg};--fg:${v.fg};--ac:${v.ac};--ac2:${v.ac2};--hl:${v.ac2};--mu:color-mix(in srgb,${v.fg} 30%,transparent);--sans:${sans};--serif:${serif};--mono:"JetBrains Mono",ui-monospace,monospace${w ? `;--fw:${w.w}` : ''}`;
+};
+
+/** 字重覆寫用的屬性（掛在 .fx 根節點） */
+export const fwAttr = (v: Vars): string => {
+  const w = weightOf(v.weight);
+  return w ? ` data-fw="${w.w}"` : '';
+};
 
 const injected = new Set<string>();
 
@@ -60,6 +84,8 @@ export const mount = (host: HTMLElement, fx: Fx, words: string[], vars: Vars, sp
   const root = document.createElement('div');
   root.className = `fx fx-${fx.id}`;
   root.setAttribute('style', varsCss(vars));
+  const w = weightOf(vars.weight);
+  if (w) root.dataset.fw = String(w.w);
   root.innerHTML = fx.html(words);
   host.appendChild(root);
   let cleanup: (() => void) | void;
