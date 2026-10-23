@@ -36,23 +36,118 @@ export function cosmicEngine(){
   return{version:1,mode,body,ratio:['9:16','16:9','1:1'].includes(String(o.ratio))?o.ratio as CosmicScene['ratio']:'9:16',background:Object.hasOwn(backgrounds,String(o.background))?String(o.background):'space',size:num('size',.35,2),speed,loop:12/speed,x:num('x',-.5,1.5),y:num('y',0,1),angle:num('angle',-180,180),color:typeof o.color==='string'&&/^#[0-9a-f]{6}$/i.test(o.color)?o.color.toLowerCase():base.color,tint:num('tint',0,1),opacity:num('opacity',0,1),brightness:num('brightness',.3,1.5),seed:Math.round(num('seed',0,999999)),spin:num('spin',-15,15),tilt:num('tilt',-60,60),light:num('light',-180,180),ambient:num('ambient',0,1),float:num('float',0,2),longitude:num('longitude',-180,180),rings:num('rings',0,1.6),ringTilt:num('ringTilt',8,65),moons:Math.round(num('moons',0,3)),orbitSpeed:num('orbitSpeed',0,2),clouds:num('clouds',0,1),cloudSpeed:num('cloudSpeed',0,2),prominence:num('prominence',0,1),horizon:num('horizon',.22,.65),altitude:num('altitude',.45,2.5),travel:num('travel',0,2),bank:num('bank',-15,15),curvature:num('curvature',0,.35),zoomStart:num('zoomStart',.3,2.5),zoomEnd:num('zoomEnd',1,6),zoomDirection:o.zoomDirection==='out'?'out':'in',focusX:num('focusX',.1,.9),focusY:num('focusY',.1,.9),stars:num('stars',0,2)};
  }
  function fromWords(words:string[]=[],fallback:CosmicMode='orbit'){try{return normalize(JSON.parse(words.find(w=>w.trim().startsWith('{'))||'{}'),fallback);}catch{return normalize({},fallback);}}
- const assetPath=(name:string)=>name==='cloud'?'/media/transport-illustrated/cloud-v1.png':['nebula','dust'].includes(name)?'/media/nature-illustrated/'+name+'-v1.png':'/media/cosmos-illustrated/'+name+'-v1.png';
+ const assetPath=(name:string)=>name==='earth-terrain'?'/media/cosmos-illustrated/earth-terrain-v2.png':name==='cloud'?'/media/transport-illustrated/cloud-v1.png':['nebula','dust'].includes(name)?'/media/nature-illustrated/'+name+'-v1.png':'/media/cosmos-illustrated/'+name+'-v1.png';
  function createRenderer(canvas:HTMLCanvasElement,overlay:HTMLCanvasElement,initial:unknown,origin:string){
   const ctx=canvas.getContext('2d')!,top=overlay.getContext('2d')!;let scene=normalize(initial),loaded=false,disposed=false,revision=0,key='';
   const assets=new Map<string,HTMLImageElement>(),pending=new Map<string,Promise<HTMLImageElement>>();
   const cv=(w:number,h:number)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
   type Material={canvas:HTMLCanvasElement;data:Uint8ClampedArray;width:number;height:number};
-  const materials=new Map<string,Material>(),floors=new Map<string,HTMLCanvasElement>();let cloudData:Uint8ClampedArray|undefined;
+  type GroundMap={width:number;height:number;levels:Map<string,{canvas:HTMLCanvasElement;pattern:CanvasPattern}>};
+  const terrain=cv(1,1),terrainCtx=terrain.getContext('2d')!;
+  const materials=new Map<string,Material>(),floors=new Map<string,GroundMap>();let cloudData:Uint8ClampedArray|undefined;
   function load(name:string){if(assets.has(name))return Promise.resolve(assets.get(name)!);if(pending.has(name))return pending.get(name)!;const p=new Promise<HTMLImageElement>((resolve,reject)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>{if(!disposed)assets.set(name,i);resolve(i);};i.onerror=()=>reject(Error('精修星球素材載入失敗，請確認網路後重試'));i.src=origin.replace(/\/$/,'')+assetPath(name);});pending.set(name,p);p.catch(()=>pending.delete(name));return p;}
-  function update(raw:unknown){scene=normalize(raw);const names=[scene.body==='gas'?'gas':scene.body==='earth'&&scene.mode!=='flyover'?'earth':'surfaces',...(scene.moons>0||scene.mode==='flyover'&&scene.body==='moon'?['surfaces']:[]),...(['space','nebula','dust'].includes(scene.background)?[scene.background]:[]),...(scene.body==='earth'&&scene.clouds>0?[scene.mode==='flyover'?'cloud':'cloudmap']:[])];if(scene.mode==='flyover'&&scene.body==='moon')names.push('earth');const next=[...new Set(names)].join('/');if(loaded&&key===next)return Promise.resolve(true);const token=++revision;loaded=false;return Promise.all([...new Set(names)].map(load)).then(()=>{if(disposed||token!==revision)return false;key=next;loaded=true;return true;});}
+  function update(raw:unknown){scene=normalize(raw);const names=[scene.body==='gas'?'gas':scene.body==='earth'?(scene.mode==='flyover'?'earth-terrain':'earth'):'surfaces',...(scene.mode!=='flyover'&&scene.moons>0?['surfaces']:[]),...(['space','nebula','dust'].includes(scene.background)?[scene.background]:[]),...(scene.body==='earth'&&scene.clouds>0?[scene.mode==='flyover'?'cloud':'cloudmap']:[])];if(scene.mode==='flyover'&&scene.body==='moon')names.push('earth');const next=[...new Set(names)].join('/');if(loaded&&key===next)return Promise.resolve(true);const token=++revision;loaded=false;return Promise.all([...new Set(names)].map(load)).then(()=>{if(disposed||token!==revision)return false;key=next;loaded=true;return true;});}
   function material(body:CosmicBody,ground=false):Material{
    const k=body+'/'+ground+'/'+scene.tint+'/'+scene.color;if(materials.has(k))return materials.get(k)!;
-   const name=body==='gas'?'gas':body==='earth'&&!ground?'earth':'surfaces',i=assets.get(name)!,c=cv(1024,512),x=c.getContext('2d',{willReadFrequently:true})!;
-   if(name==='surfaces'){const n={earth:0,moon:1,mars:2,sun:3,gas:0}[body],w=i.naturalWidth/2,h=i.naturalHeight/2;x.drawImage(i,n%2*w,Math.floor(n/2)*h,w,h,0,0,1024,512);}else x.drawImage(i,0,0,1024,512);
-   const p=x.getImageData(0,0,1024,512),d=p.data;if(scene.tint>0){const rgb=[1,3,5].map(n=>parseInt(scene.color.slice(n,n+2),16)),mx=Math.max(...rgb)||1;for(let j=0;j<d.length;j+=4){const v=Math.max(d[j],d[j+1],d[j+2]);for(let z=0;z<3;z++)d[j+z]=d[j+z]*(1-scene.tint)+v*(rgb[z]/mx)*scene.tint;}x.putImageData(p,0,0);}
-   const m={canvas:c,data:d,width:1024,height:512};materials.set(k,m);if(materials.size>10){const old=materials.keys().next().value!;materials.get(old)!.canvas.width=1;materials.delete(old);}return m;
+   const name=body==='gas'?'gas':body==='earth'?(ground?'earth-terrain':'earth'):'surfaces',i=assets.get(name)!,width=1024,height=ground?1024:512,c=cv(width,height),x=c.getContext('2d',{willReadFrequently:true})!;
+   if(name==='surfaces'){const n={earth:0,moon:1,mars:2,sun:3,gas:0}[body],w=i.naturalWidth/2,h=i.naturalHeight/2;x.drawImage(i,n%2*w,Math.floor(n/2)*h,w,h,0,0,width,height);}else x.drawImage(i,0,0,width,height);
+   const p=x.getImageData(0,0,width,height),d=p.data;if(scene.tint>0){const rgb=[1,3,5].map(n=>parseInt(scene.color.slice(n,n+2),16)),mx=Math.max(...rgb)||1;for(let j=0;j<d.length;j+=4){const v=Math.max(d[j],d[j+1],d[j+2]);for(let z=0;z<3;z++)d[j+z]=d[j+z]*(1-scene.tint)+v*(rgb[z]/mx)*scene.tint;}x.putImageData(p,0,0);}
+   const m={canvas:c,data:d,width,height};materials.set(k,m);if(materials.size>10){const old=materials.keys().next().value!;materials.get(old)!.canvas.width=1;materials.delete(old);}return m;
   }
-  function floor(body:CosmicBody){const k=body+'/'+scene.tint+'/'+scene.color;if(floors.has(k))return floors.get(k)!;const m=material(body,true),c=cv(2048,1024),x=c.getContext('2d')!;for(let y=0;y<2;y++)for(let xx=0;xx<2;xx++){x.save();x.translate(xx?2048:0,y?1024:0);x.scale(xx?-1:1,y?-1:1);x.drawImage(m.canvas,0,0);x.restore();}floors.set(k,c);if(floors.size>5){const old=floors.keys().next().value!;floors.get(old)!.width=1;floors.delete(old);}return c;}
+  function floor(body:CosmicBody):GroundMap{
+   const key=body+'/'+scene.tint+'/'+scene.color;if(floors.has(key))return floors.get(key)!;
+   const m=material(body,true),c=cv(m.width*2,m.height*2),x=c.getContext('2d')!;
+   // Mirrored repeat joins tile edges without distorting the square ground material.
+   for(let y=0;y<2;y++)for(let xx=0;xx<2;xx++){x.save();x.translate(xx?c.width:0,y?c.height:0);x.scale(xx?-1:1,y?-1:1);x.drawImage(m.canvas,0,0);x.restore();}
+   const map:GroundMap={width:c.width,height:c.height,levels:new Map([['0/0',{canvas:c,pattern:terrainCtx.createPattern(c,'repeat')!}]])};
+   floors.set(key,map);if(floors.size>2){const old=floors.keys().next().value!;for(const level of floors.get(old)!.levels.values())level.canvas.width=1;floors.delete(old);}return map;
+  }
+  function groundLevel(map:GroundMap,lx:number,ly:number):{canvas:HTMLCanvasElement;pattern:CanvasPattern}{
+   const key=lx+'/'+ly,cached=map.levels.get(key);if(cached)return cached;
+   const parent=groundLevel(map,lx>0?lx-1:0,lx>0?ly:ly-1),c=cv(map.width/2**lx,map.height/2**ly),x=c.getContext('2d')!;
+   x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(parent.canvas,0,0,c.width,c.height);
+   const level={canvas:c,pattern:terrainCtx.createPattern(c,'repeat')!};map.levels.set(key,level);return level;
+  }
+  function groundFrame(t:number,W:number,H:number,Q:number,hy:number,curve:number){
+   const s=scene,map=floor(s.body),width=Math.ceil(W*1.7*Q),height=Math.ceil(H*1.4*Q);
+   if(terrain.width!==width||terrain.height!==height){terrain.width=width;terrain.height=height;}
+   terrainCtx.setTransform(1,0,0,1,0,0);terrainCtx.clearRect(0,0,width,height);
+   terrainCtx.setTransform(Q,0,0,Q,W*.35*Q,0);
+   const step=1/Q,k=2.25/H/s.altitude*s.size,forward=t*s.travel*150+rand(1)*800+s.y*300,matrix=new DOMMatrix();
+   for(let yy=Math.floor((hy-curve)*Q)/Q;yy<height/Q;yy+=step){
+    const scale0=Math.max(.0001,(yy-hy+curve*.25)*k),scale1=Math.max(.0001,(yy+step-hy+curve*.25)*k),scale=(scale0+scale1)*.5;
+    const v0=forward+700/scale0,v1=forward+700/scale1,span=v1-v0;
+    // The vertical texture footprint is the inverse-perspective depth difference,
+    // not the horizontal scale. Filter that footprint before it reaches the horizon.
+    const lodX=Math.min(Math.log2(map.width),Math.max(0,Math.log2(1/(Q*scale)))),lodY=Math.min(Math.log2(map.height),Math.max(0,Math.log2(Math.max(1,Math.abs(span)))));
+    const lx=Math.floor(lodX),ly=Math.floor(lodY),mixX=lodX-lx,mixY=lodY-ly;let weightSum=0;
+    const paint=(ix:number,iy:number,weight:number)=>{
+     if(weight===0)return;weightSum+=weight;
+     const level=groundLevel(map,ix,iy),factorX=map.width/level.canvas.width,factorY=map.height/level.canvas.height;
+     matrix.a=scale*factorX;matrix.d=span?step/span*factorY:1;matrix.e=W/2-(map.width*(s.body==='earth'?.25:.5)+s.x*500)*scale;matrix.f=yy-v0/factorY*matrix.d;
+     level.pattern.setTransform(matrix);terrainCtx.fillStyle=level.pattern;terrainCtx.globalAlpha=weight/weightSum;terrainCtx.fillRect(-W*.35,yy,W*1.7,step);
+    };
+    // Independent horizontal/vertical levels preserve coastline detail while
+    // averaging compressed depth; blend transitions instead of drawing LOD bands.
+    paint(lx,ly,(1-mixX)*(1-mixY));paint(lx+1,ly,mixX*(1-mixY));paint(lx,ly+1,(1-mixX)*mixY);paint(lx+1,ly+1,mixX*mixY);
+   }
+   terrainCtx.globalAlpha=1;return terrain;
+  }
+  // A bounded spherical terrain patch avoids tiled coastlines in the Earth flyover.
+  // Keep the filtered Canvas path for browsers without WebGL or after context loss.
+  type EarthView={canvas:HTMLCanvasElement;gl:WebGLRenderingContext;program:WebGLProgram;texture:WebGLTexture;buffer:WebGLBuffer;materialKey:string;uniforms:Record<string,WebGLUniformLocation|null>};
+  let earthView:EarthView|null|undefined;
+  function earthFrame(t:number,W:number,H:number,Q:number){
+   if(earthView===null)return;
+   if(earthView===undefined){
+    const c=cv(1,1),gl=c.getContext('webgl',{alpha:true,premultipliedAlpha:false,preserveDrawingBuffer:true});
+    if(!gl){earthView=null;return;}
+    const shader=(type:number,source:string)=>{const s=gl.createShader(type)!;gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){gl.deleteShader(s);return null;}return s;};
+    const vertex=shader(gl.VERTEX_SHADER,'attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0.,1.);}');
+    const fragment=shader(gl.FRAGMENT_SHADER,`precision highp float;
+     varying vec2 uv;uniform sampler2D surface;uniform vec2 screen,extent;uniform float left;
+     uniform vec4 camera;uniform vec3 up,right,back;uniform vec2 patch;
+     void main(){
+      vec2 pixel=vec2(left+uv.x*extent.x,(1.-uv.y)*extent.y);
+      vec2 ray=(vec2(pixel.x/screen.x-.5,.5-pixel.y/screen.y))*2.*camera.x;
+      ray.x*=screen.x/screen.y;
+      float cp=cos(camera.y),sp=sin(camera.y);
+      vec3 d=vec3(ray.x,ray.y*cp-sp,-ray.y*sp-cp);
+      float a=dot(d,d),b=camera.z*d.y,disc=b*b-a*(camera.z*camera.z-camera.w*camera.w);
+      if(disc<0.){gl_FragColor=vec4(0.);return;}
+      float distance=(-b-sqrt(disc))/a;
+      if(distance<0.){gl_FragColor=vec4(0.);return;}
+      vec3 n=normalize(vec3(0.,camera.z,0.)+distance*d);
+      vec3 world=normalize(n.x*right+n.y*up+n.z*back);
+      vec2 tex=vec2(.5+atan(world.x,world.z)/6.28318530718,.5-asin(clamp(world.y,-1.,1.))/3.14159265359);
+      tex=(tex-patch)/vec2(.025,.05)+.5;
+      gl_FragColor=vec4(texture2D(surface,tex).rgb,1.);
+     }`);
+    if(!vertex||!fragment){if(vertex)gl.deleteShader(vertex);if(fragment)gl.deleteShader(fragment);earthView=null;return;}
+    const program=gl.createProgram()!;gl.attachShader(program,vertex);gl.attachShader(program,fragment);gl.linkProgram(program);gl.deleteShader(vertex);gl.deleteShader(fragment);
+    if(!gl.getProgramParameter(program,gl.LINK_STATUS)){gl.deleteProgram(program);earthView=null;return;}
+    const buffer=gl.createBuffer()!,texture=gl.createTexture()!,uniforms:Record<string,WebGLUniformLocation|null>={};
+    for(const name of ['surface','screen','extent','left','camera','up','right','back','patch'])uniforms[name]=gl.getUniformLocation(program,name);
+    gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+    const position=gl.getAttribLocation(program,'p');gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
+    gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    const anisotropy=gl.getExtension('EXT_texture_filter_anisotropic');if(anisotropy)gl.texParameterf(gl.TEXTURE_2D,anisotropy.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(anisotropy.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+    gl.uniform1i(uniforms.surface,0);earthView={canvas:c,gl,program,texture,buffer,uniforms,materialKey:''};
+   }
+   const s=scene,{canvas:c,gl,program,texture,uniforms}=earthView;
+   if(gl.isContextLost())return;
+   const pad=s.bank===0?0:W*.35,extra=s.bank===0?H:H*1.4;
+   const width=Math.ceil((W+pad*2)*Q),height=Math.ceil(extra*Q);if(c.width!==width||c.height!==height){c.width=width;c.height=height;}
+   gl.viewport(0,0,width,height);gl.useProgram(program);gl.bindTexture(gl.TEXTURE_2D,texture);
+   const key=s.tint+'/'+s.color;if(earthView.materialKey!==key){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,material('earth',true).canvas);gl.generateMipmap(gl.TEXTURE_2D);earthView.materialKey=key;}
+   const radius=.12/Math.max(.01,s.curvature),altitude=.018*s.altitude,tanFov=.65/s.size;
+   const pitch=Math.acos(radius/(radius+altitude))+Math.atan((.5-s.horizon)*2*tanFov);
+   const lat=.42+(s.y-.5)*.08,lon=1.9+(s.x-.5)*.08+t*s.travel*.003,cl=Math.cos(lat),sl=Math.sin(lat),co=Math.cos(lon),so=Math.sin(lon);
+   gl.uniform2f(uniforms.screen,W,H);gl.uniform2f(uniforms.extent,W+pad*2,extra);gl.uniform1f(uniforms.left,-pad);gl.uniform4f(uniforms.camera,tanFov,pitch,radius+altitude,radius);
+   gl.uniform2f(uniforms.patch,.5+(1.94+6*s.travel*.003)/(Math.PI*2),.5-.42/Math.PI);
+   gl.uniform3f(uniforms.up,cl*so,sl,cl*co);gl.uniform3f(uniforms.right,sl*so,-cl,sl*co);gl.uniform3f(uniforms.back,-co,0,so);
+   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);return{canvas:c,left:-pad,width:W+pad*2,height:extra};
+  }
   type GlobeGrid={canvas:HTMLCanvasElement;geometry:Float32Array;pixels:ImageData};
   const grids=new Map<number,GlobeGrid>();
   function globe(body:CosmicBody,diameter:number,t:number,quality:number){
@@ -81,9 +176,10 @@ export function cosmicEngine(){
     // A distant Earth rises above the lunar horizon. It shares the same scene timeline.
     if(s.body==='moon')disk('earth',W*.76,hy-H*.12,Math.min(W,H)*.13,t*.4);
     if(s.body==='sun')prominence(W/2,hy,W*.23,true);
-    ctx.save();ctx.beginPath();ctx.moveTo(-W*.35,hy+curve*.65);ctx.quadraticCurveTo(W/2,hy-curve*.65,W*1.35,hy+curve*.65);ctx.lineTo(W*1.35,H*1.4);ctx.lineTo(-W*.35,H*1.4);ctx.closePath();ctx.clip();
-    const map=floor(s.body),pattern=ctx.createPattern(map,'repeat')!;const step=Math.max(1,Math.min(3,2/Q));
-    for(let yy=Math.floor(hy-curve);yy<H*1.4;yy+=step){const distance=Math.max(1,yy-hy+curve*.25),scale=Math.max(.035,distance/(H*.8)*1.8/s.altitude)*s.size,forward=t*s.travel*150+rand(1)*800;pattern.setTransform(new DOMMatrix([scale,0,0,scale,W/2-(map.width*.5+s.x*500)*scale,yy-(forward+700/Math.max(.025,scale)+s.y*300)*scale]));ctx.fillStyle=pattern;ctx.fillRect(-W*.35,yy,W*1.7,step+.4);}ctx.restore();
+    const earth=s.body==='earth'?earthFrame(t,W,H,Q):undefined;
+    if(earth)ctx.drawImage(earth.canvas,earth.left,0,earth.width,earth.height);
+    else{ctx.save();ctx.beginPath();ctx.moveTo(-W*.35,hy+curve*.65);ctx.quadraticCurveTo(W/2,hy-curve*.65,W*1.35,hy+curve*.65);ctx.lineTo(W*1.35,H*1.4);ctx.lineTo(-W*.35,H*1.4);ctx.closePath();ctx.clip();
+     const ground=groundFrame(t,W,H,Q,hy,curve);ctx.drawImage(ground,-W*.35,0,ground.width/Q,ground.height/Q);ctx.restore();}
     if(s.body==='earth'&&s.clouds>0){const cloud=assets.get('cloud')!;for(let j=0;j<Math.round(s.clouds*10);j++){const phase=mod(rand(j)+t*.045*s.cloudSpeed),depth=.15+phase*phase,z=100+depth*430,x=W/2+(rand(j,1)-.5)*W*2.2*depth,y=hy+depth*H*.68;ctx.globalAlpha=s.opacity*(.35+.35*phase);ctx.drawImage(cloud,x-z/2,y,z,z*cloud.naturalHeight/cloud.naturalWidth);}}
     ctx.restore();
    }else{
@@ -96,7 +192,7 @@ export function cosmicEngine(){
    }
    ctx.restore();ctx.globalAlpha=1;
   }
-  function dispose(){if(disposed)return;disposed=true;revision++;assets.clear();pending.clear();for(const m of materials.values())m.canvas.width=1;materials.clear();for(const c of floors.values())c.width=1;floors.clear();for(const grid of grids.values())grid.canvas.width=1;grids.clear();cloudData=undefined;canvas.width=canvas.height=overlay.width=overlay.height=1;}
+  function dispose(){if(disposed)return;disposed=true;revision++;assets.clear();pending.clear();for(const m of materials.values())m.canvas.width=1;materials.clear();for(const map of floors.values())for(const level of map.levels.values())level.canvas.width=1;floors.clear();terrain.width=terrain.height=1;if(earthView){const {gl,program,buffer,texture,canvas}=earthView;gl.deleteTexture(texture);gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.getExtension('WEBGL_lose_context')?.loseContext();canvas.width=canvas.height=1;earthView=null;}for(const grid of grids.values())grid.canvas.width=1;grids.clear();cloudData=undefined;canvas.width=canvas.height=overlay.width=overlay.height=1;}
   const ready=update(initial);return{ready,update,render,dispose,get scene(){return scene;},get loaded(){return loaded;}};
  }
  return{modes,bodies,variants,backgrounds,bodyPresets,defaults,fields,fieldsFor,normalize,fromWords,createRenderer};

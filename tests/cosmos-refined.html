@@ -13,7 +13,7 @@ await test('沿用 169／195／199，各自編輯，原版保留且前台編號�
  for(const id of ['planet','sun','moon','earth','flyby-earth','flyby-moon','flyby-mars','flyby-sun','zoom-earth'])check(findEffect('obj-cosmos-'+id).hidden,'Original removed '+id);
  for(const no of [185,186,187,196,197,198])check(findEffect(String(no)).hidden,'Merged extra still visible '+no);
  check(new Set(EFFECTS.map(f=>NUM.get(f.id))).size===EFFECTS.length,'Duplicate public numbers');
- check(EFFECTS.filter(f=>f.id.startsWith('cosmos-illustrated-')).length===3,'Wrong card count');check(EFFECTS.filter(f=>f.cat==='cosmos').length===3&&EFFECTS.filter(f=>f.cat==='meteor').length===4,'Wrong cosmos count');check(new Set(ALL_EFFECTS.map(f=>f.no)).size===ALL_EFFECTS.length,'Duplicate numbers');
+ check(EFFECTS.filter(f=>f.id.startsWith('cosmos-illustrated-')).length===3,'Wrong card count');check(EFFECTS.filter(f=>f.cat==='cosmos').length===3&&EFFECTS.filter(f=>f.cat==='meteor').length===5,'Wrong cosmos count');check(new Set(ALL_EFFECTS.map(f=>f.no)).size===ALL_EFFECTS.length,'Duplicate numbers');
  check(norm({mode:'orbit',body:'mars'}).body==='gas'&&norm({mode:'earthzoom',body:'sun'}).body==='earth','Invalid body accepted');check(norm({mode:'__proto__',body:'constructor',spin:Infinity,size:999}).size===2,'Unsafe normalization');
 });
 for(const mode of Object.keys(R.modes))for(const body of R.variants(mode))await test(mode+'/'+body+'：載入、動態、重現、透明輸出',async()=>{
@@ -25,9 +25,15 @@ await test('三種比例與速度一致演出進度',async()=>{
  for(const mode of Object.keys(R.modes)){const i=items.find(i=>i.mode===mode);for(const [w,h] of [[320,180],[220,220],[270,480]]){i.r.render(5,w,h);check(pixels(i.a).some((v,k)=>k%4===3&&v>200),'Blank ratio');}i.r.render(5);const p=i.a.toDataURL();await i.r.update({...i.scene,speed:2});i.r.render(2.5);check(p===i.a.toDataURL(),'Speed changes progress');await i.r.update(i.scene);i.r.render(5);}
 });
 await test('專屬控制改變實際畫面，推近與拉遠互為反向',async()=>{
- const cases=[['orbit','gas',{rings:0,moons:0}],['orbit','earth',{clouds:0,longitude:100}],['flyover','moon',{altitude:2,bank:10}],['earthzoom','earth',{zoomEnd:5,focusX:.7}]];
+ const cases=[['orbit','gas',{rings:0,moons:0}],['orbit','earth',{clouds:0,longitude:100}],['flyover','moon',{altitude:2,bank:10}],['flyover','earth',{x:.8,y:.7,clouds:0}],['earthzoom','earth',{zoomEnd:5,focusX:.7}]];
  for(const [mode,body,patch] of cases){const i=items.find(i=>i.mode===mode&&i.body===body);i.r.render(5);const p=i.a.toDataURL();await i.r.update({...i.scene,...patch});i.r.render(5);check(p!==i.a.toDataURL(),'Ignored controls '+mode);await i.r.update(i.scene);i.r.render(5);}
  const i=items.find(i=>i.mode==='earthzoom'),base={...i.scene,spin:0,cloudSpeed:0,moons:0};await i.r.update(base);i.r.render(2);const p=i.a.toDataURL();await i.r.update({...base,zoomDirection:'out'});i.r.render(10);check(p===i.a.toDataURL(),'Zoom reversal differs');await i.r.update(i.scene);i.r.render(5);
+});
+await test('地球球面飛越可編輯航線、起點、換色與透明度',async()=>{
+ const i=items.find(i=>i.mode==='flyover'&&i.body==='earth'),base={...i.scene,clouds:0,background:'transparent'};
+ await i.r.update(base);i.r.render(5);const original=i.a.toDataURL();
+ for(const patch of [{x:.8},{y:.7},{tint:1,color:'#b45f8c'},{altitude:2},{curvature:.2}]){await i.r.update({...base,...patch});i.r.render(5);check(original!==i.a.toDataURL(),'Earth control ignored '+JSON.stringify(patch));}
+ await i.r.update({...base,opacity:.5});i.r.render(5);const alpha=i.a.getContext('2d').getImageData(135,470,1,1).data[3];check(alpha>=126&&alpha<=129,'Wrong Earth alpha');await i.r.update(i.scene);i.r.render(5);
 });
 await test('換色、五種背景、快速切換與清理',async()=>{
  const a=cv(),b=cv(),r=R.createRenderer(a,b,{},location.origin);await r.ready;const shots=new Set();for(const background of Object.keys(R.backgrounds).filter(k=>k!=='transparent')){await r.update(norm({background}));r.render(5);shots.add(a.toDataURL());}check(shots.size===5,'Missing background');await r.update(norm({body:'moon'}));r.render(5);const p=a.toDataURL();await r.update({...r.scene,tint:1,color:'#b45e9f'});r.render(5);check(p!==a.toDataURL(),'Tint ignored');await Promise.all([r.update({mode:'flyover',body:'moon'}),r.update({mode:'orbit',body:'sun'}),r.update({mode:'earthzoom'})]);check(r.loaded&&r.scene.mode==='earthzoom','Stale assets');r.dispose();check(a.width===1&&b.width===1,'Cleanup failed');
@@ -38,6 +44,19 @@ await test('MCP、預設與 Combo 保留四種樣式及完整設定',async()=>{
 });
 await test('三招獨立 HTML 與預覽逐像素一致',async()=>{
  for(const mode of Object.keys(R.modes)){const frame=document.createElement('iframe');frame.style.cssText='width:270px;height:480px;border:0';document.body.append(frame);const loaded=new Promise(r=>frame.onload=r);frame.srcdoc=exportHtml(findEffect(cosmicFxId(mode)),[],toneVars(PALETTES[0],'ink'),'9:16');await loaded;const root=frame.contentDocument.querySelector('.fx');check(await root.motionReady,'Export load');root.motionSeek(5);check(root.querySelector('canvas').toDataURL()===items.find(i=>i.mode===mode).a.toDataURL(),'Export differs '+mode);frame.remove();}
+});
+await test('遠景深度取樣不產生條帶，移動與不同解析度保持穩定',async()=>{
+ const fixture=document.createElement('canvas');fixture.width=fixture.height=2048;const x=fixture.getContext('2d');
+ for(let y=0;y<2048;y+=128){x.fillStyle=y/128%2?'white':'black';x.fillRect(0,y,2048,128);}
+ const source=fixture.toDataURL(),Original=window.Image;let r;
+ try{
+  window.Image=class extends Original{set src(value){super.src=String(value).includes('/sampling-fixture/')?source:value;}get src(){return super.src;}};
+  const a=cv(),b=cv();r=R.createRenderer(a,b,{mode:'flyover',body:'mars',background:'transparent',curvature:0,clouds:0},location.origin+'/sampling-fixture');await r.ready;
+  for(const width of [270,540,1080])for(const t of [0,.1,.2,.5,1,2]){
+   const height=width*16/9;r.render(t,width,height);const d=a.getContext('2d').getImageData(Math.floor(width/2),Math.floor(height*.36)+6,1,14).data;
+   const values=Array.from({length:14},(_,i)=>d[i*4]);check(Math.max(...values)-Math.min(...values)<=6,'Aliased bands '+width+' @ '+t);check(values.every(v=>v>=122&&v<=134),'Incorrect depth filtering');
+  }
+ }finally{window.Image=Original;r?.dispose();fixture.width=1;}
 });
 let playing=false,start=0;document.querySelector('#play').onclick=()=>{playing=!playing;start=performance.now();if(playing)requestAnimationFrame(tick)};function tick(now){if(!playing)return;for(const i of items)i.r.render(((now-start)/1000)%12);requestAnimationFrame(tick)}
 window.cosmicResults=results;window.cosmicItems=items;document.querySelector('#results').textContent=results.map(x=>`${x.passed?'PASS':'FAIL'} ${x.name}${x.error?' — '+x.error:''}`).join('\n');
