@@ -256,6 +256,24 @@ const SAFE_ZONES: Record<Ratio, string> = {
   '1:1': '<div class="safe"><i style="left:0;right:0;bottom:0;height:14%">底部：說明文字、控制列</i></div>',
 };
 
+/** 這段畫面的底色是不是淺色：依底色調；物件特效用場景自己的背景色 */
+const sceneLight = (fx: Fx, words: string[], tone: Tone, pal: Palette): boolean => {
+  let bg = tone === 'ink' ? pal.ink : tone === 'paper' ? pal.paper : pal.accent;
+  if (isObjFx(fx.id)) {
+    const m = /data-scene="([^"]+)"/.exec(fx.html(words));
+    try {
+      const sc = m && (JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')) as { bg?: string });
+      if (sc && typeof sc.bg === 'string' && sc.bg !== 'transparent') bg = sc.bg.split(',')[0].trim();
+    } catch {
+      /* 解析不了就用底色調 */
+    }
+  }
+  const h = /#([0-9a-f]{6})/i.exec(bg);
+  if (!h) return false;
+  const n = parseInt(h[1], 16);
+  return (((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) / 255 > 0.6;
+};
+
 const ratioCss: Record<Ratio, string> = {
   '16:9': 'width:min(100vw,177.78vh);aspect-ratio:16/9',
   '9:16': 'height:min(100vh,177.78vw);aspect-ratio:9/16',
@@ -277,7 +295,7 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean; safe?
       const fx = findEffect(s.effect);
       if (!fx) return null;
       const words = s.words?.length ? s.words : fx.sample;
-      return { fx, words, ms: Math.round(sceneSeconds(s) * 1000), tr: s.transition, vars: varsCss(toneVars(pal, s.tone ?? fx.tone, s.font ?? c.font, { face: s.face, weight: s.weight })) };
+      return { fx, words, ms: Math.round(sceneSeconds(s) * 1000), tr: s.transition, lt: sceneLight(fx, words, s.tone ?? fx.tone, pal), vars: varsCss(toneVars(pal, s.tone ?? fx.tone, s.font ?? c.font, { face: s.face, weight: s.weight })) };
     })
     .filter((s): s is NonNullable<typeof s> => !!s);
   const templates = scenes.map((s, i) => `<template id="t${i}">${s.fx.html(s.words)}</template>`).join('\n') + ovs.map((x, i) => `<template id="o${i}">${x.fx.html(x.o.words?.length ? x.o.words : x.fx.sample)}</template>`).join('');
@@ -289,10 +307,11 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean; safe?
       to: (o.to ?? scenes.length) - 1,
       // 疊加元件播到進場完成就定格，不重複進出
       hold: Math.round(Math.min(3, loopSeconds(fx) * 0.5) * 1000),
-      vars: varsCss(toneVars(pal, o.tone ?? fx.tone, c.font)),
+      // 沒指定配色＝自動：深底段落用深色系、淺底段落用淺色系，換段時跟著換
+      ...(o.tone ? { vars: varsCss(toneVars(pal, o.tone, c.font)) } : { varsD: varsCss(toneVars(pal, 'ink', c.font)), varsL: varsCss(toneVars(pal, 'paper', c.font)) }),
     })),
   );
-  const data = JSON.stringify(scenes.map((s) => ({ id: s.fx.id, words: s.words, ms: s.ms, vars: s.vars, name: s.fx.zh, ...(s.tr ? { tr: s.tr } : {}) })));
+  const data = JSON.stringify(scenes.map((s) => ({ id: s.fx.id, words: s.words, ms: s.ms, vars: s.vars, name: s.fx.zh, lt: s.lt ? 1 : 0, ...(s.tr ? { tr: s.tr } : {}) })));
   const t = c.transition ?? 'fade';
   return `<!doctype html>
 <html lang="zh-Hant-TW">
@@ -380,7 +399,7 @@ function show(){
     el.setAttribute('style',sc.vars);var fw=/--fw:(\\d+)/.exec(sc.vars);if(fw)el.dataset.fw=fw[1];
     el.innerHTML=document.getElementById('t'+idx).innerHTML;
     stage.insertBefore(el,below&&prev&&prev.isConnected?prev:(stage.querySelector('.ov')||hud));
-    cur=el;curClean=null;
+    cur=el;curClean=null;curLt=sc.lt;paintOv();
     requestAnimationFrame(()=>{const r=RUNS[sc.id];if(r&&el.isConnected){try{curClean=r(el,sc.words)||null}catch(e){console.error(e)}}});
     return el;
   };
@@ -396,9 +415,11 @@ function show(){
   if(hud){[...hud.children].forEach((b,k)=>{b.className=k<i?'done':'';const bar=b.firstChild;bar.getAnimations().forEach(a=>a.cancel());if(k===i)bar.animate([{width:'0%'},{width:'100%'}],{duration:sc.ms,easing:'linear',fill:'forwards'});});}
   timer=setTimeout(()=>{i++;if(i>=SCENES.length){if(!LOOP)return;i=0;}show();},sc.ms);
 }
-const ovEl=stage.querySelector('.ov'),ovOn=[];
+const ovEl=stage.querySelector('.ov'),ovOn=[];let curLt=0;
+const ovVars=(o)=>o.vars||(curLt?o.varsL:o.varsD);
+function paintOv(){ovOn.forEach((m,n)=>{if(m&&!OVERLAYS[n].vars)m.el.setAttribute('style',ovVars(OVERLAYS[n]));});}
 function syncOverlays(k){OVERLAYS.forEach((o,n)=>{const want=k>=o.from&&k<=o.to;const m=ovOn[n];
-  if(want&&!m){const el=document.createElement('div');el.className='fx fx-'+o.id;el.setAttribute('style',o.vars);el.innerHTML=document.getElementById('o'+n).innerHTML;ovEl.appendChild(el);
+  if(want&&!m){const el=document.createElement('div');el.className='fx fx-'+o.id;el.setAttribute('style',ovVars(o));el.innerHTML=document.getElementById('o'+n).innerHTML;ovEl.appendChild(el);
     const rec={el,clean:null,t:setTimeout(()=>el.getAnimations({subtree:true}).forEach(a=>{try{a.pause()}catch(e){}}),o.hold)};ovOn[n]=rec;
     requestAnimationFrame(()=>{const r=RUNS[o.id];if(r&&el.isConnected){try{rec.clean=r(el,o.words)||null}catch(e){console.error(e)}}});}
   else if(!want&&m){ovOn[n]=null;clearTimeout(m.t);m.el.classList.add('bye');setTimeout(()=>{m.clean&&m.clean();m.el.remove();},320);}

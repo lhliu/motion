@@ -177,7 +177,7 @@ const comboInput = {
         words: { type: 'array', items: { type: 'string' }, description: '元件文字，格式依 word_hint' },
         from: { type: 'number', description: '從第幾段開始，預設 1' },
         to: { type: 'number', description: '到第幾段結束，預設最後一段' },
-        tone: { type: 'string', enum: ['ink', 'paper', 'accent'], description: '配色系' },
+        tone: { type: 'string', enum: ['ink', 'paper', 'accent'], description: '固定配色系；省略＝自動，深底段落用深色系、淺底段落用淺色系' },
       },
       required: ['effect'],
     },

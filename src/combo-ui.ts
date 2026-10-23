@@ -97,7 +97,7 @@ export const initCombos = (deps: ComboDeps) => {
         <label><span>文字（/ 分隔）</span><input data-k="words" value="${esc((o.words ?? fx?.sample ?? []).join(' / '))}" placeholder="${esc(fx?.hint ?? '')}"></label>
         <label class="sm"><span>從第幾段</span><input data-k="from" type="number" min="1" max="${n}" step="1" value="${o.from ?? 1}"></label>
         <label class="sm"><span>到第幾段</span><input data-k="to" type="number" min="1" max="${n}" step="1" value="${o.to ?? n}"></label>
-        <label class="sm"><span>配色</span><select data-k="tone"><option value="">預設</option>${(['ink', 'paper', 'accent'] as Tone[]).map((t) => `<option value="${t}"${o.tone === t ? ' selected' : ''}>${{ ink: '深底色系', paper: '淺底色系', accent: '主色系' }[t]}</option>`).join('')}</select></label>
+        <label class="sm"><span>配色</span><select data-k="tone"><option value="">自動（跟著底色）</option>${(['ink', 'paper', 'accent'] as Tone[]).map((t) => `<option value="${t}"${o.tone === t ? ' selected' : ''}>${{ ink: '深底色系', paper: '淺底色系', accent: '主色系' }[t]}</option>`).join('')}</select></label>
       </div>
     </li>`;
   };
