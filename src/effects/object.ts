@@ -51,7 +51,7 @@ const make = (
   id: `obj-${module}-${variant}`,
   cat: module,
   tone: 'ink',
-  ...(module === 'ocean' ? { hidden: true } : {}),
+  ...((module === 'ocean'||module === 'vehicle') ? { hidden: true } : {}),
   ...(module === 'ocean' ? { duration: 8 } : {}),
   hint: module === 'ocean' ? '預設無文字。可在物件工作室調整主角、動作、配色與透明背景；字幕可在文字面板開啟。' : '一行一句，~ 開頭為英文小字（最多 4 行）。形狀、材質、顏色請在物件工作室調整，或由 AI 透過 MCP 的 build_object_scene 產生',
   css: CSS,

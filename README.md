@@ -2,7 +2,7 @@
 
 https://motion.leichthub.com
 
-短影音動態素材庫，分七個工作區（目前前台 229 招，另保留 7 招隱藏原版）＋套組：
+短影音動態素材庫，分七個工作區（目前前台 229 招，另保留 14 招隱藏原版）＋套組：
 
 - **文字特效**（121 招）：依用途分 6 類（開場標題、字幕標註、資訊字卡、轉場切換、強調情緒、風格氛圍），原本的 13 個技法分類改當「風格」篩選；首頁最上方是建案片常用 12 招（`src/uses.ts`）
 - **圖片運鏡**（21 個模組）：單張運鏡（推拉、甩入、3D 卡片、視窗彈出、分層視差、手機框）、多張組合（前後對比、翻卡、拍立得、宮格、分割畫面）、標註轉場（放大鏡、影片定格標註、縮放穿越）、裁切與遮罩（遮罩揭露、切片錯位、拼塊組圖、撕紙揭露、剪報拼貼、形狀變換、前景遮擋換景）
@@ -26,7 +26,7 @@ https://motion.leichthub.com
 
 - MCP 端點：`https://motion.leichthub.com/mcp`（Streamable HTTP、無狀態）
 - 寫入（儲存／刪除 Combo）需要金鑰：網址加 `?key=金鑰`，或 `Authorization: Bearer 金鑰`
-- 工具：`list_categories`、`search_effects`、`get_effect`、`build_map_scene`、`build_drop_scene`、`build_photo_scene`、`list_presets`、`get_preset`、`save_preset`、`compose_combo`、`save_combo`、`list_combos`、`get_combo`、`delete_combo`
+- 工具：`list_categories`、`search_effects`、`get_effect`、`build_map_scene`、`build_drop_scene`、`build_photo_scene`、`build_object_scene`、`build_illustration_scene`、`build_transport_scene`、`list_presets`、`get_preset`、`save_preset`、`compose_combo`、`save_combo`、`list_combos`、`get_combo`、`delete_combo`
 
 ### 與 AI 來回修改（預設）
 
@@ -37,6 +37,24 @@ https://motion.leichthub.com
 5. API：`GET /api/presets?kind=map|drop|photo`、`GET /api/presets/:id`；寫入 `POST /api/presets`、`PUT|DELETE /api/presets/:id`
 
 Combo 存的是預設當下的內容（快照）；預設更新後，請 AI 重新以 `{ "preset": 代碼 }` 存一次 Combo。
+
+### 交通工具・精修插畫
+
+交通分類只列七招精修插畫（#237–243）：汽車、馬車、客機、太空船、火車捷運、輪船與熱氣球。舊 `obj-vehicle-*`（#178–184）只隱藏，保留原始程式、編號、連結、object 預設及 Combo。
+
+專用編輯器 `/?view=transport`，各卡片的「編輯精修插畫」會開啟本招並記住各自設定：
+
+- 汽車：獨立輪胎轉速、懸吊起伏、道路、車燈。
+- 馬車：分層馬腿步態、木輪轉速、車身起伏、道路。
+- 客機：爬升幅度、飛行浮動、凝結尾、前景雲。
+- 太空船：推力、噴焰長度、震動、尾焰火星、爬升。
+- 火車：1–5 節車廂、間距、輪速、行進起伏、軌道。
+- 輪船：波浪幅度、船身搖晃、煙囪煙量、船尾浪。
+- 熱氣球：升降幅度、擺動、風力漂移、燃燒器與雲量。
+
+共用大小、速度（連動片長 4.8–20 秒）、位置拖曳、方向、角度、保留紋理的換色、透明度、鏡頭視差；五種背景為城市、田野、高空、海岸與宇宙，另支援透明背景。可輸出 PNG、WebM、PNG 序列，儲存預設、JSON、編輯連結與加入 Combo。透明時不繪道路／軌道，可另外關閉煙、尾焰等取得乾淨物件。
+
+`src/transport.ts` 是所有預覽、輸出與獨立 HTML 共用的自給自足 Canvas 引擎，只載入所選場景素材。素材在 `public/media/transport-illustrated/`，保留原圖並提供 CORS。MCP 使用 `build_transport_scene`（mode=car|carriage|plane|rocket|train|ship|balloon），回傳本招 `params_doc` 與編輯連結。`/r/transport.js` 提供 `MA_TRANSPORT.createRenderer(canvas, overlayCanvas, scene, assetOrigin)`；先 `await renderer.ready`，再 `renderer.render(t,W,H)`，最後 `renderer.dispose()`。可在 Vite 開啟 `/tests/transport-refined.html` 檢查動畫、專屬參數、透明度、比例、MCP、預設、Combo、獨立 HTML 與舊版相容性。
 
 ### 海底世界・精修插畫
 
@@ -148,7 +166,7 @@ npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 
 在對應分類檔加一筆 `Fx`：
 
-- `no`：**固定編號**，用目前最大編號 +1（`rg -o --no-filename "no: *[0-9]+" src | sort -V | tail -1` 可查）。編號一旦公開就不再變動、刪除特效也不回收，AI 與 Combo 會用「#編號」引用；重複時瀏覽器 console 會報錯
+- `no`：**固定編號**，用目前最大編號 +1（`rg -o --no-filename 'no:\s*[0-9]+' src | rg -o '[0-9]+' | sort -n | tail -1` 可查）。編號一旦公開就不再變動、刪除特效也不回收，AI 與 Combo 會用「#編號」引用；重複時瀏覽器 console 會報錯
 - `css`：用 `.S` 代表特效根節點、`K_` 當 keyframes 前綴，會自動範圍化成 `.fx-<id>`
 - 可用變數：`--bg` `--fg` `--ac` `--ac2` `--mu`、字體 `--sans` `--serif` `--mono`；尺寸用 `cqw`／`cqh`／`cqmin`
 - `html(words)`：回傳特效 DOM；`run(root, words)`（選填）處理 JS 動畫並回傳清除函式。`run` 必須自給自足、不可引用模組變數，因為匯出時會用 `toString()` 內嵌

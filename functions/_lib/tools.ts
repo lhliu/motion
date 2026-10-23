@@ -1,3 +1,4 @@
+import { normalizeTransport, transportFxId, TRANSPORT, type TScene } from '../../src/transport';
 import { normalizeIllustration, illustrationFxId, ILLUSTRATION, type IScene } from '../../src/illustration';
 import { ALL_TAGS, CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from '../../src/data';
 import { comboOutline, comboPrompt, comboHtml, encodeCombo, findEffect, normalizeCombo, totalSeconds, type Combo } from '../../src/combo';
@@ -17,6 +18,14 @@ const illustrationResult = (raw:unknown,ctx:ToolCtx,title='海底世界・精修
     params_doc:ILLUSTRATION.fields[sc.mode],edit_url:editUrl(ctx.origin,{kind:'illustration',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,
     local_render:`載入 ${ctx.origin}/r/illustration.js；const renderer=MA_ILLUSTRATION.createRenderer(glCanvas,particleCanvas,scene,"${ctx.origin}");await renderer.ready;逐格呼叫 renderer.render(i/fps,W,H)，依序 drawImage 兩張 canvas，最後 renderer.dispose()。`,
     next:`海底世界目前只有七種精修插畫；將 combo_scene 放進 compose_combo / save_combo，ratio=${sc.ratio}，用 edit_url 進入本招專屬編輯面板。`};
+};
+const transportResult = (raw:unknown,ctx:ToolCtx,title='交通工具・精修插畫') => {
+  const sc=normalizeTransport(raw),combo_scene={effect:transportFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop};
+  const {combo}=normalizeCombo({title,ratio:sc.ratio,transition:'cut',scenes:[combo_scene]});
+  return {scene:sc,combo_scene,modes:TRANSPORT.modes,backgrounds:TRANSPORT.backgrounds,
+    params_doc:TRANSPORT.fields[sc.mode],edit_url:editUrl(ctx.origin,{kind:'transport',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,
+    local_render:`載入 ${ctx.origin}/r/transport.js；const renderer=MA_TRANSPORT.createRenderer(canvas,overlayCanvas,scene,"${ctx.origin}");await renderer.ready;逐格呼叫 renderer.render(i/fps,W,H)，依序 drawImage 兩張 canvas，最後 renderer.dispose()。`,
+    next:`交通工具目前只有七種精修插畫；將 combo_scene 放進 compose_combo / save_combo，ratio=${sc.ratio}，用 edit_url 進入本招專屬編輯面板。`};
 };
 
 const FONT_HELP = `字型組合：${FONT_PACKS.map((f) => `${f.id}＝${f.zh}（${f.use}）`).join('；')}。省略＝sharp`;
@@ -497,13 +506,13 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'build_object_scene',
     title: '組物件特效',
-    description: `物件特效（跟水滴同一系列，硬邊零模糊、可透明疊進影片）：${OBJ_MODULES.filter(m=>m!=='ocean').map((m) => `${m}＝${OBJ_INFO[m].zh}（${OBJ_INFO[m].desc}）`).join('；')}。回傳 combo_scene、各參數說明與編輯連結。水滴請用 build_drop_scene。`,
+    description: `物件特效（跟水滴同一系列，硬邊零模糊、可透明疊進影片）：${OBJ_MODULES.filter(m=>m!=='ocean'&&m!=='vehicle').map((m) => `${m}＝${OBJ_INFO[m].zh}（${OBJ_INFO[m].desc}）`).join('；')}。回傳 combo_scene、各參數說明與編輯連結。水滴請用 build_drop_scene。`,
     inputSchema: {
       type: 'object',
       required: ['module'],
       properties: {
-        module: { type: 'string', enum: OBJ_MODULES.filter(m=>m!=='ocean') },
-        params: { type: 'object', description: '模組參數，見回傳的 params_doc；x、y 為物件位置 0–1。新海底場景請用 build_illustration_scene；舊 ocean 模組保留相容，已從目錄隱藏' },
+        module: { type: 'string', enum: OBJ_MODULES.filter(m=>m!=='ocean'&&m!=='vehicle') },
+        params: { type: 'object', description: '模組參數，見回傳的 params_doc；x、y 為物件位置 0–1。新海底場景請用 build_illustration_scene；交通工具請用 build_transport_scene；舊 ocean／vehicle 模組保留相容，已從目錄隱藏' },
         lines: { type: 'array', items: { type: 'string' }, description: '文字，一行一句（最多 4 行），~ 開頭為英文小字' },
         layout: { type: 'string', enum: ['below', 'over', 'above', 'none'], description: '文字在物件下方、疊在物件上、上方或不顯示' },
         text_color: { type: 'string' },
@@ -567,10 +576,31 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    name: 'build_transport_scene', title: '組交通精修插畫',
+    description:'七種精修交通插畫：car 汽車、carriage 馬車、plane 客機、rocket 太空船、train 火車、ship 輪船、balloon 熱氣球。獨立動作控制、配色、五種背景與透明輸出。',
+    inputSchema: {type:'object',properties:{
+      scene:{type:'object',description:'完整設定；也可直接提供下列欄位。speed 優先於 duration，片長為 12/speed'},
+      mode:{type:'string',enum:Object.keys(TRANSPORT.modes),description:'預設 car；各招專屬參數見回傳 params_doc'},
+      ...Object.fromEntries(Object.values(TRANSPORT.fields).flat().map(f=>[f.key,{type:'number',description:f.label,minimum:Math.min(...Object.values(TRANSPORT.fields).flat().filter(g=>g.key===f.key).map(g=>g.min)),maximum:Math.max(...Object.values(TRANSPORT.fields).flat().filter(g=>g.key===f.key).map(g=>g.max))}])),
+      ratio:{type:'string',enum:['9:16','16:9','1:1']}, size:{type:'number',minimum:.4,maximum:2.2}, speed:{type:'number',minimum:.6,maximum:2.5},duration:{type:'number',minimum:4.8,maximum:20},
+      x:{type:'number',minimum:-.5,maximum:1.5}, y:{type:'number',minimum:0,maximum:1}, angle:{type:'number',minimum:-60,maximum:60},
+      direction:{type:'string',enum:['left','right']},path:{type:'string',enum:['pass','cruise']},color:{type:'string',description:'#RRGGBB，提供 color 時預設開啟換色；tint=0 恢復原色'},
+      background:{type:'string',enum:Object.keys(TRANSPORT.backgrounds)},
+      tint:{type:'number',minimum:0,maximum:1},camera:{type:'number',minimum:0,maximum:1.5},opacity:{type:'number',minimum:0,maximum:1},brightness:{type:'number',minimum:.3,maximum:1.5},seed:{type:'number',minimum:0,maximum:999999},title:{type:'string'}
+    }},
+    annotations:{readOnlyHint:true},
+    run:async(a,ctx)=>{
+      const raw={...(a.scene&&typeof a.scene==='object'?a.scene:{}),...Object.fromEntries(Object.entries(a).filter(([k])=>k!=='scene'&&k!=='duration'&&k!=='title'))} as Partial<TScene>;
+      if(a.duration!==undefined){delete raw.speed;raw.loop=Number(a.duration);if(a.speed!==undefined)raw.speed=Number(a.speed);}
+      if(raw.color&&raw.tint===undefined)raw.tint=1;
+      return transportResult(raw,ctx,String(a.title??'交通工具・精修插畫'));
+    },
+  },
+  {
     name: 'list_presets',
     title: '列出預設',
     description: '列出使用者在網站工作室調好並存起來的預設（地圖場景、銳利水滴、圖片運鏡、物件特效、精修插畫）。使用者說「用 p7k2x」或「用外觀慢推那個」時，用這個查代碼。',
-    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
+    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
       const list = await listPresets(ctx.env, String(a.kind ?? ''), String(a.query ?? ''), Number(a.limit) || 50);
@@ -601,7 +631,7 @@ export const TOOLS: ToolDef[] = [
         name: { type: 'string', description: '好記的名稱，例如「外觀慢推_左到右」' },
         note: { type: 'string' },
         combo_scene: { type: 'object', description: 'build_map_scene / build_drop_scene / build_photo_scene 回傳的 combo_scene（擇一）' },
-        kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan'] },
+        kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport'] },
         data: { type: 'object', description: 'map：場景物件；drop：{ words: [...] }；photo：build_photo_scene 回傳的 scene（擇一）' },
       },
     },
@@ -715,7 +745,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
-地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、隕石／魔術方塊／星空宇宙（含太陽、月球、地球、低空飛越；cam=in/out 推近拉遠）／俯瞰空拍／交通工具／海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、隕石／魔術方塊／星空宇宙（含太陽、月球、地球、低空飛越；cam=in/out 推近拉遠）／俯瞰空拍請用 build_object_scene；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 字型：Combo 的 font（整支）與 scenes[].font（單段）可選字型組合，依段落情緒挑：數據、資訊、標題用 sharp（預設）；開箱、生活、通勤用 round；質感建案、片頭大標用 serif；旁白金句、心得用 hand；俏皮吐槽用 cute。一支影片以 2–3 組為限，同類段落維持同一組，避免每段都換。\n手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

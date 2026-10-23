@@ -1,3 +1,4 @@
+import { isTransportFx, transportFromWords, TRANSPORT } from './transport';
 import { illustrationFromWords, isIllustrationFx, ILLUSTRATION } from './illustration';
 import type { Fx } from './types';
 import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
@@ -22,6 +23,11 @@ const quoteWords = (w: string[]) => w.map((t) => `「${t}」`).join('、');
 const quoteWordsEn = (w: string[]) => w.map((t) => `"${t}"`).join(', ');
 
 export const buildPrompt = (fx: Fx, mode: PromptMode, words: string[], v: Vars, ratio: Ratio): string => {
+  if(isTransportFx(fx.id)&&mode!=='code'){
+    const sc={...transportFromWords(words,fx.id),ratio},settings=JSON.stringify(sc,null,2);
+    if(mode==='en'||mode==='video')return `Create a ${ratioEn[ratio]}, ${sc.loop.toFixed(2)}-second refined transport illustration animation using ${fx.id}. ${fx.motionEn} Use build_transport_scene with mode=${sc.mode} and the shared /r/transport.js renderer and supplied assets. Await renderer.ready before rendering frames; preserve alpha for transparent output. No added typography.\nSETTINGS\n${settings}`;
+    return `製作「${TRANSPORT.modes[sc.mode].zh}」精修交通插畫，${ratio}，${sc.loop} 秒。${fx.motion}\n使用 build_transport_scene（mode=${sc.mode}）及 /r/transport.js 共用引擎與既有素材；await renderer.ready 後逐格 render(t,W,H)，保留透明度。將 combo_scene 放入 compose_combo / save_combo。\nSETTINGS\n${settings}`;
+  }
   if (isIllustrationFx(fx.id) && mode !== 'code') {
     const sc={...illustrationFromWords(words,fx.id),ratio},settings=JSON.stringify(sc,null,2),subject=sc.mode==='whale'?ILLUSTRATION.animals[sc.animal].zh:ILLUSTRATION.modes[sc.mode].zh;
     if (mode === 'en' || mode === 'video') return `Create a ${ratioEn[ratio]}, ${sc.loop.toFixed(2)}-second refined ocean illustration animation using ${fx.id}. ${fx.motionEn} Preserve the supplied textures and species-specific motion. For exact rendering use build_illustration_scene with mode="${sc.mode}" and /r/illustration.js. No added typography.\nSETTINGS\n${settings}`;

@@ -2816,3 +2816,13 @@ pre.code {
   cursor: crosshair;
   touch-action: none;
 }
+#tsStage{touch-action:none}
+#tsSnow{pointer-events:none;outline:0}
+#tsLoading{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:#efe6ce;background:#05283f;font-size:14px;pointer-events:none}
+#tsLoading[hidden]{display:none}
+#transportstudio .st-select{max-width:100%}
+#transportstudio .st-row output{min-width:3.7em;font-variant-numeric:tabular-nums}
+#tsClock{font-size:12px;font-variant-numeric:tabular-nums}
+#tsControls input:disabled{opacity:.35}
+#transportstudio .st-out button:disabled{opacity:.5;cursor:wait}
+@media(max-width:700px){#transportstudio .st-panel{min-width:0}#transportstudio .st-left{padding:14px}#transportstudio .st-row{grid-template-columns:80px minmax(0,1fr) auto}#transportstudio .d-controls{gap:8px}}

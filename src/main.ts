@@ -1,3 +1,5 @@
+import { isTransportFx, transportMode, transportFromWords } from './transport';
+import { initTransportStudio } from './transport-studio';
 import { initIllustrationStudio } from './illustration-studio';
 import { isIllustrationFx, illustrationMode, illustrationFromWords } from './illustration';
 import './styles.css';
@@ -303,7 +305,7 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
     lede: '水滴、隕石、魔術方塊、星空宇宙、海底世界……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用；一行一句用 / 分隔',
-    hero: ['whale-illustrated', 'ocean-illustrated-shark', 'ocean-illustrated-fish', 'obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
+    hero: ['vehicle-illustrated-car', 'vehicle-illustrated-plane', 'vehicle-illustrated-ship', 'whale-illustrated', 'ocean-illustrated-shark', 'ocean-illustrated-fish', 'obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
   },
   chart: {
     small: '一行一筆數據就會動',
@@ -508,7 +510,7 @@ const cardHtml = (f: Fx, k: number) => {
   const n = NUM.get(f.id)!;
   const fav = state.favs.has(f.id);
   return `<article class="ma-card" tabindex="0" role="button" data-id="${f.id}" style="--k:${k}" aria-label="${pad(n)} ${esc(f.zh)}：${esc(f.desc)}">
-  <div class="card-stage"><div class="stage"></div>${isIllustrationFx(f.id) ? '<span class="ill-badge">精修插畫</span>' : ''}<span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
+  <div class="card-stage"><div class="stage"></div>${(isIllustrationFx(f.id)||isTransportFx(f.id)) ? '<span class="ill-badge">精修插畫</span>' : ''}<span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
   <div class="card-meta"><span class="ma-num">${pad(n)}</span><div class="card-txt"><h3>${highlight(f.zh)}</h3><p>${highlight(f.desc)}</p></div>
   <button class="heart" data-fav="${f.id}" aria-pressed="${fav}" aria-label="收藏 ${esc(f.zh)}"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.3-9C1 8.4 3.2 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.8 0 6 3.9 4.3 7.5C19 16.6 12 21 12 21z"/></svg></button></div>
 </article>`;
@@ -860,8 +862,8 @@ const renderDetail = () => {
   $('#dPhotoStudio').hidden = !isPhotoFx(fx.id);
   $('#dPlanStudio').hidden = !isPlanFx(fx.id);
   $('#dObjStudio').hidden = !isObjFx(fx.id)||isIllustrationFx(fx.id);
-  $('#dIllustrationStudio').hidden = !isIllustrationFx(fx.id);
-  dWords.closest('label')!.hidden = isIllustrationFx(fx.id);
+  $('#dIllustrationStudio').hidden = !isIllustrationFx(fx.id)&&!isTransportFx(fx.id);
+  dWords.closest('label')!.hidden = isIllustrationFx(fx.id)||isTransportFx(fx.id);
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
   syncSegs();
   renderStage();
@@ -1084,6 +1086,7 @@ const combos = initCombos({
       const data = photoSceneFromWords(words, effect.slice(6) as PModule);
       return meta ? photoStudio.loadPreset({ ...meta, data }) : photoStudio.load(data);
     }
+    if(isTransportFx(effect)){const data=transportFromWords(words,effect);return meta?transportStudio.loadPreset({...meta,data}):transportStudio.load(data);}
     if (isIllustrationFx(effect)) {
       const data=illustrationFromWords(words,effect);
       return meta ? illustrationStudio.loadPreset({...meta,data}) : illustrationStudio.load(data);
@@ -1122,9 +1125,10 @@ $('#dPlanStudio').addEventListener('click', () => {
   if (words.some((w) => w.trim().startsWith('{'))) planStudio.load(planSceneFromWords(words, mode));
   else planStudio.open(mode);
 });
+const transportStudio=initTransportStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
 const illustrationStudio=initIllustrationStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
-$('#dIllustrationStudio').addEventListener('click',()=>{const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
-const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open(), openIllustration: data => data ? illustrationStudio.load(data) : illustrationStudio.open() });
+$('#dIllustrationStudio').addEventListener('click',()=>{if(isTransportFx(d.fx.id)){const mode=transportMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=transportFromWords(words,d.fx.id);sc.ratio=ratio;transportStudio.load(sc);}else transportStudio.openMode(mode,ratio);return;}const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
+const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open(), openTransport:()=>transportStudio.open(), openIllustration: data => data ? illustrationStudio.load(data) : illustrationStudio.open() });
 $('#dObjStudio').addEventListener('click', () => {
   const fx = d.fx;
   const html = fx.html(d.words);
@@ -1146,8 +1150,8 @@ const openEdit = async () => {
   const edit = q.get('edit');
   if (!edit) return;
   const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) =>
-    p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : studio.loadPreset(p);
-  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan') {
+    p.kind === 'transport' ? transportStudio.loadPreset(p) : p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : studio.loadPreset(p);
+  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan' || edit === 'transport') {
     try {
       route({ kind: edit, name: '', data: decodeJson<PresetData>(q.get('d') ?? '') });
       toast('已載入 AI 產生的設定，調好後按「存成預設」');
@@ -1186,6 +1190,7 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'chart') return copy(CHART_PROMPT, '已複製，貼給 Claude 並附上數據');
   if (state.sec === 'text') return showKits(true);
   if (state.sec === 'plan') return planStudio.open();
+  if(state.sec==='object'&&state.cat==='vehicle')return transportStudio.open();
   if(state.sec==='object'&&state.cat==='ocean')return illustrationStudio.open();
   return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : objStudio.open();
 });

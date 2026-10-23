@@ -6,7 +6,7 @@ import type { ObjectStudioDeps } from './object-studio';
 
 const dimensions: Record<IScene['ratio'],[number,number]>={'9:16':[1080,1920],'16:9':[1920,1080],'1:1':[1080,1080]};
 const poster=(scene:IScene)=>(scene.mode==='shark'?9.3:5)/scene.speed;
-export const initIllustrationStudio = (deps: Omit<ObjectStudioDeps,'openDrop'|'openIllustration'>) => {
+export const initIllustrationStudio = (deps: Omit<ObjectStudioDeps,'openDrop'|'openIllustration'|'openTransport'>) => {
   document.body.insertAdjacentHTML('beforeend',`<dialog id="illstudio" class="detail st ms ps" aria-labelledby="isTitle"><div class="d-inner">
     <header class="d-head"><div class="d-title"><span class="ma-num cb-badge">200</span><div><h2 id="isTitle" tabindex="-1" autofocus>海底世界・精修插畫</h2><p>七種海底場景 × 個別編輯面板 × 五種海景，保留插畫紋理；調整後可直接輸出或加入 Combo</p></div></div><div class="d-nav"><button class="ic" id="isClose" aria-label="關閉">✕</button></div></header>
     <div class="st-body"><div class="st-left"><div id="isStage" class="st-stage ms-stage" data-ratio="9:16"><canvas id="isCanvas"></canvas><canvas id="isSnow"></canvas><div id="isLoading" role="status">載入精修插畫…</div></div>

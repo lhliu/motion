@@ -1,0 +1,62 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>七種精修交通工具</title>
+<style>*{box-sizing:border-box}body{margin:24px;background:#eee8da;color:#12394a;font:14px system-ui}h1{font-size:28px}.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1180px}.preview{position:relative;aspect-ratio:9/16;background:repeating-conic-gradient(#ccc 0 25%,#eee 0 50%) 0 0/12px 12px}.preview canvas{position:absolute;inset:0;width:100%;height:100%}figure{margin:0}figcaption{padding:8px;font-weight:600}pre{white-space:pre-wrap}button{padding:9px 18px;margin-bottom:16px}@media(max-width:700px){.gallery{grid-template-columns:repeat(2,1fr)}}</style>
+<h1>交通工具 · 七種精修插畫</h1><button id="play">▶ 播放全部</button><div class="gallery" id="gallery"></div><pre id="results">驗證中…</pre>
+<script type="module">
+import { TRANSPORT as R,normalizeTransport as norm,transportFxId,transportFromWords,isTransportFx } from '/src/transport.ts';
+import { ALL_EFFECTS,EFFECTS,CATEGORIES,PALETTES } from '/src/data.ts';
+import { findEffect,normalizeCombo,sceneSeconds,comboHtml } from '/src/combo.ts';
+import { presetToScene,sceneToPresetData } from '/src/presets.ts';
+import { TOOLS } from '/functions/_lib/tools.ts';
+import { KITS } from '/src/uses.ts';
+import { buildPrompt,exportHtml } from '/src/prompts.ts';
+import { toneVars,fnSource } from '/src/engine.ts';
+import { defaultObjScene,drawObj,objRenderer } from '/src/objkit.ts';
+const results=[],items=[];const check=(v,m)=>{if(!v)throw new Error(m)};
+async function test(name,fn){try{await fn();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}}
+const cv=(w=270,h=480)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+const px=c=>{const a=cv(c.width,c.height),x=a.getContext('2d');x.drawImage(c,0,0);return x.getImageData(0,0,c.width,c.height).data};
+const visible=c=>{const p=px(c);let n=0;for(let i=3;i<p.length;i+=4)if(p[i]>100)n++;return n};
+const shot=item=>item.a.toDataURL()+'|'+item.b.toDataURL();
+await test('目錄恰好七招精修插畫，編號唯一，隱藏原版仍可播放',()=>{
+ const ocean=EFFECTS.filter(f=>f.cat==='vehicle');check(ocean.length===7,'Wrong vehicle count');check(!CATEGORIES.some(c=>c.id==='transport'),'Duplicate refined category');check(new Set(ALL_EFFECTS.map(f=>f.no)).size===ALL_EFFECTS.length&&new Set(ALL_EFFECTS.map(f=>f.id)).size===ALL_EFFECTS.length,'Duplicate numbers');
+ for(const m of Object.keys(R.modes)){const f=findEffect(transportFxId(m));check(f.no===R.modes[m].no&&f.tags.includes('精修插畫')&&f.globals.includes('MA_TRANSPORT'),'Not refined '+m);check(transportFromWords([],f.id).mode===m,'Wrong card mode');}
+ check(findEffect('178').id==='obj-vehicle-car'&&findEffect('obj-vehicle-car').hidden,'Hidden original missing');
+ check(ALL_EFFECTS.filter(f=>f.hidden&&f.cat==='vehicle').length===7,'Originals deleted');
+});
+for(const mode of Object.keys(R.modes))await test(`${mode}：載入、播放、三種比例與透明度`,async()=>{
+ const a=cv(),b=cv(),sc=norm({mode}),engine=R.createRenderer(a,b,sc,location.origin),item={a,b,engine,mode};await engine.ready;engine.render(4);const before=shot(item);engine.render(6);check(before!==shot(item),'Static');engine.render(4);check(before===shot(item),'Seek not deterministic');
+ for(const [w,h] of [[320,180],[220,220],[270,480]]){engine.render(5,w,h);check(px(a).some((v,i)=>i%4!==3&&v>50),'Blank aspect ratio');}
+ await engine.update({...sc,background:'transparent',particles:0});engine.render(5);const data=px(a);check(data.some((v,i)=>i%4===3&&v===0)&&visible(a)>20,'Missing transparent subject');
+ await engine.update(sc);engine.render(5);
+ const f=document.createElement('figure');f.innerHTML=`<div class="preview"></div><figcaption>#${R.modes[mode].no} ${R.modes[mode].zh}・精修插畫</figcaption>`;f.firstElementChild.append(a,b);document.querySelector('#gallery').append(f);items.push(item);
+});
+const get=mode=>items.find(i=>i.mode===mode);
+for(const mode of Object.keys(R.modes))await test(`${mode}：專屬參數會改變實際畫面`,async()=>{
+ const item=get(mode),base=norm({mode,background:'transparent',path:'cruise'}),time=5;
+ const edits={car:{wheel:0,suspension:0},carriage:{gait:0,wheel:0},plane:{contrail:0,clouds:0},rocket:{thrust:0},train:{coaches:1},ship:{waves:0,rocking:0,smoke:0,wake:0},balloon:{rise:0,burner:0,wind:0,sway:0}};
+ await item.engine.update(base);item.engine.render(time);const a=shot(item);await item.engine.update({...base,...edits[mode]});item.engine.render(time);check(a!==shot(item),'Controls ignored');
+ await item.engine.update(norm({mode}));item.engine.render(5);
+});
+await test('每招各自的設定、預設、編輯連結及 Combo 保持主角與片長',()=>{
+ for(const mode of Object.keys(R.modes)){const sc=norm({mode,speed:.6,size:1.5}),cs=presetToScene({kind:'transport',data:sc,name:mode}),pd=sceneToPresetData(cs.effect,cs.words);check(cs.effect===transportFxId(mode)&&pd.data.mode===mode&&cs.seconds===20,'Wrong roundtrip '+mode);const c=normalizeCombo({title:mode,scenes:[cs]});check(!c.errors.length&&c.combo.scenes[0].words[0]===cs.words[0]&&sceneSeconds(c.combo.scenes[0])===20,'Combo lost config');}
+});
+await test('每招 HTML 自給自足、提示詞指向本招專屬工具',async()=>{
+ for(const mode of Object.keys(R.modes)){const fx=findEffect(transportFxId(mode)),sc=norm({mode}),words=[JSON.stringify(sc)],html=exportHtml(fx,words,toneVars(PALETTES[0],'ink'),'9:16');check(html.includes('MA_TRANSPORT')&&html.includes('data-scene='),'Missing engine');for(const language of ['web','en','video']){const p=buildPrompt(fx,language,words,toneVars(PALETTES[0],'ink'),'9:16');check(p.includes('build_transport_scene')&&p.includes(`mode=${mode}`),'Wrong prompt');}}
+ const mode='ship',fx=findEffect(transportFxId(mode)),frame=document.createElement('iframe');frame.style.cssText='width:270px;height:480px;border:0';frame.sandbox='allow-scripts allow-same-origin';document.body.append(frame);const done=new Promise(r=>frame.onload=r);frame.srcdoc=exportHtml(fx,[],toneVars(PALETTES[0],'ink'),'9:16');await done;const root=frame.contentDocument.querySelector('.fx');check(await root.motionReady,'Export not ready');root.motionSeek(5);check(root.querySelector('canvas').toDataURL()===get(mode).a.toDataURL(),'Export/preview mismatch');frame.remove();
+});
+await test('既有物件引擎與獨立原版渲染維持一致',()=>{
+ const other=(0,eval)(`(${fnSource(objRenderer)})`)();for(const module of ['meteor','cube','cosmos','aerial','vehicle']){const sc=defaultObjScene(module),a=cv(180,320),b=cv(180,320);drawObj(a.getContext('2d'),180,320,sc,3);other.drawObj(b.getContext('2d'),180,320,sc,3);check(a.toDataURL()===b.toDataURL(),'Changed '+module);}
+});
+await test('MCP 專屬工具、原版相容與速度片長',async()=>{
+ const ctx={origin:location.origin,request:new Request(location.origin+'/mcp'),env:{}},tool=TOOLS.find(t=>t.name==='build_transport_scene');
+ for(const mode of Object.keys(R.modes)){const r=await tool.run({mode,duration:20,color:'#23ab65'},ctx);check(r.scene.mode===mode&&r.scene.speed===.6&&r.scene.tint===1&&r.combo_scene.effect===transportFxId(mode)&&r.edit_url.includes('edit=transport'),'MCP wrong '+mode);}
+ const old=await TOOLS.find(t=>t.name==='build_object_scene').run({module:'vehicle',params:{mode:'train'},duration:8},ctx);check(old.scene.module==='vehicle'&&old.scene.params.mode==='train'&&old.combo_scene.seconds===8,'Legacy MCP changed');
+});
+await test('換色保留紋理，透明輸出與異步切換一致',async()=>{
+ const a=cv(),b=cv(),r=R.createRenderer(a,b,norm({mode:'car',background:'transparent'}),location.origin);await r.ready;r.render(5);const original=a.toDataURL();await r.update({...r.scene,color:'#20aa66',tint:1});r.render(5);check(a.toDataURL()!==original,'Tint ignored');const values=new Set(Array.from(px(a)).filter((v,i)=>i%4!==3));check(values.size>100,'Texture lost');
+ await Promise.all([r.update(norm({mode:'ship'})),r.update(norm({mode:'carriage'})),r.update(norm({mode:'plane'}))]);check(r.scene.mode==='plane'&&r.loaded,'Stale update won');r.render(5);check(visible(a)>100,'Race blank');r.dispose();check(a.width===1&&b.width===1,'Cleanup failed');
+});
+let playing=false,start=0;document.querySelector('#play').onclick=()=>{playing=!playing;start=performance.now();document.querySelector('#play').textContent=playing?'Ⅱ 暫停':'▶ 播放全部';if(playing)requestAnimationFrame(tick)};
+function tick(now){if(!playing)return;for(const item of items)item.engine.render(((now-start)/1000)%12);requestAnimationFrame(tick)}
+window.transportRenderAt=t=>items.forEach(i=>i.engine.render(t));window.transportResults=results;document.querySelector('#results').textContent=results.map(r=>`${r.passed?'PASS':'FAIL'} ${r.name}${r.error?' — '+r.error:''}`).join('\n');document.documentElement.dataset.result=results.every(r=>r.passed)?'pass':'fail';
+</script></html>

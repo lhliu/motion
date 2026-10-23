@@ -1,3 +1,4 @@
+import { isTransportFx } from './transport';
 import { isIllustrationFx } from './illustration';
 import { comboHtml, comboOutline, comboPrompt, sceneSummary, decodeCombo, encodeCombo, findEffect, normalizeCombo, sceneSeconds, totalSeconds, type Combo, type ComboScene, type Transition } from './combo';
 import { NUM } from './data';
@@ -62,7 +63,7 @@ export const initCombos = (deps: ComboDeps) => {
     const fx = findEffect(s.effect);
     const words = (s.words ?? fx?.sample ?? []).join(' / ');
     const diagram = fx?.cat === 'diagram';
-    const long = isIllustrationFx(s.effect) || s.effect === 'map-overlay' || s.effect === 'crisp-drop' || isPhotoFx(s.effect) || (isObjFx(s.effect) && !!s.words?.[0]?.trim().startsWith('{'));
+    const long = isTransportFx(s.effect) || isIllustrationFx(s.effect) || s.effect === 'map-overlay' || s.effect === 'crisp-drop' || isPhotoFx(s.effect) || (isObjFx(s.effect) && !!s.words?.[0]?.trim().startsWith('{'));
     return `<li class="dr-scene" data-i="${i}">
       <div class="dr-s-head"><span class="ma-num">${pad(i + 1)}</span><button class="dr-fx" data-act="open" title="打開特效">${fx ? `${esc(fx.zh)} <small>#${pad(NUM.get(fx.id)!)} ${esc(fx.en)}</small>` : esc(s.effect)}</button>
         <span class="dr-s-tools"><button class="ic" data-act="up" aria-label="上移"${i === 0 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg></button><button class="ic" data-act="down" aria-label="下移"${i === draft.scenes.length - 1 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>${long ? '<button class="ic" data-act="studio" aria-label="在工作室開啟" title="在工作室開啟">✎</button>' : ''}<button class="ic" data-act="dup" aria-label="複製這段"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><button class="ic" data-act="del" aria-label="刪除這段"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span></div>
