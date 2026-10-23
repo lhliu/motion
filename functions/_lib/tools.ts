@@ -13,13 +13,13 @@ import { KITS, USES } from '../../src/uses';
 import { FONT_IDS, FONT_PACKS } from '../../src/fonts';
 import { defaultObjScene, normalizeObjScene, objFxId, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from '../../src/objkit';
 
-const illustrationResult = (raw:unknown,ctx:ToolCtx,title='海底世界・精修插畫') => {
+const illustrationResult = (raw:unknown,ctx:ToolCtx,title='海洋世界・精修插畫') => {
   const sc=normalizeIllustration(raw),combo_scene={effect:illustrationFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop};
   const {combo}=normalizeCombo({title,ratio:sc.ratio,transition:'cut',scenes:[combo_scene]});
   return {scene:sc,combo_scene,modes:ILLUSTRATION.modes,subjects:sc.mode==='whale'?ILLUSTRATION.animals:undefined,backgrounds:ILLUSTRATION.backgrounds,
     params_doc:ILLUSTRATION.fields[sc.mode],edit_url:editUrl(ctx.origin,{kind:'illustration',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,
     local_render:`載入 ${ctx.origin}/r/illustration.js；const renderer=MA_ILLUSTRATION.createRenderer(glCanvas,particleCanvas,scene,"${ctx.origin}");await renderer.ready;逐格呼叫 renderer.render(i/fps,W,H)，依序 drawImage 兩張 canvas，最後 renderer.dispose()。`,
-    next:`海底世界目前只有七種精修插畫；將 combo_scene 放進 compose_combo / save_combo，ratio=${sc.ratio}，用 edit_url 進入本招專屬編輯面板。`};
+    next:`海洋世界的海底場景目前有七種精修插畫；將 combo_scene 放進 compose_combo / save_combo，ratio=${sc.ratio}，用 edit_url 進入本招專屬編輯面板。`};
 };
 const transportResult = (raw:unknown,ctx:ToolCtx,title='交通工具・精修插畫') => {
   const sc=normalizeTransport(raw),combo_scene={effect:transportFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop};
@@ -27,7 +27,7 @@ const transportResult = (raw:unknown,ctx:ToolCtx,title='交通工具・精修插
   return {scene:sc,combo_scene,modes:TRANSPORT.modes,backgrounds:TRANSPORT.backgrounds,
     params_doc:TRANSPORT.fields[sc.mode],edit_url:editUrl(ctx.origin,{kind:'transport',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,
     local_render:`載入 ${ctx.origin}/r/transport.js；const renderer=MA_TRANSPORT.createRenderer(canvas,overlayCanvas,scene,"${ctx.origin}");await renderer.ready;逐格呼叫 renderer.render(i/fps,W,H)，依序 drawImage 兩張 canvas，最後 renderer.dispose()。`,
-    next:`交通工具目前開放飛機、太空船、輪船、熱氣球四種精修插畫；將 combo_scene 放進 compose_combo / save_combo，ratio=${sc.ratio}，用 edit_url 進入本招專屬編輯面板。`};
+    next:`精修交通插畫目前開放四種：飛機、熱氣球（天空物件）、太空船（星空物件）、輪船（海洋世界）；將 combo_scene 放進 compose_combo / save_combo，ratio=${sc.ratio}，用 edit_url 進入本招專屬編輯面板。`};
 };
 const natureResult = (raw:unknown,ctx:ToolCtx,title='隕石與俯瞰・精修插畫') => {
   const sc=normalizeNature(raw),combo_scene={effect:natureFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop};
@@ -588,7 +588,7 @@ export const TOOLS: ToolDef[] = [
       const raw={...(a.scene&&typeof a.scene==='object'?a.scene:{}),...Object.fromEntries(Object.entries(a).filter(([k])=>k!=='scene'&&k!=='duration'&&k!=='title'))} as Partial<IScene>;
       if(a.duration!==undefined){delete raw.speed;raw.loop=Number(a.duration);if(a.speed!==undefined)raw.speed=Number(a.speed);}
       if(raw.color&&raw.tint===undefined)raw.tint=1;
-      return illustrationResult(raw,ctx,String(a.title??'海底世界・精修插畫'));
+      return illustrationResult(raw,ctx,String(a.title??'海洋世界・精修插畫'));
     },
   },
   {

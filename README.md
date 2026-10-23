@@ -8,7 +8,7 @@ https://motion.leichthub.com
 - **圖片運鏡**（21 個模組）：單張運鏡（推拉、甩入、3D 卡片、視窗彈出、分層視差、手機框）、多張組合（前後對比、翻卡、拍立得、宮格、分割畫面）、標註轉場（放大鏡、影片定格標註、縮放穿越）、裁切與遮罩（遮罩揭露、切片錯位、拼塊組圖、撕紙揭露、剪報拼貼、形狀變換、前景遮擋換景）
 - **地圖區位**（15 招）：捷運鐵路路網（單線路網、路線條、多線路網：轉乘站、焦點站、鐵路黑白線、規劃中虛線、區域圈，文字行描述 `src/transit.ts`，本機渲染 `/r/transit.js`）；基地框（可加減角點做 L 形）、路名、資訊卡、資訊條、圓形標記（A棟/B棟）、通勤路線、放射路線；場景可加「太空降落」開場
 - **物件特效**（14 招）：水滴泡泡、魔術方塊、星空宇宙；工作室 `/?view=object`，MCP `build_object_scene`，本機渲染 `/r/obj.js`。隕石與俯瞰原版已隱藏保留，精修版移入插畫工作區。
-- **插畫**（23 招）：星空物件系列 4 招（天體 #169、星球飛越 #195、推近地球 #199、精修隕石 #244；隕石在編輯器切換四種樣式）、俯瞰 8 招（`src/nature.ts`，MCP `build_nature_scene`）、交通工具 4 招（開車上路 #237、馬車旅行 #238、火車捷運 #241 依既有設定隱藏保留，`src/transport.ts`，MCP `build_transport_scene`）、海底世界 7 招（`src/illustration.ts`，MCP `build_illustration_scene`）；每招有獨立編輯設定。
+- **插畫**（23 招）：星空物件系列 5 招（天體 #169、星球飛越 #195、推近地球 #199、精修隕石 #244、太空船 #240；隕石在編輯器切換四種樣式）、俯瞰 8 招（`src/nature.ts`，MCP `build_nature_scene`）、天空物件 2 招（客機、熱氣球；開車上路 #237、馬車旅行 #238、火車捷運 #241 依既有設定隱藏保留，`src/transport.ts`，MCP `build_transport_scene`）、海洋世界 8 招（海底 7 招 `src/illustration.ts`，MCP `build_illustration_scene`；輪船 #242 用 `build_transport_scene`）；每招有獨立編輯設定。
 - **圖表特效**（20 招）：直條、堆疊直條、橫條、排名、瀑布、折線、區域、組合（雙軸）、圓餅、環圈、儀表板、進度環、象形圖、樹狀、旭日、漏斗、盒鬚、XY 散佈、泡泡、雷達；數據一行一筆「標籤 數值」（`src/chart.ts`，本機渲染 `/r/chart.js`），全站預覽文字只換標題
 - **格局**（7 招）：戶別定位、公設導覽、逐間高亮、看屋動線、單房聚焦、戶型比較、平面立體傾斜；格局工作室 `/?view=plan` 放入建商平面圖、拉框或多邊形標房間、點動線，自動抓平面圖範圍（去掉 DM 留白與 Logo），可手動調整；MCP `build_plan_scene`，本機渲染 `/r/plan.js`（`src/plankit.ts`）。網站示範為程式畫的虛構戶型，真實 DM 只存在使用者自己的預設與 Combo
 - **套組**：獨立分頁 `/?ws=kits`，常見段落順序的現成 Combo（`src/uses.ts` 的 KITS）
@@ -63,9 +63,9 @@ MCP `build_nature_scene` 使用 `mode=meteor|city|river|mountain|grass|farm|coas
 
 原有四招隕石 `obj-meteor-*`（#158–161）及八招俯瞰 `obj-aerial-*`（#170–177）只標記隱藏，完整保留代碼、編號、原動畫與舊連結／預設／Combo。原有交通工具隱藏設定保持不變。
 
-### 交通工具・精修插畫
+### 交通工具・精修插畫（天空物件／星空物件／海洋世界）
 
-交通分類保留七招精修插畫（#237–243），其中 #237／#238／#241 依既有設定隱藏，前台列出四招：汽車、馬車、客機、太空船、火車捷運、輪船與熱氣球。舊 `obj-vehicle-*`（#178–184）只隱藏，保留原始程式、編號、連結、object 預設及 Combo。
+交通分類保留七招精修插畫（#237–243），其中 #237／#238／#241 依既有設定隱藏，前台列出四招，依主題分到三個分類：客機、熱氣球在「天空物件」，太空船 #240 在「星空物件」，輪船 #242 在「海洋世界」。舊 `obj-vehicle-*`（#178–184）只隱藏，保留原始程式、編號、連結、object 預設及 Combo。
 
 專用編輯器 `/?view=transport`，各卡片的「編輯精修插畫」會開啟本招並記住各自設定：
 
@@ -81,7 +81,7 @@ MCP `build_nature_scene` 使用 `mode=meteor|city|river|mountain|grass|farm|coas
 
 `src/transport.ts` 是所有預覽、輸出與獨立 HTML 共用的自給自足 Canvas 引擎，只載入所選場景素材。素材在 `public/media/transport-illustrated/`，保留原圖並提供 CORS。MCP 使用 `build_transport_scene`（mode=car|carriage|plane|rocket|train|ship|balloon），回傳本招 `params_doc` 與編輯連結。`/r/transport.js` 提供 `MA_TRANSPORT.createRenderer(canvas, overlayCanvas, scene, assetOrigin)`；先 `await renderer.ready`，再 `renderer.render(t,W,H)`，最後 `renderer.dispose()`。馬匹使用新版完整插畫 `horse-complete-v2.png`，原本的分離身體／腿部素材保留。馬腿採連續蒙皮與固定骨長，四蹄交替接地，輪速與路面預設配合步態；船隻的船底由世界座標的水線遮住，搖晃穿過水面，透明輸出也保留正確水線。`/tests/transport-anatomy.html` 提供四個步態時間點及船隻預覽，驗證骨長、接地、吃水與透明度。可在 Vite 開啟 `/tests/transport-refined.html` 檢查動畫、專屬參數、透明度、比例、MCP、預設、Combo、獨立 HTML 與舊版相容性。
 
-### 海底世界・精修插畫
+### 海洋世界・精修插畫
 
 海底分類前台只顯示七招精修插畫，原有向量版隱藏保留：魚群穿梭（#224）、海豚同行（#225）、海洋巨物（#200）、鯊魚迎面衝刺（#226）、珊瑚花園（#227）、深海下潛（#228）、潛水艇探索（#229）。六招新精修動畫使用新的 `ocean-illustrated-*` 代碼。原有七招 `obj-ocean-*`（#188–194）只標記 `hidden: true`，保留原始動畫、編號與編輯功能，舊連結、Combo、object 預設及舊 MCP 呼叫仍播放原版，沒有轉換或刪除。`ALL_EFFECTS` 保留全部效果，`EFFECTS` 是前台可見清單；搜尋、分類、API 目錄只列可見清單，`get_effect` 和 `findEffect` 可讀取隱藏原版。
 

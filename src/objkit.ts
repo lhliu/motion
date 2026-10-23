@@ -31,8 +31,8 @@ export const OBJ_INFO: Record<OModule, { zh: string; en: string; desc: string }>
   cube: { zh: '魔術方塊', en: 'Rubik Cube', desc: '立體魔術方塊緩慢旋轉並轉動層，材質有塑膠、金屬、花色、單色' },
   cosmos: { zh: '星空宇宙', en: 'Cosmos', desc: '閃爍星空、光速穿越、旋轉星系、行星光環、太陽、月球、地球、低空飛越星球表面，可推近拉遠、加流星' },
   aerial: { zh: '俯瞰', en: 'Aerial View', desc: '從正上方往下看的城市、河流、山川、草原牛馬、農田、海岸、森林、交流道，鏡頭緩慢平移推近' },
-  ocean: { zh: '海底世界', en: 'Underwater', desc: '魚群、海豚、巨鯨、迎面鯊魚、珊瑚、深海下潛、潛水艇，可去背或搭配海底場景' },
-  vehicle: { zh: '交通工具', en: 'Vehicles', desc: '飛機、太空船、汽車、馬車、火車、輪船、熱氣球，側面行進、背景捲動' },
+  ocean: { zh: '海洋世界', en: 'Underwater', desc: '魚群、海豚、巨鯨、迎面鯊魚、珊瑚、深海下潛、潛水艇，可去背或搭配海底場景' },
+  vehicle: { zh: '天空物件', en: 'Vehicles', desc: '飛機、太空船、汽車、馬車、火車、輪船、熱氣球，側面行進、背景捲動' },
 };
 export const OBJ_MODULES = Object.keys(OBJ_INFO) as OModule[];
 

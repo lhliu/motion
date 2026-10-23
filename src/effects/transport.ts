@@ -4,7 +4,7 @@ import { fnSource } from '../engine';
 import { transportEngine, transportFromWords, TRANSPORT, type TMode } from '../transport';
 export const TRANSPORT_GLOBALS=`globalThis.MA_TRANSPORT=${fnSource(transportEngine)}();`;
 export const illustratedVehicles:Fx[]=(Object.entries(TRANSPORT.modes) as [TMode,typeof TRANSPORT.modes[TMode]][]).map(([,info])=>({
- id:info.id,no:info.no,cat:'vehicle',zh:info.zh+'・精修插畫',en:info.en,desc:info.desc,
+ id:info.id,no:info.no,cat:info.id==='vehicle-illustrated-rocket'?'meteor':info.id==='vehicle-illustrated-ship'?'ocean':'vehicle',zh:info.zh+'・精修插畫',en:info.en,desc:info.desc,
  tags:['精修插畫','交通工具','可疊影片'],tone:'ink',sample:[],duration:12,preferredRatio:'9:16',added:'2026-10-23',
  hint:'按「編輯精修插畫」調整專屬動作、大小、速度、配色與五種背景；支援透明輸出。',
  motion:info.desc+'。分層精修插畫，各招有獨立編輯參數。可調整大小、速度、位置、方向、角度、配色、透明度與五種背景。無文字入場，不加陰影、模糊或光暈。',

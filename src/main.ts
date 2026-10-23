@@ -326,7 +326,7 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
   illus: {
     small: '精修插畫主角',
     big: '插畫',
-    lede: '星空物件、俯瞰、交通工具、海底世界……每一招都是<strong>精修插畫</strong>，主角、背景、配色都有<strong>專屬編輯</strong>，背景可透明直接疊進影片。',
+    lede: '星空物件、俯瞰、天空物件、海洋世界……每一招都是<strong>精修插畫</strong>，主角、背景、配色都有<strong>專屬編輯</strong>，背景可透明直接疊進影片。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用',
     hero: ['cosmos-illustrated-orbit','cosmos-illustrated-flyover','cosmos-illustrated-earthzoom','meteor-illustrated','aerial-illustrated-city','aerial-illustrated-grass','whale-illustrated', 'vehicle-illustrated-plane', 'ocean-illustrated-shark', 'vehicle-illustrated-ship', 'ocean-illustrated-fish'],
@@ -373,7 +373,7 @@ const renderHeroCopy = () => {
   $('#wbLabel').textContent = h.wb;
   $<HTMLInputElement>('#userText').placeholder = h.ph;
   $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件編輯器', illus: '打開插畫編輯', chart: '複製「請 AI 用我的數據做圖表」的指令', plan: '打開格局工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
-  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '魔術方塊、星空；水滴在工作室裡切換', illus: '先選分類：隕石、俯瞰、交通工具或海底世界', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
+  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '魔術方塊、星空宇宙、水滴各有編輯器', illus: '先選分類：星空物件、俯瞰、天空物件或海洋世界', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
   const n = secFx().length;
   $('#statFx').textContent = String(n);
   $('#statCat').textContent = String(CATEGORIES.filter((c) => c.sec === state.sec).length);
