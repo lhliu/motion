@@ -1251,8 +1251,8 @@ export const objRenderer = () => {
     return s - Math.floor(s);
   };
   /** 闊葉樹冠：落影＋幾團葉叢＋亮面 */
-  const tree = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, c: string) => {
-    const h = hash(x, y);
+  const tree = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, c: string, seed?: number) => {
+    const h = seed ?? hash(x, y);
     const lobes = (dx: number, dy: number, k: number, col: string) => {
       ctx.fillStyle = col;
       ctx.beginPath();
@@ -1271,8 +1271,8 @@ export const objRenderer = () => {
     blob(ctx, x - r * 0.32, y - r * 0.34, r * 0.3, mix(c, '#ffffff', 0.2));
   };
   /** 針葉樹：星形 */
-  const pine = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, c: string) => {
-    const h = hash(x, y) * 6;
+  const pine = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, c: string, seed?: number) => {
+    const h = (seed ?? hash(x, y)) * 6;
     const star = (dx: number, dy: number, k: number, col: string) => {
       ctx.fillStyle = col;
       ctx.beginPath();
@@ -2173,10 +2173,11 @@ export const objRenderer = () => {
         if (Math.abs(x) > 0.75 || Math.abs(y) > 0.85) continue;
         if (((x - ccx) / (crx + 0.01)) ** 2 + ((y - ccy) / (cry + 0.01)) ** 2 < 1) continue;
         if (dist(st, x, y) < 0.035 + rr * 0.5 || dist(tr, x, y) < 0.012 + rr * 0.6) continue;
-        const sway = Math.sin(t * 1.3 + k * 9) * 0.0015;
+        // 微風：整棵輕輕擺，葉形固定不變
+        const sway = Math.sin(t * 0.8 + k * 9) * 0.0005;
         const c = k > 0.97 ? '#b7a33f' : greens[Math.floor(k * greens.length)];
-        if (ty < 0.3) pine(ctx, x + sway, y, rr * 0.9, c);
-        else tree(ctx, x + sway, y, rr, c);
+        if (ty < 0.3) pine(ctx, x + sway, y, rr * 0.9, c, k);
+        else tree(ctx, x + sway, y, rr, c, k);
       }
       // 登山客
       for (const [s0, c] of w.hikers as number[][]) {
