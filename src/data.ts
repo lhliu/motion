@@ -24,13 +24,13 @@ import { plans } from './effects/plan';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
-  { id: 'text', code: 'TEXT', zh: '文字特效', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字' },
-  { id: 'photo', code: 'PHOTO', zh: '圖片運鏡', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
-  { id: 'map', code: 'MAP', zh: '地圖區位', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
-  { id: 'object', code: 'OBJECT', zh: '物件特效', en: 'Object Motion', desc: '水滴、隕石、魔術方塊、星空宇宙、海底世界；一系列可調形狀材質的主角物件', studio: 'object' },
-  { id: 'chart', code: 'CHART', zh: '圖表特效', en: 'Chart Motion', desc: '直條、折線、圓餅、階層、統計、瀑布……一行一筆數據就會動' },
+  { id: 'text', code: 'TEXT', zh: '文字', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字' },
+  { id: 'photo', code: 'PHOTO', zh: '圖片', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
+  { id: 'map', code: 'MAP', zh: '地圖', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
+  { id: 'object', code: 'OBJECT', zh: '物件', en: 'Object Motion', desc: '水滴、隕石、魔術方塊、星空宇宙、海底世界；一系列可調形狀材質的主角物件', studio: 'object' },
+  { id: 'chart', code: 'CHART', zh: '圖表', en: 'Chart Motion', desc: '直條、折線、圓餅、階層、統計、瀑布……一行一筆數據就會動' },
   { id: 'plan', code: 'PLAN', zh: '格局', en: 'Floor Plan', desc: '平面圖、單房、戶別定位、公設、立體傾斜；放建商平面圖就能動', studio: 'plan' },
-  { id: 'explain', code: 'EXPLAIN', zh: '圖解動畫', en: 'Explainer', desc: '工法、剖面、流程示意；一支一支客製，改圖請交給 AI' },
+  { id: 'explain', code: 'EXPLAIN', zh: '圖解', en: 'Explainer', desc: '工法、剖面、流程示意；一支一支客製，改圖請交給 AI' },
 ];
 
 export const CATEGORIES: Category[] = [
