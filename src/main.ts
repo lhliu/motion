@@ -96,6 +96,9 @@ const wordsFor = (fx: Fx): string[] => {
     return fx.sample.map((x, k) => (k === i ? t : x));
   }
   if (fx.id.startsWith('transit-')) return [`@title ${t}`, ...fx.sample.filter((x) => !x.startsWith('@title'))];
+  // 數據地圖只換標題，其他地圖招式的格式各自不同，預覽時維持範例
+  if (['mx-choro', 'mx-bubble', 'mx-bars'].includes(fx.id)) return [`@title ${t}`, ...fx.sample.filter((x) => !x.startsWith('@title'))];
+  if (fx.id.startsWith('mx-')) return fx.sample;
   return t
     .split(/\s*\/\s*/)
     .map((s) => s.trim())
