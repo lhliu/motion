@@ -97,6 +97,12 @@ export const ALL_EFFECTS: Fx[] = [
   ...plans,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
+// 從前台隱藏（代碼、編號保留，舊 Combo 與預設仍可用）
+const HIDE = new Set(['vehicle-illustrated-car', 'vehicle-illustrated-carriage', 'vehicle-illustrated-train']);
+ALL_EFFECTS.forEach((f) => {
+  if (HIDE.has(f.id)) f.hidden = true;
+});
+
 // 有 3D 效果（透視、3D 翻轉、立體厚度、等角視角、球體自轉）的招式統一加上「3D」標籤；新增 3D 招式時加進這裡
 const THREE_D = new Set([
   'text-tunnel', 'ring-tunnel', 'text-orbit', 'text-cylinder', 'extrude', 'star-crawl', 'qa-card', 'flip-cards', 'blinds', 'domino', 'flip-chars', 'text-cube', 'text-corridor', 'paper-cut', 'synthwave',

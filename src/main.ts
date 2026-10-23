@@ -314,7 +314,7 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
     lede: '交通工具、海底世界……每一招都是<strong>精修插畫</strong>，主角、背景、配色都有<strong>專屬編輯</strong>，背景可透明直接疊進影片。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用',
-    hero: ['vehicle-illustrated-car', 'whale-illustrated', 'vehicle-illustrated-plane', 'ocean-illustrated-shark', 'vehicle-illustrated-ship', 'ocean-illustrated-fish'],
+    hero: ['whale-illustrated', 'vehicle-illustrated-plane', 'ocean-illustrated-shark', 'vehicle-illustrated-ship', 'ocean-illustrated-fish'],
   },
   chart: {
     small: '一行一筆數據就會動',
