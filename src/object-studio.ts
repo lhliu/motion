@@ -1,5 +1,5 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
-import { defaultObjScene, drawObj, METEOR_COLORS, objFxId, normalizeObjScene, OBJ_DEFAULTS, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from './objkit';
+import { defaultObjScene, drawObj, METEOR_COLORS, OCEAN_PRESETS, objFxId, normalizeObjScene, OBJ_DEFAULTS, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from './objkit';
 import type { PField } from './photokit';
 import { esc } from './util';
 import { FONT_PACKS, preloadFonts } from './fonts';
@@ -138,7 +138,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
     memo[sc.module] = { ...sc.params };
     const m = b.dataset.m as OModule;
     const base = defaultObjScene(m);
-    sc = { ...sc, module: m, bg: base.bg, params: { ...OBJ_DEFAULTS[m], ...(memo[m] ?? {}) }, text: { ...sc.text, layout: base.text.layout } };
+    sc = { ...sc, module: m, loop: base.loop, bg: base.bg, params: { ...OBJ_DEFAULTS[m], ...(memo[m] ?? {}) }, text: { ...sc.text, layout: base.text.layout } };
     persist();
     renderAll();
   });
@@ -153,7 +153,20 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
   };
   const paramsEl = $('#osParams');
   const renderParams = () => {
-    paramsEl.innerHTML = '<p class="ms-hint">拖預覽上的藍色圓點可移動物件。</p>' + OBJ_PARAMS[sc.module].map((f) => field(f, sc.params[f.k])).join('');
+    const fields = OBJ_PARAMS[sc.module].filter((f) => {
+      if (sc.module !== 'ocean') return true;
+      const mode = String(sc.params.mode);
+      if (f.k === 'scene') return mode !== 'deep';
+      if (['strike', 'mouth', 'exit', 'shake'].includes(f.k)) return mode === 'shark';
+      if (f.k === 'beam') return mode === 'submarine';
+      if (f.k === 'count') return ['fish', 'dolphins', 'coral'].includes(mode);
+      if (f.k === 'route') return ['fish', 'dolphins'].includes(mode);
+      if (f.k === 'direction') return !['deep', 'coral'].includes(mode);
+      if (['size', 'color', 'color2'].includes(f.k)) return mode !== 'deep';
+      return true;
+    });
+    const hint = sc.module === 'ocean' ? '拖藍點移動主角。勾選透明背景、關閉海底場景，可輸出去背素材；深海下潛為全景動畫。' : '拖預覽上的藍色圓點可移動物件。';
+    paramsEl.innerHTML = `<p class="ms-hint">${hint}</p>` + fields.map((f) => field(f, sc.params[f.k])).join('');
   };
   const onField = (host: HTMLElement, target: () => Record<string, unknown>, after: (key: string) => void) => {
     host.addEventListener('input', (e) => {
@@ -180,6 +193,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
   onField(paramsEl, () => sc.params, (key) => {
     // 換隕石材質時，顏色一起換成該材質的預設
     if (sc.module === 'meteor' && key === 'material') [sc.params.color, sc.params.color2] = METEOR_COLORS[String(sc.params.material)] ?? METEOR_COLORS.rock;
+    if (sc.module === 'ocean' && key === 'mode') Object.assign(sc.params, OCEAN_PRESETS[String(sc.params.mode)]);
     renderParams();
   });
 
@@ -241,7 +255,10 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
     sc.loop = parseFloat(loopEl.value);
     $('#osLoopV').textContent = `${sc.loop}s`;
     timeEl.max = String(sc.loop);
+    tView = Math.min(tView, sc.loop);
+    timeEl.value = String(tView);
     persist();
+    redraw();
   });
 
   /* ───────── 輸出 ───────── */
@@ -250,7 +267,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
     status.hidden = !m;
     status.textContent = m;
   };
-  const fonts = () => preloadFonts(sc.text.lines.join(''), sc.font);
+  const fonts = () => sc.text.layout === 'none' || !sc.text.lines.length ? Promise.resolve() : preloadFonts(sc.text.lines.join(''), sc.font);
   const drawAt = (c: CanvasRenderingContext2D, W: number, H: number, t: number) => drawObj(c, W, H, sc, t);
   $('#osPng').addEventListener('click', async () => {
     await fonts();
@@ -303,6 +320,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
     redraw();
   });
   const renderAll = () => {
+    tView = Math.min(tView, sc.loop);
     syncMod();
     syncRatio();
     syncBg();
@@ -346,7 +364,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
       else if (module && module !== sc.module) {
         memo[sc.module] = { ...sc.params };
         const base = defaultObjScene(module);
-        sc = { ...sc, module, bg: base.bg, params: { ...OBJ_DEFAULTS[module], ...(memo[module] ?? {}) } };
+        sc = { ...sc, module, loop: base.loop, bg: base.bg, params: { ...OBJ_DEFAULTS[module], ...(memo[module] ?? {}) }, text: { ...sc.text, layout: base.text.layout } };
       }
       persist();
       open();

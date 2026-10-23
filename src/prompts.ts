@@ -2,6 +2,7 @@ import type { Fx } from './types';
 import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
 import { fontPack } from './fonts';
 import { MODULE_INFO, photoSceneFromWords, type PModule } from './photokit';
+import { objSceneFromWords } from './objkit';
 
 export type Ratio = '16:9' | '9:16' | '1:1';
 export type PromptMode = 'web' | 'en' | 'video' | 'code';
@@ -20,6 +21,13 @@ const quoteWords = (w: string[]) => w.map((t) => `「${t}」`).join('、');
 const quoteWordsEn = (w: string[]) => w.map((t) => `"${t}"`).join(', ');
 
 export const buildPrompt = (fx: Fx, mode: PromptMode, words: string[], v: Vars, ratio: Ratio): string => {
+  if (fx.cat === 'ocean' && mode !== 'code') {
+    const sc = objSceneFromWords(words, 'ocean', { mode: fx.id.replace('obj-ocean-', '') });
+    sc.ratio = ratio;
+    const settings = JSON.stringify(sc, null, 2);
+    if (mode === 'en' || mode === 'video') return `Create a ${ratioEn[ratio]} underwater animation: ${fx.en}.\n${fx.motionEn}\nUse crisp vector shapes without blur, shadows or glow. Preserve transparent alpha when requested. Add no typography unless supplied in scene.text.\nDuration: ${sc.loop} seconds.\nSETTINGS\n${settings}\nUse Motion Atlas build_object_scene with module "ocean", or /r/obj.js and MA_OBJ.drawObj(ctx, W, H, scene, t) for exact local frame rendering; preview and export must use the same timeline.`;
+    return `請製作「${fx.zh}」海底物件動畫，${ratioZh[ratio]}，${sc.loop} 秒。\n${fx.motion}\n硬邊向量風格；不要增加文字入場。只有 scene.text 提供文字時才顯示字幕。透明背景必須保留 alpha。\n場景設定：\n${settings}\n使用 build_object_scene，module="ocean"，沿用 params；本機逐格渲染載入 /r/obj.js，呼叫 MA_OBJ.drawObj(ctx, W, H, scene, t)。請沿用同一套引擎預覽與匯出，並回傳物件工作室編輯連結。`;
+  }
   if (fx.id.startsWith('photo-') && mode !== 'code') {
     const module = fx.id.slice(6) as PModule;
     const info = MODULE_INFO[module];

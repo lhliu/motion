@@ -280,10 +280,10 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
   object: {
     small: '一系列可調的主角物件',
     big: '物件特效',
-    lede: '水滴、隕石、魔術方塊、星空宇宙……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
+    lede: '水滴、隕石、魔術方塊、星空宇宙、海底世界……形狀、材質、顏色都能調，邊緣全部<strong>硬邊零模糊</strong>，背景可透明直接<strong>疊進影片</strong>，文字可放在物件上或下方。',
     wb: '預覽文字',
     ph: '輸入標題，全部卡片即時套用；一行一句用 / 分隔',
-    hero: ['obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
+    hero: ['obj-ocean-whale', 'obj-ocean-shark', 'obj-ocean-fish', 'obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
   },
   explain: {
     small: '一張剖面講清楚',

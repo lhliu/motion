@@ -22,7 +22,7 @@ export const SECTIONS: Section[] = [
   { id: 'text', code: 'TEXT', zh: '文字特效', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字' },
   { id: 'photo', code: 'PHOTO', zh: '圖片運鏡', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
   { id: 'map', code: 'MAP', zh: '地圖區位', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
-  { id: 'object', code: 'OBJECT', zh: '物件特效', en: 'Object Motion', desc: '水滴、隕石、魔術方塊、星空宇宙；一系列可調形狀材質的主角物件', studio: 'object' },
+  { id: 'object', code: 'OBJECT', zh: '物件特效', en: 'Object Motion', desc: '水滴、隕石、魔術方塊、星空宇宙、海底世界；一系列可調形狀材質的主角物件', studio: 'object' },
   { id: 'explain', code: 'EXPLAIN', zh: '圖解動畫', en: 'Explainer', desc: '工法、剖面、流程示意；一支一支客製，改圖請交給 AI' },
 ];
 
@@ -50,6 +50,7 @@ export const CATEGORIES: Category[] = [
   { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '星空、光速、星系、行星' },
   { id: 'aerial', sec: 'object', code: 'AERIAL', zh: '俯瞰', tagline: '城市、河流、山川、草原牛馬' },
   { id: 'vehicle', sec: 'object', code: 'VEHICLE', zh: '交通工具', tagline: '飛機、太空船、汽車、馬車' },
+  { id: 'ocean', sec: 'object', code: 'OCEAN', zh: '海底世界', tagline: '魚群、海豚、巨鯨、鯊魚與深海探索' },
   { id: 'diagram', sec: 'explain', code: 'DIAGRAM', zh: '工法剖面', tagline: '建材、管線、結構，一張剖面講清楚' },
 ];
 

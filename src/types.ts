@@ -22,7 +22,8 @@ export type CatId =
   | 'cube'
   | 'cosmos'
   | 'aerial'
-  | 'vehicle';
+  | 'vehicle'
+  | 'ocean';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';

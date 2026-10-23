@@ -1,6 +1,7 @@
 // 文字特效的「用途」分類（剪片時怎麼找），原本的技法分類改當「風格」篩選。網站與 MCP 共用。
 import type { Combo } from './combo';
 import { buildMapScene, sceneLength } from './mapkit';
+import { normalizeObjScene } from './objkit';
 
 export type UseId = 'open' | 'caption' | 'info' | 'trans' | 'emph' | 'mood';
 
@@ -37,7 +38,29 @@ export const PICKS = ['shorts-caption', 'location-pin', 'big-number', 'lower-thi
 export const MOOD_PREVIEW = 8;
 
 /** 套組：常見段落順序，帶進 Combo 草稿後換字即可（文字皆為示意，請換成可查證的內容） */
+const oceanScene = (mode: string, note: string, params: Record<string, number | string> = {}) => {
+  const sc = normalizeObjScene({ module: 'ocean', params: { mode, ...params } });
+  return { effect: `obj-ocean-${mode}`, words: [JSON.stringify(sc)], seconds: sc.loop, note };
+};
 export const KITS: { id: string; zh: string; desc: string; combo: Combo }[] = [
+  {
+    id: 'kit-ocean-reef', zh: '珊瑚生態', desc: '珊瑚花園 → 魚群穿梭 → 海豚同行；無文字海底片段',
+    combo: { title: '珊瑚生態', ratio: '9:16', transition: 'fade', tags: ['套組', '海底', '療癒'], scenes: [
+      oceanScene('coral', '珊瑚隨水流擺動'), oceanScene('fish', '近處魚群穿梭'), oceanScene('dolphins', '海豚同行'),
+    ] },
+  },
+  {
+    id: 'kit-ocean-whale', zh: '巨物相遇', desc: '深海下潛 → 巨鯨近身經過 → 魚群游離',
+    combo: { title: '巨物相遇', ratio: '9:16', transition: 'fade', tags: ['套組', '海底', '探索'], scenes: [
+      oceanScene('deep', '下潛至深海'), oceanScene('whale', '巨鯨掠過鏡頭'), oceanScene('fish', '魚群游離', { depth: 0.85, count: 16 }),
+    ] },
+  },
+  {
+    id: 'kit-ocean-explore', zh: '深海探險', desc: '深海下潛 → 潛水艇探照 → 鯊魚迎面衝刺',
+    combo: { title: '深海探險', ratio: '9:16', transition: 'cut', tags: ['套組', '海底', '衝擊'], scenes: [
+      oceanScene('deep', '海溝下潛'), oceanScene('submarine', '潛水艇巡航與探照'), oceanScene('shark', '迎面衝刺，以巨物遮滿畫面收尾', { exit: 'cover' }),
+    ] },
+  },
   {
     id: 'kit-unbox',
     zh: '建案開箱 Shorts',

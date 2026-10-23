@@ -18,19 +18,28 @@ const run: Fx['run'] = (root) => {
   } catch {
     return;
   }
-  const dpr = Math.min(2, devicePixelRatio || 1);
-  const W = (cv.width = Math.max(1, Math.round(cv.clientWidth * dpr)));
-  const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
   const FS = getComputedStyle(root).getPropertyValue('--sans').trim();
-  const t0 = performance.now();
   const loop = Math.max(2, sc.loop || 6);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let elapsed = 0, previous = performance.now();
   let raf = 0;
+  const draw = () => R.drawObj(ctx, cv.width, cv.height, sc, reduced.matches ? loop * 0.35 : elapsed % loop, FS);
+  const ro = new ResizeObserver(() => {
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    cv.width = Math.max(1, Math.round(cv.clientWidth * dpr));
+    cv.height = Math.max(1, Math.round(cv.clientHeight * dpr));
+    draw();
+  });
+  ro.observe(cv);
   const f = (now: number) => {
     raf = requestAnimationFrame(f);
-    R.drawObj(ctx, W, H, sc, ((now - t0) / 1000) % loop, FS);
+    const speed = Number(root.dataset.motionSpeed ?? 1);
+    if (!reduced.matches) elapsed += Math.max(0, now - previous) / 1000 * (Number.isFinite(speed) ? Math.max(0, speed) : 1);
+    previous = now;
+    draw();
   };
   raf = requestAnimationFrame(f);
-  return () => cancelAnimationFrame(raf);
+  return () => { cancelAnimationFrame(raf); ro.disconnect(); };
 };
 
 const make = (
@@ -42,7 +51,8 @@ const make = (
   id: `obj-${module}-${variant}`,
   cat: module,
   tone: 'ink',
-  hint: '一行一句，~ 開頭為英文小字（最多 4 行）。形狀、材質、顏色請在物件工作室調整，或由 AI 透過 MCP 的 build_object_scene 產生',
+  ...(module === 'ocean' ? { duration: 8 } : {}),
+  hint: module === 'ocean' ? '預設無文字。可在物件工作室調整主角、動作、配色與透明背景；字幕可在文字面板開啟。' : '一行一句，~ 開頭為英文小字（最多 4 行）。形狀、材質、顏色請在物件工作室調整，或由 AI 透過 MCP 的 build_object_scene 產生',
   css: CSS,
   html: (w) => `<canvas data-scene="${esc(JSON.stringify(objSceneFromWords(w, module, preset)))}"></canvas>`,
   globals: OBJ_GLOBALS,
@@ -56,6 +66,14 @@ const C_MOTION = '立體魔術方塊以回彈放大登場後緩慢水平自轉�
 const C_MOTION_EN = 'A 3D Rubik’s cube springs in and spins slowly, twisting several layers 90 degrees one after another and then undoing them in reverse; each cubie has a body color and inset stickers, lit faces slightly brighter and shaded faces darker; text fades in below. Perspective 3D, hard edges.';
 
 export const objects: Fx[] = [
+  make('ocean', 'fish', { mode: 'fish' }, { no: 188, zh: "魚群穿梭", en: "School of Fish", desc: "有遠近層次的魚群，擺尾沿弧線、直線或環繞路線穿梭", tags: ['海底', '可疊影片', '療癒'], sample: [], motion: "魚群依遠近分層繪製，個體有條紋與腹部色塊，尾鰭各自擺動；沿弧線穿梭，可切直線或環繞，前景珊瑚輕擺。 全部硬邊，不用陰影、模糊、光暈；預設不顯示文字。", motionEn: "A layered school of striped fish swims along curved, straight or orbiting paths, with independently beating tails and swaying foreground coral. All hard-edged, without shadows, blur or glow. No text by default." }),
+  make('ocean', 'dolphins', { mode: 'dolphins' }, { no: 189, zh: "海豚同行", en: "Dolphin Pod", desc: "一群海豚交錯游動，上下擺尾、輕輕翻身", tags: ['海底', '可疊影片', '療癒'], sample: [], motion: "一群有背鰭、長吻與水平尾鰭的海豚交錯前進，上下擺尾，腹背投影隨翻身微變；遠近大小形成景深。 全部硬邊，不用陰影、模糊、光暈；預設不顯示文字。", motionEn: "A pod of dolphins with dorsal fins, beaks and horizontal flukes swims in overlapping layers, undulating and subtly rolling. All hard-edged, without shadows, blur or glow. No text by default." }),
+  make('ocean', 'whale', { mode: 'whale' }, { no: 190, zh: "巨鯨經過", en: "Whale Encounter", desc: "一隻巨鯨從遠處游近，龐大身軀掠過鏡頭", tags: ['海底', '可疊影片', '療癒'], sample: [], motion: "單一大鯨魚由遠而近、緩慢放大，腹部褶線與胸鰭清楚可見，巨大的身體超出畫框，再向另一側游離；尾部緩慢上下擺動。 全部硬邊，不用陰影、模糊、光暈；預設不顯示文字。", motionEn: "One massive whale approaches slowly from the distance, its ventral pleats and pectoral fin visible as its body grows beyond the frame and passes the camera. All hard-edged, without shadows, blur or glow. No text by default." }),
+  make('ocean', 'shark', { mode: 'shark' }, { no: 191, zh: "鯊魚迎面衝刺", en: "Shark Rush", desc: "遠方巡游後迎面加速，張嘴衝近並擦身而過", tags: ['海底', '可疊影片', '衝擊'], sample: [], motion: "正面鯊魚先在遠方左右巡游，在設定時間後加速衝近、張嘴露出牙齒；結尾可選擦身而過或佔滿畫面，震動可關閉。 全部硬邊，不用陰影、模糊、光暈；預設不顯示文字。", motionEn: "A distant shark patrols, then accelerates toward the camera and opens its toothed mouth; choose a close pass or a frame-filling finish, with optional camera shake. All hard-edged, without shadows, blur or glow. No text by default." }),
+  make('ocean', 'coral', { mode: 'coral' }, { no: 192, zh: "珊瑚花園", en: "Coral Garden", desc: "枝狀、扇狀珊瑚與海草形成分層花園", tags: ['海底', '可疊影片', '療癒'], sample: [], motion: "分叉的枝狀珊瑚、放射骨架的扇狀珊瑚與帶狀海草分布在海床前後層，各自隨水流輕擺，懸浮氣泡上升。 全部硬邊，不用陰影、模糊、光暈；預設不顯示文字。", motionEn: "Branching and fan-shaped corals with ribbon seaweed form a layered reef garden, gently swaying in the current beneath rising bubbles. All hard-edged, without shadows, blur or glow. No text by default." }),
+  make('ocean', 'deep', { mode: 'deep' }, { no: 193, zh: "深海下潛", en: "Deep Sea Descent", desc: "海溝岩壁向上掠過，鏡頭持續向深海下潛", tags: ['海底', '可疊影片', '探索'], sample: [], motion: "鏡頭向下潛行，三層海溝岩壁以不同速度往上移，懸浮顆粒向上掠過，深藍海水逐漸變暗，遠處有巨鯨剪影。 全部硬邊，不用陰影、模糊、光暈；預設不顯示文字。", motionEn: "The camera descends through three parallax layers of trench walls and rising particles, the dark blue water deepening around a distant whale silhouette. All hard-edged, without shadows, blur or glow. No text by default." }),
+  make('ocean', 'submarine', { mode: 'submarine' }, { no: 194, zh: "潛水艇探索", en: "Submarine Explorer", desc: "螺旋槳轉動、氣泡拖尾，探照燈掃描海底", tags: ['海底', '可疊影片', '探索'], sample: [], motion: "黃色潛水艇緩慢巡航與起伏，尾端螺旋槳轉動、氣泡向後上方散開，舷窗有硬邊反光；扇形探照燈緩慢掃過海底。 全部硬邊，不用陰影、模糊、光暈；預設不顯示文字。", motionEn: "A yellow submarine cruises and bobs with a spinning propeller, trailing bubbles, reflective portholes and a slowly sweeping hard-edged searchlight. All hard-edged, without shadows, blur or glow. No text by default." }),
+
   make('meteor', 'rock', {}, { no: 158, zh: '漂浮隕石', en: 'Floating Meteor', desc: '隨機形狀的岩石隕石，自轉漂浮、周圍有碎石', tags: ['片頭', '科幻', '可疊影片'], sample: ['重磅登場'], motion: M_MOTION, motionEn: M_MOTION_EN }),
   make('meteor', 'ice', { shape: 'sym', sym: 6, material: 'ice', color: '#cfeaf7', color2: '#6aa5c8', craters: 0, debris: 6, bg: '#0b1626' }, { no: 159, zh: '對稱冰晶隕石', en: 'Symmetric Ice Meteor', desc: '六瓣對稱的冰晶隕石，有切面與高光', tags: ['片頭', '清爽', '可疊影片'], sample: ['冷靜分析'], motion: M_MOTION.replace('坑洞（暗色橢圓加受光邊緣）', '冰晶切面三角'), motionEn: M_MOTION_EN }),
   make('meteor', 'lava', { material: 'lava', color: '#3a2a26', color2: '#1a1210', trail: 1, angle: -35, debris: 2, craters: 0, bg: '#120c10' }, { no: 160, zh: '熔岩墜落', en: 'Lava Meteor Fall', desc: '帶熔岩裂縫的隕石拖著火焰尾跡墜落', tags: ['衝擊', '片頭', '可疊影片'], sample: ['爆炸性消息'], motion: '隕石帶著三層實色（黃、橘、紅）的尖形火焰尾跡登場，表面有發亮的熔岩裂縫折線並脈動；周圍少量碎石；文字在下方淡入。全部硬邊。', motionEn: 'A meteor enters trailing a pointed three-layer flat flame (yellow, orange, red), its surface cracked with glowing lava lines that pulse; a few fragments drift nearby and text fades in below. All hard-edged.' }),

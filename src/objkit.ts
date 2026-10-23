@@ -1,8 +1,8 @@
-// 物件特效：隕石、魔術方塊、星空宇宙。跟水滴一樣是參數化的一系列，全部硬邊、不用模糊與陰影，可透明疊進影片。
+// 物件特效：隕石、方塊、宇宙、俯瞰、交通工具與海底世界。全部硬邊，可透明疊進影片。
 // objRenderer 內部必須自給自足，匯出 HTML 時以 toString() 內嵌。
 import type { PField } from './photokit';
 
-export type OModule = 'meteor' | 'cube' | 'cosmos' | 'aerial' | 'vehicle';
+export type OModule = 'meteor' | 'cube' | 'cosmos' | 'aerial' | 'vehicle' | 'ocean';
 
 export interface OText {
   lines: string[];
@@ -31,6 +31,7 @@ export const OBJ_INFO: Record<OModule, { zh: string; en: string; desc: string }>
   cube: { zh: '魔術方塊', en: 'Rubik Cube', desc: '立體魔術方塊緩慢旋轉並轉動層，材質有塑膠、金屬、花色、單色' },
   cosmos: { zh: '星空宇宙', en: 'Cosmos', desc: '閃爍星空、光速穿越、旋轉星系、行星光環、太陽、月球、地球，可加流星' },
   aerial: { zh: '俯瞰', en: 'Aerial View', desc: '從正上方往下看的城市、河流、山川、草原牛馬、農田、海岸、森林、交流道，鏡頭緩慢平移推近' },
+  ocean: { zh: '海底世界', en: 'Underwater', desc: '魚群、海豚、巨鯨、迎面鯊魚、珊瑚、深海下潛、潛水艇，可去背或搭配海底場景' },
   vehicle: { zh: '交通工具', en: 'Vehicles', desc: '飛機、太空船、汽車、馬車、火車、輪船、熱氣球，側面行進、背景捲動' },
 };
 export const OBJ_MODULES = Object.keys(OBJ_INFO) as OModule[];
@@ -40,14 +41,45 @@ export const OBJ_DEFAULTS: Record<OModule, Record<string, number | string>> = {
   cube: { n: 3, material: 'plastic', pattern: 'stripe', scheme: 'classic', mono: '#ff5a36', body: '#151515', size: 0.36, x: 0.5, y: 0.42, tilt: -28, turn: 35, spin: 14, twist: 1, speed: 1 },
   cosmos: { mode: 'stars', density: 1, speed: 1, color: '#ffffff', color2: '#8ab4ff', planet: '#e8a35c', ring: 1, shoot: 1, x: 0.5, y: 0.42, size: 0.32 },
   aerial: { mode: 'city', seed: 3, pan: 1, dir: -30, zoom: 1.25, rot: 0, traffic: 1, herd: 18, x: 0.5, y: 0.45 },
+  ocean: { mode: 'fish', count: 28, size: 0.7, speed: 1, direction: 'right', route: 'wave', current: 0.6, depth: 0.55, scene: 1, bubbles: 1, seed: 7, color: '#65d9ce', color2: '#ffc86a', x: 0.5, y: 0.46, strike: 0.48, mouth: 1, exit: 'pass', shake: 0.3, beam: 1 },
   vehicle: { mode: 'car', color: '#ff5a36', color2: '#ffffff', size: 0.5, speed: 1, scene: 1, x: 0.5, y: 0.45 },
+};
+/** 海底卡片、工作室與 MCP 共用的起始配色與隊形。 */
+export const OCEAN_PRESETS: Record<string, Record<string, number | string>> = {
+  fish: { mode: 'fish', count: 28, color: '#65d9ce', color2: '#ffc86a', size: 0.7, depth: 0.55 },
+  dolphins: { mode: 'dolphins', count: 6, color: '#86b9cc', color2: '#d7eee9', size: 0.7, depth: 0.55 },
+  whale: { mode: 'whale', color: '#477f98', color2: '#bbd9d7', size: 0.9, depth: 0.75 },
+  shark: { mode: 'shark', color: '#799eaf', color2: '#dbe6df', size: 0.8, depth: 0.8 },
+  coral: { mode: 'coral', color: '#f68183', color2: '#f4c66b', count: 28, depth: 0.25 },
+  deep: { mode: 'deep', color: '#4ca6b5', color2: '#9fe1de', depth: 0.95 },
+  submarine: { mode: 'submarine', color: '#f4bd59', color2: '#fff0bb', size: 0.7, depth: 0.8 },
 };
 /** 隕石材質的預設配色（換材質時一起換） */
 export const METEOR_COLORS: Record<string, [string, string]> = { rock: ['#8a7f72', '#4a423a'], ice: ['#cfeaf7', '#6aa5c8'], lava: ['#3a2a26', '#1a1210'], metal: ['#c9a65a', '#6e5525'] };
-const BG: Record<OModule, string> = { meteor: '#0b0d14', cube: '#151515', cosmos: '#05070d', aerial: '#cfc9bd', vehicle: '#bfe3f7' };
+const BG: Record<OModule, string> = { meteor: '#0b0d14', cube: '#151515', cosmos: '#05070d', aerial: '#cfc9bd', vehicle: '#bfe3f7', ocean: '#07394b' };
 
 const pos = (k: string, label: string): PField => ({ k, label, type: 'range', min: 0, max: 1, step: 0.01 });
 export const OBJ_PARAMS: Record<OModule, PField[]> = {
+  ocean: [
+    { k: 'mode', label: '海底主角', type: 'seg', opts: [['fish', '魚群'], ['dolphins', '海豚群'], ['whale', '巨鯨'], ['shark', '迎面鯊魚'], ['coral', '珊瑚花園'], ['deep', '深海下潛'], ['submarine', '潛水艇']] },
+    { k: 'scene', label: '海底場景', type: 'seg', opts: [['1', '珊瑚與水流'], ['0', '只有主角']] },
+    { k: 'color', label: '主色', type: 'color' },
+    { k: 'color2', label: '輔色', type: 'color' },
+    { k: 'count', label: '魚群／珊瑚數量', type: 'range', min: 1, max: 60, step: 1 },
+    { k: 'size', label: '主角大小', type: 'range', min: 0.3, max: 1.5, step: 0.01 },
+    { k: 'speed', label: '動作速度', type: 'range', min: 0, max: 2, step: 0.05 },
+    { k: 'direction', label: '游動方向', type: 'seg', opts: [['right', '向右'], ['left', '向左']] },
+    { k: 'route', label: '游動路線', type: 'seg', opts: [['wave', '弧線'], ['straight', '直行'], ['orbit', '環繞']] },
+    { k: 'current', label: '水流強度', type: 'range', min: 0, max: 1.5, step: 0.05 },
+    { k: 'depth', label: '深海明暗', type: 'range', min: 0, max: 1, step: 0.05 },
+    { k: 'bubbles', label: '氣泡與懸浮顆粒', type: 'seg', opts: [['1', '有'], ['0', '無']] },
+    { k: 'seed', label: '群體與地形變化', type: 'range', min: 1, max: 99, step: 1 },
+    { k: 'strike', label: '衝刺起點（片長比例）', type: 'range', min: 0.2, max: 0.7, step: 0.01 },
+    { k: 'mouth', label: '衝刺張嘴', type: 'seg', opts: [['1', '張嘴'], ['0', '閉嘴']] },
+    { k: 'exit', label: '衝刺結尾', type: 'seg', opts: [['pass', '擦身而過'], ['cover', '佔滿畫面']] },
+    { k: 'shake', label: '衝刺震動', type: 'range', min: 0, max: 1, step: 0.05 },
+    { k: 'beam', label: '探照燈', type: 'seg', opts: [['1', '掃描'], ['0', '關閉']] },
+  ],
   meteor: [
     { k: 'shape', label: '形狀', type: 'seg', opts: [['random', '隨機'], ['sym', '對稱'], ['round', '圓潤'], ['shard', '碎片']] },
     { k: 'material', label: '材質', type: 'seg', opts: [['rock', '岩石'], ['ice', '冰晶'], ['lava', '熔岩'], ['metal', '金屬']] },
@@ -114,23 +146,24 @@ export const OBJ_PARAMS: Record<OModule, PField[]> = {
 
 export const objFxPrefix = 'obj-';
 /** 放進 Combo 時用的特效代碼（場景 JSON 會覆蓋卡片預設，所以每個模組用第一張卡即可） */
-export const objFxId = (m: OModule) => ({ meteor: 'obj-meteor-rock', cube: 'obj-cube-plastic', cosmos: 'obj-cosmos-stars', aerial: 'obj-aerial-city', vehicle: 'obj-vehicle-car' })[m];
+export const objFxId = (m: OModule) => ({ meteor: 'obj-meteor-rock', cube: 'obj-cube-plastic', cosmos: 'obj-cosmos-stars', aerial: 'obj-aerial-city', vehicle: 'obj-vehicle-car', ocean: 'obj-ocean-fish' })[m];
 export const isObjFx = (id: string) => id.startsWith(objFxPrefix);
 export const objFxModule = (id: string): OModule => (OBJ_MODULES.find((m) => id.startsWith(`${objFxPrefix}${m}`)) ?? 'meteor');
 
 export const defaultObjScene = (module: OModule = 'meteor'): OScene => ({
   ratio: '9:16',
-  loop: 6,
+  loop: module === 'ocean' ? 8 : 6,
   module,
   bg: BG[module],
   params: { ...OBJ_DEFAULTS[module] },
-  text: { lines: [], layout: module === 'cosmos' || module === 'aerial' ? 'over' : 'below', color: module === 'vehicle' ? '#1d2433' : '#ffffff', size: 1, stroke: module === 'vehicle' ? '#ffffff' : '#111111', strokeW: module === 'aerial' ? 14 : module === 'vehicle' ? 10 : 0, delay: 0.6 },
+  text: { lines: [], layout: module === 'ocean' ? 'none' : module === 'cosmos' || module === 'aerial' ? 'over' : 'below', color: module === 'vehicle' ? '#1d2433' : '#ffffff', size: 1, stroke: module === 'vehicle' ? '#ffffff' : '#111111', strokeW: module === 'aerial' ? 14 : module === 'vehicle' ? 10 : 0, delay: 0.6 },
 });
 
 /** 補齊缺漏欄位並夾住範圍，AI 給的資料也能安全使用 */
 export const normalizeObjScene = (raw: Partial<OScene>, fallback: OModule = 'meteor'): OScene => {
   const module = OBJ_MODULES.includes(raw.module as OModule) ? (raw.module as OModule) : fallback;
   const base = defaultObjScene(module);
+  if (module === 'ocean') Object.assign(base.params, OCEAN_PRESETS[String(raw.params?.mode)] ?? {});
   const ratio = (['9:16', '16:9', '1:1'] as const).includes(raw.ratio as OScene['ratio']) ? (raw.ratio as OScene['ratio']) : base.ratio;
   const loop = Math.max(2, Math.min(20, Number(raw.loop) || base.loop));
   const params: Record<string, number | string> = { ...base.params };
@@ -176,7 +209,7 @@ export const objSceneFromWords = (w: string[], module: OModule, preset: Record<s
     }
   }
   const sc = defaultObjScene(module);
-  sc.params = { ...sc.params, ...preset };
+  sc.params = { ...sc.params, ...(module === 'ocean' ? OCEAN_PRESETS[String(preset.mode)] : {}), ...preset };
   if (typeof preset.bg === 'string') sc.bg = preset.bg;
   if (typeof preset.layout === 'string') sc.text.layout = preset.layout as OText['layout'];
   sc.text.lines = w.filter((x) => x && !x.startsWith('{')).slice(0, 4);
@@ -210,6 +243,7 @@ export const objRenderer = () => {
     };
   };
   const hex = (h: string) => {
+    if (h.startsWith('rgb(')) return h.slice(4, -1).split(',').map(Number);
     const s = h.replace('#', '');
     return [0, 2, 4].map((i) => parseInt(s.slice(i, i + 2), 16) || 0);
   };
@@ -1776,6 +1810,260 @@ export const objRenderer = () => {
     return { cx: X, cy: Y, r: R * (mode === 'balloon' ? 0.95 : 0.5) };
   };
 
+  /* ───────── 海底世界 ───────── */
+  const seaPaths = new Map<string, Path2D>();
+  const seaPath = (ctx: CanvasRenderingContext2D, d: string, color: string) => {
+    let path = seaPaths.get(d);
+    if (!path) { path = new Path2D(d); seaPaths.set(d, path); }
+    ctx.fillStyle = color; ctx.fill(path);
+  };
+  const seaOval = (ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, color: string) => {
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+  };
+  /** 比例座標的側面動物，尾部獨立擺動；不依賴外部圖片。 */
+  const seaAnimal = (ctx: CanvasRenderingContext2D, kind: string, phase: number, c: string, light: string, variant = 0) => {
+    const whale = kind === 'whale', dolphin = kind === 'dolphins';
+    const tail = Math.sin(phase) * (whale ? 0.1 : 0.2);
+    ctx.save(); ctx.translate(-0.76, 0); ctx.rotate(tail);
+    seaPath(ctx, whale || dolphin
+      ? 'M .12 0 Q -.12 -.04 -.4 -.35 Q -.42 -.08 -.2 .02 Q -.42 .12 -.4 .3 Q -.1 .11 .12 .05 Z'
+      : 'M .16 0 L -.42 -.32 Q -.3 0 -.42 .32 Z', mix(c, '#061d2d', 0.25));
+    ctx.restore();
+    if (whale) {
+      seaPath(ctx, 'M -.9 .01 Q -.45 -.35 .43 -.32 Q 1.02 -.3 1.06 -.04 Q 1.08 .23 .5 .31 Q -.16 .4 -.9 .01 Z', c);
+      seaPath(ctx, 'M -.75 .07 Q .05 .3 .97 .06 Q .89 .25 .5 .31 Q -.16 .4 -.75 .07 Z', light);
+      seaPath(ctx, 'M -.5 -.19 Q -.37 -.37 -.23 -.44 L -.12 -.27 Z', mix(c, '#061d2d', 0.2));
+      ctx.save(); ctx.translate(0.32, 0.14); ctx.rotate(Math.sin(phase * 0.7) * 0.13);
+      seaPath(ctx, 'M -.08 -.04 Q -.3 .28 -.53 .47 Q -.15 .51 .22 .05 Z', mix(c, '#061d2d', 0.32)); ctx.restore();
+      ctx.strokeStyle = mix(c, light, 0.4); ctx.lineWidth = 0.009;
+      for (let j = 0; j < 5; j++) {
+        ctx.beginPath(); ctx.moveTo(0.25 + j * 0.11, 0.16); ctx.quadraticCurveTo(0.3 + j * 0.1, 0.26, 0.11 + j * 0.1, 0.3); ctx.stroke();
+      }
+      seaOval(ctx, 0.8, -0.015, 0.024, 0.023, '#092532');
+      seaOval(ctx, 0.805, -0.02, 0.007, 0.007, '#f0f3df');
+      ctx.strokeStyle = mix(c, '#061d2d', 0.5); ctx.lineWidth = 0.012;
+      ctx.beginPath(); ctx.moveTo(0.86, 0.12); ctx.quadraticCurveTo(1, 0.1, 1.03, 0.06); ctx.stroke();
+      seaOval(ctx, 0.58, -0.26, 0.04, 0.012, mix(c, '#061d2d', 0.4));
+    } else if (dolphin) {
+      seaPath(ctx, 'M -.86 0 Q -.2 -.42 .48 -.21 Q .7 -.15 .74 -.04 L 1 -.015 L .97 .055 L .67 .09 Q .3 .4 -.28 .12 Z', c);
+      seaPath(ctx, 'M -.7 .03 Q .02 .18 .74 .045 L .67 .09 Q .3 .4 -.28 .12 Z', light);
+      seaPath(ctx, 'M -.18 -.23 Q -.12 -.54 .13 -.53 Q .04 -.3 .25 -.25 Z', mix(c, '#061d2d', 0.2));
+      ctx.save(); ctx.rotate(Math.sin(phase) * 0.1);
+      seaPath(ctx, 'M .24 .12 Q .12 .4 -.12 .43 L .02 .12 Z', mix(c, '#061d2d', 0.25)); ctx.restore();
+      seaOval(ctx, 0.61, -0.06, 0.02, 0.021, '#092532');
+      seaOval(ctx, 0.614, -0.066, 0.006, 0.006, '#ffffff');
+    } else {
+      const body = 'M -.86 0 Q -.32 -.48 .45 -.28 Q .75 -.21 .92 0 Q .75 .21 .45 .28 Q -.32 .48 -.86 0 Z';
+      seaPath(ctx, body, c);
+      seaPath(ctx, 'M -.35 -.28 L -.08 -.55 L .2 -.31 Z', light);
+      seaPath(ctx, 'M -.1 .28 L .22 .43 L .35 .28 Z', mix(c, '#061d2d', 0.2));
+      ctx.save(); ctx.clip(seaPaths.get(body)!);
+      if (variant % 3 === 0) {
+        ctx.fillStyle = light;
+        for (let j = 0; j < 3; j++) { ctx.save(); ctx.translate(-0.4 + j * 0.35, 0); ctx.rotate(-0.25); ctx.fillRect(-0.045, -0.5, 0.09, 1); ctx.restore(); }
+      } else seaPath(ctx, 'M -.8 .04 Q .1 .25 .9 .02 L .6 .4 L -.3 .45 Z', light);
+      ctx.restore();
+      ctx.save(); ctx.translate(0.12, 0.06); ctx.rotate(tail);
+      seaPath(ctx, 'M 0 0 Q -.2 -.05 -.26 .15 L .13 .08 Z', mix(c, '#061d2d', 0.18)); ctx.restore();
+      seaOval(ctx, 0.59, -0.055, 0.07, 0.075, '#f4f2d9');
+      seaOval(ctx, 0.61, -0.05, 0.036, 0.045, '#082b37');
+    }
+  };
+  const seaCoral = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string, variant: number, t: number, current: number) => {
+    ctx.save(); ctx.translate(x, y); ctx.scale(size, size);
+    ctx.rotate(Math.sin(t * 0.8 + variant) * 0.035 * current);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (variant % 3 === 0) {
+      ctx.strokeStyle = color; ctx.lineWidth = 0.045;
+      for (let j = -4; j <= 4; j++) {
+        const ex = j * 0.16, ey = -0.9 + Math.abs(j) * 0.065;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(ex * 0.2, -0.4, ex, ey); ctx.stroke();
+        for (let k = 1; k <= 3; k++) {
+          ctx.beginPath(); ctx.moveTo(ex * k / 4, ey * k / 4); ctx.lineTo(ex * k / 4 + 0.16, ey * k / 4 - 0.18); ctx.stroke();
+        }
+        seaOval(ctx, ex, ey, 0.035, 0.035, mix(color, '#fff1ca', 0.5));
+      }
+    } else if (variant % 3 === 1) {
+      const branch = (x0: number, y0: number, len: number, angle: number, level: number) => {
+        const x1 = x0 + Math.sin(angle) * len, y1 = y0 - Math.cos(angle) * len;
+        ctx.strokeStyle = color; ctx.lineWidth = 0.025 + level * 0.025;
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo(x0, y1, x1, y1); ctx.stroke();
+        if (level > 0) { branch(x1, y1, len * 0.66, angle - 0.57, level - 1); branch(x1, y1, len * 0.68, angle + 0.61, level - 1); }
+        else seaOval(ctx, x1, y1, 0.05, 0.05, mix(color, '#fff1ca', 0.45));
+      };
+      branch(0, 0, 0.4, 0, 3);
+    } else for (let j = -2; j <= 2; j++) {
+      ctx.save(); ctx.translate(j * 0.12, 0); ctx.rotate(j * 0.2 + Math.sin(t + j) * 0.08 * current);
+      seaPath(ctx, 'M -.06 0 Q -.25 -.42 0 -.95 Q .18 -.55 .06 0 Z', j % 2 ? color : mix(color, '#b9ead7', 0.25)); ctx.restore();
+    }
+    ctx.restore();
+  };
+  const drawOcean = (ctx: CanvasRenderingContext2D, W: number, H: number, P: Record<string, number | string>, time: number, duration: number, background: string) => {
+    const g = (k: string, d: number) => num(P[k], d);
+    const mode = String(P.mode ?? 'fish'), S = Math.min(W, H);
+    const t = Math.max(0, time) * g('speed', 1), progress = (t / duration) % 1;
+    const depth = g('depth', 0.55), current = g('current', 0.6), scene = g('scene', 1) > 0;
+    const c = String(P.color ?? '#65d9ce'), c2 = String(P.color2 ?? '#ffc86a');
+    const X = W * g('x', 0.5), Y = H * g('y', 0.46), scale = g('size', 0.7);
+    const dir = P.direction === 'left' ? -1 : 1, seed = g('seed', 7);
+    const list = stars(100, seed + 80);
+    // 透明輸出不繪製整片水色，場景與單獨主角皆保留 alpha。
+    if ((scene || mode === 'deep') && background === '#07394b') {
+      ctx.fillStyle = mix('#0c7181', '#020e24', depth + (mode === 'deep' ? progress * 0.04 : 0)); ctx.fillRect(0, 0, W, H);
+      for (let j = 0; j < 5; j++) {
+        ctx.fillStyle = `rgba(127,228,216,${(1 - depth) * 0.055})`;
+        const xx = (j * 0.33 - 0.3 + Math.sin(t * 0.12 + j) * 0.025) * W;
+        ctx.beginPath(); ctx.moveTo(xx, 0); ctx.lineTo(xx + W * 0.11, 0); ctx.lineTo(xx + W * 0.7, H); ctx.lineTo(xx + W * 0.28, H); ctx.fill();
+      }
+      ctx.strokeStyle = `rgba(164,240,221,${(1 - depth) * 0.14})`; ctx.lineWidth = S * 0.002;
+      for (let j = 0; j < 10; j++) {
+        const xx = ((j * 0.197 + t * 0.012) % 1.3 - 0.15) * W;
+        ctx.beginPath(); ctx.ellipse(xx, H * (0.06 + j % 3 * 0.045), S * 0.13, S * 0.025, -0.2, 0.1, 2.5); ctx.stroke();
+      }
+    }
+    if (mode === 'deep') {
+      for (let layer = 0; layer < 3; layer++) {
+        const tile = H * 0.18, scroll = t * S * (0.018 + layer * 0.014), start = Math.floor(scroll / tile);
+        ctx.fillStyle = mix('#123e50', '#020e24', layer * 0.23);
+        for (let side = 0; side < 2; side++) {
+          ctx.beginPath(); ctx.moveTo(side ? W : 0, -H);
+          for (let j = start - 2; j <= start + 12; j++) {
+            const r = rng(seed + layer * 21 + j * 89 + side * 131);
+            const yy = j * tile - scroll;
+            const inset = S * (0.07 + layer * 0.035 + r() * 0.1);
+            ctx.lineTo(side ? W - inset : inset, yy);
+          }
+          ctx.lineTo(side ? W : 0, H * 2); ctx.closePath(); ctx.fill();
+        }
+      }
+      ctx.save(); ctx.translate(W * (0.5 + Math.sin(t * 0.1) * 0.18), H * 0.38 - t * S * 0.008);
+      ctx.scale(S * 0.22, S * 0.22); ctx.globalAlpha = 0.23;
+      seaAnimal(ctx, 'whale', t, '#6896a5', '#6896a5'); ctx.restore();
+    }
+    const reef = (front: boolean) => {
+      if ((!scene && mode !== 'coral') || mode === 'deep') return;
+      const count = mode === 'coral' ? Math.round(g('count', 28)) : 13;
+      const colors = mode === 'coral' ? [c, c2, '#69b7a5'] : ['#e48282', '#dbb878', '#419d91'];
+      if (!front && scene) {
+        ctx.fillStyle = mix('#336e75', '#081d30', depth * 0.8);
+        ctx.beginPath(); ctx.moveTo(0, H);
+        for (let j = 0; j <= 20; j++) ctx.lineTo(W * j / 20, H * 0.91 + Math.sin(j * 0.8) * S * 0.025);
+        ctx.lineTo(W, H); ctx.fill();
+      }
+      for (let j = 0; j < count; j++) {
+        const [a, b, z, ph] = list[j];
+        if ((j % 3 === 0) !== front) continue;
+        const sz = S * (mode === 'coral' ? (front ? 0.32 + z * 0.23 : 0.18 + z * 0.18) * scale / 0.7 : front ? 0.17 + z * 0.13 : 0.07 + z * 0.09);
+        const xx = a * W + (mode === 'coral' ? X - W * 0.5 : 0);
+        const yy = H * (front ? 1.025 : mode === 'coral' ? 0.9 : 0.95) + b * S * 0.025 + (mode === 'coral' ? Y - H * 0.46 : 0);
+        seaCoral(ctx, xx, yy, sz, front ? colors[j % 3] : mix(colors[j % 3], '#123d49', 0.42 + depth * 0.15), j, t + ph, current);
+      }
+    };
+    reef(false);
+    if (g('bubbles', 1)) for (let j = 0; j < 48; j++) {
+      const [a, b, z, ph] = list[j];
+      const xx = ((a + Math.sin(t * 0.3 + ph) * 0.018 * current + 1) % 1) * W;
+      const yy = ((b - t * (mode === 'deep' ? 0.035 : 0.012) * (0.4 + z) % 1 + 1) % 1) * H;
+      ctx.strokeStyle = `rgba(179,235,226,${0.16 + z * 0.22})`; ctx.lineWidth = S * 0.0012;
+      ctx.beginPath(); ctx.arc(xx, yy, S * (0.001 + z * (j % 5 ? 0.001 : 0.006)), 0, Math.PI * 2); ctx.stroke();
+    }
+    if (mode === 'fish' || mode === 'dolphins') {
+      const dolphin = mode === 'dolphins', n = Math.round(g('count', dolphin ? 6 : 28));
+      const order = Array.from({ length: n }, (_, j) => j).sort((a, b) => list[a][2] - list[b][2]);
+      order.forEach((j) => {
+        const [a, b, z, ph] = list[j];
+        const travel = ((a * 1.3 + t * (0.035 + z * 0.022)) % 1.3) - 0.15;
+        let px = X + dir * (travel - 0.5) * W;
+        let py = Y + (b - 0.5) * H * (dolphin ? 0.39 : 0.48);
+        let angle = Math.cos(t + ph) * 0.035;
+        if (P.route === 'orbit') {
+          const theta = a * Math.PI * 2 + t * 0.3 * dir;
+          px = X + Math.cos(theta) * W * (0.12 + b * 0.25);
+          py = Y + Math.sin(theta) * H * 0.18;
+          angle = Math.atan2(dir * Math.cos(theta) * H * 0.18, -dir * Math.sin(theta) * W * (0.12 + b * 0.25));
+        } else if (P.route !== 'straight') {
+          py += Math.sin(travel * Math.PI * 2 + ph * 0.3) * S * 0.07;
+          angle += Math.cos(travel * Math.PI * 2 + ph * 0.3) * 0.12;
+        }
+        const radius = S * scale * (dolphin ? 0.12 + z * 0.07 : 0.032 + z * 0.035);
+        ctx.save(); ctx.translate(px, py); ctx.rotate(angle); ctx.scale(P.route === 'orbit' ? radius : radius * dir, radius);
+        if (dolphin) ctx.scale(1, 0.84 + Math.sin(t * 0.75 + ph) * 0.16);
+        seaAnimal(ctx, mode, t * (dolphin ? 4 : 7) + ph, mix(j % 4 === 0 && !dolphin ? c2 : c, '#123949', (1 - z) * 0.38), dolphin ? c2 : mix(c2, '#f4e7b4', z * 0.2), j);
+        ctx.restore();
+      });
+    }
+    if (mode === 'whale') {
+      const distance = 0.36 + Math.sin(Math.PI * clamp(progress * 1.06)) * 1.08;
+      const radius = S * scale * distance * 0.68;
+      const px = X + dir * (progress - 0.5) * (W + radius * 1.6);
+      ctx.save(); ctx.translate(px, Y + Math.sin(t * 0.6) * S * 0.025); ctx.rotate(Math.sin(t * 0.4) * 0.035); ctx.scale(radius * dir, radius);
+      seaAnimal(ctx, 'whale', t * 1.8, c, c2); ctx.restore();
+    }
+    if (mode === 'shark') {
+      const q = clamp((progress - g('strike', 0.48)) / (1 - g('strike', 0.48))), approach = q * q * q;
+      const cover = P.exit === 'cover', radius = S * scale * (0.09 + (cover ? 5 : 2.5) * approach);
+      const drift = Math.sin(t * 1.3) * S * 0.11 * (1 - approach);
+      const px = X + drift + (cover ? 0 : dir * W * 2.6 * Math.pow(clamp((q - 0.68) / 0.32), 2));
+      const shake = g('shake', 0.3) * approach * S * 0.007;
+      ctx.save(); ctx.translate(px + Math.sin(t * 73) * shake, Y + Math.cos(t * 61) * shake);
+      ctx.rotate(Math.sin(t * 1.3) * 0.08 * (1 - approach)); ctx.scale(radius, radius);
+      seaPath(ctx, 'M -.15 -.5 L 0 -1.1 L .2 -.48 Z', mix(c, '#082635', 0.3));
+      seaPath(ctx, 'M -.34 -.03 Q -.85 .1 -1.25 .62 L -.37 .34 Z M .34 -.03 Q .85 .1 1.25 .62 L .37 .34 Z', mix(c, '#082635', 0.2));
+      seaPath(ctx, 'M 0 -.65 Q -.58 -.47 -.53 .2 Q -.4 .74 0 .8 Q .4 .74 .53 .2 Q .58 -.47 0 -.65 Z', c);
+      seaPath(ctx, 'M 0 -.19 Q -.37 .03 -.4 .4 Q -.26 .79 0 .8 Q .26 .79 .4 .4 Q .37 .03 0 -.19 Z', c2);
+      seaPath(ctx, 'M -.43 -.04 L -.19 .04 L -.29 .1 L -.44 .04 Z M .43 -.04 L .19 .04 L .29 .1 L .44 .04 Z', '#092331');
+      seaOval(ctx, -0.31, 0.04, 0.025, 0.022, '#f6dfa4'); seaOval(ctx, 0.31, 0.04, 0.025, 0.022, '#f6dfa4');
+      seaOval(ctx, -0.3, 0.04, 0.012, 0.018, '#071b26'); seaOval(ctx, 0.3, 0.04, 0.012, 0.018, '#071b26');
+      const open = g('mouth', 1) ? 0.08 + ease(q * 2) * 0.24 : 0.012;
+      ctx.save(); ctx.translate(0, 0.4); ctx.scale(1, open);
+      ctx.beginPath(); ctx.ellipse(0, 0, 0.3, 1, 0, 0, Math.PI * 2); ctx.fillStyle = '#122230'; ctx.fill(); ctx.clip();
+      seaOval(ctx, 0, 0.75, 0.19, 0.28, '#b56c70');
+      for (let j = -4; j <= 4; j++) {
+        const xx = j * 0.062, yy = Math.sqrt(Math.max(0, 1 - (xx / 0.3) ** 2));
+        ctx.fillStyle = '#fff5db'; ctx.beginPath(); ctx.moveTo(xx - 0.029, -yy); ctx.lineTo(xx + 0.029, -yy); ctx.lineTo(xx, -yy + 0.52); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(xx - 0.026, yy); ctx.lineTo(xx + 0.026, yy); ctx.lineTo(xx, yy - 0.42); ctx.fill();
+      }
+      ctx.restore(); ctx.strokeStyle = mix(c, '#092331', 0.5); ctx.lineWidth = 0.016;
+      for (let j = 0; j < 3; j++) for (const side of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(side * (0.43 - j * 0.025), 0.15 + j * 0.06); ctx.lineTo(side * (0.47 - j * 0.015), 0.22 + j * 0.06); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if (mode === 'submarine') {
+      const radius = S * scale * 0.52, px = X + Math.sin(t * 0.45) * W * 0.1, py = Y + Math.sin(t * 0.9) * S * 0.025;
+      ctx.save(); ctx.translate(px, py); ctx.scale(radius * dir, radius);
+      if (g('beam', 1)) {
+        ctx.save(); ctx.translate(0.76, 0.12); ctx.rotate(Math.sin(t * 0.65) * 0.2);
+        seaPath(ctx, 'M 0 -.04 L 3.6 -1.1 L 3.6 1.1 L 0 .04 Z', 'rgba(246,235,173,0.09)');
+        seaPath(ctx, 'M 0 -.025 L 3.3 -.54 L 3.3 .54 L 0 .025 Z', 'rgba(246,235,173,0.1)'); ctx.restore();
+      }
+      ctx.strokeStyle = mix(c, '#253949', 0.5); ctx.lineWidth = 0.055; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-0.06, -0.3); ctx.lineTo(-0.06, -0.63); ctx.lineTo(0.15, -0.63); ctx.stroke();
+      seaPath(ctx, 'M -.93 -.08 L -1.12 -.32 L -1.16 .32 L -.93 .1 Z', mix(c, '#132d3d', 0.28));
+      ctx.save(); ctx.translate(-1.11, 0); ctx.scale(1, 0.25 + Math.abs(Math.sin(t * 19)) * 0.75);
+      seaOval(ctx, 0, 0, 0.035, 0.38, c2); ctx.restore();
+      seaPath(ctx, 'M -.36 -.23 L -.36 -.45 Q -.08 -.59 .18 -.4 L .21 -.23 Z', c);
+      seaPath(ctx, 'M -.64 -.28 L .51 -.28 Q 1.03 -.28 1.03 0 Q 1.03 .32 .51 .32 L -.64 .32 Q -1 .32 -1 0 Q -1 -.28 -.64 -.28 Z', c);
+      seaPath(ctx, 'M -1 .04 Q -.5 .26 1 .04 Q 1 .32 .51 .32 L -.64 .32 Q -.99 .3 -1 .04 Z', mix(c, '#7b562b', 0.3));
+      ctx.strokeStyle = c2; ctx.lineWidth = 0.014; ctx.beginPath(); ctx.moveTo(-0.66, -0.2); ctx.lineTo(0.53, -0.2); ctx.stroke();
+      for (let j = 0; j < 3; j++) {
+        const xx = -0.48 + j * 0.45;
+        seaOval(ctx, xx, 0, 0.15, 0.15, mix(c, '#263e46', 0.6)); seaOval(ctx, xx, 0, 0.115, 0.115, '#155969');
+        ctx.save(); ctx.translate(xx, 0); seaPath(ctx, 'M -.08 -.035 L .035 -.09 L .08 -.045 L -.065 .025 Z', '#6fd3d4'); ctx.restore();
+        for (let k = 0; k < 4; k++) seaOval(ctx, xx + Math.cos(k * Math.PI / 2) * 0.134, Math.sin(k * Math.PI / 2) * 0.134, 0.009, 0.009, c2);
+      }
+      seaOval(ctx, 0.89, 0.13, 0.07, 0.047, c2);
+      if (g('bubbles', 1)) for (let j = 0; j < 8; j++) {
+        const q = (t * 0.6 + j / 8) % 1;
+        ctx.strokeStyle = `rgba(188,235,226,${0.65 * (1 - q)})`; ctx.lineWidth = 0.009;
+        ctx.beginPath(); ctx.arc(-1.2 - q * 1.2, -q * 0.3 + Math.sin(j + t) * 0.04, 0.02 + q * 0.045, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    reef(true);
+    return { cx: X, cy: Y, r: S * scale * (mode === 'whale' ? 0.4 : 0.23) };
+  };
+
   /* ───────── 文字 ───────── */
   const drawText = (ctx: CanvasRenderingContext2D, W: number, H: number, sc: OScene, t: number, u: number, obj: { cx: number; cy: number; r: number }) => {
     const tx = sc.text;
@@ -1832,7 +2120,9 @@ export const objRenderer = () => {
       ctx.fillRect(0, 0, W, H);
     }
     const obj =
-      sc.module === 'cube'
+      sc.module === 'ocean'
+        ? drawOcean(ctx, W, H, P, t, Math.max(2, sc.loop || 8), sc.bg)
+        : sc.module === 'cube'
         ? drawCube(ctx, W, H, P, t, u)
         : sc.module === 'cosmos'
           ? drawCosmos(ctx, W, H, P, t, u)

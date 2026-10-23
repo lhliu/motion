@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<title>海底世界：預覽與回歸測試</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3efe6;color:#172a32;font:15px system-ui,sans-serif;padding:36px}header{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:26px}h1{font-size:36px;margin:6px 0}p{color:#61747a}.eyebrow{letter-spacing:.24em;font-size:11px;color:#257b7b}.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}article{overflow:hidden;background:#fff;border:1px solid #cfdcd7;border-radius:14px}canvas{width:100%;display:block;aspect-ratio:9/16;background:#07394b}article h2{font-size:16px;margin:14px 16px 4px}article p{font-size:11px;margin:0 16px 16px}#results{white-space:pre-wrap;font-size:12px;margin-top:28px}button{background:#0b5662;color:#fff;border:0;padding:12px 20px;border-radius:8px;cursor:pointer}
+</style>
+<header><div><span class="eyebrow">MOTION ATLAS / OCEAN COLLECTION</span><h1>海底世界</h1><p>七種硬邊向量動畫 · 無文字入場 · 可透明疊加</p></div><button id="play">▶ 播放全部</button></header>
+<div class="gallery" id="gallery"></div><pre id="results">檢查中…</pre>
+<script type="module">
+import { defaultObjScene, normalizeObjScene, drawObj, objRenderer, objSceneFromWords, objFxModule, objFxId } from '/src/objkit.ts';
+import { EFFECTS, CATEGORIES, PALETTES } from '/src/data.ts';
+import { fnSource, toneVars, loopSeconds, mount, setSpeed } from '/src/engine.ts';
+import { buildPrompt } from '/src/prompts.ts';
+import { KITS } from '/src/uses.ts';
+import { normalizeCombo, sceneSeconds, comboHtml } from '/src/combo.ts';
+import { presetToScene, sceneToPresetData } from '/src/presets.ts';
+import { TOOLS } from '/functions/_lib/tools.ts';
+const modes=['fish','dolphins','whale','shark','coral','deep','submarine'];
+const labels=['魚群穿梭','海豚同行','巨鯨經過','鯊魚迎面衝刺','珊瑚花園','深海下潛','潛水艇探索'];
+const results=[];
+const check=(ok,message)=>{if(!ok)throw new Error(message)};
+const test=(name,run)=>{try{run();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}};
+const exported=(0,eval)(`(${fnSource(objRenderer)})`)().drawObj;
+const scene=(mode,params={})=>normalizeObjScene({module:'ocean',params:{mode,...params}});
+const canvas=(w=180,h=320)=>{const cv=document.createElement('canvas');cv.width=w;cv.height=h;return cv};
+const render=(sc,t,w=180,h=320,draw=drawObj)=>{const cv=canvas(w,h),ctx=cv.getContext('2d');draw(ctx,w,h,sc,t);check(ctx.getTransform().isIdentity&&ctx.globalAlpha===1&&ctx.filter==='none'&&ctx.shadowBlur===0,'Canvas state leaked');return ctx.getImageData(0,0,w,h).data};
+const eq=(a,b)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
+const count=(p,predicate)=>{let n=0;for(let i=0;i<p.length;i+=4)if(predicate(p,i))n++;return n};
+const opaque=p=>count(p,(a,i)=>a[i+3]>250);
+const visible=p=>count(p,(a,i)=>a[i+3]>0);
+const fx=mode=>EFFECTS.find(f=>f.id===`obj-ocean-${mode}`);
+const cards=modes.map((mode,i)=>{const a=document.createElement('article');a.innerHTML=`<canvas width="360" height="640"></canvas><h2>#${188+i} ${labels[i]}</h2><p>${mode.toUpperCase()} / 8 SEC</p>`;gallery.append(a);return {cv:a.querySelector('canvas'),sc:scene(mode)}});
+window.oceanRenderAt=(t)=>cards.forEach(({cv,sc})=>drawObj(cv.getContext('2d'),cv.width,cv.height,sc,t));
+window.oceanRenderAt(4.6);
+let playing=false,origin=0;
+document.querySelector('#play').onclick=()=>{playing=!playing;origin=performance.now();document.querySelector('#play').textContent=playing?'■ 停止':'▶ 播放全部';if(playing)requestAnimationFrame(tick)};
+function tick(now){if(!playing)return;window.oceanRenderAt(((now-origin)/1000)%8);requestAnimationFrame(tick)}
+test('分類、唯一編號 #188–194、八秒片長及無文字預設',()=>{
+ check(CATEGORIES.some(c=>c.id==='ocean'&&c.sec==='object'),'Missing category');
+ check(new Set(EFFECTS.map(f=>f.no)).size===EFFECTS.length,'Duplicate numbers');
+ check(new Set(EFFECTS.map(f=>f.id)).size===EFFECTS.length,'Duplicate IDs');
+ modes.forEach((m,i)=>{check(fx(m)?.no===188+i,'Wrong number');check(loopSeconds(fx(m))===8,'Wrong duration');const sc=objSceneFromWords([], 'ocean',{mode:m});check(sc.text.layout==='none'&&sc.text.lines.length===0,'Unexpected typography');check(objFxModule(fx(m).id)==='ocean','Wrong module')});
+});
+test('預設依主角補齊、非法參數安全處理',()=>{
+ const sc=scene('dolphins');check(sc.params.count===6,'Dolphin count');
+ const bad=scene('INVALID',{count:999,size:-1,color:'url(x)',speed:Infinity,x:2});
+ check(bad.params.mode==='fish'&&bad.params.count===60&&bad.params.size===.3&&bad.params.color==='#65d9ce'&&bad.params.x===1,'Normalization failed');
+});
+for(const mode of modes)for(const [w,h] of [[180,320],[320,180],[220,220]]){
+ test(`${mode} ${w}×${h}：可見、時間變化、獨立匯出一致`,()=>{
+  const sc=scene(mode),a=render(sc,1.5,w,h),b=render(sc,4.6,w,h);
+  check(!eq(a,b),'Animation is static');check(eq(b,render(sc,4.6,w,h,exported)),'Export differs');check(eq(b,render(sc,4.6,w,h)),'Not deterministic');
+  sc.bg='transparent';sc.params.scene=mode==='deep'?1:0;sc.params.bubbles=0;
+  const alpha=render(sc,4,w,h);check(visible(alpha)>10,'Missing subject');check(count(alpha,(a,i)=>a[i+3]===0)>w*h*.1,'Alpha lost');
+ });
+}
+for(const mode of modes)test(`${mode}：速度零時凍結`,()=>{const sc=scene(mode,{speed:0});check(eq(render(sc,1),render(sc,6)),'Speed zero still animates')});
+test('魚群數量控制有實際作用',()=>{const a=scene('fish',{count:1,scene:0,bubbles:0});a.bg='transparent';const b=scene('fish',{count:50,scene:0,bubbles:0});b.bg='transparent';check(visible(render(b,4))>visible(render(a,4))*3,'Count ignored')});
+test('鯊魚巡游、衝刺與遮滿結尾',()=>{
+ const sc=scene('shark',{scene:0,bubbles:0,exit:'cover'});sc.bg='transparent';
+ check(opaque(render(sc,7.95))>180*320*.9,'Shark does not fill frame');
+ check(visible(render(sc,7.4))>visible(render(sc,2))*12,'No approach');
+ sc.params.exit='pass';check(visible(render(sc,7.95))<180*320*.1,'Shark fails to pass camera');
+});
+test('潛水艇探照燈可關閉',()=>{const sc=scene('submarine',{scene:0,bubbles:0});sc.bg='transparent';const a=render(sc,3);sc.params.beam=0;check(!eq(a,render(sc,3)),'Beam toggle ignored')});
+test('自訂背景色與透明珊瑚不被預設水色蓋掉',()=>{const sc=scene('fish',{bubbles:0});sc.bg='#f100e1';const a=render(sc,4);check(a[0]===241&&a[1]===0&&a[2]===225,'Custom color overwritten');const coral=scene('coral',{scene:0,bubbles:0});coral.bg='transparent';check(render(coral,4)[3]===0,'Coral backdrop is opaque')});
+test('預設與 Combo 來回保留主角、透明度與片長',()=>{
+ const sc=scene('shark',{exit:'cover'});sc.bg='transparent';sc.loop=12;
+ const cs=presetToScene({kind:'object',name:'test',data:sc});check(cs.effect===objFxId('ocean')&&cs.seconds===12,'Wrong preset output');
+ const pd=sceneToPresetData(cs.effect,cs.words);check(pd.data.params.mode==='shark'&&pd.data.bg==='transparent','Lost settings');
+ check(sceneSeconds(cs)===12,'Combo truncated');
+});
+test('三個海底套組通過驗證，沒有文字入場',()=>{
+ const kits=KITS.filter(k=>k.id.startsWith('kit-ocean-'));check(kits.length===3,'Missing kits');
+ for(const k of kits){const c=normalizeCombo(k.combo);check(!c.errors.length,c.errors.join(';'));for(const s of c.combo.scenes){check(JSON.parse(s.words[0]).text.layout==='none','Kit has text');check(sceneSeconds(s)===8,'Kit clipped')}}
+});
+test('海底提示詞使用物件引擎與正確設定',()=>{for(const mode of ['web','en','video']){const p=buildPrompt(fx('shark'),mode,[],toneVars(PALETTES[0],'ink'),'9:16');check(p.includes('build_object_scene')&&p.includes('shark')&&!p.includes('kinetic typography'),'Wrong prompt')}});
+for(const module of ['meteor','cube','cosmos','aerial','vehicle'])test(`舊模組 ${module} 匯出維持一致`,()=>{const sc=defaultObjScene(module);check(eq(render(sc,2.5),render(sc,2.5,180,320,exported)),'Legacy export failed')});
+const tool=TOOLS.find(t=>t.name==='build_object_scene');
+for(const mode of modes){try{
+ const r=await tool.run({module:'ocean',params:{mode},ratio:'9:16'},{env:{},request:new Request('http://localhost/mcp'),origin:'http://localhost'});
+ check(r.scene.module==='ocean'&&r.scene.params.mode===mode,'Wrong MCP scene');check(r.scene.text.layout==='none'&&r.scene.loop===8,'Wrong MCP defaults');check(r.combo_scene.seconds===8&&r.edit_url,'MCP integration missing');results.push({name:`MCP ${mode}`,passed:true});
+}catch(e){results.push({name:`MCP ${mode}`,passed:false,error:String(e)})}}
+try {
+ const host=document.createElement('div');host.style.cssText='position:relative;width:180px;height:320px';document.body.append(host);
+ const mounted=mount(host,fx('fish'),[],toneVars(PALETTES[0],'ink'),0);
+ const wait=()=>new Promise(r=>setTimeout(r,80));await wait();
+ const cv=host.querySelector('canvas'),first=cv.toDataURL();await wait();check(first===cv.toDataURL(),'Pause ignored');
+ setSpeed(mounted.root,1);await wait();check(first!==cv.toDataURL(),'Playback did not resume');
+ setSpeed(mounted.root,0);await wait();const paused=cv.toDataURL();await wait();check(paused===cv.toDataURL(),'Pause did not freeze');
+ host.style.width='320px';host.style.height='180px';await wait();
+ const dpr=Math.min(2,devicePixelRatio||1);check(cv.width===320*dpr&&cv.height===180*dpr,'Canvas did not resize');
+ mounted.stop();host.remove();results.push({name:'實際播放：暫停、繼續與尺寸變更',passed:true});
+} catch(e) {results.push({name:'實際播放：暫停、繼續與尺寸變更',passed:false,error:String(e)})}
+window.oceanResults=results;
+window.oceanExportHtml=buildPrompt(fx('shark'),'code',[],toneVars(PALETTES[0],'ink'),'9:16');
+window.oceanComboHtml=comboHtml(KITS.find(k=>k.id==='kit-ocean-explore').combo);
+window.oceanScenes=Object.fromEntries(modes.map(m=>[m,scene(m)]));
+resultsEl();function resultsEl(){document.querySelector('#results').textContent=results.map(r=>`${r.passed?'PASS':'FAIL'} ${r.name}${r.error?' — '+r.error:''}`).join('\n');document.documentElement.dataset.result=results.every(r=>r.passed)?'pass':'fail'}
+</script>
+</html>
