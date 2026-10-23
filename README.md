@@ -25,6 +25,8 @@ https://motion.leichthub.com
 
 ## MCP 與 Combo 庫
 
+省 token 設計：工具回傳精簡 JSON（不縮排、不重複附 structuredContent）；預覽與編輯網址自動壓縮成 `?cz=`／`?z=`（deflate-raw，舊的 `?combo=`／`?d=` 仍可用）；`get_effect` 支援 `ids` 一次查多招、預設不附提示詞（要時加 `format`）；`list_categories` 套組只列摘要，`kit` 參數取完整段落；`compose_combo`／`get_combo` 預設不附重做提示詞（`include_prompt`）。
+
 網站內建 MCP（Model Context Protocol）伺服器，讓 Claude、ChatGPT、Claude Code 直接使用這個圖鑑：描述需求 → AI 查特效 → 組成 Combo（多段特效串成一段動畫）→ 給預覽連結 → 存進 Combo 庫當日後參考。
 
 - MCP 端點：`https://motion.leichthub.com/mcp`（Streamable HTTP、無狀態）

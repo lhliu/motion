@@ -212,20 +212,27 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'list_categories',
     title: '列出分類與配色',
-    description: `列出 Motion Atlas 的工作區（文字、圖片、地圖、物件、插畫、圖表、格局、圖解）、${CATEGORIES.length} 個分類（共 ${EFFECTS.length} 招）、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。`,
-    inputSchema: { type: 'object', properties: {} },
+    description: `列出 Motion Atlas 的工作區（文字、圖片、地圖、物件、插畫、圖表、格局、圖解）、${CATEGORIES.length} 個分類（共 ${EFFECTS.length} 招）、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。套組只列摘要，要完整段落用 kit 參數取得。`,
+    inputSchema: { type: 'object', properties: { kit: { type: 'string', enum: KITS.map((k) => k.id), description: '只取這個套組的完整 Combo（可直接交給 compose_combo）' } } },
     annotations: { readOnlyHint: true },
-    run: async () => ({
+    run: async (a) => {
+      if (a.kit) {
+        const k = KITS.find((x) => x.id === a.kit);
+        if (!k) throw new Error(`套組「${String(a.kit)}」不存在`);
+        return { id: k.id, name: k.zh, flow: k.desc, combo: k.combo, next: '把文字換成使用者的內容（地名、數字只用可查證的資料）後交給 compose_combo。' };
+      }
+      return {
       total_effects: EFFECTS.length,
       sections: SECTIONS.map((x) => ({ ...x, count: EFFECTS.filter((f) => secOf(f) === x.id).length, categories: CATEGORIES.filter((c) => c.sec === x.id).map((c) => c.id) })),
       font_packs: FONT_PACKS.map((f) => ({ id: f.id, name: f.zh, use: f.use })),
       text_uses: USES.map((u) => ({ ...u, count: EFFECTS.filter((f) => f.use === u.id).length })),
       categories: CATEGORIES.map((c) => ({ ...c, count: EFFECTS.filter((f) => f.cat === c.id).length })),
-      kits: KITS.map((k) => ({ id: k.id, name: k.zh, flow: k.desc, ratio: k.combo.ratio, scenes: k.combo.scenes })),
+      kits: KITS.map((k) => ({ id: k.id, name: k.zh, flow: k.desc, ratio: k.combo.ratio, effects: k.combo.scenes.map((s) => s.effect) })),
       tags: ALL_TAGS,
       palettes: PALETTES,
       tones: { ink: '深色底', paper: '淺色底', accent: '主色底' },
-    }),
+    };
+    },
   },
   {
     name: 'search_effects',
@@ -263,23 +270,29 @@ export const TOOLS: ToolDef[] = [
     name: 'get_effect',
     title: '取得特效細節與提示詞',
     description:
-      '取得單一特效的完整資訊：動態拆解、可直接貼給 AI 的提示詞，或可獨立播放的 HTML 原始碼。可以帶入自訂文字、配色與比例。',
+      '取得特效細節：word_hint 文字格式與動態拆解。一次要看多招時用 ids（最多 12 個，只回精簡資訊，省 token）；需要提示詞或 HTML 原始碼時才給單一 id 加 format。',
     inputSchema: {
       type: 'object',
-      required: ['id'],
       properties: {
         id: { type: 'string', description: '特效 id 或編號' },
+        ids: { type: 'array', items: { type: 'string' }, maxItems: 12, description: '一次查多招（只回 word_hint、動態描述等精簡資訊）' },
         words: { type: 'array', items: { type: 'string' } },
         palette: { type: 'string', enum: PALETTES.map((p) => p.id) },
         accent: { type: 'string', description: '#RRGGBB' },
         tone: { type: 'string', enum: ['ink', 'paper', 'accent'] },
         font: { type: 'string', enum: FONT_IDS, description: FONT_HELP },
         ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'] },
-        format: { type: 'string', enum: ['web', 'en', 'video', 'code'], description: 'web 中文網頁提示詞、en 英文、video AI 影片提示詞、code HTML 原始碼；預設 web' },
+        format: { type: 'string', enum: ['none', 'web', 'en', 'video', 'code'], description: 'none 不附提示詞（預設）、web 中文網頁提示詞、en 英文、video AI 影片提示詞、code HTML 原始碼' },
       },
     },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
+      if (Array.isArray(a.ids) && a.ids.length) {
+        const list = a.ids.slice(0, 12).map((id) => findEffect(String(id)));
+        return {
+          effects: list.map((fx, i) => (fx ? { ...summary(fx), motion_zh: fx.motion } : { id: String((a.ids as unknown[])[i]), error: '找不到，請用 search_effects 查詢' })),
+        };
+      }
       const fx = findEffect(String(a.id ?? ''));
       if (!fx) throw new Error(`找不到特效「${String(a.id)}」，請用 search_effects 查詢`);
       const base = PALETTES.find((p) => p.id === a.palette) ?? PALETTES[0];
@@ -287,14 +300,13 @@ export const TOOLS: ToolDef[] = [
       const words = Array.isArray(a.words) && a.words.length ? a.words.map(String) : fx.sample;
       const tone = ['ink', 'paper', 'accent'].includes(String(a.tone)) ? (a.tone as Fx['tone']) : fx.tone;
       const ratio = (['16:9', '9:16', '1:1'].includes(String(a.ratio)) ? a.ratio : (fx.preferredRatio ?? '16:9')) as Ratio;
-      const format = (['web', 'en', 'video', 'code'].includes(String(a.format)) ? a.format : 'web') as PromptMode;
+      const format = ['web', 'en', 'video', 'code'].includes(String(a.format)) ? (a.format as PromptMode) : null;
       return {
         ...summary(fx),
         motion_zh: fx.motion,
-        motion_en: fx.motionEn,
+        ...(format === 'en' ? { motion_en: fx.motionEn } : {}),
         page_url: `${ctx.origin}/?fx=${fx.id}`,
-        format,
-        output: buildPrompt(fx, format, words, toneVars(pal, tone, FONT_IDS.includes(a.font as never) ? String(a.font) : undefined), ratio),
+        ...(format ? { format, output: buildPrompt(fx, format, words, toneVars(pal, tone, FONT_IDS.includes(a.font as never) ? String(a.font) : undefined), ratio) } : {}),
       };
     },
   },
@@ -730,7 +742,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: {
       type: 'object',
       required: ['title', 'scenes'],
-      properties: { ...comboInput, include_html: { type: 'boolean', description: '是否一併回傳完整 HTML，預設 false' }, include_prompt: { type: 'boolean', description: '是否回傳可貼給 AI 重做的提示詞，預設 true' } },
+      properties: { ...comboInput, include_html: { type: 'boolean', description: '是否一併回傳完整 HTML，預設 false' }, include_prompt: { type: 'boolean', description: '是否回傳可貼給 AI 重做的提示詞，預設 false（需要時才開，省 token）' } },
     },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
@@ -742,7 +754,7 @@ export const TOOLS: ToolDef[] = [
         ok: true,
         saved: false,
         ...comboView(combo, ctx.origin, a.include_html === true),
-        ...(a.include_prompt === false ? {} : { prompt: comboPrompt(combo) }),
+        ...(a.include_prompt === true ? { prompt: comboPrompt(combo) } : {}),
         next: '請把 play_url 給使用者預覽；滿意後呼叫 save_combo 儲存。',
       };
     },
@@ -784,12 +796,12 @@ export const TOOLS: ToolDef[] = [
     name: 'get_combo',
     title: '取得 Combo',
     description: '取得一個已儲存 Combo 的完整分鏡、提示詞，以及（選擇性）可獨立播放的 HTML。',
-    inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, include_html: { type: 'boolean' } } },
+    inputSchema: { type: 'object', required: ['id'], properties: { id: { type: 'string' }, include_html: { type: 'boolean' }, include_prompt: { type: 'boolean', description: '是否附重做提示詞，預設 false' } } },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
       const c = await getCombo(ctx.env, String(a.id));
       if (!c) throw new Error(`找不到 Combo ${String(a.id)}`);
-      return { ...comboView(c, ctx.origin, a.include_html === true), prompt: comboPrompt(c) };
+      return { ...comboView(c, ctx.origin, a.include_html === true), ...(a.include_prompt === true ? { prompt: comboPrompt(c) } : {}) };
     },
   },
   {
@@ -812,8 +824,9 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 組 Combo 的建議流程：
 1. 先釐清用途、比例（YouTube 16:9、Shorts 9:16）、總長度與要出現的文字。
 2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
-3. 用 compose_combo 預覽，把 play_url 給使用者看。
+3. 用 compose_combo 預覽，把 play_url 給使用者看。段落之間可用 transition（整支）或 scenes[].transition（單段）選新轉場；系列角標、資料來源條等元件用 overlays 常駐疊在段落上方。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
+省 token 的用法：要看多招的文字格式時用 get_effect 的 ids 一次查（不要逐一呼叫）；get_effect 預設不附提示詞，使用者要提示詞或 HTML 才加 format；list_categories 的套組只列摘要，選定後用 kit 參數取完整段落；compose_combo 預設不附重做提示詞（include_prompt）。回傳的預覽與編輯網址是壓縮過的，請原樣轉給使用者。
 地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、魔術方塊／星空背景請用 build_object_scene；天體、低空飛越及推近地球精修插畫用 build_cosmos_scene（mode=orbit｜flyover｜earthzoom，body=gas｜sun｜moon｜earth｜mars，依 mode 選擇）；隕石及俯瞰精修插畫請用 build_nature_scene（隕石 mode=meteor，style=rock｜ice｜lava｜gold；俯瞰 mode=city｜river｜mountain｜grass｜farm｜coast｜forest｜highway）；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 字型：Combo 的 font（整支）與 scenes[].font（單段）可選字型組合，依段落情緒挑：數據、資訊、標題用 sharp（預設）；開箱、生活、通勤用 round；質感建案、片頭大標用 serif；旁白金句、心得用 hand；俏皮吐槽用 cute。一支影片以 2–3 組為限，同類段落維持同一組，避免每段都換。\n手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 

@@ -20,7 +20,7 @@ import { isPlanFx, planFxMode, planSceneFromWords } from './plankit';
 import { isObjFx, objFxModule, objSceneFromWords, type OScene } from './objkit';
 import { comboHtml, findEffect } from './combo';
 import { sceneFromWords } from './effects/map';
-import { decodeJson, type Preset, type PresetData } from './presets';
+import { decodeJson, unpackJson, type Preset, type PresetData } from './presets';
 
 /* ───────── 小工具 ───────── */
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -1279,7 +1279,8 @@ const openEdit = async () => {
     p.kind === 'cosmos' ? cosmicStudio.loadPreset(p) : p.kind === 'nature' ? natureStudio.loadPreset(p) : p.kind === 'transport' ? transportStudio.loadPreset(p) : p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : studio.loadPreset(p);
   if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan' || edit === 'transport' || edit === 'nature' || edit === 'cosmos') {
     try {
-      route({ kind: edit, name: '', data: decodeJson<PresetData>(q.get('d') ?? '') });
+      const z = q.get('z');
+      route({ kind: edit, name: '', data: z ? await unpackJson<PresetData>(z) : decodeJson<PresetData>(q.get('d') ?? '') });
       toast('已載入 AI 產生的設定，調好後按「存成預設」');
     } catch {
       toast('編輯連結的內容無法讀取');

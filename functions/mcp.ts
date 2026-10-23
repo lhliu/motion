@@ -2,6 +2,30 @@
 import { canWrite, CORS, json, preflight, type Ctx } from './_lib/env';
 import { StoreError } from './_lib/store';
 import { INSTRUCTIONS, isWriteTool, TOOLS } from './_lib/tools';
+import { decodeJson, packJson } from '../src/presets';
+
+// 回傳裡的長網址（?combo=… 預覽、?d=… 編輯連結）換成壓縮版（?cz=、?z=），通常短 3–5 倍，省 AI 的 token
+const LONG = /([?&])(combo|d)=([A-Za-z0-9_-]{160,})/g;
+const shrinkUrl = async (s: string): Promise<string> => {
+  const hits = [...s.matchAll(LONG)];
+  if (!hits.length) return s;
+  let out = s;
+  for (const m of hits) {
+    try {
+      const z = await packJson(decodeJson(m[3]));
+      if (z.length < m[3].length) out = out.replace(m[0], `${m[1]}${m[2] === 'combo' ? 'cz' : 'z'}=${z}`);
+    } catch {
+      /* 解不開就保留原樣 */
+    }
+  }
+  return out;
+};
+const shrink = async (v: unknown): Promise<unknown> => {
+  if (typeof v === 'string') return v.length > 200 ? shrinkUrl(v) : v;
+  if (Array.isArray(v)) return Promise.all(v.map(shrink));
+  if (v && typeof v === 'object') return Object.fromEntries(await Promise.all(Object.entries(v).map(async ([k, x]) => [k, await shrink(x)])));
+  return v;
+};
 
 const VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 
@@ -49,8 +73,9 @@ const handle = async (m: RpcReq, ctx: Ctx, origin: string) => {
         if (!w.ok) return ok(m.id, { isError: true, content: [{ type: 'text', text: w.reason }] });
       }
       try {
-        const out = await tool.run((m.params?.arguments as Record<string, unknown>) ?? {}, { env: ctx.env, request: ctx.request, origin });
-        return ok(m.id, { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }], structuredContent: out });
+        const out = await shrink(await tool.run((m.params?.arguments as Record<string, unknown>) ?? {}, { env: ctx.env, request: ctx.request, origin }));
+        // 只回一份精簡 JSON：不縮排、不重複附 structuredContent（工具沒有宣告 outputSchema）
+        return ok(m.id, { content: [{ type: 'text', text: JSON.stringify(out) }] });
       } catch (e) {
         const msg = e instanceof StoreError || e instanceof Error ? e.message : String(e);
         return ok(m.id, { isError: true, content: [{ type: 'text', text: msg }] });

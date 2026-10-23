@@ -136,6 +136,21 @@ export const decodeJson = <T = unknown>(s: string): T => {
   return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)))) as T;
 };
 
+const b64url = (bytes: Uint8Array) => {
+  let bin = '';
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+const unb64url = (s: string) => {
+  const b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+  return Uint8Array.from(atob(b64 + '==='.slice((b64.length + 3) % 4)), (c) => c.charCodeAt(0));
+};
+/** 壓縮版網址參數（deflate-raw + base64url），比直接 base64 短 3–5 倍；網站與 MCP 共用 */
+export const packJson = async (v: unknown): Promise<string> =>
+  b64url(new Uint8Array(await new Response(new Blob([JSON.stringify(v)]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer()));
+export const unpackJson = async <T = unknown>(s: string): Promise<T> =>
+  JSON.parse(await new Response(new Blob([unb64url(s)]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()) as T;
+
 /** 編輯連結：已存的預設用代碼；尚未存的設定直接編進網址 */
 export const editUrl = (origin: string, p: { id?: string; kind: PresetKind; data: PresetData }): string => {
   if (p.id) return `${origin}/?edit=${p.id}`;

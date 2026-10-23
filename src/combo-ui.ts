@@ -10,6 +10,7 @@ import { esc } from './util';
 import { isPhotoFx } from './photokit';
 import { isObjFx } from './objkit';
 import { FONT_PACKS } from './fonts';
+import { unpackJson } from './presets';
 import { detectBeat, fitToBeat, parseSrt, srtScenes, type Beat } from './combo-tools';
 
 export interface ComboDeps {
@@ -520,9 +521,10 @@ export const initCombos = (deps: ComboDeps) => {
     $<HTMLIFrameElement>('#drPreview').srcdoc = '';
     dlg.querySelectorAll<HTMLIFrameElement>('.cb-card iframe').forEach((f) => f.removeAttribute('srcdoc'));
     const u = new URL(location.href);
-    if (u.searchParams.has('view') || u.searchParams.has('combo')) {
+    if (u.searchParams.has('view') || u.searchParams.has('combo') || u.searchParams.has('cz')) {
       u.searchParams.delete('view');
       u.searchParams.delete('combo');
+      u.searchParams.delete('cz');
       history.replaceState({}, '', u.pathname + u.search);
     }
   });
@@ -538,6 +540,17 @@ export const initCombos = (deps: ComboDeps) => {
       deps.toast('預覽連結的 Combo 資料無法讀取');
     }
   }
+  // ?cz= 是壓縮版（MCP 給的預覽連結），解壓是非同步的
+  const cz = params.get('cz');
+  if (cz)
+    unpackJson(cz)
+      .then((raw) => {
+        const { combo, errors } = normalizeCombo(raw);
+        if (errors.length) throw new Error(errors[0]);
+        shared = combo;
+        show('library');
+      })
+      .catch(() => deps.toast('預覽連結的 Combo 資料無法讀取'));
   const view = params.get('view');
   saveDraft();
   if (shared) show('library');
