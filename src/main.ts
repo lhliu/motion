@@ -1,3 +1,5 @@
+import { isCosmicFx, cosmicFromWords } from './cosmos';
+import { initCosmicStudio } from './cosmos-studio';
 import { isNatureFx, natureMode, natureFromWords } from './nature';
 import { initNatureStudio } from './nature-studio';
 import { isTransportFx, transportMode, transportFromWords } from './transport';
@@ -532,7 +534,7 @@ const cardHtml = (f: Fx, k: number) => {
   const n = NUM.get(f.id)!;
   const fav = state.favs.has(f.id);
   return `<article class="ma-card" tabindex="0" role="button" data-id="${f.id}" style="--k:${k}" aria-label="${pad(n)} ${esc(f.zh)}：${esc(f.desc)}">
-  <div class="card-stage"><div class="stage"></div>${(isIllustrationFx(f.id)||isTransportFx(f.id)||isNatureFx(f.id)) ? '<span class="ill-badge">精修插畫</span>' : ''}<span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
+  <div class="card-stage"><div class="stage"></div>${(isCosmicFx(f.id)||isIllustrationFx(f.id)||isTransportFx(f.id)||isNatureFx(f.id)) ? '<span class="ill-badge">精修插畫</span>' : ''}<span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
   <div class="card-meta"><span class="ma-num">${pad(n)}</span><div class="card-txt"><h3>${highlight(f.zh)}</h3><p>${highlight(f.desc)}</p></div>
   <button class="heart" data-fav="${f.id}" aria-pressed="${fav}" aria-label="收藏 ${esc(f.zh)}"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.3-9C1 8.4 3.2 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.8 0 6 3.9 4.3 7.5C19 16.6 12 21 12 21z"/></svg></button></div>
 </article>`;
@@ -903,8 +905,8 @@ const renderDetail = () => {
   $('#dPhotoStudio').hidden = !isPhotoFx(fx.id);
   $('#dPlanStudio').hidden = !isPlanFx(fx.id);
   $('#dObjStudio').hidden = !isObjFx(fx.id)||isIllustrationFx(fx.id);
-  $('#dIllustrationStudio').hidden = !isIllustrationFx(fx.id)&&!isTransportFx(fx.id)&&!isNatureFx(fx.id);
-  dWords.closest('label')!.hidden = isIllustrationFx(fx.id)||isTransportFx(fx.id)||isNatureFx(fx.id);
+  $('#dIllustrationStudio').hidden = !isCosmicFx(fx.id)&&!isIllustrationFx(fx.id)&&!isTransportFx(fx.id)&&!isNatureFx(fx.id);
+  dWords.closest('label')!.hidden = isCosmicFx(fx.id)||isIllustrationFx(fx.id)||isTransportFx(fx.id)||isNatureFx(fx.id);
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
   syncSegs();
   renderStage();
@@ -1127,6 +1129,7 @@ const combos = initCombos({
       const data = photoSceneFromWords(words, effect.slice(6) as PModule);
       return meta ? photoStudio.loadPreset({ ...meta, data }) : photoStudio.load(data);
     }
+    if(isCosmicFx(effect)){const data=cosmicFromWords(words,effect);return meta?cosmicStudio.loadPreset({...meta,data}):cosmicStudio.load(data);}
     if(isNatureFx(effect)){const data=natureFromWords(words,effect);return meta?natureStudio.loadPreset({...meta,data}):natureStudio.load(data);}
     if(isTransportFx(effect)){const data=transportFromWords(words,effect);return meta?transportStudio.loadPreset({...meta,data}):transportStudio.load(data);}
     if (isIllustrationFx(effect)) {
@@ -1167,10 +1170,11 @@ $('#dPlanStudio').addEventListener('click', () => {
   if (words.some((w) => w.trim().startsWith('{'))) planStudio.load(planSceneFromWords(words, mode));
   else planStudio.open(mode);
 });
+const cosmicStudio=initCosmicStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
 const natureStudio=initNatureStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
 const transportStudio=initTransportStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
 const illustrationStudio=initIllustrationStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
-$('#dIllustrationStudio').addEventListener('click',()=>{if(isNatureFx(d.fx.id)){const mode=natureMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=natureFromWords(words,d.fx.id);sc.ratio=ratio;natureStudio.load(sc);}else natureStudio.openMode(mode,ratio);return;}if(isTransportFx(d.fx.id)){const mode=transportMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=transportFromWords(words,d.fx.id);sc.ratio=ratio;transportStudio.load(sc);}else transportStudio.openMode(mode,ratio);return;}const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
+$('#dIllustrationStudio').addEventListener('click',()=>{if(isCosmicFx(d.fx.id)){const sc=cosmicFromWords(d.words,d.fx.id);sc.ratio=d.ratio;const hasSettings=d.words.some(w=>w.trim().startsWith('{'));closeDetail();if(hasSettings)cosmicStudio.load(sc);else cosmicStudio.load({...sc,...store.get('cosmic-'+sc.mode,{}),ratio:sc.ratio});return;}if(isNatureFx(d.fx.id)){const mode=natureMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=natureFromWords(words,d.fx.id);sc.ratio=ratio;natureStudio.load(sc);}else natureStudio.openMode(mode,ratio);return;}if(isTransportFx(d.fx.id)){const mode=transportMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=transportFromWords(words,d.fx.id);sc.ratio=ratio;transportStudio.load(sc);}else transportStudio.openMode(mode,ratio);return;}const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
 const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc) });
 $('#dObjStudio').addEventListener('click', () => {
   const fx = d.fx;
@@ -1193,8 +1197,8 @@ const openEdit = async () => {
   const edit = q.get('edit');
   if (!edit) return;
   const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) =>
-    p.kind === 'nature' ? natureStudio.loadPreset(p) : p.kind === 'transport' ? transportStudio.loadPreset(p) : p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : studio.loadPreset(p);
-  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan' || edit === 'transport' || edit === 'nature') {
+    p.kind === 'cosmos' ? cosmicStudio.loadPreset(p) : p.kind === 'nature' ? natureStudio.loadPreset(p) : p.kind === 'transport' ? transportStudio.loadPreset(p) : p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : studio.loadPreset(p);
+  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan' || edit === 'transport' || edit === 'nature' || edit === 'cosmos') {
     try {
       route({ kind: edit, name: '', data: decodeJson<PresetData>(q.get('d') ?? '') });
       toast('已載入 AI 產生的設定，調好後按「存成預設」');
@@ -1234,6 +1238,7 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'text') return showKits(true);
   if (state.sec === 'plan') return planStudio.open();
   if(state.sec==='illus'){if(state.cat==='vehicle')return transportStudio.open();if(state.cat==='ocean')return illustrationStudio.open();return natureStudio.openMode(state.cat==='aerial'?'city':'meteor');}
+  if (state.sec === 'object'&&state.cat==='cosmos')return cosmicStudio.openMode('orbit');
   if (state.sec === 'object') return state.cat === 'liquid' ? studio.open() : objStudio.open(state.cat === 'cosmos' ? 'cosmos' : state.cat === 'cube' ? 'cube' : undefined);
   return state.sec === 'photo' ? photoStudio.open() : mapStudio.open();
 });

@@ -1,3 +1,4 @@
+import { normalizeCosmos, cosmicFxId, COSMOS, type CosmicScene } from '../../src/cosmos';
 import { normalizeNature, natureFxId, NATURE, type NScene } from '../../src/nature';
 import { normalizeTransport, transportFxId, TRANSPORT, type TScene } from '../../src/transport';
 import { normalizeIllustration, illustrationFxId, ILLUSTRATION, type IScene } from '../../src/illustration';
@@ -35,6 +36,12 @@ const natureResult = (raw:unknown,ctx:ToolCtx,title='隕石與俯瞰・精修插
     params_doc:NATURE.fields[sc.mode],edit_url:editUrl(ctx.origin,{kind:'nature',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,
     local_render:`載入 ${ctx.origin}/r/nature.js；const renderer=MA_NATURE.createRenderer(canvas,overlayCanvas,scene,"${ctx.origin}");await renderer.ready;逐格呼叫 renderer.render(i/fps,W,H)，依序 drawImage 兩張 canvas，最後 renderer.dispose()。`,
     next:`隕石與俯瞰一招隕石切換四種樣式，加上八種俯瞰場景；將 combo_scene 放進 compose_combo / save_combo，ratio=${sc.ratio}，用 edit_url 進入本招專屬編輯面板。`};
+};
+
+const cosmicResult=(raw:unknown,ctx:ToolCtx,title='星空宇宙・精修插畫')=>{
+ const sc=normalizeCosmos(raw),combo_scene={effect:cosmicFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop};
+ const {combo}=normalizeCombo({title,ratio:sc.ratio,transition:'cut',scenes:[combo_scene]});
+ return{scene:sc,combo_scene,modes:COSMOS.modes,variants:COSMOS.variants(sc.mode).map(id=>({id,...COSMOS.bodies[id]})),backgrounds:COSMOS.backgrounds,params_doc:COSMOS.fieldsFor(sc),edit_url:editUrl(ctx.origin,{kind:'cosmos',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,local_render:`Load ${ctx.origin}/r/cosmos.js; const renderer=MA_COSMOS.createRenderer(canvas,overlayCanvas,scene,"${ctx.origin}"); await renderer.ready; renderer.render(t,W,H); renderer.dispose();`,next:'天體四樣式一招、低空飛越四地表一招、推近地球獨立一招。舊九招隱藏保留，精修地表為示意插畫；太陽飛越為視覺想像。將 combo_scene 放進 compose_combo / save_combo。'};
 };
 
 const FONT_HELP = `字型組合：${FONT_PACKS.map((f) => `${f.id}＝${f.zh}（${f.use}）`).join('；')}。省略＝sharp`;
@@ -629,10 +636,22 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    name:'build_cosmos_scene',title:'組星空宇宙精修插畫',
+    description:'三個專屬編輯器：orbit 天體（gas 行星光環、sun 太陽、moon 月球、earth 地球）；flyover 低空飛越（earth、moon、mars 火星、sun）；earthzoom 推近地球。球面自轉、環帶遮擋、衛星繞行、透視地表與獨立運鏡。地表為示意插畫。',
+    inputSchema:{type:'object',properties:{scene:{type:'object',description:'完整設定；頂層欄位優先'},mode:{type:'string',enum:Object.keys(COSMOS.modes)},body:{type:'string',enum:Object.keys(COSMOS.bodies)},
+      ...Object.fromEntries(Object.values(COSMOS.fields).flat().map(f=>[f.key,{type:'number',description:f.label,minimum:f.min,maximum:f.max}])),
+      ratio:{type:'string',enum:['9:16','16:9','1:1']},size:{type:'number',minimum:.35,maximum:2},speed:{type:'number',minimum:.6,maximum:2.5},duration:{type:'number',minimum:4.8,maximum:20},x:{type:'number',minimum:-.5,maximum:1.5},y:{type:'number',minimum:0,maximum:1},angle:{type:'number',minimum:-180,maximum:180},color:{type:'string',description:'#RRGGBB'},tint:{type:'number',minimum:0,maximum:1},opacity:{type:'number',minimum:0,maximum:1},brightness:{type:'number',minimum:.3,maximum:1.5},seed:{type:'number',minimum:0,maximum:999999},stars:{type:'number',minimum:0,maximum:2},background:{type:'string',enum:Object.keys(COSMOS.backgrounds)},zoomDirection:{type:'string',enum:['in','out']},title:{type:'string'}
+    }},annotations:{readOnlyHint:true},run:async(a,ctx)=>{
+      const raw={...(a.scene&&typeof a.scene==='object'?a.scene:{}),...Object.fromEntries(Object.entries(a).filter(([k])=>!['scene','duration','title'].includes(k)))} as Partial<CosmicScene>;
+      if(a.duration!==undefined){delete raw.speed;raw.loop=Number(a.duration);if(a.speed!==undefined)raw.speed=Number(a.speed);}if(raw.color&&raw.tint===undefined)raw.tint=1;
+      return cosmicResult(raw,ctx,String(a.title??'星空宇宙・精修插畫'));
+    },
+  },
+  {
     name: 'list_presets',
     title: '列出預設',
     description: '列出使用者在網站工作室調好並存起來的預設（地圖場景、銳利水滴、圖片運鏡、物件特效、精修插畫）。使用者說「用 p7k2x」或「用外觀慢推那個」時，用這個查代碼。',
-    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
+    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature', 'cosmos'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
       const list = await listPresets(ctx.env, String(a.kind ?? ''), String(a.query ?? ''), Number(a.limit) || 50);
@@ -663,7 +682,7 @@ export const TOOLS: ToolDef[] = [
         name: { type: 'string', description: '好記的名稱，例如「外觀慢推_左到右」' },
         note: { type: 'string' },
         combo_scene: { type: 'object', description: 'build_map_scene / build_drop_scene / build_photo_scene 回傳的 combo_scene（擇一）' },
-        kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature'] },
+        kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature', 'cosmos'] },
         data: { type: 'object', description: 'map：場景物件；drop：{ words: [...] }；photo：build_photo_scene 回傳的 scene（擇一）' },
       },
     },
@@ -777,7 +796,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
 3. 用 compose_combo 預覽，把 play_url 給使用者看。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
-地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、魔術方塊／星空宇宙（含太陽、月球、地球、低空飛越；cam=in/out 推近拉遠）請用 build_object_scene；隕石及俯瞰精修插畫請用 build_nature_scene（隕石 mode=meteor，style=rock｜ice｜lava｜gold；俯瞰 mode=city｜river｜mountain｜grass｜farm｜coast｜forest｜highway）；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、魔術方塊／星空背景請用 build_object_scene；天體、低空飛越及推近地球精修插畫用 build_cosmos_scene（mode=orbit｜flyover｜earthzoom，body=gas｜sun｜moon｜earth｜mars，依 mode 選擇）；隕石及俯瞰精修插畫請用 build_nature_scene（隕石 mode=meteor，style=rock｜ice｜lava｜gold；俯瞰 mode=city｜river｜mountain｜grass｜farm｜coast｜forest｜highway）；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 字型：Combo 的 font（整支）與 scenes[].font（單段）可選字型組合，依段落情緒挑：數據、資訊、標題用 sharp（預設）；開箱、生活、通勤用 round；質感建案、片頭大標用 serif；旁白金句、心得用 hand；俏皮吐槽用 cute。一支影片以 2–3 組為限，同類段落維持同一組，避免每段都換。\n手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

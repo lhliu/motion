@@ -1,3 +1,4 @@
+import { illustratedCosmos } from './effects/cosmos';
 import { illustratedNature } from './effects/nature';
 import { illustratedVehicles } from './effects/transport';
 import type { Category, Fx, Palette, Section, SecId } from './types';
@@ -94,13 +95,14 @@ export const ALL_EFFECTS: Fx[] = [
   ...illustratedOcean,
   ...illustratedVehicles,
   ...illustratedNature,
+  ...illustratedCosmos,
   ...transit,
   ...charts,
   ...plans,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 從前台隱藏（代碼、編號保留，舊 Combo 與預設仍可用）
-const HIDE = new Set(['vehicle-illustrated-car', 'vehicle-illustrated-carriage', 'vehicle-illustrated-train']);
+const HIDE = new Set(['obj-cosmos-planet','obj-cosmos-sun','obj-cosmos-moon','obj-cosmos-earth','obj-cosmos-flyby-earth','obj-cosmos-flyby-moon','obj-cosmos-flyby-mars','obj-cosmos-flyby-sun','obj-cosmos-zoom-earth','vehicle-illustrated-car', 'vehicle-illustrated-carriage', 'vehicle-illustrated-train']);
 ALL_EFFECTS.forEach((f) => {
   if (HIDE.has(f.id)) f.hidden = true;
 });

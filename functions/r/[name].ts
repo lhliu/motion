@@ -1,3 +1,4 @@
+import { COSMOS_GLOBALS } from '../../src/effects/cosmos';
 import { NATURE_GLOBALS } from '../../src/effects/nature';
 import { TRANSPORT_GLOBALS } from '../../src/effects/transport';
 import { ILLUSTRATION_GLOBALS } from '../../src/effects/illustrated';
@@ -18,6 +19,7 @@ const ENGINES: Record<string, { usage: string; code: string }> = {
     code: PHOTO_GLOBALS,
   },
   'map.js': { usage: 'MA_MAP.drawScene(ctx, W, H, scene, tSeconds, bgImage?)', code: MAP_GLOBALS },
+  'cosmos.js':{usage:'const renderer=MA_COSMOS.createRenderer(canvas,overlayCanvas,scene,assetOrigin); await renderer.ready; renderer.render(t,W,H); renderer.dispose();',code:COSMOS_GLOBALS},
   'nature.js':{usage:'const renderer=MA_NATURE.createRenderer(canvas,overlayCanvas,scene,assetOrigin); await renderer.ready; renderer.render(t,W,H); renderer.dispose();',code:NATURE_GLOBALS},
   'transport.js': {usage:'const renderer=MA_TRANSPORT.createRenderer(canvas,overlayCanvas,scene,assetOrigin); await renderer.ready; renderer.render(t,W,H); // dispose when done',code:TRANSPORT_GLOBALS},
   'illustration.js': {usage:'const renderer=MA_ILLUSTRATION.createRenderer(glCanvas,particleCanvas,scene,assetOrigin); await renderer.ready; renderer.render(t,W,H); // composite both canvases; dispose when done',code:ILLUSTRATION_GLOBALS},

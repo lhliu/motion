@@ -1,0 +1,41 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>星空宇宙精修</title><style>body{margin:24px;background:#eee8da;color:#12394a;font:14px system-ui}.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:1200px}figure{margin:0}canvas{width:100%;display:block;aspect-ratio:9/16;background:repeating-conic-gradient(#ccc 0 25%,#eee 0 50%) 0/12px 12px}figcaption{padding:8px}pre{white-space:pre-wrap}</style><h1>三招精修宇宙・四天體／四飛越／地球推近</h1><button id="play">播放全部</button><div id="gallery" class="gallery"></div><pre id="results">檢查中…</pre>
+<script type="module">
+import{COSMOS as R,normalizeCosmos as norm,cosmicFxId,cosmicFromWords}from'/src/cosmos.ts';
+import{ALL_EFFECTS,EFFECTS,PALETTES}from'/src/data.ts';
+import{findEffect,normalizeCombo,sceneSeconds}from'/src/combo.ts';
+import{presetToScene,sceneToPresetData}from'/src/presets.ts';
+import{TOOLS}from'/functions/_lib/tools.ts';
+import{exportHtml}from'/src/prompts.ts';import{toneVars}from'/src/engine.ts';
+const results=[],items=[],check=(v,m)=>{if(!v)throw Error(m)},cv=()=>{const c=document.createElement('canvas');c.width=270;c.height=480;return c},pixels=c=>c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+async function test(name,fn){try{await fn();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}}
+await test('九招原版保留隱藏，三張精修卡，編號唯一',()=>{
+ for(const no of [169,185,186,187,195,196,197,198,199])check(findEffect(String(no)).hidden,'Old effect visible or deleted '+no);
+ check(EFFECTS.filter(f=>f.id.startsWith('cosmos-illustrated-')).length===3,'Wrong card count');check(EFFECTS.filter(f=>f.cat==='cosmos').length===6,'Wrong cosmos count');check(new Set(ALL_EFFECTS.map(f=>f.no)).size===ALL_EFFECTS.length,'Duplicate numbers');
+ check(norm({mode:'orbit',body:'mars'}).body==='gas'&&norm({mode:'earthzoom',body:'sun'}).body==='earth','Invalid body accepted');check(norm({mode:'__proto__',body:'constructor',spin:Infinity,size:999}).size===2,'Unsafe normalization');
+});
+for(const mode of Object.keys(R.modes))for(const body of R.variants(mode))await test(mode+'/'+body+'：載入、動態、重現、透明輸出',async()=>{
+ const a=cv(),b=cv(),scene=norm({mode,body}),r=R.createRenderer(a,b,scene,location.origin);await r.ready;r.render(4);const p=a.toDataURL();r.render(7);check(p!==a.toDataURL(),'Static');r.render(4);check(p===a.toDataURL(),'Nondeterministic');
+ await r.update({...scene,background:'transparent'});r.render(5);const px=pixels(a);check(px.some((v,i)=>i%4===3&&v===0)&&px.some((v,i)=>i%4===3&&v>200),'Alpha missing');await r.update(scene);r.render(5);
+ const f=document.createElement('figure');f.innerHTML=`<figcaption>#${R.modes[mode].no} ${R.modes[mode].zh}・${R.bodies[body].zh}</figcaption>`;f.prepend(a);document.querySelector('#gallery').append(f);items.push({mode,body,a,b,r,scene});
+});
+await test('三種比例與速度一致演出進度',async()=>{
+ for(const mode of Object.keys(R.modes)){const i=items.find(i=>i.mode===mode);for(const [w,h] of [[320,180],[220,220],[270,480]]){i.r.render(5,w,h);check(pixels(i.a).some((v,k)=>k%4===3&&v>200),'Blank ratio');}i.r.render(5);const p=i.a.toDataURL();await i.r.update({...i.scene,speed:2});i.r.render(2.5);check(p===i.a.toDataURL(),'Speed changes progress');await i.r.update(i.scene);i.r.render(5);}
+});
+await test('專屬控制改變實際畫面，推近與拉遠互為反向',async()=>{
+ const cases=[['orbit','gas',{rings:0,moons:0}],['orbit','earth',{clouds:0,longitude:100}],['flyover','moon',{altitude:2,bank:10}],['earthzoom','earth',{zoomEnd:5,focusX:.7}]];
+ for(const [mode,body,patch] of cases){const i=items.find(i=>i.mode===mode&&i.body===body);i.r.render(5);const p=i.a.toDataURL();await i.r.update({...i.scene,...patch});i.r.render(5);check(p!==i.a.toDataURL(),'Ignored controls '+mode);await i.r.update(i.scene);i.r.render(5);}
+ const i=items.find(i=>i.mode==='earthzoom'),base={...i.scene,spin:0,cloudSpeed:0,moons:0};await i.r.update(base);i.r.render(2);const p=i.a.toDataURL();await i.r.update({...base,zoomDirection:'out'});i.r.render(10);check(p===i.a.toDataURL(),'Zoom reversal differs');await i.r.update(i.scene);i.r.render(5);
+});
+await test('換色、五種背景、快速切換與清理',async()=>{
+ const a=cv(),b=cv(),r=R.createRenderer(a,b,{},location.origin);await r.ready;const shots=new Set();for(const background of Object.keys(R.backgrounds).filter(k=>k!=='transparent')){await r.update(norm({background}));r.render(5);shots.add(a.toDataURL());}check(shots.size===5,'Missing background');await r.update(norm({body:'moon'}));r.render(5);const p=a.toDataURL();await r.update({...r.scene,tint:1,color:'#b45e9f'});r.render(5);check(p!==a.toDataURL(),'Tint ignored');await Promise.all([r.update({mode:'flyover',body:'moon'}),r.update({mode:'orbit',body:'sun'}),r.update({mode:'earthzoom'})]);check(r.loaded&&r.scene.mode==='earthzoom','Stale assets');r.dispose();check(a.width===1&&b.width===1,'Cleanup failed');
+});
+await test('MCP、預設與 Combo 保留四種樣式及完整設定',async()=>{
+ const tool=TOOLS.find(t=>t.name==='build_cosmos_scene'),ctx={origin:location.origin,request:new Request(location.origin+'/mcp'),env:{}};
+ for(const i of items){const r=await tool.run({...i.scene,speed:.6},ctx);check(r.scene.mode===i.mode&&r.scene.body===i.body&&r.combo_scene.seconds===20&&r.edit_url.includes('edit=cosmos'),'MCP failed');const cs=presetToScene({kind:'cosmos',data:r.scene,name:i.mode}),pd=sceneToPresetData(cs.effect,cs.words),combo=normalizeCombo({title:'test',scenes:[cs]});check(pd.kind==='cosmos'&&pd.data.body===i.body&&cs.effect===cosmicFxId(i.mode),'Preset failed');check(combo.combo.scenes[0].words[0]===cs.words[0]&&sceneSeconds(combo.combo.scenes[0])===20,'Truncated config');}
+});
+await test('三招獨立 HTML 與預覽逐像素一致',async()=>{
+ for(const mode of Object.keys(R.modes)){const frame=document.createElement('iframe');frame.style.cssText='width:270px;height:480px;border:0';document.body.append(frame);const loaded=new Promise(r=>frame.onload=r);frame.srcdoc=exportHtml(findEffect(cosmicFxId(mode)),[],toneVars(PALETTES[0],'ink'),'9:16');await loaded;const root=frame.contentDocument.querySelector('.fx');check(await root.motionReady,'Export load');root.motionSeek(5);check(root.querySelector('canvas').toDataURL()===items.find(i=>i.mode===mode).a.toDataURL(),'Export differs '+mode);frame.remove();}
+});
+let playing=false,start=0;document.querySelector('#play').onclick=()=>{playing=!playing;start=performance.now();if(playing)requestAnimationFrame(tick)};function tick(now){if(!playing)return;for(const i of items)i.r.render(((now-start)/1000)%12);requestAnimationFrame(tick)}
+window.cosmicResults=results;window.cosmicItems=items;document.querySelector('#results').textContent=results.map(x=>`${x.passed?'PASS':'FAIL'} ${x.name}${x.error?' — '+x.error:''}`).join('\n');
+</script></html>
