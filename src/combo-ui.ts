@@ -2,8 +2,8 @@ import { isCosmicFx } from './cosmos';
 import { isNatureFx } from './nature';
 import { isTransportFx } from './transport';
 import { isIllustrationFx } from './illustration';
-import { comboHtml, comboOutline, comboPrompt, sceneSummary, decodeCombo, encodeCombo, findEffect, normalizeCombo, sceneSeconds, totalSeconds, TRANSITIONS, TRANSITION_INFO, type Combo, type ComboScene, type Transition } from './combo';
-import { NUM } from './data';
+import { comboHtml, comboOutline, comboPrompt, sceneSummary, decodeCombo, encodeCombo, findEffect, normalizeCombo, sceneSeconds, totalSeconds, TRANSITIONS, TRANSITION_INFO, type Combo, type ComboOverlay, type ComboScene, type Transition } from './combo';
+import { EFFECTS, NUM, secOf } from './data';
 import type { Ratio } from './prompts';
 import type { Tone } from './types';
 import { esc } from './util';
@@ -79,6 +79,64 @@ export const initCombos = (deps: ComboDeps) => {
     </li>`;
   };
 
+  // 可當疊加圖層的元件：元件工作區全部＋常用字幕條
+  const OV_EXTRA = ['location-pin', 'lower-third', 'subscribe-cta', 'news-ticker', 'hashtag-pop', 'shorts-caption', 'callout'];
+  const ovChoices = EFFECTS.filter((f) => secOf(f) === 'ui' || OV_EXTRA.includes(f.id));
+  const drOvPick = $<HTMLSelectElement>('#drOvPick');
+  drOvPick.innerHTML = ovChoices.map((f) => `<option value="${f.id}"${f.id === 'hook-series' ? ' selected' : ''}>#${pad(NUM.get(f.id)!)} ${esc(f.zh)}</option>`).join('');
+  const ovRow = (o: ComboOverlay, i: number) => {
+    const fx = findEffect(o.effect);
+    const n = Math.max(1, draft.scenes.length);
+    return `<li class="dr-scene ov-row" data-o="${i}">
+      <div class="dr-s-head"><span class="ma-num">疊</span><button class="dr-fx" data-act="open" title="打開特效">${fx ? `${esc(fx.zh)} <small>#${pad(NUM.get(fx.id)!)} ${esc(fx.en)}</small>` : esc(o.effect)}</button><span class="dr-s-tools"><button class="ic" data-act="del" aria-label="刪除疊加"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span></div>
+      <div class="dr-s-body">
+        <label><span>文字（/ 分隔）</span><input data-k="words" value="${esc((o.words ?? fx?.sample ?? []).join(' / '))}" placeholder="${esc(fx?.hint ?? '')}"></label>
+        <label class="sm"><span>從第幾段</span><input data-k="from" type="number" min="1" max="${n}" step="1" value="${o.from ?? 1}"></label>
+        <label class="sm"><span>到第幾段</span><input data-k="to" type="number" min="1" max="${n}" step="1" value="${o.to ?? n}"></label>
+        <label class="sm"><span>配色</span><select data-k="tone"><option value="">預設</option>${(['ink', 'paper', 'accent'] as Tone[]).map((t) => `<option value="${t}"${o.tone === t ? ' selected' : ''}>${{ ink: '深底色系', paper: '淺底色系', accent: '主色系' }[t]}</option>`).join('')}</select></label>
+      </div>
+    </li>`;
+  };
+  $('#drOvAdd').addEventListener('click', () => {
+    if (!draft.scenes.length) return deps.toast('先加入至少一個段落');
+    (draft.overlays ??= []).push({ effect: drOvPick.value });
+    if (draft.overlays.length > 6) draft.overlays.length = 6;
+    saveDraft();
+    renderDraft();
+  });
+  const ovEl = $('#drOverlays');
+  ovEl.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
+    const li = (e.target as HTMLElement).closest<HTMLElement>('[data-o]');
+    if (!b || !li || !draft.overlays) return;
+    const i = Number(li.dataset.o);
+    if (b.dataset.act === 'open') return deps.openDetail(draft.overlays[i].effect);
+    if (b.dataset.act === 'del') draft.overlays.splice(i, 1);
+    if (!draft.overlays.length) delete draft.overlays;
+    saveDraft();
+    renderDraft();
+  });
+  ovEl.addEventListener('input', (e) => {
+    const el = e.target as HTMLInputElement | HTMLSelectElement;
+    const li = el.closest<HTMLElement>('[data-o]');
+    if (!li || !el.dataset.k || !draft.overlays) return;
+    const o = draft.overlays[Number(li.dataset.o)];
+    const k = el.dataset.k;
+    if (k === 'words') {
+      const w = el.value.split(/\s*\/\s*/).map((x) => x.trim()).filter(Boolean);
+      if (w.length) o.words = w;
+      else delete o.words;
+    } else if (k === 'from' || k === 'to') {
+      const v = Math.round(Number(el.value));
+      if (v >= 1) o[k] = v;
+    } else if (k === 'tone') {
+      if (el.value) o.tone = el.value as Tone;
+      else delete o.tone;
+    }
+    saveDraft();
+    renderPreview();
+  });
+
   let previewTimer = 0;
   const renderPreview = () => {
     clearTimeout(previewTimer);
@@ -99,6 +157,7 @@ export const initCombos = (deps: ComboDeps) => {
     $<HTMLSelectElement>('#drTrans').value = draft.transition ?? 'fade';
     $<HTMLSelectElement>('#drFont').value = draft.font ?? 'sharp';
     $('#drScenes').innerHTML = draft.scenes.map(sceneRow).join('');
+    $('#drOverlays').innerHTML = (draft.overlays ?? []).map(ovRow).join('');
     $('#drEmpty').hidden = draft.scenes.length > 0;
     $('#drKeyState').textContent = deps.store.get('key', '') ? '已設定' : '未設定';
     renderPreview();

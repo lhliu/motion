@@ -8,6 +8,8 @@ const base = { added: '2026-10-23', preferredRatio: '9:16' as const };
 const typeLoop: Fx['run'] = (root) => {
   const els = [...root.querySelectorAll<HTMLElement>('[data-type]')];
   const cyc = Number(root.querySelector<HTMLElement>('[data-cycle]')?.dataset.cycle || 5000);
+  // 當 Combo 疊加圖層時只打一次字，打完定格
+  const once = !!root.parentElement?.classList.contains('ov');
   let alive = true;
   const timers: number[] = [];
   const go = () => {
@@ -23,7 +25,7 @@ const typeLoop: Fx['run'] = (root) => {
       full.forEach((_, i) => timers.push(window.setTimeout(() => alive && (el.textContent = full.slice(0, i + 1).join('')), at + i * step)));
       timers.push(window.setTimeout(() => alive && root.classList.add('done'), at + full.length * step + 150));
     });
-    timers.push(window.setTimeout(() => { root.classList.remove('play'); go(); }, cyc));
+    if (!once) timers.push(window.setTimeout(() => { root.classList.remove('play'); go(); }, cyc));
   };
   go();
   return () => { alive = false; timers.forEach(clearTimeout); };

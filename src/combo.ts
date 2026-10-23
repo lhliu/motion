@@ -47,6 +47,17 @@ export interface ComboScene {
   note?: string;
 }
 
+/** 疊加圖層：常駐在段落上方的元件（系列角標、資料來源條、子母畫面框⋯），背景透明 */
+export interface ComboOverlay {
+  effect: string;
+  words?: string[];
+  /** 從第幾段開始（1 起算），省略＝第 1 段 */
+  from?: number;
+  /** 到第幾段結束（含），省略＝最後一段 */
+  to?: number;
+  tone?: Tone;
+}
+
 export interface Combo {
   id?: string;
   title: string;
@@ -60,6 +71,7 @@ export interface Combo {
   /** 整支的字型組合，省略＝俐落黑體 */
   font?: string;
   scenes: ComboScene[];
+  overlays?: ComboOverlay[];
   source?: string;
   created_at?: string;
   updated_at?: string;
@@ -113,6 +125,22 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
       ...(str(r.note, 200) ? { note: str(r.note, 200) } : {}),
     };
   });
+  const rawOv = Array.isArray(o.overlays) ? o.overlays : [];
+  if (rawOv.length > 6) errors.push('overlays 最多 6 層');
+  const overlays: ComboOverlay[] = rawOv.slice(0, 6).flatMap((v, i) => {
+    const r = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+    const fx = findEffect(str(r.effect, 40));
+    if (!fx) {
+      errors.push(`overlays[${i}].effect「${String(r.effect)}」不存在`);
+      return [];
+    }
+    if (fx.cat === 'diagram' || isPhotoFx(fx.id) || isObjFx(fx.id) || fx.id === 'map-overlay') errors.push(`overlays[${i}]：${fx.zh}不適合當疊加圖層，建議用元件（ui-*、hook-*、estate-source）或字幕條`);
+    const words = Array.isArray(r.words) ? r.words.map((w) => str(w, 60)).filter(Boolean).slice(0, 12) : typeof r.words === 'string' ? str(r.words, 200).split(/\s*\/\s*|\n/).filter(Boolean) : [];
+    const n = rawScenes.length || 1;
+    const from = Math.min(n, Math.max(1, Math.round(Number(r.from) || 1)));
+    const to = Math.min(n, Math.max(from, Math.round(Number(r.to) || n)));
+    return [{ effect: fx.id, ...(words.length ? { words } : {}), ...(from > 1 ? { from } : {}), ...(to < n ? { to } : {}), ...(TONES.includes(r.tone as Tone) ? { tone: r.tone as Tone } : {}) }];
+  });
   const palette = PALETTES.some((p) => p.id === o.palette) ? (o.palette as string) : 'leicht';
   const combo: Combo = {
     title,
@@ -121,6 +149,7 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     ratio: RATIOS.includes(o.ratio as Ratio) ? (o.ratio as Ratio) : '16:9',
     transition: TRANSITIONS.includes(o.transition as Transition) ? (o.transition as Transition) : 'fade',
   };
+  if (overlays.length) combo.overlays = overlays;
   if (o.font !== undefined && o.font !== '' && !FONT_IDS.includes(o.font as never)) errors.push(`font「${String(o.font)}」不存在，可用：${FONT_IDS.join('｜')}`);
   if (FONT_IDS.includes(o.font as never) && o.font !== 'sharp') combo.font = o.font as string;
   if (str(o.brief, 1000)) combo.brief = str(o.brief, 1000);
@@ -209,7 +238,16 @@ export const comboOutline = (c: Combo): string =>
       const w = sceneSummary(s.effect, s.words ?? fx?.sample ?? []);
       return `${i + 1}. ${fx ? `#${String(NUM.get(fx.id)).padStart(2, '0')} ${fx.zh}（${fx.id}）` : s.effect}｜${sceneSeconds(s)} 秒${s.font ? `｜字型：${fontPack(s.font).zh}` : ''}｜${w}${s.note ? `｜${s.note}` : ''}`;
     })
-    .join('\n');
+    .join('\n') +
+  (c.overlays?.length
+    ? '\n' +
+      c.overlays
+        .map((o) => {
+          const fx = findEffect(o.effect);
+          return `疊加：${fx ? `#${String(NUM.get(fx.id)).padStart(2, '0')} ${fx.zh}（${fx.id}）` : o.effect}｜第 ${o.from ?? 1}–${o.to ?? c.scenes.length} 段｜${(o.words ?? fx?.sample ?? []).join(' / ')}`;
+        })
+        .join('\n')
+    : '');
 
 const ratioCss: Record<Ratio, string> = {
   '16:9': 'width:min(100vw,177.78vh);aspect-ratio:16/9',
@@ -220,7 +258,8 @@ const ratioCss: Record<Ratio, string> = {
 /** 產生可獨立播放的 Combo HTML（依序播放、可循環） */
 export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean } = {}): string => {
   const pal = comboPalette(c);
-  const used = [...new Set(c.scenes.map((s) => s.effect))].map((id) => findEffect(id)).filter((f): f is Fx => !!f);
+  const ovs = (c.overlays ?? []).map((o) => ({ o, fx: findEffect(o.effect) })).filter((x): x is { o: ComboOverlay; fx: Fx } => !!x.fx);
+  const used = [...new Set([...c.scenes.map((s) => s.effect), ...ovs.map((x) => x.fx.id)])].map((id) => findEffect(id)).filter((f): f is Fx => !!f);
   const css = used.map((f) => scopeCss(f).trim()).join('\n');
   const runs = used
     .filter((f) => f.run)
@@ -234,7 +273,18 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean } = {}
       return { fx, words, ms: Math.round(sceneSeconds(s) * 1000), tr: s.transition, vars: varsCss(toneVars(pal, s.tone ?? fx.tone, s.font ?? c.font, { face: s.face, weight: s.weight })) };
     })
     .filter((s): s is NonNullable<typeof s> => !!s);
-  const templates = scenes.map((s, i) => `<template id="t${i}">${s.fx.html(s.words)}</template>`).join('\n');
+  const templates = scenes.map((s, i) => `<template id="t${i}">${s.fx.html(s.words)}</template>`).join('\n') + ovs.map((x, i) => `<template id="o${i}">${x.fx.html(x.o.words?.length ? x.o.words : x.fx.sample)}</template>`).join('');
+  const ovData = JSON.stringify(
+    ovs.map(({ o, fx }) => ({
+      id: fx.id,
+      words: o.words?.length ? o.words : fx.sample,
+      from: (o.from ?? 1) - 1,
+      to: (o.to ?? scenes.length) - 1,
+      // 疊加元件播到進場完成就定格，不重複進出
+      hold: Math.round(Math.min(3, loopSeconds(fx) * 0.5) * 1000),
+      vars: varsCss(toneVars(pal, o.tone ?? fx.tone, c.font)),
+    })),
+  );
   const data = JSON.stringify(scenes.map((s) => ({ id: s.fx.id, words: s.words, ms: s.ms, vars: s.vars, name: s.fx.zh, ...(s.tr ? { tr: s.tr } : {}) })));
   const t = c.transition ?? 'fade';
   return `<!doctype html>
@@ -283,6 +333,7 @@ html,body{margin:0;height:100%;background:#0b0b0b;display:grid;place-items:cente
 .tc-glitch i{position:absolute;left:0;right:0;opacity:0;animation:tGlitch .56s steps(1) both}
 .tc-glitch i:nth-child(1){top:22%;height:2cqh;background:var(--c3)}.tc-glitch i:nth-child(2){top:51%;height:1cqh;background:var(--c1);animation-delay:.04s}.tc-glitch i:nth-child(3){top:74%;height:3cqh;background:var(--c2);animation-delay:.08s}
 @keyframes tGlitch{0%,100%{opacity:0}10%,30%,55%,75%{opacity:1}20%,45%,65%{opacity:0}}
+.ov{position:absolute;inset:0;z-index:70;pointer-events:none}.ov>.fx{background:transparent}.ov>.fx.bye{animation:cOut .3s ease both}
 .hud{position:absolute;left:0;right:0;bottom:0;z-index:99;display:flex;gap:4px;padding:8px;pointer-events:none}
 .hud i{flex:1;height:3px;border-radius:3px;background:#fff4;overflow:hidden}.hud i b{display:block;height:100%;width:0;background:#fff}
 .hud i.done b{width:100%}
@@ -292,12 +343,13 @@ ${css}
 </style>
 </head>
 <body>
-<div class="stage"${opts.hud === false ? '' : ' data-hud'}></div>
+<div class="stage"${opts.hud === false ? '' : ' data-hud'}><div class="ov"></div></div>
 ${templates}
 <script>
 const SCENES=${data.replace(/</g, '\\u003c')};
 ${[...new Set(used.map((f) => f.globals).filter(Boolean))].join('\n')}
 const RUNS={${runs}};
+const OVERLAYS=${ovData.replace(/</g, '\\u003c')};
 const TRANSITION=${JSON.stringify(t)};
 const LOOP=${opts.loop === false ? 'false' : 'true'};
 const stage=document.querySelector('.stage');
@@ -331,9 +383,17 @@ function show(){
   }
   else if(t==='page'){prev.classList.add('out-page');mount('',true);drop(END.page);}
   else{mount('in-'+t);prev.classList.add('out-'+t);drop(600);}
+  syncOverlays(idx);
   if(hud){[...hud.children].forEach((b,k)=>{b.className=k<i?'done':'';const bar=b.firstChild;bar.getAnimations().forEach(a=>a.cancel());if(k===i)bar.animate([{width:'0%'},{width:'100%'}],{duration:sc.ms,easing:'linear',fill:'forwards'});});}
   timer=setTimeout(()=>{i++;if(i>=SCENES.length){if(!LOOP)return;i=0;}show();},sc.ms);
 }
+const ovEl=stage.querySelector('.ov'),ovOn=[];
+function syncOverlays(k){OVERLAYS.forEach((o,n)=>{const want=k>=o.from&&k<=o.to;const m=ovOn[n];
+  if(want&&!m){const el=document.createElement('div');el.className='fx fx-'+o.id;el.setAttribute('style',o.vars);el.innerHTML=document.getElementById('o'+n).innerHTML;ovEl.appendChild(el);
+    const rec={el,clean:null,t:setTimeout(()=>el.getAnimations({subtree:true}).forEach(a=>{try{a.pause()}catch(e){}}),o.hold)};ovOn[n]=rec;
+    requestAnimationFrame(()=>{const r=RUNS[o.id];if(r&&el.isConnected){try{rec.clean=r(el,o.words)||null}catch(e){console.error(e)}}});}
+  else if(!want&&m){ovOn[n]=null;clearTimeout(m.t);m.el.classList.add('bye');setTimeout(()=>{m.clean&&m.clean();m.el.remove();},320);}
+});}
 const go=()=>show();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(go);else go();
 </script>
@@ -357,7 +417,16 @@ ${c.brief ? `\n【需求】${c.brief}\n` : ''}
 【段落轉場】${TRANSITION_INFO[c.transition ?? 'fade'].desc}${c.scenes.some((s) => s.transition) ? '；個別段落另有指定，見分鏡' : ''}
 
 【分鏡】
-${parts.join('\n')}
+${parts.join('\n')}${
+    c.overlays?.length
+      ? `\n\n【疊加圖層】背景透明、疊在段落上方，進場完成後定格不重複：\n${c.overlays
+          .map((o) => {
+            const fx = findEffect(o.effect);
+            return fx ? `- 【${fx.zh}】第 ${o.from ?? 1}–${o.to ?? c.scenes.length} 段｜文字：${(o.words?.length ? o.words : fx.sample).join(' / ')}\n  動態：${fx.motion}` : '';
+          })
+          .join('\n')}`
+      : ''
+  }
 
 【規格】單一 HTML 檔、無外部函式庫（字體除外）；動畫以 transform／opacity 為主確保 60fps；字級用 vw/vh 或 container query 單位；頂部用 CSS 變數集中管理文字、顏色與每段秒數。`;
 };

@@ -126,6 +126,7 @@ const comboView = (c: Combo, origin: string, withHtml = false) => ({
   transition: c.transition,
   total_seconds: totalSeconds(c),
   scenes: c.scenes,
+  overlays: c.overlays ?? [],
   outline: comboOutline(c),
   scene_edit_urls: c.scenes.map((sc, i) => {
     const pd = sceneToPresetData(sc.effect, sc.words ?? []);
@@ -160,6 +161,22 @@ const comboInput = {
         transition: { type: 'string', enum: TRANSITIONS, description: '進入這段的轉場（第一段無效），省略＝跟整支的 transition。適合在換章節時用 push／door／page，卡點用 flash／whip／glitch' },
         note: { type: 'string', description: '這段的用意或剪輯備註' },
       },
+    },
+  },
+  overlays: {
+    type: 'array',
+    maxItems: 6,
+    description: '疊加圖層：常駐在段落上方、背景透明、進場後定格的元件。適合 hook-series 系列角標、estate-source 資料來源條、ui-pip 子母畫面框、location-pin 地點標記、lower-third 名牌條。用 from／to 指定第幾段到第幾段（1 起算，含頭尾）',
+    items: {
+      type: 'object',
+      properties: {
+        effect: { type: 'string', description: '元件特效 id' },
+        words: { type: 'array', items: { type: 'string' }, description: '元件文字，格式依 word_hint' },
+        from: { type: 'number', description: '從第幾段開始，預設 1' },
+        to: { type: 'number', description: '到第幾段結束，預設最後一段' },
+        tone: { type: 'string', enum: ['ink', 'paper', 'accent'], description: '配色系' },
+      },
+      required: ['effect'],
     },
   },
   palette: { type: 'string', enum: PALETTES.map((p) => p.id), description: '配色組，預設 leicht（光寓橘）' },

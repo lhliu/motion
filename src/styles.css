@@ -1743,8 +1743,40 @@ pre.code {
 }
 .dr-s-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 76px 84px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+}
+.dr-s-body > label:first-child {
+  grid-column: 1 / -1;
+}
+.dr-ov {
+  margin-top: 14px;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dr-ov-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.dr-ov-head b {
+  font-size: 14px;
+}
+.dr-ov-head small {
+  flex-basis: 100%;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.dr-ov-head select {
+  flex: 1;
+  min-width: 160px;
+}
+.dr-scene.ov-row {
+  border-style: dashed;
 }
 .dr-s-body label {
   display: flex;
