@@ -2746,3 +2746,16 @@ pre.code {
 .ps-mod-g .ps-mod-desc {
   grid-column: 1 / -1;
 }
+
+/* Refined illustration family and editor. */
+.ill-badge{position:absolute;left:12px;top:12px;padding:5px 8px;background:#eee6d2;color:#12394a;border:1px solid #12394a;font-size:11px;font-weight:700;pointer-events:none}
+#isStage{touch-action:none}
+#isSnow{pointer-events:none;outline:0}
+#isLoading{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:#efe6ce;background:#05283f;font-size:14px;pointer-events:none}
+#isLoading[hidden]{display:none}
+#illstudio .st-select{max-width:100%}
+#illstudio .st-row output{min-width:3.7em;font-variant-numeric:tabular-nums}
+#isClock{font-size:12px;font-variant-numeric:tabular-nums}
+#isControls input:disabled{opacity:.35}
+#illstudio .st-out button:disabled{opacity:.5;cursor:wait}
+@media(max-width:700px){#illstudio .st-panel{min-width:0}#illstudio .st-left{padding:14px}#illstudio .st-row{grid-template-columns:80px minmax(0,1fr) auto}#illstudio .d-controls{gap:8px}}

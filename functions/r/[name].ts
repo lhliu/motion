@@ -1,3 +1,4 @@
+import { ILLUSTRATION_GLOBALS } from '../../src/effects/illustrated';
 // 繪製引擎：讓本機（例如 Claude Code + Playwright）逐格渲染，跟網站畫出來的一模一樣
 import { PHOTO_GLOBALS } from '../../src/effects/photo';
 import { MAP_GLOBALS } from '../../src/effects/map';
@@ -14,6 +15,7 @@ const ENGINES: Record<string, { usage: string; code: string }> = {
     code: PHOTO_GLOBALS,
   },
   'map.js': { usage: 'MA_MAP.drawScene(ctx, W, H, scene, tSeconds, bgImage?)', code: MAP_GLOBALS },
+  'illustration.js': {usage:'const renderer=MA_ILLUSTRATION.createRenderer(glCanvas,particleCanvas,scene,assetOrigin); await renderer.ready; renderer.render(t,W,H); // composite both canvases; dispose when done',code:ILLUSTRATION_GLOBALS},
   'obj.js': { usage: 'MA_OBJ.drawObj(ctx, W, H, scene, tSeconds) — scene 為 build_object_scene 的 scene', code: OBJ_GLOBALS },
   'chart.js': { usage: 'const d = MA_CHART.parse(words); MA_CHART.draw(ctx, W, H, kind, d, tSeconds, { fg, bg, ac, ac2 }) — kind 為特效代碼去掉 chart- 前綴（column、line、pie…）；words 與卡片相同', code: CHART_GLOBALS },
   'transit.js': { usage: 'const net = MA_TRANSIT.parse(words); MA_TRANSIT.draw(ctx, W, H, net, tSeconds, { fg, bg }) — words 與 transit-* 卡片相同', code: TRANSIT_GLOBALS },
@@ -27,7 +29,7 @@ export const onRequestGet = async ({ params }: Ctx) => {
       headers: { 'content-type': 'text/css; charset=utf-8', 'access-control-allow-origin': '*', 'cache-control': 'public, max-age=3600' },
     });
   const e = ENGINES[String(params.name)];
-  if (!e) return new Response('// 可用：photo.js、map.js、obj.js、drop.js、chart.js、transit.js、fonts.css', { status: 404, headers: { 'content-type': 'text/javascript; charset=utf-8' } });
+  if (!e) return new Response('// 可用：photo.js、map.js、illustration.js、obj.js、drop.js、chart.js、transit.js、fonts.css', { status: 404, headers: { 'content-type': 'text/javascript; charset=utf-8' } });
   return new Response(`// Motion Atlas 繪製引擎\n// 用法：${e.usage}\n// 逐格渲染：t 從 0 開始，每格加 1/fps；畫布尺寸建議 1080×1920（9:16）\n// 字型：頁面先載入 /r/fonts.css，並在畫第一格前 await document.fonts.load（Chiron Hei HK 與 MA Num 兩種字型）\n${e.code}\n`, {
     headers: { 'content-type': 'text/javascript; charset=utf-8', 'access-control-allow-origin': '*', 'cache-control': 'public, max-age=300' },
   });

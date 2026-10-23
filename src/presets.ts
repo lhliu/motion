@@ -1,15 +1,16 @@
+import { normalizeIllustration, illustrationFromWords, isIllustrationFx, type IScene } from './illustration';
 // 預設（preset）：工作室調好的一份設定，有短代碼，AI 與網站來回修改都用它。網站與伺服器共用，不可在載入時碰 DOM。
 import { parseDrop } from './drop';
 import { sceneLength, type MScene } from './mapkit';
 import { isPhotoFx, normalizePhotoScene, photoFxId, type PScene } from './photokit';
 import { isObjFx, normalizeObjScene, objFxId, objFxModule, type OScene } from './objkit';
 
-export type PresetKind = 'map' | 'drop' | 'photo' | 'object';
-export const PRESET_KINDS: PresetKind[] = ['map', 'drop', 'photo', 'object'];
-export const KIND_NAME: Record<PresetKind, string> = { map: '地圖場景', drop: '銳利水滴', photo: '圖片運鏡', object: '物件特效' };
+export type PresetKind = 'map' | 'drop' | 'photo' | 'object' | 'illustration';
+export const PRESET_KINDS: PresetKind[] = ['map', 'drop', 'photo', 'object', 'illustration'];
+export const KIND_NAME: Record<PresetKind, string> = { map: '地圖場景', drop: '銳利水滴', photo: '圖片運鏡', object: '物件特效', illustration: '精修插畫' };
 
 /** map：MScene；drop：{ words: string[] }（文字行＋@設定行）；photo：PScene（images 通常留空，渲染時再填） */
-export type PresetData = MScene | { words: string[] } | PScene | OScene;
+export type PresetData = MScene | { words: string[] } | PScene | OScene | IScene;
 
 export interface Preset {
   id?: string;
@@ -33,6 +34,10 @@ export interface SceneLike {
 /** 預設 → 可放進 Combo 的段落；圖片運鏡可用 images 換成這次要用的圖 */
 export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, o: { images?: string[] } = {}): SceneLike => {
   const note = p.id ? `預設 ${p.id}${p.name ? `「${p.name}」` : ''}` : undefined;
+  if (p.kind === 'illustration') {
+    const sc=normalizeIllustration(p.data);
+    return {effect:'whale-illustrated', words:[JSON.stringify(sc)], seconds:sc.loop, note};
+  }
   if (p.kind === 'map') {
     const sc = p.data as MScene;
     return { effect: 'map-overlay', words: [JSON.stringify(sc)], seconds: sceneLength(sc) + 1, ...(sc.font ? { font: sc.font } : {}), note };
@@ -52,6 +57,7 @@ export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, 
 
 /** Combo 段落 → 預設資料（反向，用於從 Combo 打開工作室） */
 export const sceneToPresetData = (effect: string, words: string[]): { kind: PresetKind; data: PresetData } | null => {
+  if (isIllustrationFx(effect)) return {kind:'illustration',data:illustrationFromWords(words)};
   if (effect === 'map-overlay') {
     const j = words.find((w) => w.trim().startsWith('{'));
     try {
@@ -84,6 +90,7 @@ export const sceneToPresetData = (effect: string, words: string[]): { kind: Pres
 export const checkPresetData = (kind: unknown, data: unknown): string => {
   if (!PRESET_KINDS.includes(kind as PresetKind)) return `kind 必須是 ${PRESET_KINDS.join('｜')}`;
   if (!data || typeof data !== 'object') return 'data 必須是物件';
+  if (kind === 'illustration' && !('animal' in data)) return '精修插畫缺少 animal';
   if (kind === 'map') {
     const d = data as Partial<MScene>;
     if (!Array.isArray(d.els)) return '地圖場景缺少 els（元件清單）';

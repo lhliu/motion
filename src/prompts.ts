@@ -1,3 +1,4 @@
+import { illustrationFromWords, ILLUSTRATION } from './illustration';
 import type { Fx } from './types';
 import { BASE_FX_CSS, fnSource, FONT_LINK, loopSeconds, scopeCss, varsCss, type Vars } from './engine';
 import { fontPack } from './fonts';
@@ -22,8 +23,9 @@ const quoteWordsEn = (w: string[]) => w.map((t) => `"${t}"`).join(', ');
 
 export const buildPrompt = (fx: Fx, mode: PromptMode, words: string[], v: Vars, ratio: Ratio): string => {
   if (fx.id === 'whale-illustrated' && mode !== 'code') {
-    if (mode === 'en' || mode === 'video') return `Create a ${ratioEn[ratio]}, 12-second illustrated whale encounter. ${fx.motionEn} Use the existing whale-illustrated effect or get_effect source and its supplied illustration assets. For an exact Motion Atlas preview/export, use the HTML implementation; generative video can only approximate the result. No added typography. This is a fixed illustrated scene.`;
-    return `請使用獨立特效 whale-illustrated（巨鯨經過・精修插畫），${ratioZh[ratio]}、完整 12 秒。\n${fx.motion}\n請用 get_effect 取得本招原始碼與既有插畫素材，保留相同動作與細節，不增加文字。這是固定插畫場景，可加入 compose_combo／save_combo；本招不使用 build_object_scene，請直接指定 effect="whale-illustrated"。匯出 HTML 需能載入網站提供的插畫素材。`;
+    const sc={...illustrationFromWords(words),ratio},settings=JSON.stringify(sc,null,2);
+    if (mode === 'en' || mode === 'video') return `Create a ${ratioEn[ratio]}, ${sc.loop.toFixed(2)}-second refined illustration animation using whale-illustrated. ${fx.motionEn} Preserve the supplied textures and settings. For exact rendering use build_illustration_scene and /r/illustration.js; generative video can only approximate it. No added typography.\nSETTINGS\n${settings}`;
+    return `請使用 whale-illustrated（精修插畫）：${ILLUSTRATION.animals[sc.animal].zh} × ${ILLUSTRATION.backgrounds[sc.background].zh}，${ratioZh[ratio]}，完整 ${sc.loop.toFixed(2)} 秒。\n${fx.motion}\n用 build_illustration_scene 產生設定與編輯連結，將 combo_scene 放進 compose_combo／save_combo。使用 get_effect 或 /r/illustration.js 的共用引擎與既有插畫素材；逐格輸出須 await renderer.ready 再 render(t)。透明背景保留 alpha，不加文字。\n場景設定：\n${settings}`;
   }
   if (fx.cat === 'ocean' && mode !== 'code') {
     const sc = objSceneFromWords(words, 'ocean', { mode: fx.id.replace('obj-ocean-', '') });

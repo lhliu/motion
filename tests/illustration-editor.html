@@ -1,0 +1,70 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>精修插畫編輯器驗證</title>
+<style>body{background:#eee8da;color:#12394a;font:15px system-ui;margin:24px}#gallery{display:flex;gap:12px;flex-wrap:wrap}.preview{position:relative;width:210px;height:374px;background:repeating-conic-gradient(#ccc 0 25%,#eee 0 50%) 0 0/12px 12px}.preview canvas{position:absolute;inset:0;width:100%;height:100%}figure{margin:0}figcaption{padding:8px}pre{white-space:pre-wrap}iframe{width:270px;height:480px}</style>
+<h1>精修插畫：五種主角與五種背景</h1><div id="gallery"></div><pre id="results">檢查中…</pre>
+<script type="module">
+import { ILLUSTRATION as R, normalizeIllustration as norm, illustrationFromWords } from '/src/illustration.ts';
+import { illustratedWhale as fx } from '/src/effects/illustrated.ts';
+import { normalizeCombo, sceneSeconds, sceneSummary, comboHtml } from '/src/combo.ts';
+import { presetToScene, sceneToPresetData, checkPresetData, editUrl, decodeJson } from '/src/presets.ts';
+import { TOOLS } from '/functions/_lib/tools.ts';
+import { exportHtml } from '/src/prompts.ts';
+import { toneVars } from '/src/engine.ts';
+import { PALETTES } from '/src/data.ts';
+const results=[],engines=[];const check=(v,m)=>{if(!v)throw new Error(m)};
+async function test(name,fn){try{await fn();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}}
+function create(sc,w=270,h=480){const a=document.createElement('canvas'),b=document.createElement('canvas');a.width=b.width=w;a.height=b.height=h;const engine=R.createRenderer(a,b,sc,location.origin);engines.push(engine);return {a,b,engine};}
+function pixels(a){const c=document.createElement('canvas');c.width=a.width;c.height=a.height;const ctx=c.getContext('2d');ctx.drawImage(a,0,0);return ctx.getImageData(0,0,c.width,c.height).data;}
+let active;
+await test('設定白名單、數值限制、惡意／缺漏資料',()=>{
+ const s=norm({animal:'__proto__',background:'https://bad.example/',size:999,speed:Infinity,x:NaN,y:-2,color:'red',opacity:-1,seed:2.7});
+ check(s.animal==='humpback'&&s.background==='reef'&&s.size===2.2&&s.speed===1&&s.x===.5&&s.y===0&&s.opacity===0&&s.seed===3,'Unsafe normalization');
+ check(norm(null).loop===12&&illustrationFromWords(['broken']).animal==='humpback','Missing defaults');
+});
+await test('五種主角與五種背景均可載入並顯示，含各別局部擺動',async()=>{
+ const subjects=Object.keys(R.animals),backgrounds=Object.keys(R.backgrounds).filter(k=>k!=='transparent');check(subjects.length===5&&backgrounds.length===5,'Wrong count');
+ for(let i=0;i<5;i++){
+  const sc=norm({animal:subjects[i],background:backgrounds[i],path:'hover',size:.83,particles:0,camera:0});
+  const item=create(sc,210,374);await item.engine.ready;item.engine.render(3);const before=item.a.toDataURL();item.engine.render(4);check(before!==item.a.toDataURL(),subjects[i]+' not animated');
+  const p=pixels(item.a);check(p.some((v,k)=>k%4!==3&&v>100),'Blank '+subjects[i]);
+  const f=document.createElement('figure');f.innerHTML=`<div class="preview"></div><figcaption>${R.animals[sc.animal].zh} · ${R.backgrounds[sc.background].zh}</figcaption>`;f.firstElementChild.append(item.a,item.b);document.querySelector('#gallery').append(f);
+  if(i===0)active=item;
+ }
+});
+await test('速度與片長同步，同一演出進度畫面完全相同',async()=>{
+ const e=active.engine;await e.update({path:'hover',speed:1});e.render(5);const original=active.a.toDataURL();await e.update({path:'hover',speed:2});e.render(2.5);check(original===active.a.toDataURL(),'Speed changes pose trajectory');check(e.scene.loop===6,'Wrong fast length');check(norm({speed:.6}).loop===20&&norm({loop:8}).speed===1.5,'Wrong duration conversion');
+});
+await test('大小、位置、鏡射、角度、運動路線影響畫面',async()=>{
+ const e=active.engine;const base={background:'transparent',path:'hover',camera:0,particles:0,motion:0};await e.update(base);e.render(5);const original=active.a.toDataURL();
+ for(const patch of [{size:1.5},{x:.7},{y:.6},{direction:'left'},{angle:25},{path:'pass'}]){await e.update({...base,...patch});e.render(5);check(original!==active.a.toDataURL(),'Ignored '+JSON.stringify(patch));}
+});
+await test('換色保留紋理，原色可復原，透明背景 alpha 正確',async()=>{
+ const e=active.engine,sc={background:'transparent',path:'hover',particles:0,camera:0,motion:0};await e.update(sc);e.render(5);const original=active.a.toDataURL(),before=pixels(active.a);check(before[3]===0&&before.some((v,i)=>i%4===3&&v===255),'Alpha not preserved');
+ await e.update({...sc,color:'#d64b65',tint:1});e.render(5);const tinted=pixels(active.a);check(original!==active.a.toDataURL(),'Tint ignored');
+ const colors=new Set();let changed=0;for(let i=0;i<tinted.length;i+=4)if(tinted[i+3]>250){colors.add(tinted.slice(i,i+3).join(','));if(Math.abs(tinted[i]-before[i])>20)changed++;}
+ check(colors.size>500&&changed>500,'Lost illustration detail or color');await e.update({...sc,color:'#d64b65',tint:0});e.render(5);check(original===active.a.toDataURL(),'Original color not recoverable');
+});
+await test('背景亮度、顆粒量／種子可編輯且 seek 可重現',async()=>{
+ const e=active.engine;await e.update({path:'hover',particles:0});e.render(5);const a=active.a.toDataURL();await e.update({path:'hover',brightness:.5,particles:1});e.render(5);check(a!==active.a.toDataURL(),'Brightness ignored');const p=active.b.toDataURL();await e.update({path:'hover',brightness:.5,particles:1,seed:31});e.render(5);check(p!==active.b.toDataURL(),'Seed ignored');const b=active.b.toDataURL();e.render(7);e.render(5);check(b===active.b.toDataURL(),'Particles not deterministic');
+});
+await test('快速切換資產不會被舊載入結果覆蓋',async()=>{
+ const item=create({animal:'sperm',background:'cave'});const pending=item.engine.ready;const latest=item.engine.update({animal:'squid',background:'wreck'});await Promise.all([pending,latest]);check(item.engine.scene.animal==='squid'&&item.engine.scene.background==='wreck'&&item.engine.loaded,'Stale image won race');item.engine.render(5);check(pixels(item.a).some(v=>v>100),'Latest frame blank');item.engine.dispose();
+});
+await test('預設／Combo／編輯連結往返保留完整 JSON 與片長',()=>{
+ const sc=norm({animal:'monster',background:'cave',speed:.6,color:'#ef485e',tint:.7,size:1.8,direction:'left'}),words=[JSON.stringify(sc)];
+ const preset={kind:'illustration',name:'海怪',data:sc};check(!checkPresetData(preset.kind,preset.data),'Invalid preset');const cs=presetToScene(preset);check(cs.seconds===20&&sceneToPresetData(cs.effect,cs.words).kind==='illustration','Preset conversion failed');
+ const result=normalizeCombo({title:'海怪',ratio:'9:16',scenes:[{effect:fx.id,words}]});check(!result.errors.length&&result.combo.scenes[0].words[0]===words[0],'Truncated JSON');check(sceneSeconds(result.combo.scenes[0])===20,'Lost speed duration');check(sceneSummary(fx.id,words).includes('原創海怪'),'Raw JSON summary');
+ const u=new URL(editUrl(location.origin,preset));check(decodeJson(u.searchParams.get('d')).animal==='monster','Invalid link');check(comboHtml(result.combo).includes('MA_ILLUSTRATION'),'Missing shared engine');
+});
+await test('MCP 專用工具、換色預設及速度／片長優先順序',async()=>{
+ const t=TOOLS.find(t=>t.name==='build_illustration_scene'),ctx={origin:location.origin,env:{},request:new Request(location.origin+'/mcp')};check(t&&!t.write,'Missing read-only tool');
+ const a=await t.run({animal:'shark',background:'blue',size:1.7,color:'#cc5566',speed:.6,duration:8},ctx);check(a.scene.tint===1&&a.scene.loop===20&&a.combo_scene.seconds===20&&a.edit_url.includes('edit=illustration'),'Wrong builder result');
+ const b=await t.run({scene:{animal:'squid',speed:2},duration:8},ctx);check(b.scene.loop===8&&b.scene.animal==='squid','Duration ignored');window.illustrationBuilderResult=a;
+});
+await test('自給自足 HTML：指定主角與設定可逐格播放',async()=>{
+ const sc=norm({animal:'monster',background:'transparent',path:'hover',speed:2,color:'#49ae96',tint:.6,particles:0});const words=[JSON.stringify(sc)];
+ const frame=document.createElement('iframe');frame.sandbox='allow-scripts allow-same-origin';document.body.append(frame);const done=new Promise(r=>frame.onload=r);frame.srcdoc=exportHtml(fx,words,toneVars(PALETTES[0],'ink'),'9:16');await done;const root=frame.contentDocument.querySelector('.fx');check(await root.motionReady,'Standalone failed');root.motionSeek(2.5);const cv=root.querySelector('canvas');check(pixels(cv).some((v,i)=>i%4===3&&v===0),'Standalone transparency failed');frame.remove();
+});
+// Restore gallery frame after parameter tests.
+await active.engine.update({path:'hover',size:.83,particles:0,camera:0});active.engine.render(4);
+window.illustrationEditorResults=results;document.querySelector('#results').textContent=results.map(r=>`${r.passed?'PASS':'FAIL'} ${r.name}${r.error?' — '+r.error:''}`).join('\n');document.documentElement.dataset.result=results.every(r=>r.passed)?'pass':'fail';
+</script></html>

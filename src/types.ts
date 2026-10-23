@@ -24,6 +24,7 @@ export type CatId =
   | 'aerial'
   | 'vehicle'
   | 'ocean'
+  | 'illustration'
   | 'transit'
   | 'cbar'
   | 'cline'

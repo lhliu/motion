@@ -1,3 +1,5 @@
+import { initIllustrationStudio } from './illustration-studio';
+import { isIllustrationFx, illustrationFromWords } from './illustration';
 import './styles.css';
 import { CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from './data';
 import { mount, setSpeed, toneVars, type Mounted } from './engine';
@@ -495,7 +497,7 @@ const cardHtml = (f: Fx, k: number) => {
   const n = NUM.get(f.id)!;
   const fav = state.favs.has(f.id);
   return `<article class="ma-card" tabindex="0" role="button" data-id="${f.id}" style="--k:${k}" aria-label="${pad(n)} ${esc(f.zh)}：${esc(f.desc)}">
-  <div class="card-stage"><div class="stage"></div><span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
+  <div class="card-stage"><div class="stage"></div>${f.cat === 'illustration' ? '<span class="ill-badge">精修插畫</span>' : ''}<span class="card-en">${esc(f.en)}</span><span class="card-tags">${f.tags.map(esc).join(' • ')}</span></div>
   <div class="card-meta"><span class="ma-num">${pad(n)}</span><div class="card-txt"><h3>${highlight(f.zh)}</h3><p>${highlight(f.desc)}</p></div>
   <button class="heart" data-fav="${f.id}" aria-pressed="${fav}" aria-label="收藏 ${esc(f.zh)}"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.3-9C1 8.4 3.2 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.8 0 6 3.9 4.3 7.5C19 16.6 12 21 12 21z"/></svg></button></div>
 </article>`;
@@ -846,6 +848,8 @@ const renderDetail = () => {
   $('#dMapStudio').hidden = fx.cat !== 'map';
   $('#dPhotoStudio').hidden = !isPhotoFx(fx.id);
   $('#dObjStudio').hidden = !isObjFx(fx.id);
+  $('#dIllustrationStudio').hidden = !isIllustrationFx(fx.id);
+  dWords.closest('label')!.hidden = isIllustrationFx(fx.id);
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
   syncSegs();
   renderStage();
@@ -1064,6 +1068,10 @@ const combos = initCombos({
       const data = photoSceneFromWords(words, effect.slice(6) as PModule);
       return meta ? photoStudio.loadPreset({ ...meta, data }) : photoStudio.load(data);
     }
+    if (isIllustrationFx(effect)) {
+      const data=illustrationFromWords(words);
+      return meta ? illustrationStudio.loadPreset({...meta,data}) : illustrationStudio.load(data);
+    }
     if (isObjFx(effect)) {
       const data = objSceneFromWords(words, objFxModule(effect));
       return meta ? objStudio.loadPreset({ ...meta, data }) : objStudio.load(data);
@@ -1090,6 +1098,8 @@ $('#dPhotoStudio').addEventListener('click', () => {
   closeDetail();
   photoStudio.open(m);
 });
+const illustrationStudio=initIllustrationStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
+$('#dIllustrationStudio').addEventListener('click',()=>{const sc=illustrationFromWords(d.words);sc.ratio=d.ratio;closeDetail();illustrationStudio.load(sc);});
 const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open() });
 $('#dObjStudio').addEventListener('click', () => {
   const fx = d.fx;
@@ -1112,8 +1122,8 @@ const openEdit = async () => {
   const edit = q.get('edit');
   if (!edit) return;
   const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) =>
-    p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : studio.loadPreset(p);
-  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object') {
+    p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : studio.loadPreset(p);
+  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration') {
     try {
       route({ kind: edit, name: '', data: decodeJson<PresetData>(q.get('d') ?? '') });
       toast('已載入 AI 產生的設定，調好後按「存成預設」');
@@ -1151,6 +1161,7 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'explain') return copy(EXPLAIN_PROMPT, '已複製，貼給 Claude Code 並附上草圖');
   if (state.sec === 'chart') return copy(CHART_PROMPT, '已複製，貼給 Claude 並附上數據');
   if (state.sec === 'text') return showKits(true);
+  if(state.sec==='object'&&state.cat==='illustration')return illustrationStudio.open();
   return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : objStudio.open();
 });
 // 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊

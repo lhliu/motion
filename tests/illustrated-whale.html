@@ -14,7 +14,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const vars=toneVars(PALETTES[0],'ink');const fx=EFFECTS.find(f=>f.id==='whale-illustrated');
 let mounted;
 await test('新增獨立 #200，舊 #188–199 與 #190 保留',()=>{
- check(fx.no===200&&fx.cat==='ocean'&&secOf(fx)==='object','Missing independent effect');
+ check(fx.no===200&&fx.cat==='illustration'&&secOf(fx)==='object','Missing independent effect');
  check(new Set(EFFECTS.map(f=>f.no)).size===EFFECTS.length,'Duplicate number');
  check(EFFECTS.find(f=>f.id==='obj-ocean-whale').no===190,'Original whale replaced');
  const modes=['fish','dolphins','whale','shark','coral','deep','submarine'];

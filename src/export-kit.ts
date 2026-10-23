@@ -94,21 +94,27 @@ export const recordWebm = (W: number, H: number, seconds: number, draw: (ctx: Ca
   if (!mime) return null;
   const c = canvasOf(W, H);
   const ctx = c.getContext('2d')!;
-  const rec = new MediaRecorder(c.captureStream(30), { mimeType: mime, videoBitsPerSecond: 12_000_000 });
+  // Prime the first frame before capture: WebGL/image uploads must not consume the clip's opening.
+  draw(ctx, 0);
+  const stream = c.captureStream(30);
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
   const chunks: BlobPart[] = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   return new Promise((resolve) => {
-    rec.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+    rec.onstop = () => { stream.getTracks().forEach(track => track.stop()); resolve(new Blob(chunks, { type: 'video/webm' })); };
     const dur = seconds * 1000;
-    const start = performance.now();
+    let start: number | undefined;
     rec.start();
     const tick = (now: number) => {
+      start ??= now;
       const e = now - start;
       draw(ctx, e / 1000);
       onProgress(Math.min(1, e / dur));
       if (e < dur) requestAnimationFrame(tick);
-      else rec.stop();
+      // Let the final canvas frame reach the capture stream before stopping.
+      else requestAnimationFrame(() => rec.stop());
     };
-    requestAnimationFrame(tick);
+    // Commit the primed canvas frame before starting the animation clock.
+    requestAnimationFrame(() => requestAnimationFrame(tick));
   });
 };

@@ -47,9 +47,11 @@ MCP 使用 `build_object_scene`，`module: "ocean"`，`params.mode` 為 `fish | 
 
 啟動 Vite 後開啟 `/tests/ocean.html`，可預覽七種動畫並檢查三種比例、透明度、時間變化、匯出一致性、MCP、預設及套組。結果為 `window.oceanResults`。
 
-「巨鯨經過・精修插畫」（`whale-illustrated`，#200）是獨立的一招，與向量版 `obj-ocean-whale`（#190）並列，既有海底動畫、工作室參數與套組都保留。它使用 Demo 的座頭鯨去背插畫及海景，以 WebGL 紋理局部形變呈現尾部、身體與胸鰭的不同相位；固定 12 秒、預設 9:16、無文字，也支援其他比例的等比裁切。素材位於 `public/media/whale-illustrated/`，提供 CORS 以支援下載的 HTML 與 sandbox Combo，播放時需要載入網站素材。
+「海洋巨物・精修插畫」（`whale-illustrated`，#200）位於物件特效的「精修插畫」分類，原始 id 與連結維持相容，向量版 `obj-ocean-whale`（#190）與既有七招海底動畫保留。專用編輯器 `/?view=illustration` 提供五種主角（座頭鯨、抹香鯨、大白鯊、巨大烏賊、原創海怪）及五種背景（珊瑚礁、開闊藍海、深海海溝、沉船遺址、海底洞穴），另可選透明背景。可調大小、位置（拖曳）、角度、方向、掠過／停留、擺動幅度、紋理換色、透明度、鏡頭視差、顆粒量／水流／種子及背景亮度。速度 0.6–2.5 倍連動片長 `12 / speed`（4.8–20 秒）；預設 9:16，支援等比裁切的 16:9、1:1。支援 PNG、WebM、PNG 序列、JSON 匯入／匯出、編輯連結、預設與 Combo。透明 WebM 需由支援 alpha 的剪輯軟體讀取，PNG 序列保留透明度。
 
-本招可直接加入 Combo：`{ "effect": "whale-illustrated", "seconds": 12 }`，完整原始碼透過 MCP `get_effect` 取得；不走 `build_object_scene` 的向量海底模組。逐格輸出時，掛載後等待 `root.motionReady`，再呼叫 `root.motionSeek(tSeconds)`。使用 `prefers-reduced-motion` 或初始暫停卡片時顯示 5 秒主視覺，卸載會釋放 WebGL 資源。瀏覽器回歸測試為 `/tests/illustrated-whale.html`（`window.illustratedWhaleResults`）。
+`src/illustration.ts` 是網站、輸出、MCP 與獨立 HTML 共用的自給自足 WebGL／Canvas 引擎；不同主角有各自的尾鰭、胸鰭、觸腕或蛇行變形。MCP 使用 `build_illustration_scene`，引擎端點 `/r/illustration.js`；`MA_ILLUSTRATION.createRenderer(glCanvas, particleCanvas, scene, assetOrigin)` 後先 `await renderer.ready`，再 `renderer.render(t, W, H)`，依序合成兩張 canvas，結束時 `renderer.dispose()`。僅載入所選主角與背景；素材位於 `public/media/whale-illustrated/`，有 CORS，下載的 HTML 與 sandbox Combo 播放時需要連線載入素材。原始 `whale-v1.png`、`ocean-v1.png` 不覆寫。
+
+本招可直接加入 Combo：`{ "effect": "whale-illustrated", "seconds": 12 }`，完整原始碼透過 MCP `get_effect` 取得；不走 `build_object_scene` 的向量海底模組。逐格輸出時，掛載後等待 `root.motionReady`，再呼叫 `root.motionSeek(tSeconds)`。使用 `prefers-reduced-motion` 或初始暫停卡片時顯示演出進度第 5 秒的主視覺，卸載會釋放 WebGL 資源。瀏覽器回歸測試為 `/tests/illustrated-whale.html`（`window.illustratedWhaleResults`）及 `/tests/illustration-editor.html`（`window.illustrationEditorResults`）。
 
 
 ### 圖片運鏡與本機渲染
