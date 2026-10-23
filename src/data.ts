@@ -55,7 +55,7 @@ export const CATEGORIES: Category[] = [
   { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '星空、光速、星系、行星' },
   { id: 'aerial', sec: 'object', code: 'AERIAL', zh: '俯瞰', tagline: '城市、河流、山川、草原牛馬' },
   { id: 'vehicle', sec: 'object', code: 'VEHICLE', zh: '交通工具', tagline: '飛機、太空船、汽車、馬車' },
-  { id: 'ocean', sec: 'object', code: 'OCEAN', zh: '海底世界・精修插畫', tagline: '七種精修海底場景，各有專屬編輯與透明輸出' },
+  { id: 'ocean', sec: 'object', code: 'OCEAN', zh: '海底世界（精）', tagline: '七種精修海底場景，各有專屬編輯與透明輸出' },
   { id: 'cbar', sec: 'chart', code: 'BAR', zh: '直條橫條', tagline: '直條、堆疊、橫條、排名、瀑布' },
   { id: 'cline', sec: 'chart', code: 'LINE', zh: '折線區域', tagline: '走勢、量體、雙軸組合' },
   { id: 'cpie', sec: 'chart', code: 'PIE', zh: '圓形比例', tagline: '圓餅、環圈、儀表、進度環、象形圖' },
