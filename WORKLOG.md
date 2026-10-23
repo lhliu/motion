@@ -11,3 +11,8 @@
   - `src/effects/texture.ts`、`switch.ts`：canvas 文字改讀 `--fw`。
 - 驗證：`npm run build` 通過；Playwright 截圖 7 張（原狀＋2 字體×3 字重）於 `out/font-picker/`，確認瀏覽器只下載所選字重（例：明體細只載 Noto Serif TC 300）。
 - 補強（主代理）：Combo 場景加 `face`／`weight`（驗證、加入 Combo、播放與匯出 HTML 的 `data-fw`）；截圖移出 git。
+
+## 2026-10-23 18:10（UTC+8）上線
+- KC 核准「先上字型」。分支 merge 最新 main 後 build 通過，PR #1 squash merge → main `835a87d`。
+- Cloudflare Pages Git 自動部署（check run：Cloudflare Pages success），約 1.5 分鐘上線。
+- 正式站驗證：JS 含「跟字型組合／原字重」；黑體粗、明體細切換正常（`data-fw` 900／300，只載對應字重），無 page error。

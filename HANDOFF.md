@@ -1,7 +1,7 @@
 # HANDOFF：字體選擇器（feat/font-picker）
 
 ## 狀態
-- Draft PR，**未合併、未部署**。預設值（跟字型組合／原字重）不會改變現有畫面。
+- 已於 2026-10-23 squash merge（835a87d）並由 Cloudflare Pages 自動部署上線。預設值（跟字型組合／原字重）不會改變現有畫面。
 
 ## 怎麼測
 1. `npm ci && npm run build && npm run preview` → http://127.0.0.1:4174/

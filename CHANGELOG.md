@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## 2026-10-23（main 835a87d，已上線）
 ### 新增
 - 字體選擇器（feat/font-picker）：工作台新增「字體」與「字重」兩個下拉選單，套用到所有文字特效。
   - 字體：跟字型組合（預設，不改變現狀）／黑體（思源黑體 Noto Sans TC）／明體（思源宋體 Noto Serif TC）。
