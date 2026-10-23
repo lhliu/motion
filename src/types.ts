@@ -37,7 +37,20 @@ export type CatId =
   | 'tflash'
   | 'social'
   | 'hook'
-  | 'estate';
+  | 'estate'
+  | 'site'
+  | 'keys'
+  | 'furniture'
+  | 'house'
+  | 'contract'
+  | 'skyline'
+  | 'weather'
+  | 'signal'
+  | 'plant'
+  | 'clock'
+  | 'party'
+  | 'coins'
+  | 'gacha';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';

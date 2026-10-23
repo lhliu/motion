@@ -1,8 +1,9 @@
 // 物件特效：隕石、方塊、宇宙、俯瞰、交通工具與海底世界。全部硬邊，可透明疊進影片。
 // objRenderer 內部必須自給自足，匯出 HTML 時以 toString() 內嵌。
 import type { PField } from './photokit';
+import { PROP_BG, PROP_DEFAULTS, PROP_INFO, PROP_PARAMS, type PropModule } from './propkit';
 
-export type OModule = 'meteor' | 'cube' | 'cosmos' | 'aerial' | 'vehicle' | 'ocean';
+export type OModule = 'meteor' | 'cube' | 'cosmos' | 'aerial' | 'vehicle' | 'ocean' | PropModule;
 
 export interface OText {
   lines: string[];
@@ -33,6 +34,7 @@ export const OBJ_INFO: Record<OModule, { zh: string; en: string; desc: string }>
   aerial: { zh: '俯瞰', en: 'Aerial View', desc: '從正上方往下看的城市、河流、山川、草原牛馬、農田、海岸、森林、交流道，鏡頭緩慢平移推近' },
   ocean: { zh: '海洋世界', en: 'Underwater', desc: '魚群、海豚、巨鯨、迎面鯊魚、珊瑚、深海下潛、潛水艇，可去背或搭配海底場景' },
   vehicle: { zh: '天空物件', en: 'Vehicles', desc: '飛機、太空船、汽車、馬車、火車、輪船、熱氣球，側面行進、背景捲動' },
+  ...PROP_INFO,
 };
 export const OBJ_MODULES = Object.keys(OBJ_INFO) as OModule[];
 
@@ -43,6 +45,7 @@ export const OBJ_DEFAULTS: Record<OModule, Record<string, number | string>> = {
   aerial: { mode: 'city', seed: 3, pan: 1, dir: -30, zoom: 1.25, rot: 0, traffic: 1, herd: 18, x: 0.5, y: 0.45 },
   ocean: { mode: 'fish', count: 28, size: 0.7, speed: 1, direction: 'right', route: 'wave', current: 0.6, depth: 0.55, scene: 1, bubbles: 1, seed: 7, color: '#65d9ce', color2: '#ffc86a', x: 0.5, y: 0.46, strike: 0.48, mouth: 1, exit: 'pass', shake: 0.3, beam: 1 },
   vehicle: { mode: 'car', color: '#ff5a36', color2: '#ffffff', size: 0.5, speed: 1, scene: 1, x: 0.5, y: 0.45 },
+  ...PROP_DEFAULTS,
 };
 /** 海底卡片、工作室與 MCP 共用的起始配色與隊形。 */
 export const OCEAN_PRESETS: Record<string, Record<string, number | string>> = {
@@ -56,7 +59,15 @@ export const OCEAN_PRESETS: Record<string, Record<string, number | string>> = {
 };
 /** 隕石材質的預設配色（換材質時一起換） */
 export const METEOR_COLORS: Record<string, [string, string]> = { rock: ['#8a7f72', '#4a423a'], ice: ['#cfeaf7', '#6aa5c8'], lava: ['#3a2a26', '#1a1210'], metal: ['#c9a65a', '#6e5525'] };
-const BG: Record<OModule, string> = { meteor: '#0b0d14', cube: '#151515', cosmos: '#05070d', aerial: '#cfc9bd', vehicle: '#bfe3f7', ocean: '#07394b' };
+const BG: Record<OModule, string> = { meteor: '#0b0d14', cube: '#151515', cosmos: '#05070d', aerial: '#cfc9bd', vehicle: '#bfe3f7', ocean: '#07394b', ...PROP_BG };
+/** 背景第一個顏色是不是淺色（決定預設文字用深色或白色） */
+const lightBg = (bg: string) => {
+  const m = /#([0-9a-f]{6})/i.exec(bg);
+  if (!m) return false;
+  const n = parseInt(m[1], 16);
+  return ((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114 > 150;
+};
+const isProp = (m: OModule) => m in PROP_INFO;
 
 const pos = (k: string, label: string): PField => ({ k, label, type: 'range', min: 0, max: 1, step: 0.01 });
 export const OBJ_PARAMS: Record<OModule, PField[]> = {
@@ -146,11 +157,12 @@ export const OBJ_PARAMS: Record<OModule, PField[]> = {
     { k: 'speed', label: '速度', type: 'range', min: 0, max: 3, step: 0.05 },
     { k: 'scene', label: '背景（路面、雲、海、星）', type: 'seg', opts: [['1', '有'], ['0', '只有交通工具']] },
   ],
+  ...PROP_PARAMS,
 };
 
 export const objFxPrefix = 'obj-';
 /** 放進 Combo 時用的特效代碼（場景 JSON 會覆蓋卡片預設，所以每個模組用第一張卡即可） */
-export const objFxId = (m: OModule) => ({ meteor: 'obj-meteor-rock', cube: 'obj-cube-plastic', cosmos: 'obj-cosmos-stars', aerial: 'obj-aerial-city', vehicle: 'obj-vehicle-car', ocean: 'obj-ocean-fish' })[m];
+export const objFxId = (m: OModule): string => ({ meteor: 'obj-meteor-rock', cube: 'obj-cube-plastic', cosmos: 'obj-cosmos-stars', aerial: 'obj-aerial-city', vehicle: 'obj-vehicle-car', ocean: 'obj-ocean-fish' } as Record<string, string>)[m] ?? `obj-${m}-${String(OBJ_DEFAULTS[m]?.mode ?? 'main')}`;
 export const isObjFx = (id: string) => id.startsWith(objFxPrefix);
 export const objFxModule = (id: string): OModule => (OBJ_MODULES.find((m) => id.startsWith(`${objFxPrefix}${m}`)) ?? 'meteor');
 
@@ -160,7 +172,7 @@ export const defaultObjScene = (module: OModule = 'meteor'): OScene => ({
   module,
   bg: BG[module],
   params: { ...OBJ_DEFAULTS[module] },
-  text: { lines: [], layout: module === 'ocean' ? 'none' : module === 'cosmos' || module === 'aerial' ? 'over' : 'below', color: module === 'vehicle' ? '#1d2433' : '#ffffff', size: 1, stroke: module === 'vehicle' ? '#ffffff' : '#111111', strokeW: module === 'aerial' ? 14 : module === 'vehicle' ? 10 : 0, delay: 0.6 },
+  text: isProp(module) ? { lines: [], layout: 'below', color: lightBg(BG[module]) ? '#1d2433' : '#ffffff', size: 1, stroke: '#111111', strokeW: 0, delay: 0.6 } : { lines: [], layout: module === 'ocean' ? 'none' : module === 'cosmos' || module === 'aerial' ? 'over' : 'below', color: module === 'vehicle' ? '#1d2433' : '#ffffff', size: 1, stroke: module === 'vehicle' ? '#ffffff' : '#111111', strokeW: module === 'aerial' ? 14 : module === 'vehicle' ? 10 : 0, delay: 0.6 },
 });
 
 /** 補齊缺漏欄位並夾住範圍，AI 給的資料也能安全使用 */
@@ -216,6 +228,7 @@ export const objSceneFromWords = (w: string[], module: OModule, preset: Record<s
   sc.params = { ...sc.params, ...(module === 'ocean' ? OCEAN_PRESETS[String(preset.mode)] : {}), ...preset };
   if (typeof preset.bg === 'string') sc.bg = preset.bg;
   if (typeof preset.layout === 'string') sc.text.layout = preset.layout as OText['layout'];
+  if (typeof preset.tcolor === 'string') sc.text.color = preset.tcolor;
   sc.text.lines = w.filter((x) => x && !x.startsWith('{')).slice(0, 4);
   return sc;
 };
@@ -3275,7 +3288,9 @@ export const objRenderer = () => {
             ? drawAerial(ctx, W, H, P, t, sc.loop)
             : sc.module === 'vehicle'
               ? drawVehicle(ctx, W, H, P, t, u)
-              : drawMeteor(ctx, W, H, P, t, u);
+              : (globalThis as unknown as { MA_PROP?: { has: (m: string) => boolean; draw: (...a: unknown[]) => { cx: number; cy: number; r: number } } }).MA_PROP?.has(sc.module)
+                ? (globalThis as unknown as { MA_PROP: { draw: (...a: unknown[]) => { cx: number; cy: number; r: number } } }).MA_PROP.draw(sc.module, ctx, W, H, P, t, Math.max(2, sc.loop || 6))
+                : drawMeteor(ctx, W, H, P, t, u);
     const handles: Record<string, number[]> = { card: [obj.cx, obj.cy] };
     drawText(ctx, W, H, sc, t, u, obj);
     return handles;
