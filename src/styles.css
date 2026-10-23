@@ -2720,13 +2720,13 @@ pre.code {
   border: 1px solid var(--line-2);
 }
 
-/* 六個工作區：中等寬度時分頁獨立成一列 */
-@media (max-width: 1500px) {
+/* 七個分頁：中等寬度時分頁獨立成一列 */
+@media (max-width: 1640px) {
   .ws button small {
     display: none;
   }
 }
-@media (max-width: 1320px) and (min-width: 721px) {
+@media (max-width: 1500px) and (min-width: 721px) {
   .ma-top {
     flex-wrap: wrap;
     row-gap: 10px;

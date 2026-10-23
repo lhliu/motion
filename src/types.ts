@@ -23,7 +23,13 @@ export type CatId =
   | 'cosmos'
   | 'aerial'
   | 'vehicle'
-  | 'ocean';
+  | 'ocean'
+  | 'transit'
+  | 'cbar'
+  | 'cline'
+  | 'cpie'
+  | 'chier'
+  | 'cstat';
 
 /** 背景調性：ink 深底、paper 淺底、accent 主色底 */
 export type Tone = 'ink' | 'paper' | 'accent';
@@ -69,8 +75,8 @@ export interface Fx {
   kw?: string[];
 }
 
-/** 網站的工作區：文字特效、圖片運鏡、地圖區位、物件特效、圖解動畫 */
-export type SecId = 'text' | 'photo' | 'map' | 'object' | 'explain';
+/** 網站的工作區：文字特效、圖片運鏡、地圖區位、物件特效、圖表、圖解動畫 */
+export type SecId = 'text' | 'photo' | 'map' | 'object' | 'chart' | 'explain';
 
 export interface Section {
   id: SecId;

@@ -17,6 +17,8 @@ import { photo } from './effects/photo';
 import { diagram } from './effects/diagram';
 import { objects } from './effects/object';
 import { illustratedWhale } from './effects/illustrated';
+import { transit } from './effects/transit';
+import { charts } from './effects/chart';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
@@ -24,6 +26,7 @@ export const SECTIONS: Section[] = [
   { id: 'photo', code: 'PHOTO', zh: '圖片運鏡', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
   { id: 'map', code: 'MAP', zh: '地圖區位', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
   { id: 'object', code: 'OBJECT', zh: '物件特效', en: 'Object Motion', desc: '水滴、隕石、魔術方塊、星空宇宙、海底世界；一系列可調形狀材質的主角物件', studio: 'object' },
+  { id: 'chart', code: 'CHART', zh: '圖表特效', en: 'Chart Motion', desc: '直條、折線、圓餅、階層、統計、瀑布……一行一筆數據就會動' },
   { id: 'explain', code: 'EXPLAIN', zh: '圖解動畫', en: 'Explainer', desc: '工法、剖面、流程示意；一支一支客製，改圖請交給 AI' },
 ];
 
@@ -45,6 +48,7 @@ export const CATEGORIES: Category[] = [
   { id: 'pmark', sec: 'photo', code: 'FOCUS', zh: '標註轉場', tagline: '圈重點、定格、穿越' },
   { id: 'pcut', sec: 'photo', code: 'MASK', zh: '裁切與遮罩', tagline: '切片、拼塊、撕紙、剪報與遮擋換景' },
   { id: 'map', sec: 'map', code: 'MAP', zh: '地圖區位', tagline: '把位置、距離、通勤講清楚' },
+  { id: 'transit', sec: 'map', code: 'METRO', zh: '捷運鐵路路網', tagline: '路網圖、路線條、轉乘與規劃中路線' },
   { id: 'liquid', sec: 'object', code: 'DROP', zh: '水滴泡泡', tagline: '柔軟、透明、會呼吸' },
   { id: 'meteor', sec: 'object', code: 'METEOR', zh: '隕石', tagline: '隨機、對稱、熔岩、冰晶' },
   { id: 'cube', sec: 'object', code: 'CUBE', zh: '魔術方塊', tagline: '塑膠、金屬、花色、單色' },
@@ -52,6 +56,11 @@ export const CATEGORIES: Category[] = [
   { id: 'aerial', sec: 'object', code: 'AERIAL', zh: '俯瞰', tagline: '城市、河流、山川、草原牛馬' },
   { id: 'vehicle', sec: 'object', code: 'VEHICLE', zh: '交通工具', tagline: '飛機、太空船、汽車、馬車' },
   { id: 'ocean', sec: 'object', code: 'OCEAN', zh: '海底世界', tagline: '魚群、海豚、巨鯨、鯊魚與深海探索' },
+  { id: 'cbar', sec: 'chart', code: 'BAR', zh: '直條橫條', tagline: '直條、堆疊、橫條、排名、瀑布' },
+  { id: 'cline', sec: 'chart', code: 'LINE', zh: '折線區域', tagline: '走勢、量體、雙軸組合' },
+  { id: 'cpie', sec: 'chart', code: 'PIE', zh: '圓形比例', tagline: '圓餅、環圈、儀表、進度環、象形圖' },
+  { id: 'chier', sec: 'chart', code: 'TREE', zh: '階層流程', tagline: '樹狀、旭日、漏斗' },
+  { id: 'cstat', sec: 'chart', code: 'STAT', zh: '統計散佈', tagline: '盒鬚、散佈、泡泡、雷達' },
   { id: 'diagram', sec: 'explain', code: 'DIAGRAM', zh: '工法剖面', tagline: '建材、管線、結構，一張剖面講清楚' },
 ];
 
@@ -76,10 +85,12 @@ export const EFFECTS: Fx[] = [
   ...diagram,
   ...objects,
   illustratedWhale,
+  ...transit,
+  ...charts,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 文字特效：指定用途、標籤收斂成固定詞彙，並依用途重新排序（編號跟著用途走）
-const secIdx = (f: Fx) => ['text', 'photo', 'map', 'object', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
+const secIdx = (f: Fx) => ['text', 'photo', 'map', 'object', 'chart', 'explain'].indexOf(CATEGORIES.find((c) => c.id === f.cat)!.sec);
 const useIdx = (f: Fx) => USES.findIndex((u) => u.id === f.use);
 // 同一用途內依 uses.ts 列出的順序（常用的在前）
 const useRank = new Map(Object.keys(USE_OF).map((id, i) => [id, i]));

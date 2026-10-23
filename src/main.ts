@@ -77,6 +77,12 @@ const palette = (): Palette => {
 const wordsFor = (fx: Fx): string[] => {
   const t = state.text.trim();
   if (!t) return fx.sample;
+  // 圖表與路網的內容是數據：預覽文字只換標題
+  if (fx.id.startsWith('chart-')) {
+    const i = fx.sample.findIndex((x) => !/^[@~]/.test(x));
+    return fx.sample.map((x, k) => (k === i ? t : x));
+  }
+  if (fx.id.startsWith('transit-')) return [`@title ${t}`, ...fx.sample.filter((x) => !x.startsWith('@title'))];
   return t
     .split(/\s*\/\s*/)
     .map((s) => s.trim())
@@ -233,6 +239,14 @@ const unwatchAll = () => {
 const refreshAll = () => slots.forEach((s) => s.visible && renderSlot(s));
 
 /* ───────── 工作區 ───────── */
+const CHART_PROMPT = `請用 Motion Atlas 的圖表特效（圖表工作區，特效代碼 chart-*）幫我做一段數據動畫。
+
+想表達的重點：（例如「這區房價五年漲了多少」）
+圖表類型：（直條、折線、圓餅、排名、瀑布……不確定就請你挑）
+數據：（貼上表格或數字，並附上資料來源與時間）
+比例：9:16 或 16:9
+
+做法：用 search_effects 找 chart- 開頭的特效、get_effect 看 word_hint 的資料格式，把數據寫成「標籤 數值」一行一筆，用 compose_combo 預覽給我看。數字只能用我提供、可查證的資料，副標註明來源與時間。`;
 const EXPLAIN_PROMPT = `請幫我做一支新的「圖解動畫」，收進 Motion Atlas（repo：lhliu/motion）的圖解動畫工作區。
 
 內容：（描述要講的工法／剖面／流程，並附上草圖或參考截圖）
@@ -249,6 +263,7 @@ const SEC_ICON: Record<SecId, string> = {
   photo: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 8"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
   object: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M5.5 9.5c3 2 10 2 13 0M8 4.5l1.5 2M16 19.5l-1.5-2"/></svg>',
+  chart: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   explain: '<svg viewBox="0 0 24 24"><path d="M3 8l9-4 9 4-9 4z"/><path d="M3 12l9 4 9-4M3 16l9 4 9-4"/></svg>',
 };
 const KITS_ICON = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/></svg>';
@@ -285,6 +300,14 @@ const SEC_HERO: Record<SecId, { small: string; big: string; lede: string; wb: st
     ph: '輸入標題，全部卡片即時套用；一行一句用 / 分隔',
     hero: ['obj-ocean-whale', 'obj-ocean-shark', 'obj-ocean-fish', 'obj-meteor-lava', 'obj-cube-plastic', 'obj-cosmos-galaxy', 'crisp-drop', 'obj-meteor-ice', 'obj-cube-metal', 'obj-cosmos-planet', 'obj-cosmos-warp'],
   },
+  chart: {
+    small: '一行一筆數據就會動',
+    big: '圖表特效',
+    lede: '直條、折線、圓餅、排名、瀑布、雷達……20 種圖表都是<strong>即時渲染</strong>的動畫：在卡片上直接改「標籤 數值」，或把數據交給 AI 用 <strong>MCP</strong> 組進 Combo。數字請用<strong>可查證的資料</strong>，副標註明來源與時間。',
+    wb: '預覽標題',
+    ph: '輸入標題，全部圖表即時套用；數據請在各卡片編輯',
+    hero: ['chart-column', 'chart-line', 'chart-donut', 'chart-rank', 'chart-waterfall', 'chart-radar', 'chart-treemap', 'chart-gauge', 'chart-bubble', 'chart-funnel'],
+  },
   explain: {
     small: '一張剖面講清楚',
     big: '圖解動畫',
@@ -310,8 +333,8 @@ const renderHeroCopy = () => {
   $('#heroLede').innerHTML = h.lede;
   $('#wbLabel').textContent = h.wb;
   $<HTMLInputElement>('#userText').placeholder = h.ph;
-  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
-  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '隕石、魔術方塊、星空；水滴在工作室裡切換', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
+  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件工作室', chart: '複製「請 AI 用我的數據做圖表」的指令', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
+  $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '隕石、魔術方塊、星空；水滴在工作室裡切換', chart: '貼給 Claude，附上數據與來源', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
   const n = secFx().length;
   $('#statFx').textContent = String(n);
   $('#statCat').textContent = String(CATEGORIES.filter((c) => c.sec === state.sec).length);
@@ -1126,6 +1149,7 @@ updateFavCount();
 renderGrid();
 $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'explain') return copy(EXPLAIN_PROMPT, '已複製，貼給 Claude Code 並附上草圖');
+  if (state.sec === 'chart') return copy(CHART_PROMPT, '已複製，貼給 Claude 並附上數據');
   if (state.sec === 'text') return showKits(true);
   return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : objStudio.open();
 });

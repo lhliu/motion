@@ -157,7 +157,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'list_categories',
     title: '列出分類與配色',
-    description: `列出 Motion Atlas 的工作區（文字特效、圖片運鏡、地圖區位、物件特效、圖解動畫）、${CATEGORIES.length} 個分類（共 ${EFFECTS.length} 招）、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。`,
+    description: `列出 Motion Atlas 的工作區（文字特效、圖片運鏡、地圖區位、物件特效、圖表特效、圖解動畫）、${CATEGORIES.length} 個分類（共 ${EFFECTS.length} 招）、常用情境標籤與可用配色。第一次使用時先呼叫，了解有哪些選擇。`,
     inputSchema: { type: 'object', properties: {} },
     annotations: { readOnlyHint: true },
     run: async () => ({
@@ -617,7 +617,7 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
-export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分五個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位、物件特效（水滴、隕石、魔術方塊、星空宇宙、俯瞰空拍、交通工具）、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
+export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分六個工作區：文字特效、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位（含捷運／鐵路路網 transit-*）、物件特效（水滴、隕石、魔術方塊、星空宇宙、俯瞰空拍、交通工具、海底世界）、圖表特效（chart-* 共 20 種，words 一行一筆「標籤 數值」，格式見 get_effect 的 word_hint）、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
 你可以：查特效（search_effects / get_effect）、把多個特效組成 Combo 動畫（compose_combo），並存進 Combo 庫（save_combo）當作日後參考（list_combos / get_combo）。
 
 組 Combo 的建議流程：
