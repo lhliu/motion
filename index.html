@@ -279,6 +279,13 @@
                   <select id="drFont" aria-label="整支的字型"></select>
                 </div>
                 <label class="dr-field"><span>標籤（用空白分隔）</span><input id="drTags" type="text" placeholder="片頭 建案" /></label>
+                <div class="dr-tools">
+                  <label class="btn-ghost dr-file">匯入 SRT 字幕<input id="drSrt" type="file" accept=".srt,text/plain" hidden /></label>
+                  <select id="drSrtFx" aria-label="字幕樣式"><option value="shorts-caption">字幕樣式：短影音大字幕</option><option value="karaoke">字幕樣式：卡拉 OK</option><option value="typewriter">字幕樣式：打字機</option><option value="lower-third">字幕樣式：名牌條</option></select>
+                  <label class="btn-ghost dr-file">配樂卡點<input id="drAudio" type="file" accept="audio/*" hidden /></label>
+                  <button class="btn-ghost" id="drBeatFit" hidden>段落秒數對齊拍點</button>
+                  <p class="dr-tool-note" id="drBeatNote" hidden></p>
+                </div>
                 <ol class="dr-scenes" id="drScenes"></ol>
                 <p class="dr-empty" id="drEmpty">草稿還是空的。打開任何特效，按「加入 Combo」就會出現在這裡。</p>
                 <div class="dr-ov">
@@ -292,6 +299,7 @@
                 <div class="d-actions dr-actions">
                   <button class="ma-btn" id="drSave"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5zM8 3v6h8M8 21v-7h8v7" /></svg><span>存到 Combo 庫</span></button>
                   <button class="btn-ghost" id="drPlay"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z" /></svg>重播</button>
+                  <button class="btn-ghost" id="drSafe" aria-pressed="false">安全區</button>
                   <button class="btn-ghost" id="drCopyPrompt">複製提示詞</button>
                   <button class="btn-ghost" id="drCopyHtml">複製 HTML</button>
                   <button class="btn-ghost" id="drCopyJson">複製 JSON</button>

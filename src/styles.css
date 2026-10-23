@@ -1749,6 +1749,28 @@ pre.code {
 .dr-s-body > label:first-child {
   grid-column: 1 / -1;
 }
+.dr-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.dr-tools select {
+  max-width: 220px;
+}
+.dr-file {
+  cursor: pointer;
+}
+.dr-tool-note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+#drSafe[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--page);
+}
 .dr-ov {
   margin-top: 14px;
   border-top: 1px dashed var(--line);

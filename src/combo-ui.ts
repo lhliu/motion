@@ -10,6 +10,7 @@ import { esc } from './util';
 import { isPhotoFx } from './photokit';
 import { isObjFx } from './objkit';
 import { FONT_PACKS } from './fonts';
+import { detectBeat, fitToBeat, parseSrt, srtScenes, type Beat } from './combo-tools';
 
 export interface ComboDeps {
   toast: (msg: string) => void;
@@ -137,6 +138,66 @@ export const initCombos = (deps: ComboDeps) => {
     renderPreview();
   });
 
+  /* ───────── 工具：SRT、配樂卡點、安全區 ───────── */
+  let safeOn = false;
+  $('#drSafe').addEventListener('click', () => {
+    safeOn = !safeOn;
+    $('#drSafe').setAttribute('aria-pressed', String(safeOn));
+    renderPreview();
+  });
+  $<HTMLInputElement>('#drSrt').addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const cues = parseSrt(await file.text());
+    if (!cues.length) return deps.toast('讀不到字幕，請確認是 SRT 格式');
+    const room = 20 - draft.scenes.length;
+    if (room <= 0) return deps.toast('Combo 最多 20 段，請先刪掉一些段落');
+    draft.scenes.push(...srtScenes(cues, $<HTMLSelectElement>('#drSrtFx').value, room));
+    if (!draft.title) draft.title = file.name.replace(/\.srt$/i, '');
+    saveDraft();
+    renderDraft();
+    deps.toast(cues.length > room ? `已匯入前 ${room} 句（Combo 最多 20 段，字幕共 ${cues.length} 句）` : `已匯入 ${cues.length} 句字幕`);
+  });
+  let beat: Beat | null = null;
+  let audio: HTMLAudioElement | null = null;
+  const restartAudio = () => {
+    if (!audio) return;
+    audio.currentTime = beat?.offset ?? 0;
+    void audio.play().catch(() => {});
+  };
+  $<HTMLInputElement>('#drAudio').addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const note = $('#drBeatNote');
+    note.hidden = false;
+    note.textContent = '分析節拍中…';
+    try {
+      beat = await detectBeat(file);
+      if (audio) URL.revokeObjectURL(audio.src);
+      audio = new Audio(URL.createObjectURL(file));
+      audio.loop = true;
+      note.textContent = `「${file.name}」約 ${beat.bpm} BPM，一拍 ${beat.beat.toFixed(2)} 秒，第一拍在 ${beat.offset} 秒。預覽會從第一拍開始播放音樂；剪輯時把音樂第 ${beat.offset} 秒對齊影片開頭。`;
+      $('#drBeatFit').hidden = false;
+      restartAudio();
+    } catch {
+      beat = null;
+      note.textContent = '這個音樂檔無法分析，請換 MP3、M4A 或 WAV';
+    }
+  });
+  $('#drBeatFit').addEventListener('click', () => {
+    if (!beat || !draft.scenes.length) return;
+    const fit = fitToBeat(draft.scenes.map(sceneSeconds), beat.beat);
+    draft.scenes.forEach((s, i) => (s.seconds = fit[i]));
+    saveDraft();
+    renderDraft();
+    deps.toast(`已把 ${fit.length} 段對齊拍點（每段為整數拍）`);
+  });
+  dlg.addEventListener('close', () => audio?.pause());
+
   let previewTimer = 0;
   const renderPreview = () => {
     clearTimeout(previewTimer);
@@ -144,7 +205,8 @@ export const initCombos = (deps: ComboDeps) => {
       const frame = $<HTMLIFrameElement>('#drPreview');
       const ok = draft.scenes.length > 0;
       $('#drPreviewWrap').dataset.ratio = draft.ratio ?? '16:9';
-      frame.srcdoc = ok ? comboHtml(withPalette({ ...draft, title: draft.title || '未命名 Combo' })) : '';
+      frame.srcdoc = ok ? comboHtml(withPalette({ ...draft, title: draft.title || '未命名 Combo' }), { safe: safeOn }) : '';
+      restartAudio();
       $('#drMeta').textContent = ok ? `${draft.scenes.length} 段 · 約 ${totalSeconds(draft)} 秒 · ${draft.ratio} · ${editingId ? `編輯中：${editingId}` : '尚未儲存'}` : '';
     }, 250);
   };

@@ -116,7 +116,7 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     return {
       effect: fx?.id ?? str(r.effect, 40),
       ...(words?.length ? { words } : {}),
-      ...(Number.isFinite(sec) && sec > 0 ? { seconds: Math.min(20, Math.max(0.8, Math.round(sec * 10) / 10)) } : {}),
+      ...(Number.isFinite(sec) && sec > 0 ? { seconds: Math.min(20, Math.max(0.8, Math.round(sec * 100) / 100)) } : {}),
       ...(tone ? { tone } : {}),
       ...(font ? { font } : {}),
       ...(FACE_IDS.includes(r.face as never) ? { face: r.face as string } : {}),
@@ -249,6 +249,13 @@ export const comboOutline = (c: Combo): string =>
         .join('\n')
     : '');
 
+/** 平台介面會擋住的區域（Shorts／Reels 標題列、說明文字、右側按鈕；橫式播放器控制列），預覽時標出來 */
+const SAFE_ZONES: Record<Ratio, string> = {
+  '9:16': '<div class="safe"><i style="left:0;right:0;top:0;height:11%">頂部：帳號、搜尋列</i><i style="left:0;right:0;bottom:0;height:21%">底部：說明文字、音樂、帳號名稱</i><i style="right:0;top:42%;bottom:21%;width:15%">按讚 留言 分享</i></div>',
+  '16:9': '<div class="safe"><i style="left:0;right:0;bottom:0;height:13%">播放器控制列、字幕</i><i style="right:0;top:0;width:22%;height:12%">資訊卡、浮水印</i></div>',
+  '1:1': '<div class="safe"><i style="left:0;right:0;bottom:0;height:14%">底部：說明文字、控制列</i></div>',
+};
+
 const ratioCss: Record<Ratio, string> = {
   '16:9': 'width:min(100vw,177.78vh);aspect-ratio:16/9',
   '9:16': 'height:min(100vh,177.78vw);aspect-ratio:9/16',
@@ -256,7 +263,7 @@ const ratioCss: Record<Ratio, string> = {
 };
 
 /** 產生可獨立播放的 Combo HTML（依序播放、可循環） */
-export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean } = {}): string => {
+export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean; safe?: boolean } = {}): string => {
   const pal = comboPalette(c);
   const ovs = (c.overlays ?? []).map((o) => ({ o, fx: findEffect(o.effect) })).filter((x): x is { o: ComboOverlay; fx: Fx } => !!x.fx);
   const used = [...new Set([...c.scenes.map((s) => s.effect), ...ovs.map((x) => x.fx.id)])].map((id) => findEffect(id)).filter((f): f is Fx => !!f);
@@ -333,6 +340,8 @@ html,body{margin:0;height:100%;background:#0b0b0b;display:grid;place-items:cente
 .tc-glitch i{position:absolute;left:0;right:0;opacity:0;animation:tGlitch .56s steps(1) both}
 .tc-glitch i:nth-child(1){top:22%;height:2cqh;background:var(--c3)}.tc-glitch i:nth-child(2){top:51%;height:1cqh;background:var(--c1);animation-delay:.04s}.tc-glitch i:nth-child(3){top:74%;height:3cqh;background:var(--c2);animation-delay:.08s}
 @keyframes tGlitch{0%,100%{opacity:0}10%,30%,55%,75%{opacity:1}20%,45%,65%{opacity:0}}
+.safe{position:absolute;inset:0;z-index:98;pointer-events:none;font:700 max(9px,1.6cqmin)/1.2 system-ui,sans-serif;color:#fff}
+.safe i{position:absolute;display:flex;align-items:flex-start;padding:.6cqmin 1cqmin;background:repeating-linear-gradient(45deg,#ff3b3055 0 6px,#ff3b3022 6px 12px);outline:1px dashed #ff3b30;font-style:normal}
 .ov{position:absolute;inset:0;z-index:70;pointer-events:none}.ov>.fx{background:transparent}.ov>.fx.bye{animation:cOut .3s ease both}
 .hud{position:absolute;left:0;right:0;bottom:0;z-index:99;display:flex;gap:4px;padding:8px;pointer-events:none}
 .hud i{flex:1;height:3px;border-radius:3px;background:#fff4;overflow:hidden}.hud i b{display:block;height:100%;width:0;background:#fff}
@@ -343,7 +352,7 @@ ${css}
 </style>
 </head>
 <body>
-<div class="stage"${opts.hud === false ? '' : ' data-hud'}><div class="ov"></div></div>
+<div class="stage"${opts.hud === false ? '' : ' data-hud'}><div class="ov"></div>${opts.safe ? SAFE_ZONES[c.ratio ?? '16:9'] : ''}</div>
 ${templates}
 <script>
 const SCENES=${data.replace(/</g, '\\u003c')};
