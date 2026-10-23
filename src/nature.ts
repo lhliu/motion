@@ -121,7 +121,7 @@ export function natureEngine(){
     }
     const riverX=(u:number)=>500+100*Math.sin(u*Math.PI*2);
     if(['river','coast'].includes(s.mode)){
-     for(let i=0;i<s.boats;i++){const u=mod(.1+i/Math.max(1,s.boats)+t*s.flow*.018),y=u*1778,x=s.mode==='river'?riverX(u):180+rand(i)*150,dx=s.mode==='river'?100*Math.PI*2*Math.cos(u*Math.PI*2):0,heading=Math.PI-Math.atan2(dx,1778);
+     for(let i=0;i<s.boats;i++){const u=mod(.1+i/Math.max(1,s.boats)+rand(i,3)*.07+t*s.flow*.018),y=u*1778,x=s.mode==='river'?riverX(u):180+rand(i)*150,dx=s.mode==='river'?100*Math.PI*2*Math.cos(u*Math.PI*2):0,heading=Math.PI-Math.atan2(dx,1778);
       if(s.waves>0)for(let j=0;j<3;j++){const age=mod(t*.35+i*.3+j/3),wy=y-age*65,ww=age*14*s.waves;ctx.strokeStyle='#e4eee0';ctx.globalAlpha=s.opacity*(1-age)*.45;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-ww,wy);ctx.lineTo(x,wy-3);ctx.lineTo(x+ww,wy);ctx.stroke();}ctx.globalAlpha=s.opacity;image('boat-top',x,y,23,heading);
      }
      if(s.mode==='coast'&&s.waves>0)for(let k=0;k<4;k++){const phase=mod(t*.13+k/4),shore=565+phase*26*s.waves;ctx.globalAlpha=s.opacity*Math.sin(phase*Math.PI)*.4;ctx.strokeStyle='#f4f0d7';ctx.lineWidth=1.8;ctx.beginPath();for(let y=0;y<=1800;y+=12){const x=shore+Math.sin(y*.005)*15+Math.sin(y*.055+t)*2;y?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}ctx.globalAlpha=s.opacity;
