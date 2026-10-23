@@ -359,7 +359,7 @@ const renderHeroCopy = () => {
   $('#heroLede').innerHTML = h.lede;
   $('#wbLabel').textContent = h.wb;
   $<HTMLInputElement>('#userText').placeholder = h.ph;
-  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件工作室', illus: '打開插畫編輯', chart: '複製「請 AI 用我的數據做圖表」的指令', plan: '打開格局工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
+  $('#heroStudio').textContent = { text: '看套組', photo: '打開圖片工作室', map: '打開地圖工作室', object: '打開物件編輯器', illus: '打開插畫編輯', chart: '複製「請 AI 用我的數據做圖表」的指令', plan: '打開格局工作室', explain: '複製「請 AI 做新圖解」的指令' }[state.sec];
   $('#heroCtaNote').textContent = { text: '常見段落順序的現成 Combo，換字就能用', photo: '放自己的照片，拖曳微調', map: '上傳底圖，拖曳擺放', object: '魔術方塊、星空；水滴在工作室裡切換', illus: '先選分類：隕石、俯瞰、交通工具或海底世界', chart: '貼給 Claude，附上數據與來源', plan: '放入平面圖，拉框標房間', explain: '貼給 Claude Code，附上你的草圖或參考截圖' }[state.sec];
   const n = secFx().length;
   $('#statFx').textContent = String(n);
@@ -1141,7 +1141,7 @@ const natureStudio=initNatureStudio({toast,copy,store,addScene:sc=>combos.addSce
 const transportStudio=initTransportStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
 const illustrationStudio=initIllustrationStudio({toast,copy,store,addScene:sc=>combos.addScene(sc)});
 $('#dIllustrationStudio').addEventListener('click',()=>{if(isNatureFx(d.fx.id)){const mode=natureMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=natureFromWords(words,d.fx.id);sc.ratio=ratio;natureStudio.load(sc);}else natureStudio.openMode(mode,ratio);return;}if(isTransportFx(d.fx.id)){const mode=transportMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=transportFromWords(words,d.fx.id);sc.ratio=ratio;transportStudio.load(sc);}else transportStudio.openMode(mode,ratio);return;}const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
-const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc), openDrop: () => studio.open(), openNature:mode=>natureStudio.openMode(mode), openTransport:()=>transportStudio.open(), openIllustration: data => data ? illustrationStudio.load(data) : illustrationStudio.open() });
+const objStudio = initObjectStudio({ toast, copy, store, addScene: (sc) => combos.addScene(sc) });
 $('#dObjStudio').addEventListener('click', () => {
   const fx = d.fx;
   const html = fx.html(d.words);
@@ -1204,7 +1204,8 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'text') return showKits(true);
   if (state.sec === 'plan') return planStudio.open();
   if(state.sec==='illus'){if(state.cat==='vehicle')return transportStudio.open();if(state.cat==='ocean')return illustrationStudio.open();return natureStudio.openMode(state.cat==='aerial'?'city':'meteor');}
-  return state.sec === 'photo' ? photoStudio.open() : state.sec === 'map' ? mapStudio.open() : objStudio.open();
+  if (state.sec === 'object') return state.cat === 'liquid' ? studio.open() : objStudio.open(state.cat === 'cosmos' ? 'cosmos' : state.cat === 'cube' ? 'cube' : undefined);
+  return state.sec === 'photo' ? photoStudio.open() : mapStudio.open();
 });
 // 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊
 new ResizeObserver(([e]) => document.documentElement.style.setProperty('--top-h', `${Math.round(e.borderBoxSize?.[0]?.blockSize ?? (e.target as HTMLElement).offsetHeight)}px`)).observe($('.ma-top'));

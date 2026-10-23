@@ -8,13 +8,13 @@ const dimensions: Record<NScene['ratio'],[number,number]>={'9:16':[1080,1920],'1
 const poster=(scene:NScene)=>5/scene.speed;
 export const initNatureStudio = (deps: Omit<ObjectStudioDeps,'openDrop'|'openIllustration'|'openTransport'>) => {
   document.body.insertAdjacentHTML('beforeend',`<dialog id="naturestudio" class="detail st ms ps" aria-labelledby="nsTitle"><div class="d-inner">
-    <header class="d-head"><div class="d-title"><span class="ma-num cb-badge">244</span><div><h2 id="nsTitle" tabindex="-1" autofocus>隕石與俯瞰・精修插畫</h2><p>一招隕石切換四種樣式 × 八種俯瞰場景 × 個別編輯，保留插畫紋理；調整後可直接輸出或加入 Combo</p></div></div><div class="d-nav"><button class="ic" id="nsClose" aria-label="關閉">✕</button></div></header>
+    <header class="d-head"><div class="d-title"><span class="ma-num cb-badge">244</span><div><h2 id="nsTitle" tabindex="-1" autofocus>隕石與俯瞰・精修插畫</h2><p id="nsDesc"></p></div></div><div class="d-nav"><button class="ic" id="nsClose" aria-label="關閉">✕</button></div></header>
     <div class="st-body"><div class="st-left"><div id="nsStage" class="st-stage ms-stage" data-ratio="9:16"><canvas id="nsCanvas"></canvas><canvas id="nsSnow"></canvas><div id="nsLoading" role="status">載入精修插畫…</div></div>
       <div class="d-controls"><div class="seg" id="nsRatio" aria-label="比例"><button data-v="9:16">9:16 手機</button><button data-v="16:9">16:9</button><button data-v="1:1">1:1</button></div><button id="nsPlay" class="btn-ghost">▶ 播放</button><label class="ms-loop">時間 <input type="range" id="nsTime" min="0" max="12" step="0.02"></label><output id="nsClock"></output></div>
       <div id="nsPreset"></div><div class="st-out"><button id="nsPng" class="ma-btn" data-export>PNG</button><button id="nsWebm" class="btn-ghost" data-export>WebM 影片</button><button id="nsSeq" class="btn-ghost" data-export>PNG 序列（ZIP）</button><button id="nsCombo" class="btn-ghost">加入 Combo</button><button id="nsLink" class="btn-ghost">複製編輯連結</button><button id="nsJson" class="btn-ghost">下載設定</button><button id="nsImport" class="btn-ghost">匯入設定</button><input id="nsFile" type="file" accept="application/json,.json" hidden></div>
       <p id="nsStatus" role="status" class="st-status" hidden></p><p class="st-note">可拖曳預覽調整主角位置。速度連動片長（4.8–20 秒）；停留展示適合持續展示。透明背景可疊進影片，隕石可完整去背；俯瞰透明模式保留地景圖卡、卡片外透明。俯瞰均為虛構示意插畫。WebM 透明度需由支援 alpha 的剪輯軟體讀取；PNG 序列保留透明度。</p>
     </div><div class="st-panel" id="nsControls">
-      <fieldset><legend>隕石與八種俯瞰</legend><div class="ps-mod ps-mod-g" id="nsModes"></div></fieldset>
+      <fieldset hidden><legend>隕石與八種俯瞰</legend><div class="ps-mod ps-mod-g" id="nsModes"></div></fieldset>
       <fieldset id="nsStylesGroup"><legend>隕石樣式 · 一招四種</legend><div class="ps-mod ps-mod-g" id="nsStyles"></div></fieldset>
       <fieldset id="nsSpecific"><legend id="nsSpecificTitle">專屬編輯</legend><div id="nsSpecificFields"></div></fieldset>
       <fieldset id="nsCameraGroup"><legend>俯瞰運鏡</legend><div id="nsCamera"></div></fieldset>
@@ -59,6 +59,7 @@ export const initNatureStudio = (deps: Omit<ObjectStudioDeps,'openDrop'|'openIll
     $('#nsSpecificTitle').textContent=R.modes[scene.mode].zh+'・專屬編輯';
     $('#nsSpecificFields').innerHTML=R.fields[scene.mode].map(f=>range(f.key,f.label,f.min,f.max,f.step)).join('')+(scene.mode==='meteor'?(scene.style==='lava'?range('heat','熱度脈動',0,1.5,.05):['ice','gold'].includes(scene.style)?range('shine','切面反光',0,1,.05):''):'');
     $('#nsTitle').textContent=R.modes[scene.mode].zh+'・精修插畫';
+    $('#nsDesc').textContent=meteor?'一招隕石切換四種樣式 × 專屬編輯，保留插畫紋理；調整後可直接輸出或加入 Combo':'俯瞰地景專屬編輯 × 運鏡 × 環境光線，保留插畫紋理；調整後可直接輸出或加入 Combo';
     dlg.querySelector('.cb-badge')!.textContent=String(R.modes[scene.mode].no);
   }
   $('#nsModes').addEventListener('click',e=>{const b=(e.target as HTMLElement).closest<HTMLElement>('[data-mode]');if(!b)return;const mode=b.dataset.mode as NMode;persist();bar.set();scene=normalizeNature(memo[mode]??{mode,ratio:scene.ratio});tView=poster(scene);sync();stop();void update();});

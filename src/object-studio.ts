@@ -10,10 +10,6 @@ export interface ObjectStudioDeps {
   toast: (msg: string) => void;
   copy: (text: string, msg: string) => Promise<void>;
   addScene: (s: { effect: string; words: string[]; seconds?: number; font?: string; ratio?: OScene['ratio'] }) => void;
-  openDrop: () => void;
-  openNature?: (mode:'meteor'|'city') => void;
-  openTransport: () => void;
-  openIllustration: (data?: unknown) => void;
   store: { get<T>(k: string, d: T): T; set(k: string, v: unknown): void };
 }
 
@@ -123,32 +119,12 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
   cv.addEventListener('pointercancel', endDrag);
 
   /* ───────── 模組、參數、文字 ───────── */
-  const modEl = $('#osMod');
-  modEl.innerHTML =
-    OBJ_MODULES.filter(m=>!['ocean','vehicle','meteor','aerial'].includes(m)).map((m) => `<button type="button" data-m="${m}" title="${esc(OBJ_INFO[m].desc)}"><b>${OBJ_INFO[m].zh}</b></button>`).join('') +
-    '<button type="button" data-nature="meteor"><b>隕石・精修插畫 ↗</b></button><button type="button" data-nature="city"><b>俯瞰・精修插畫 ↗</b></button><button type="button" data-transport><b>交通・精修插畫 ↗</b></button><button type="button" data-illustration><b>海底・精修插畫 ↗</b></button><button type="button" data-drop><b>水滴 ↗</b></button><p class="ps-mod-desc" id="osModDesc"></p>';
+  // 每種物件各自一個編輯器：不放模組切換，標題與說明跟著目前物件
   const syncMod = () => {
-    modEl.querySelectorAll<HTMLElement>('[data-m]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === sc.module)));
-    $('#osModDesc').textContent = `${OBJ_INFO[sc.module].zh}：${OBJ_INFO[sc.module].desc}`;
+    const info = OBJ_INFO[sc.module];
+    $('#osTitle').textContent = `${info.zh}・編輯器`;
+    $('#osDesc').textContent = info.desc;
   };
-  modEl.addEventListener('click', (e) => {
-    const nature=(e.target as HTMLElement).closest<HTMLElement>('[data-nature]');if(nature){dlg.close();deps.openNature?.(nature.dataset.nature as 'meteor'|'city');return;}
-    if ((e.target as HTMLElement).closest('[data-transport]')) {dlg.close();deps.openTransport();return;}
-    if ((e.target as HTMLElement).closest('[data-illustration]')) {dlg.close();deps.openIllustration();return;}
-    if ((e.target as HTMLElement).closest('[data-drop]')) {
-      dlg.close();
-      deps.openDrop();
-      return;
-    }
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-m]');
-    if (!b || b.dataset.m === sc.module) return;
-    memo[sc.module] = { ...sc.params };
-    const m = b.dataset.m as OModule;
-    const base = defaultObjScene(m);
-    sc = { ...sc, module: m, loop: base.loop, bg: base.bg, params: { ...OBJ_DEFAULTS[m], ...(memo[m] ?? {}) }, text: { ...sc.text, layout: base.text.layout } };
-    persist();
-    renderAll();
-  });
 
   const field = (f: PField, v: unknown) => {
     if (f.type === 'range')

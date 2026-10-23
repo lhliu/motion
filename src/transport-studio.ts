@@ -8,13 +8,13 @@ const dimensions: Record<TScene['ratio'],[number,number]>={'9:16':[1080,1920],'1
 const poster=(scene:TScene)=>5/scene.speed;
 export const initTransportStudio = (deps: Omit<ObjectStudioDeps,'openDrop'|'openIllustration'|'openTransport'>) => {
   document.body.insertAdjacentHTML('beforeend',`<dialog id="transportstudio" class="detail st ms ps" aria-labelledby="tsTitle"><div class="d-inner">
-    <header class="d-head"><div class="d-title"><span class="ma-num cb-badge">237</span><div><h2 id="tsTitle" tabindex="-1" autofocus>交通工具・精修插畫</h2><p>交通工具 × 個別編輯面板 × 五種背景，保留插畫紋理；調整後可直接輸出或加入 Combo</p></div></div><div class="d-nav"><button class="ic" id="tsClose" aria-label="關閉">✕</button></div></header>
+    <header class="d-head"><div class="d-title"><span class="ma-num cb-badge">237</span><div><h2 id="tsTitle" tabindex="-1" autofocus>交通工具・精修插畫</h2><p>專屬編輯面板 × 五種背景，保留插畫紋理；調整後可直接輸出或加入 Combo</p></div></div><div class="d-nav"><button class="ic" id="tsClose" aria-label="關閉">✕</button></div></header>
     <div class="st-body"><div class="st-left"><div id="tsStage" class="st-stage ms-stage" data-ratio="9:16"><canvas id="tsCanvas"></canvas><canvas id="tsSnow"></canvas><div id="tsLoading" role="status">載入精修插畫…</div></div>
       <div class="d-controls"><div class="seg" id="tsRatio" aria-label="比例"><button data-v="9:16">9:16 手機</button><button data-v="16:9">16:9</button><button data-v="1:1">1:1</button></div><button id="tsPlay" class="btn-ghost">▶ 播放</button><label class="ms-loop">時間 <input type="range" id="tsTime" min="0" max="12" step="0.02"></label><output id="tsClock"></output></div>
       <div id="tsPreset"></div><div class="st-out"><button id="tsPng" class="ma-btn" data-export>PNG</button><button id="tsWebm" class="btn-ghost" data-export>WebM 影片</button><button id="tsSeq" class="btn-ghost" data-export>PNG 序列（ZIP）</button><button id="tsCombo" class="btn-ghost">加入 Combo</button><button id="tsLink" class="btn-ghost">複製編輯連結</button><button id="tsJson" class="btn-ghost">下載設定</button><button id="tsImport" class="btn-ghost">匯入設定</button><input id="tsFile" type="file" accept="application/json,.json" hidden></div>
       <p id="tsStatus" role="status" class="st-status" hidden></p><p class="st-note">可拖曳預覽調整主角位置。速度連動片長（4.8–20 秒）；停留展示適合持續展示。透明背景可疊進影片，透明時隱藏道路與軌道；可個別關閉雲、尾焰、煙或船尾浪。WebM 透明度需由支援 alpha 的剪輯軟體讀取；PNG 序列保留透明度。</p>
     </div><div class="st-panel" id="tsControls">
-      <fieldset><legend>交通工具</legend><div class="ps-mod ps-mod-g" id="tsModes"></div></fieldset>
+      <fieldset hidden><legend>交通工具</legend><div class="ps-mod ps-mod-g" id="tsModes"></div></fieldset>
       <fieldset id="tsSpecific"><legend id="tsSpecificTitle">專屬編輯</legend><div id="tsSpecificFields"></div></fieldset>
       <fieldset><legend>構圖</legend><div id="tsComposition"></div></fieldset>
       <fieldset><legend>動作</legend><div id="tsMotion"></div><p class="ms-hint" id="tsDuration"></p></fieldset>
