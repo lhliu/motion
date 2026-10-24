@@ -165,6 +165,17 @@ npm run preview
 npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 ```
 
+### MCP 預覽截圖（preview_combo）
+
+AI 組好 Combo 後呼叫 `preview_combo`，伺服器用 Cloudflare Browser Run 打開分格預覽頁 `/c/sheet?z=…`（每段在 45%、90% 各一格，全部同時停在目標時間），回傳一張截圖與執行錯誤，讓 AI 自己檢查文字被切、重疊、對比、空白。
+
+設定（擇一，設好後重新部署）：
+
+- Pages 專案 → Settings → Variables and Secrets：`CF_ACCOUNT_ID`（帳號 ID）、`CF_BROWSER_TOKEN`（API Token，權限 Account → Browser Run → Edit，選加密）
+- 或有 Browser Run 綁定 `BROWSER` 時直接使用綁定
+
+免費方案每天 10 分鐘瀏覽器時間，一次預覽約 10–25 秒。沒設定時工具會回傳 `sheet_url`，可以用瀏覽器打開檢查。
+
 ### 自動畫面檢查
 
 改完特效或共用引擎後跑一次，確認沒有招式壞掉：

@@ -24,7 +24,7 @@ export const onRequestGet = async ({ env, params, request }: Ctx) => {
     } else c = await getCombo(env, String(params.id));
     if (!c) return page('找不到這個 Combo', 404);
     const hud = q.get('hud') !== '0';
-    return new Response(comboHtml(c, { hud, loop: q.get('loop') !== '0' }), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=60' } });
+    return new Response(comboHtml(c, { hud, loop: q.get('loop') !== '0', hold: q.get('hold') === '1' }), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=60' } });
   } catch (e) {
     return page(e instanceof Error ? e.message : '讀取失敗', 503);
   }

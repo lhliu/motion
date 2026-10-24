@@ -13,6 +13,8 @@ import { buildMapScene, sceneLength, type MapSceneInput } from '../../src/mapkit
 import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
 import { KITS, USES } from '../../src/uses';
 import { scriptToCombo } from '../../src/script-combo';
+import { SHEET_CELL, sheetCells } from '../../src/combo-sheet';
+import { canShoot, SHOT_SETUP, snapshot } from './shot';
 import { FONT_IDS, FONT_PACKS } from '../../src/fonts';
 import { defaultObjScene, normalizeObjScene, objFxId, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from '../../src/objkit';
 
@@ -52,7 +54,7 @@ import { MODULE_INFO, normalizePhotoScene, PARAMS, photoFxId, PHOTO_MODULES, typ
 import { normalizePlanScene, PLAN_INFO, PLAN_MODES, planFxId, planLength, type PlanMode, type PlanScene } from '../../src/plankit';
 import type { Env } from './env';
 import { deleteCombo, getCombo, getPreset, listCombos, listPresets, saveCombo, savePreset } from './store';
-import { checkPresetData, editUrl, KIND_NAME, presetToScene, sceneToPresetData, type PresetKind } from '../../src/presets';
+import { checkPresetData, editUrl, packJson, KIND_NAME, presetToScene, sceneToPresetData, type PresetKind } from '../../src/presets';
 
 export interface ToolCtx {
   env: Env;
@@ -790,7 +792,50 @@ const TOOLS_FULL: ToolDef[] = [
         saved: false,
         ...comboView(combo, ctx.origin, a.include_html === true),
         ...(a.include_prompt === true ? { prompt: comboPrompt(combo) } : {}),
-        next: '請把 play_url 給使用者預覽；滿意後呼叫 save_combo 儲存。',
+        next: '先呼叫 preview_combo（同樣的參數）看截圖自查，沒問題再把 play_url 給使用者；滿意後 save_combo 儲存。',
+      };
+    },
+  },
+  {
+    name: 'preview_combo',
+    title: '預覽 Combo 畫面（截圖）',
+    description:
+      '把 Combo 每一段在指定時間點（預設段落的 45% 與 90%）各拍一格，回傳一張分格截圖與執行錯誤，讓你自己檢查：文字是否被切掉、太小、重疊、跟底色對比不足、畫面是否空白或跑版。有問題就改 words、tone、effect 或秒數後再預覽，確認沒問題再給使用者 play_url 或 save_combo。欄位與 compose_combo 相同；一次最多 12 段，段數多時用 from/to 分批。',
+    inputSchema: {
+      type: 'object',
+      required: ['title', 'scenes'],
+      properties: {
+        ...bare(comboInput),
+        at: { type: 'array', items: { type: 'number' }, description: '每段要拍的時間點（段落比例 0–1），最多 3 個，預設 [0.45, 0.9]' },
+        from: { type: 'number', description: '從第幾段開始（預設 1）' },
+        to: { type: 'number', description: '到第幾段（預設 from+11）' },
+      },
+    },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const pe = await resolvePresets(a, ctx.env);
+      if (pe.length) return { ok: false, errors: pe };
+      const { combo, errors } = normalizeCombo(a);
+      if (errors.length) return { ok: false, errors };
+      const at = (Array.isArray(a.at) ? (a.at as unknown[]).map(Number).filter((x) => x > 0 && x <= 1) : []).slice(0, 3);
+      const ats = at.length ? at : [0.45, 0.9];
+      const from = Math.max(1, Math.round(Number(a.from) || 1));
+      const to = Math.min(combo.scenes.length, Math.round(Number(a.to) || from + 11), from + 11);
+      const cells = sheetCells(combo, ats, { from, to });
+      const sheet_url = `${ctx.origin}/c/sheet?z=${await packJson(combo)}&at=${ats.join(',')}&from=${from}&to=${to}`;
+      const base = { scenes: `${from}–${to} / ${combo.scenes.length}`, at: ats, sheet_url, play_url: linkFor(ctx.origin, combo) };
+      if (!canShoot(ctx.env)) return { ok: false, ...base, error: SHOT_SETUP, fallback: '目前無法截圖；可請使用者打開 sheet_url 或 play_url 檢查。' };
+      const ratio = combo.ratio ?? '16:9', [w] = SHEET_CELL[ratio] ?? SHEET_CELL['16:9'], per = ratio === '16:9' ? 2 : 3;
+      const width = Math.round(per * (ats.length * (w + 8) + 20) + (per - 1) * 18 + 40);
+      const maxT = Math.max(0, ...cells.map((c) => c.t));
+      const shot = await snapshot(ctx.env, sheet_url, { width, height: 900 }, maxT * 1000 + 6000);
+      const errs = (/<pre id="errs">([\s\S]*?)<\/pre>/.exec(shot.html)?.[1] ?? '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').split('\n').filter(Boolean);
+      return {
+        __image: { data: shot.image, mimeType: shot.mime },
+        ok: true,
+        ...base,
+        runtime_errors: errs,
+        check: '逐格檢查：文字完整可讀（沒被切、沒換行斷字、沒疊到其他元素）、對比足夠、9:16 的重要內容避開上下 15% 與右側按鈕區、沒有空白或錯位。數字與地名是否照使用者提供的資料。',
       };
     },
   },
@@ -878,7 +923,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 組 Combo 的建議流程：
 1. 先釐清用途、比例（YouTube 16:9、Shorts 9:16）、總長度與要出現的文字。
 2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
-3. 用 compose_combo 預覽，把 play_url 給使用者看。段落之間可用 transition（整支）或 scenes[].transition（單段）選新轉場；系列角標、資料來源條等元件用 overlays 常駐疊在段落上方。
+3. 用 compose_combo 驗證，再用 preview_combo 拿分格截圖自己檢查（文字被切、太小、重疊、對比不足、空白），有問題先修再預覽，確認沒問題才把 play_url 給使用者看。段落之間可用 transition（整支）或 scenes[].transition（單段）選新轉場；系列角標、資料來源條等元件用 overlays 常駐疊在段落上方。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
 省 token 的用法：要看多招的文字格式時用 get_effect 的 ids 一次查（不要逐一呼叫）；get_effect 預設不附提示詞，使用者要提示詞或 HTML 才加 format；list_categories 的套組只列摘要，選定後用 kit 參數取完整段落；compose_combo 預設不附重做提示詞（include_prompt）。回傳的預覽與編輯網址是壓縮過的，請原樣轉給使用者。
 地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、魔術方塊／星空背景請用 build_object_scene；天體、低空飛越及推近地球精修插畫用 build_cosmos_scene（mode=orbit｜flyover｜earthzoom，body=gas｜sun｜moon｜earth｜mars，依 mode 選擇）；隕石及俯瞰精修插畫請用 build_nature_scene（隕石 mode=meteor，style=rock｜ice｜lava｜gold；俯瞰 mode=city｜river｜mountain｜grass｜farm｜coast｜forest｜highway）；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。

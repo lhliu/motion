@@ -73,9 +73,12 @@ const handle = async (m: RpcReq, ctx: Ctx, origin: string) => {
         if (!w.ok) return ok(m.id, { isError: true, content: [{ type: 'text', text: w.reason }] });
       }
       try {
-        const out = await shrink(await tool.run((m.params?.arguments as Record<string, unknown>) ?? {}, { env: ctx.env, request: ctx.request, origin }));
+        const raw = (await tool.run((m.params?.arguments as Record<string, unknown>) ?? {}, { env: ctx.env, request: ctx.request, origin })) as Record<string, unknown>;
+        // 工具可回傳 __image（例如 preview_combo 的截圖），放成 MCP 的 image 內容讓 AI 直接看
+        const img = raw && typeof raw === 'object' ? (raw.__image as { data: string; mimeType: string } | undefined) : undefined;
+        const out = await shrink(img ? Object.fromEntries(Object.entries(raw).filter(([k]) => k !== '__image')) : raw);
         // 只回一份精簡 JSON：不縮排、不重複附 structuredContent（工具沒有宣告 outputSchema）
-        return ok(m.id, { content: [{ type: 'text', text: JSON.stringify(out) }] });
+        return ok(m.id, { content: [...(img ? [{ type: 'image', data: img.data, mimeType: img.mimeType }] : []), { type: 'text', text: JSON.stringify(out) }] });
       } catch (e) {
         const msg = e instanceof StoreError || e instanceof Error ? e.message : String(e);
         return ok(m.id, { isError: true, content: [{ type: 'text', text: msg }] });

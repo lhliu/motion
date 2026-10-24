@@ -297,7 +297,7 @@ export const comboHtmlReady = async (c: Combo, opts: Parameters<typeof comboHtml
 };
 
 /** 產生可獨立播放的 Combo HTML（依序播放、可循環）。用到的繪製引擎必須已載入（前端請用 comboHtmlReady） */
-export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean; safe?: boolean } = {}): string => {
+export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean; safe?: boolean; hold?: boolean } = {}): string => {
   const pal = comboPalette(c);
   const ovs = (c.overlays ?? []).map((o) => ({ o, fx: findEffect(o.effect) })).filter((x): x is { o: ComboOverlay; fx: Fx } => !!x.fx);
   const used = [...new Set([...c.scenes.map((s) => s.effect), ...ovs.map((x) => x.fx.id)])].map((id) => findEffect(id)).filter((f): f is Fx => !!f);
@@ -441,7 +441,12 @@ function syncOverlays(k){OVERLAYS.forEach((o,n)=>{const want=k>=o.from&&k<=o.to;
   else if(!want&&m){ovOn[n]=null;clearTimeout(m.t);m.el.classList.add('bye');setTimeout(()=>{m.clean&&m.clean();m.el.remove();},320);}
 });}
 const go=()=>show();
-if(document.fonts&&document.fonts.ready)document.fonts.ready.then(go);else go();
+const ready=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+${opts.hold ? `// 預覽截圖用：等外層頁面統一發號令再開始，讓每一格停在指定時間
+addEventListener('error',(e)=>parent.postMessage({type:'ma-err',msg:String(e.message||e)},'*'));
+const ce=console.error;console.error=(...a)=>{parent.postMessage({type:'ma-err',msg:a.map((x)=>x&&x.message||String(x)).join(' ')},'*');ce(...a);};
+addEventListener('message',(e)=>{if(e.data&&e.data.type==='ma-go')setTimeout(go,Math.max(0,e.data.delay|0));});
+ready.then(()=>parent.postMessage({type:'ma-loaded'},'*'));` : 'ready.then(go);'}
 </script>
 </body>
 </html>

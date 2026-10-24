@@ -19,6 +19,11 @@ export interface Env {
   DB?: D1Database;
   /** 寫入用金鑰（Pages 的加密環境變數） */
   MOTION_KEY?: string;
+  /** Browser Run 綁定（preview_combo 截圖用；有綁定就不需要下面兩個變數） */
+  BROWSER?: { quickAction?: (action: string, body: unknown) => Promise<Response> };
+  /** 沒有綁定時改用 Browser Run REST API：帳號 ID 與 API Token（權限 Browser Run - Edit，加密變數） */
+  CF_ACCOUNT_ID?: string;
+  CF_BROWSER_TOKEN?: string;
 }
 
 export interface Ctx {
