@@ -19,7 +19,7 @@ const run: Fx['run'] = (root) => {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   let elapsed = 0, previous = performance.now();
   let raf = 0;
-  const draw = () => R.drawObj(ctx, cv.width, cv.height, sc, reduced.matches ? loop * 0.35 : elapsed % loop, FS);
+  const draw = () => R.drawObj(ctx, cv.width, cv.height, sc, reduced.matches ? loop * 0.35 : ((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min(elapsed, loop - 0.001) : elapsed % loop), FS);
   const ro = new ResizeObserver(() => {
     const dpr = Math.min(2, devicePixelRatio || 1);
     cv.width = Math.max(1, Math.round(cv.clientWidth * dpr));

@@ -135,7 +135,7 @@ export const diagram: Fx[] = [
       };
       const frame = (now: number) => {
         raf = requestAnimationFrame(frame);
-        const t = ((now - t0) / 1000) % L;
+        const t = ((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min((now - t0) / 1000, L - 0.001) : (now - t0) / 1000 % L);
         ctx.clearRect(0, 0, W, H);
         ctx.save();
         ctx.globalAlpha = 1 - clamp((t - (L - 0.4)) / 0.4);
@@ -297,7 +297,7 @@ export const diagram: Fx[] = [
       };
       const frame = (now: number) => {
         raf = requestAnimationFrame(frame);
-        const t = ((now - t0) / 1000) % L;
+        const t = ((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min((now - t0) / 1000, L - 0.001) : (now - t0) / 1000 % L);
         ctx.clearRect(0, 0, W, H);
         ctx.save();
         ctx.globalAlpha = 1 - clamp((t - (L - 0.4)) / 0.4);
@@ -661,7 +661,7 @@ export const diagram: Fx[] = [
         if (stopped) return;
         const speed = Number(root.dataset.motionSpeed ?? 1);
         elapsed += Math.max(0, now - last) / 1000 * (Number.isFinite(speed) && speed >= 0 ? speed : 1); last = now;
-        draw(elapsed % L);
+        draw(((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min(elapsed, L - 0.001) : elapsed % L));
         raf = requestAnimationFrame(frame);
       };
       const onMotion = () => {

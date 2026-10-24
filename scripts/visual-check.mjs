@@ -1,4 +1,4 @@
-// 自動畫面檢查：每一招截兩格（循環的 45% 與 90%），抓出執行錯誤、素材載入失敗、整格空白，
+// 自動畫面檢查：每一招截三格（Combo 段落的 45%、90%、99%），抓出執行錯誤、素材載入失敗、整格空白，
 // 有基準版本時再逐像素比對，列出畫面變了的招式。結果寫到 visual-report/index.html。
 //
 //   npm run check:visual                    只檢查錯誤與空白
@@ -19,7 +19,7 @@ const baseRef = bi >= 0 ? args[bi + 1] : '';
 const only = args.filter((a, i) => !a.startsWith('--') && (bi < 0 || i !== bi + 1));
 const OUT = resolve('visual-report');
 const SIZE = { '9:16': [360, 640], '16:9': [640, 360], '1:1': [480, 480] };
-const AT = [0.45, 0.9];
+const AT = [0.45, 0.9, 0.99];
 const DIFF = 0.015; // 超過 1.5% 的像素明顯不同才算有變（改一行字就會超過；更低會被抗鋸齒雜訊誤判）
 
 rmSync(OUT, { recursive: true, force: true });
@@ -103,14 +103,14 @@ const shoot = async (side, m, tag = side) => {
       const target = Math.round(m.seconds * 1000 * at);
       await page.clock.runFor(target - t);
       t = target;
-      // CSS 動畫不吃假時鐘，手動停在同一個時間點
-      await page.evaluate((ms) => document.getAnimations().forEach((a) => { a.pause(); a.currentTime = ms; }), target);
+      // CSS 動畫不吃假時鐘，手動停在同一個時間點（播放器已定格的動畫不超過定格點）
+      await page.evaluate((ms) => document.getAnimations().forEach((a) => { a.pause(); a.currentTime = a.__maEnd != null ? Math.min(ms, a.__maEnd) : ms; }), target);
       // 給圖片解碼與 canvas 繪製一點真實時間
       await page.waitForTimeout(60);
       const name = `${tag}-${m.id}-${Math.round(at * 100)}.png`;
       await page.screenshot({ path: join(OUT, 'img', name) });
       shots.push(name);
-      await page.evaluate(() => document.getAnimations().forEach((a) => a.play()));
+      await page.evaluate(() => document.getAnimations().forEach((a) => a.__maEnd == null && a.play()));
     }
   } catch (e) {
     errors.push(`載入失敗：${e.message.split('\n')[0]}`);
@@ -166,6 +166,7 @@ for (const r of results) {
   for (let k = 0; k < r.shots.length; k++) {
     const s = await stats([`${ORIGIN}/img/${r.shots[k]}`, r.baseShots[k] ? `${ORIGIN}/img/${r.baseShots[k]}` : null]);
     if (s.sd > 2) r.blank = false;
+    (r.sds ??= []).push(s.sd);
     r.diff = Math.max(r.diff, s.diff);
   }
   // 有差異時兩邊各再拍一次：同一版本拍兩次就對不上，代表這招的畫格會飄（例如以畫格計數），列為不穩定而不算改動
@@ -182,13 +183,15 @@ await browser.close();
 server.close();
 
 // 5. 報告
-const bad = results.filter((r) => r.errors.length || r.blank);
+// 段落結尾變空白：放進影片會在換段前閃一下空白（播放器應該讓動畫停在完成畫面）
+for (const r of results) if (!r.blank && r.sds?.length === 3 && r.sds[2] < 3 && Math.max(r.sds[0], r.sds[1]) > 8) r.endBlank = true;
+const bad = results.filter((r) => r.errors.length || r.blank || r.endBlank);
 const changed = results.filter((r) => !bad.includes(r) && !r.flaky && r.diff > DIFF);
 const flaky = results.filter((r) => !bad.includes(r) && r.flaky);
 const fresh = results.filter((r) => !bad.includes(r) && r.isNew);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => `&${{ '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot' }[c]};`);
 const row = (r) => `<section><h3>#${r.no} ${esc(r.zh)} <code>${r.id}</code> <small>${r.ratio}・${r.seconds}s${r.diff ? `・差異 ${(r.diff * 100).toFixed(1)}%` : ''}</small></h3>
-${r.errors.map((e) => `<p class=err>${esc(e)}</p>`).join('')}${r.blank ? '<p class=err>兩格都是單一顏色（空白畫面）</p>' : ''}
+${r.errors.map((e) => `<p class=err>${esc(e)}</p>`).join('')}${r.blank ? '<p class=err>每一格都是單一顏色（空白畫面）</p>' : ''}${r.endBlank ? '<p class=err>段落結尾變成空白</p>' : ''}
 <div class=shots>${r.shots.map((s, k) => `<figure>${r.baseShots[k] ? `<img src="img/${r.baseShots[k]}" title="基準">` : ''}<img src="img/${s}" title="目前"><figcaption>${Math.round(AT[k] * 100)}%${r.baseShots[k] ? '（左基準、右目前）' : ''}</figcaption></figure>`).join('')}</div></section>`;
 const block = (title, list) => (list.length ? `<h2>${title}（${list.length}）</h2>${list.map(row).join('')}` : '');
 writeFileSync(
@@ -199,5 +202,5 @@ writeFileSync(
 ${block('有問題', bad)}${block('畫面有變（請確認是否預期）', changed)}${block('新招', fresh)}${block('不穩定（同一版本拍兩次也不同，差異僅供參考）', flaky)}${bad.length + changed.length + fresh.length + flaky.length ? '' : '<p>全部通過，畫面與基準一致。</p>'}`,
 );
 console.log(`有問題 ${bad.length}・畫面有變 ${changed.length}・新招 ${fresh.length}・不穩定 ${flaky.length} → ${join(OUT, 'index.html')}`);
-for (const r of bad) console.log(`  ✗ ${r.id}：${[...r.errors, ...(r.blank ? ['空白畫面'] : [])].join('；')}`);
+for (const r of bad) console.log(`  ✗ ${r.id}：${[...r.errors, ...(r.blank ? ['空白畫面'] : []), ...(r.endBlank ? ['段落結尾變空白'] : [])].join('；')}`);
 process.exit(bad.length ? 1 : 0);

@@ -88,7 +88,8 @@ export const card: Fx[] = [
             el.textContent = raw;
             el.classList.add('land');
             cap.classList.add('on');
-            t = window.setTimeout(go, 2600);
+            // 影片模式（Combo）播一次就停在完成畫面
+            if (!(globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE) t = window.setTimeout(go, 2600);
           }
         };
         raf = requestAnimationFrame(f);

@@ -26,7 +26,7 @@ const run: Fx['run'] = (root) => {
   let raf = 0;
   const f = (now: number) => {
     raf = requestAnimationFrame(f);
-    R.draw(ctx, W, H, net, ((now - t0) / 1000) % loop, opt);
+    R.draw(ctx, W, H, net, ((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min((now - t0) / 1000, loop - 0.001) : (now - t0) / 1000 % loop), opt);
   };
   raf = requestAnimationFrame(f);
   return () => cancelAnimationFrame(raf);

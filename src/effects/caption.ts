@@ -206,7 +206,7 @@ export const caption: Fx[] = [
       const tick = () => {
         els.forEach((e) => e.classList.remove('on'));
         if (i < els.length) els[i].classList.add('on');
-        i = (i + 1) % (els.length + 2);
+        i = (globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min(i + 1, els.length - 1) : (i + 1) % (els.length + 2);
       };
       tick();
       const t = window.setInterval(tick, 450);

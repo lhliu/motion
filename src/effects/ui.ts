@@ -8,8 +8,8 @@ const base = { added: '2026-10-23', preferredRatio: '9:16' as const };
 const typeLoop: Fx['run'] = (root) => {
   const els = [...root.querySelectorAll<HTMLElement>('[data-type]')];
   const cyc = Number(root.querySelector<HTMLElement>('[data-cycle]')?.dataset.cycle || 5000);
-  // 當 Combo 疊加圖層時只打一次字，打完定格
-  const once = !!root.parentElement?.classList.contains('ov');
+  // Combo（影片模式）與疊加圖層只打一次字，打完定格
+  const once = !!root.parentElement?.classList.contains('ov') || !!(globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE;
   let alive = true;
   const timers: number[] = [];
   const go = () => {
@@ -499,7 +499,8 @@ export const ui: Fx[] = [
       let raf = 0, t0 = performance.now(), landed = false;
       const f = (now: number) => {
         raf = requestAnimationFrame(f);
-        const e = (now - t0) % CYC;
+        // 影片模式（Combo）不重播，停在完成的畫面
+        const e = (globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min(now - t0, CYC - 901) : (now - t0) % CYC;
         const k = Math.min(1, Math.max(0, (e - 300) / RUN));
         const p = 1 - Math.pow(1 - k, 3);
         tm.textContent = fmt(total * p);
@@ -676,7 +677,8 @@ export const ui: Fx[] = [
       let raf = 0, t0 = performance.now(), phase = -1;
       const f = (now: number) => {
         raf = requestAnimationFrame(f);
-        const e = (now - t0) % CYC;
+        // 影片模式（Combo）不重播，停在完成的畫面
+        const e = (globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min(now - t0, CYC - 901) : (now - t0) % CYC;
         const k = Math.min(1, Math.max(0, (e - 200) / CLIMB));
         const p = 1 - Math.pow(1 - k, 2.4);
         fl.textContent = k >= 1 ? label : String(Math.max(1, Math.round(1 + (to - 1) * p)));

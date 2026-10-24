@@ -10,15 +10,15 @@ const load = (p: string) => import(pathToFileURL(resolve(root, p)).href);
 // 繪製引擎改成按需載入後，命令列要先同步載入全部（舊版本沒有這個檔就略過）
 await load('src/engines-all.ts').catch(() => {});
 const { ALL_EFFECTS } = await load('src/data.ts');
-const { comboHtml } = await load('src/combo.ts');
+const { comboHtml, sceneSeconds } = await load('src/combo.ts');
 
 mkdirSync(out, { recursive: true });
 const list: { id: string; no: number; zh: string; ratio: string; seconds: number; file: string }[] = [];
 for (const f of ALL_EFFECTS) {
   if (only.length && !only.some((s) => f.id.includes(s))) continue;
   const ratio = f.preferredRatio ?? '9:16';
-  // Canvas 招式跑一個完整循環；CSS 招式給 4 秒，夠看到進場後的穩定畫面
-  const seconds = Math.min(12, f.duration ?? 4);
+  // 用放進 Combo 時的預設秒數（舊版本沒有 sceneSeconds 就用 4 秒）
+  const seconds = Math.min(12, sceneSeconds ? sceneSeconds({ effect: f.id }) : f.duration ?? 4);
   const file = `${f.id}.html`;
   writeFileSync(join(out, file), comboHtml({ title: f.id, ratio, transition: 'cut', scenes: [{ effect: f.id, seconds }] }, { hud: false, loop: false }));
   list.push({ id: f.id, no: f.no, zh: f.zh, ratio, seconds, file });

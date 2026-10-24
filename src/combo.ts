@@ -396,6 +396,49 @@ const RUNS={${runs}};
 const OVERLAYS=${ovData.replace(/</g, '\\u003c')};
 const TRANSITION=${JSON.stringify(t)};
 const LOOP=${opts.loop === false ? 'false' : 'true'};
+// 影片模式：網站卡片的動畫會無限循環（進場→停住→退場），放進影片要播一次就停在完成畫面。
+// 找出每個無限動畫最長的「停住」區段，播到那裡就定格；同名動畫若是輪流出現（各自停住的時間互不重疊）就只留最後一個。
+window.MA_ONCE=true;
+const kfSig=(k)=>JSON.stringify(Object.keys(k).filter((p)=>!['offset','computedOffset','easing','composite'].includes(p)).sort().map((p)=>[p,k[p]]));
+const hidden=(k)=>String(k.opacity).trim()==='0'||/scale[XY]?[(]0[,)]/.test(String(k.transform||''));
+function freeze(root){
+  // 轉場招式（cut-*）本身就是一次完整的換場：播到第一輪結尾
+  if(/(^| )fx-cut-/.test(root.className)){root.getAnimations({subtree:true}).forEach((a)=>{try{if(a.effect.getTiming().iterations===Infinity)a.effect.updateTiming({iterations:1,fill:'both'});}catch(e){}});return;}
+  const groups={};
+  root.getAnimations({subtree:true}).forEach((a)=>{
+    if(a.__ma)return;a.__ma=1;
+    const ef=a.effect;if(!ef||!ef.getTiming||!ef.getKeyframes)return;
+    const tm=ef.getTiming();if(tm.iterations!==Infinity||typeof tm.duration!=='number'||!tm.duration)return;
+    const ks=ef.getKeyframes();let vis=null,any=null;
+    for(let j=0;j+1<ks.length;j++){const o1=ks[j].computedOffset,o2=ks[j+1].computedOffset;
+      // steps(1)／step-end 的區段雖然前後值不同，中間其實停在前一格
+      if(o2-o1<0.1||(kfSig(ks[j])!==kfSig(ks[j+1])&&!/^steps[(]1[,)]|^step-end/.test(ks[j].easing||'')))continue;
+      if(!any||o2-o1>any.e-any.s)any={s:o1,e:o2};
+      if(!hidden(ks[j])&&(!vis||o2-o1>vis.e-vis.s))vis={s:o1,e:o2};}
+    // 優先停在看得見的停住區段；只有隱藏區段的（例如擦除色塊）停在隱藏狀態；都沒有的是持續動態，保持循環
+    let best=vis||any;
+    // 來回動畫（0%=100%，中間一格，例如日出、上下漂浮）：停在中間那一格；中間比較淡（閃爍）就停在頭尾
+    if(!best&&ks.length===3&&kfSig(ks[0])===kfSig(ks[2])){const m=ks[1].computedOffset;
+      best=Number(ks[1].opacity)<Number(ks[0].opacity??1)?{s:1,e:1}:{s:m,e:m};}
+    if(!best)return;
+    const name=a.animationName||'';const d=tm.delay||0;
+    (groups[name]=groups[name]||[]).push({a,tm,vis:!!vis,from:d+best.s*tm.duration,to:d+best.e*tm.duration});
+  });
+  Object.values(groups).forEach((g)=>{
+    // 輪流出現：彼此看得見的停住時間沒有共同交集，只留最後一個
+    const rot=g.length>1&&g.every((x)=>x.vis)&&Math.max(...g.map((x)=>x.from))>=Math.min(...g.map((x)=>x.to));
+    const last=g.reduce((m,x)=>(x.from>m.from?x:m),g[0]);
+    g.forEach((x)=>{
+      const a=x.a,dur=x.tm.duration;
+      // 停在第一次（或已經錯過就下一次）停住區段的尾端，同時退後一點點避開邊界
+      let at=(rot&&x!==last?x.tm.delay+dur:x.to)-1;
+      const ct=Number(a.currentTime)||0;
+      if(ct>at)at+=Math.ceil((ct-at)/dur)*dur;
+      a.__maEnd=at;
+      setTimeout(()=>{try{a.pause();a.currentTime=at;}catch(e){}},Math.max(0,(at-ct)/(a.playbackRate||1)));
+    });
+  });
+}
 const stage=document.querySelector('.stage');
 let i=0,cur=null,curClean=null,timer=0;
 let hud=null;
@@ -416,6 +459,8 @@ function show(){
     el.innerHTML=document.getElementById('t'+idx).innerHTML;
     stage.insertBefore(el,below&&prev&&prev.isConnected?prev:(stage.querySelector('.ov')||hud));
     cur=el;curClean=null;curLt=sc.lt;paintOv();
+    // JS 動態可能稍後才產生元素，前 3 秒持續檢查新出現的動畫
+    freeze(el);[120,400,900,1600,2500].forEach((ms)=>setTimeout(()=>el.isConnected&&freeze(el),ms));
     requestAnimationFrame(()=>{const r=RUNS[sc.id];if(r&&el.isConnected){try{curClean=r(el,sc.words)||null}catch(e){console.error(e)}}});
     return el;
   };

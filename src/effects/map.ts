@@ -122,7 +122,7 @@ export const map: Fx[] = [
       let raf = 0;
       const f = (now: number) => {
         raf = requestAnimationFrame(f);
-        R.drawScene(ctx, W, H, sc, ((now - t0) / 1000) % loop, img, FS);
+        R.drawScene(ctx, W, H, sc, ((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min((now - t0) / 1000, loop - 0.001) : (now - t0) / 1000 % loop), img, FS);
       };
       raf = requestAnimationFrame(f);
       return () => cancelAnimationFrame(raf);
@@ -192,7 +192,7 @@ export const map: Fx[] = [
       let raf = 0;
       const f = (now: number) => {
         raf = requestAnimationFrame(f);
-        R.drawScene(ctx, W, H, sc, ((now - t0) / 1000) % loop, img, FS);
+        R.drawScene(ctx, W, H, sc, ((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min((now - t0) / 1000, loop - 0.001) : (now - t0) / 1000 % loop), img, FS);
       };
       raf = requestAnimationFrame(f);
       return () => cancelAnimationFrame(raf);

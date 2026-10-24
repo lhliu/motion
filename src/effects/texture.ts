@@ -103,6 +103,8 @@ export const texture: Fx[] = [
       const small = document.createElement('canvas');
       const smc = small.getContext('2d')!;
       const tick = () => {
+        // 影片模式停在最清楚的那一格
+        if ((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE && k > 7) k = 7;
         const s = Math.max(1, Math.round((steps[k % steps.length] * W) / 800));
         small.width = Math.max(1, Math.ceil(W / s));
         small.height = Math.max(1, Math.ceil(H / s));

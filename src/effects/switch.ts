@@ -354,7 +354,7 @@ export const switching: Fx[] = [
           });
           el.innerHTML = html;
           if (p < 1) raf = requestAnimationFrame(frame);
-          else t = window.setTimeout(go, 1600);
+          else if (!(globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE) t = window.setTimeout(go, 1600);
         };
         raf = requestAnimationFrame(frame);
       };

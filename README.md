@@ -181,7 +181,7 @@ AI 組好 Combo 後呼叫 `preview_combo`，伺服器用 Cloudflare Browser Run 
 改完特效或共用引擎後跑一次，確認沒有招式壞掉：
 
 ```sh
-npm run check:visual                   # 每招截兩格，抓執行錯誤、素材 404、整格空白
+npm run check:visual                   # 每招用 Combo 預設秒數截 45%、90%、99% 三格，抓執行錯誤、素材 404、空白畫面、段落結尾變空白
 npm run check:visual -- --base main    # 另外跟 main 逐像素比對，列出畫面有變的招式
 npm run check:visual -- mx- cut-       # 只檢查 id 含這些字的招式
 ```

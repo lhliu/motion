@@ -29,7 +29,7 @@ const run: Fx['run'] = (root) => {
   const f = (now: number) => {
     raf = requestAnimationFrame(f);
     // 停在接近完成的畫面多留一下，再重播
-    const t = reduced.matches ? loop * 0.9 : ((now - t0) / 1000) % (loop + 1.2);
+    const t = reduced.matches ? loop * 0.9 : ((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? (now - t0) / 1000 : ((now - t0) / 1000) % (loop + 1.2));
     R.draw(ctx, W, H, mode, w, Math.min(t, loop), opt);
   };
   raf = requestAnimationFrame(f);
