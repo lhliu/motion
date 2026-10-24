@@ -43,7 +43,16 @@ await test('MCP、預設與 Combo 保留四種樣式及完整設定',async()=>{
  for(const i of items){const r=await tool.run({...i.scene,speed:.6},ctx);check(r.scene.mode===i.mode&&r.scene.body===i.body&&r.combo_scene.seconds===20&&r.edit_url.includes('edit=cosmos'),'MCP failed');const cs=presetToScene({kind:'cosmos',data:r.scene,name:i.mode}),pd=sceneToPresetData(cs.effect,cs.words),combo=normalizeCombo({title:'test',scenes:[cs]});check(pd.kind==='cosmos'&&pd.data.body===i.body&&cs.effect===cosmicFxId(i.mode),'Preset failed');check(combo.combo.scenes[0].words[0]===cs.words[0]&&sceneSeconds(combo.combo.scenes[0])===20,'Truncated config');}
 });
 await test('三招獨立 HTML 與預覽逐像素一致',async()=>{
- for(const mode of Object.keys(R.modes)){const frame=document.createElement('iframe');frame.style.cssText='width:270px;height:480px;border:0';document.body.append(frame);const loaded=new Promise(r=>frame.onload=r);frame.srcdoc=exportHtml(findEffect(cosmicFxId(mode)),[],toneVars(PALETTES[0],'ink'),'9:16');await loaded;const root=frame.contentDocument.querySelector('.fx');check(await root.motionReady,'Export load');root.motionSeek(5);check(root.querySelector('canvas').toDataURL()===items.find(i=>i.mode===mode).a.toDataURL(),'Export differs '+mode);frame.remove();}
+ for(const mode of Object.keys(R.modes)){const frame=document.createElement('iframe');frame.style.cssText='width:270px;height:480px;border:0';document.body.append(frame);const loaded=new Promise(r=>frame.onload=r);frame.srcdoc=exportHtml(findEffect(cosmicFxId(mode)),[],toneVars(PALETTES[0],'ink'),'9:16');await loaded;const root=frame.contentDocument.querySelector('.fx');check(await root.motionReady,'Export load');root.motionSeek(5);const a=cv(),b=cv(),reference=R.createRenderer(a,b,norm({mode}),location.origin,{lite:true});await reference.ready;reference.render(5);check(root.querySelector('canvas').toDataURL()===a.toDataURL(),'Export differs '+mode);reference.dispose();frame.remove();}
+});
+await test('飛越薄雲覆蓋、流速與停止，保留地平線和透明度',async()=>{
+ const a=cv(),b=cv(),base={mode:'flyover',body:'earth',background:'transparent',travel:0,clouds:0,cloudSpeed:0},r=R.createRenderer(a,b,base,location.origin);await r.ready;
+ try{
+  r.render(3);const clear=a.toDataURL();await r.update({...base,clouds:.8});r.render(3);const cloudy=a.toDataURL();check(clear!==cloudy,'Cloud amount ignored');
+  r.render(7);check(cloudy===a.toDataURL(),'Stationary clouds drift');await r.update({...base,clouds:.8,cloudSpeed:1});r.render(3);const first=a.toDataURL();r.render(7);check(first!==a.toDataURL(),'Cloud flow ignored');
+  await r.update({...base,clouds:.8,opacity:.5});r.render(3);const x=a.getContext('2d');check(x.getImageData(135,1,1,1).data[3]===0,'Clouds paint the sky');const alpha=x.getImageData(135,470,1,1).data[3];check(alpha>=126&&alpha<=129,'Clouds change scene opacity');
+  check(!performance.getEntriesByType('resource').some(e=>/transport-illustrated\/cloud-v1/.test(e.name)),'Side-view cloud sprite still loaded');
+ }finally{r.dispose();}
 });
 await test('遠景深度取樣不產生條帶，移動與不同解析度保持穩定',async()=>{
  const fixture=document.createElement('canvas');fixture.width=fixture.height=2048;const x=fixture.getContext('2d');

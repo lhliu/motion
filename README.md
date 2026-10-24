@@ -50,7 +50,7 @@ Combo 存的是預設當下的內容（快照）；預設更新後，請 AI 重�
 三招精修宇宙效果與 #244 精修隕石合為「插畫 → 星空物件」系列（分類代碼沿用 `meteor`，共四招）。「物件 → 星空宇宙」只保留三招原有星空背景：
 
 - #169 `cosmos-illustrated-orbit`：行星光環、太陽、月球、地球在單一編輯器切換。球面材質自轉、地軸傾角與日照方向，環帶與衛星正確前後遮擋；依天體顯示環帶、雲層或日珥控制。
-- #195 `cosmos-illustrated-flyover`：地球、月球、火星、太陽地表在單一編輯器切換。地球使用連續球面地表與獨立海岸材質，避免地圖重複鋪排；其餘地表以分方向取樣過濾的透視投影推進，抑制遠處橫紋與閃爍。可調前進速度、飛行高度、地平線、弧度與鏡頭傾斜；月面天邊有地球，地球可加低雲。地表為示意插畫，太陽飛越為視覺想像。
+- #195 `cosmos-illustrated-flyover`：地球、月球、火星、太陽地表在單一編輯器切換。地球使用連續球面地表與獨立海岸材質，避免地圖重複鋪排；其餘地表以分方向取樣過濾的透視投影推進，抑制遠處橫紋與閃爍。可調前進速度、飛行高度、地平線、弧度與鏡頭傾斜；月面天邊有地球，地球可加有高度差與透視變化的薄雲層，雲量、流速各自可調。地表為示意插畫，太陽飛越為視覺想像。
 - #199 `cosmos-illustrated-earthzoom`：獨立推近地球，可調起訖倍率、聚焦位置、推近／拉遠、自轉、雲層及衛星。
 
 三個編輯器 `/?view=cosmic-orbit|cosmic-flyover|cosmic-earthzoom` 各自記憶設定，前兩招的四種樣式也各自記憶，預設清單依編輯器分開。支援換色、五種背景、透明、比例、PNG、WebM、PNG 序列、JSON、編輯連結、預設及 Combo。透明飛越保留地面、天空透明。MCP `build_cosmos_scene` 使用 `mode=orbit|flyover|earthzoom`、`body=gas|sun|moon|earth|mars`（依 mode 限制），回傳設定、專屬參數與編輯連結。共用引擎 `/r/cosmos.js`：`MA_COSMOS.createRenderer(canvas,overlay,scene,assetOrigin)`，先 `await renderer.ready` 再逐格 `render(t,W,H)`；結束 `dispose()`。素材位於 `public/media/cosmos-illustrated/`，保留原始圖檔，材質由 Canvas 取樣，不加文字、投影、模糊或光暈。
