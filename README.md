@@ -176,6 +176,8 @@ AI 組好 Combo 後呼叫 `preview_combo`，伺服器用 Cloudflare Browser Run 
 
 免費方案每天 10 分鐘瀏覽器時間，一次預覽約 10–25 秒。沒設定時工具會回傳 `sheet_url`，可以用瀏覽器打開檢查。
 
+在 Claude Code 等能在使用者電腦執行程式的環境，AI 加 `local: true` 呼叫：伺服器不截圖、不耗用額度，改回傳 `local_preview` 步驟，用本機無頭瀏覽器開 `sheet_url`、等 `#ready` 後整頁截圖。
+
 ### 自動畫面檢查
 
 改完特效或共用引擎後跑一次，確認沒有招式壞掉：

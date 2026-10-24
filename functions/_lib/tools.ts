@@ -800,7 +800,7 @@ const TOOLS_FULL: ToolDef[] = [
     name: 'preview_combo',
     title: '預覽 Combo 畫面（截圖）',
     description:
-      '把 Combo 每一段在指定時間點（預設段落的 45% 與 90%）各拍一格，回傳一張分格截圖與執行錯誤，讓你自己檢查：文字是否被切掉、太小、重疊、跟底色對比不足、畫面是否空白或跑版。有問題就改 words、tone、effect 或秒數後再預覽，確認沒問題再給使用者 play_url 或 save_combo。欄位與 compose_combo 相同；一次最多 12 段，段數多時用 from/to 分批。',
+      '把 Combo 每一段在指定時間點（預設段落的 45% 與 90%）各拍一格，回傳一張分格截圖與執行錯誤，讓你自己檢查：文字是否被切掉、太小、重疊、跟底色對比不足、畫面是否空白或跑版。有問題就改 words、tone、effect 或秒數後再預覽，確認沒問題再給使用者 play_url 或 save_combo。欄位與 compose_combo 相同；一次最多 12 段，段數多時用 from/to 分批。能在使用者電腦執行程式（Claude Code 等）時加 local: true，改用本機瀏覽器截圖。',
     inputSchema: {
       type: 'object',
       required: ['title', 'scenes'],
@@ -809,6 +809,7 @@ const TOOLS_FULL: ToolDef[] = [
         at: { type: 'array', items: { type: 'number' }, description: '每段要拍的時間點（段落比例 0–1），最多 3 個，預設 [0.45, 0.9]' },
         from: { type: 'number', description: '從第幾段開始（預設 1）' },
         to: { type: 'number', description: '到第幾段（預設 from+11）' },
+        local: { type: 'boolean', description: '你能在使用者電腦執行程式（例如 Claude Code）時設 true：不在伺服器截圖、不耗用每日額度，改回傳 local_preview 自己截' },
       },
     },
     annotations: { readOnlyHint: true },
@@ -824,10 +825,13 @@ const TOOLS_FULL: ToolDef[] = [
       const cells = sheetCells(combo, ats, { from, to });
       const sheet_url = `${ctx.origin}/c/sheet?z=${await packJson(combo)}&at=${ats.join(',')}&from=${from}&to=${to}`;
       const base = { scenes: `${from}–${to} / ${combo.scenes.length}`, at: ats, sheet_url, play_url: linkFor(ctx.origin, combo) };
-      if (!canShoot(ctx.env)) return { ok: false, ...base, error: SHOT_SETUP, fallback: '目前無法截圖；可請使用者打開 sheet_url 或 play_url 檢查。' };
       const ratio = combo.ratio ?? '16:9', [w] = SHEET_CELL[ratio] ?? SHEET_CELL['16:9'], per = ratio === '16:9' ? 2 : 3;
       const width = Math.round(per * (ats.length * (w + 8) + 20) + (per - 1) * 18 + 40);
       const maxT = Math.max(0, ...cells.map((c) => c.t));
+      // 本機截圖：分格頁全部格子停在目標時間後會加上 #ready，錯誤訊息寫在 #errs
+      const local_preview = `在使用者電腦用 Playwright（或任何無頭瀏覽器）開 sheet_url，viewport 寬 ${width}，等 #ready 出現（state: attached，最多 ${Math.ceil(maxT + 20)} 秒），整頁截圖（fullPage）後自己看圖；#errs 的文字是執行錯誤。例：const p=await (await chromium.launch()).newPage({viewport:{width:${width},height:900}});await p.goto(sheet_url);await p.waitForSelector('#ready',{state:'attached',timeout:${Math.ceil(maxT + 20) * 1000}});await p.screenshot({path:'preview.png',fullPage:true});`;
+      if (a.local === true) return { ok: true, ...base, local_preview };
+      if (!canShoot(ctx.env)) return { ok: false, ...base, error: SHOT_SETUP, local_preview, fallback: '能在使用者電腦執行程式就照 local_preview 自己截圖；不行的話請使用者打開 sheet_url 或 play_url 檢查。' };
       const shot = await snapshot(ctx.env, sheet_url, { width, height: 900 }, maxT * 1000 + 6000);
       const errs = (/<pre id="errs">([\s\S]*?)<\/pre>/.exec(shot.html)?.[1] ?? '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').split('\n').filter(Boolean);
       return {
@@ -923,7 +927,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 組 Combo 的建議流程：
 1. 先釐清用途、比例（YouTube 16:9、Shorts 9:16）、總長度與要出現的文字。
 2. 文字段落先決定用途（開場標題 open、字幕標註 caption、資訊字卡 info、轉場切換 trans、強調情緒 emph、風格氛圍 mood），再用 search_effects 的 use 參數挑特效，留意 word_hint 的文字格式。同一個 Combo 盡量不要重複同一招；建案片可先參考 list_categories 回傳的 kits（套組）。
-3. 用 compose_combo 驗證，再用 preview_combo 拿分格截圖自己檢查（文字被切、太小、重疊、對比不足、空白），有問題先修再預覽，確認沒問題才把 play_url 給使用者看。段落之間可用 transition（整支）或 scenes[].transition（單段）選新轉場；系列角標、資料來源條等元件用 overlays 常駐疊在段落上方。
+3. 用 compose_combo 驗證，再用 preview_combo 拿分格截圖自己檢查（能在使用者電腦執行程式時加 local: true 用本機瀏覽器截圖；文字被切、太小、重疊、對比不足、空白），有問題先修再預覽，確認沒問題才把 play_url 給使用者看。段落之間可用 transition（整支）或 scenes[].transition（單段）選新轉場；系列角標、資料來源條等元件用 overlays 常駐疊在段落上方。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
 省 token 的用法：要看多招的文字格式時用 get_effect 的 ids 一次查（不要逐一呼叫）；get_effect 預設不附提示詞，使用者要提示詞或 HTML 才加 format；list_categories 的套組只列摘要，選定後用 kit 參數取完整段落；compose_combo 預設不附重做提示詞（include_prompt）。回傳的預覽與編輯網址是壓縮過的，請原樣轉給使用者。
 地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、魔術方塊／星空背景請用 build_object_scene；天體、低空飛越及推近地球精修插畫用 build_cosmos_scene（mode=orbit｜flyover｜earthzoom，body=gas｜sun｜moon｜earth｜mars，依 mode 選擇）；隕石及俯瞰精修插畫請用 build_nature_scene（隕石 mode=meteor，style=rock｜ice｜lava｜gold；俯瞰 mode=city｜river｜mountain｜grass｜farm｜coast｜forest｜highway）；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
