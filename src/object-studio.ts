@@ -1,6 +1,6 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
 import { drawObj } from './render/obj';
-import { defaultObjScene, METEOR_COLORS, OCEAN_PRESETS, objFxId, normalizeObjScene, OBJ_DEFAULTS, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from './objkit';
+import { defaultObjScene, METEOR_COLORS, OCEAN_PRESETS, objSceneFxId, objFields, OBJECT_COSMOS_GROUPS, normalizeObjScene, OBJ_DEFAULTS, OBJ_INFO, OBJ_MODULES, type OModule, type OScene } from './objkit';
 import type { PField } from './photokit';
 import { esc } from './util';
 import { FONT_PACKS, preloadFonts } from './fonts';
@@ -122,7 +122,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
   /* ───────── 模組、參數、文字 ───────── */
   // 每種物件各自一個編輯器：不放模組切換，標題與說明跟著目前物件
   const syncMod = () => {
-    const info = OBJ_INFO[sc.module];
+    const info = sc.module === 'cosmos' && sc.cosmosGroup ? OBJECT_COSMOS_GROUPS[sc.cosmosGroup] : OBJ_INFO[sc.module];
     $('#osTitle').textContent = `${info.zh}・編輯器`;
     $('#osDesc').textContent = info.desc;
   };
@@ -137,7 +137,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
   };
   const paramsEl = $('#osParams');
   const renderParams = () => {
-    const fields = OBJ_PARAMS[sc.module].filter((f) => {
+    const fields = objFields(sc).filter((f) => {
       if (sc.module !== 'ocean') return true;
       const mode = String(sc.params.mode);
       if (f.k === 'scene') return mode !== 'deep';
@@ -279,7 +279,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
     deps.toast('已輸出 WebM');
   });
   $('#osCombo').addEventListener('click', () => {
-    deps.addScene({ effect: objFxId(sc.module), words: [JSON.stringify(sc)], seconds: sc.loop, ratio: sc.ratio, ...(sc.font ? { font: sc.font } : {}) });
+    deps.addScene({ effect: objSceneFxId(sc), words: [JSON.stringify(sc)], seconds: sc.loop, ratio: sc.ratio, ...(sc.font ? { font: sc.font } : {}) });
   });
   $('#osJson').addEventListener('click', () => deps.copy(JSON.stringify(sc), '已複製設定 JSON，可貼給 AI 修改'));
 

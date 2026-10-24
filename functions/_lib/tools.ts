@@ -46,7 +46,7 @@ const natureResult = (raw:unknown,ctx:ToolCtx,title='隕石與俯瞰・精修插
 const cosmicResult=(raw:unknown,ctx:ToolCtx,title='星空宇宙・精修插畫')=>{
  const sc=normalizeCosmos(raw),combo_scene={effect:cosmicFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop};
  const {combo}=normalizeCombo({title,ratio:sc.ratio,transition:'cut',scenes:[combo_scene]});
- return{scene:sc,combo_scene,modes:COSMOS.modes,variants:COSMOS.variants(sc.mode).map(id=>({id,...COSMOS.bodies[id]})),backgrounds:COSMOS.backgrounds,params_doc:COSMOS.fieldsFor(sc),edit_url:editUrl(ctx.origin,{kind:'cosmos',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,local_render:`Load ${ctx.origin}/r/cosmos.js; const renderer=MA_COSMOS.createRenderer(canvas,overlayCanvas,scene,"${ctx.origin}"); await renderer.ready; renderer.render(t,W,H); renderer.dispose();`,next:'插畫／星空物件系列：#169 天體四樣式一招、#195 低空飛越四地表一招、#199 推近地球獨立一招，另有 #244 精修隕石。舊九招隱藏保留，精修地表為示意插畫；太陽飛越為視覺想像。將 combo_scene 放進 compose_combo / save_combo。'};
+ return{scene:sc,combo_scene,modes:COSMOS.modes,variants:COSMOS.variants(sc.mode).map(id=>({id,...COSMOS.bodies[id]})),backgrounds:COSMOS.backgrounds,params_doc:COSMOS.fieldsFor(sc),edit_url:editUrl(ctx.origin,{kind:'cosmos',data:sc}),preview_url:`${ctx.origin}/?combo=${encodeCombo(combo)}`,local_render:`Load ${ctx.origin}/r/cosmos.js; const renderer=MA_COSMOS.createRenderer(canvas,overlayCanvas,scene,"${ctx.origin}"); await renderer.ready; renderer.render(t,W,H); renderer.dispose();`,next:'插畫／星空物件系列：#253 天體四樣式一招、#254 低空飛越四地表一招、#255 推近地球獨立一招，另有 #244 精修隕石。非精修 #169、#195、#199 位於物件／星空宇宙，其餘六招原版隱藏保留。精修地表為示意插畫；太陽飛越為視覺想像。將 combo_scene 放進 compose_combo / save_combo。'};
 };
 
 const FONT_HELP = `字型組合：${FONT_PACKS.map((f) => `${f.id}＝${f.zh}（${f.use}）`).join('；')}。省略＝sharp`;

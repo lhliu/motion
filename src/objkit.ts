@@ -25,7 +25,15 @@ export interface OScene {
   params: Record<string, number | string>;
   text: OText;
   font?: string;
+  /** 非精修宇宙合併卡的獨立編輯範圍；舊場景不帶此欄位仍可用。 */
+  cosmosGroup?: 'orbit' | 'flyover' | 'earthzoom';
 }
+
+export const OBJECT_COSMOS_GROUPS = {
+  orbit: { id: 'obj-cosmos-planet', zh: '天體切換', desc: '行星光環、太陽、月球、地球；非精修版，四種天體共用一個編輯器。', preset: { mode: 'planet', planet: '#e8a35c', color2: '#f2d6a2', y: 0.36, size: 0.34, layout: 'below' } },
+  flyover: { id: 'obj-cosmos-flyby-earth', zh: '星球飛越', desc: '地球、月球、火星、太陽；非精修版，四種地表共用一個編輯器。', preset: { mode: 'flyby', surface: 'earth' } },
+  earthzoom: { id: 'obj-cosmos-zoom-earth', zh: '推近地球', desc: '非精修版的獨立地球運鏡編輯器，可調推近、拉遠與倍率。', preset: { mode: 'earth', y: 0.42, size: 0.3, cam: 'in', camz: 3, layout: 'over' } },
+} as const;
 
 export const OBJ_INFO: Record<OModule, { zh: string; en: string; desc: string }> = {
   meteor: { zh: '隕石', en: 'Meteor', desc: '漂浮或墜落的隕石，形狀可隨機、對稱、圓潤或碎片，材質有岩石、冰晶、熔岩、金屬' },
@@ -165,6 +173,21 @@ export const objFxPrefix = 'obj-';
 export const objFxId = (m: OModule): string => ({ meteor: 'obj-meteor-rock', cube: 'obj-cube-plastic', cosmos: 'obj-cosmos-stars', aerial: 'obj-aerial-city', vehicle: 'obj-vehicle-car', ocean: 'obj-ocean-fish' } as Record<string, string>)[m] ?? `obj-${m}-${String(OBJ_DEFAULTS[m]?.mode ?? 'main')}`;
 export const isObjFx = (id: string) => id.startsWith(objFxPrefix);
 export const objFxModule = (id: string): OModule => (OBJ_MODULES.find((m) => id.startsWith(`${objFxPrefix}${m}`)) ?? 'meteor');
+export const objSceneFxId = (scene: OScene): string => scene.module === 'cosmos' && scene.cosmosGroup ? OBJECT_COSMOS_GROUPS[scene.cosmosGroup].id : objFxId(scene.module);
+
+/** 合併卡只顯示本招適用的控制，不影響舊版通用宇宙場景。 */
+export const objFields = (scene: OScene): PField[] => {
+  if (scene.module !== 'cosmos' || !scene.cosmosGroup) return OBJ_PARAMS[scene.module];
+  const group = scene.cosmosGroup;
+  return OBJ_PARAMS.cosmos.flatMap((field): PField[] => {
+    if (field.k === 'mode') return group === 'orbit' && field.type === 'seg' ? [{ ...field, label: '天體', opts: field.opts.filter(([v]) => ['planet', 'sun', 'moon', 'earth'].includes(v)) }] : [];
+    if (['surface', 'alt'].includes(field.k) && group !== 'flyover') return [];
+    if (['cam', 'camz', 'size'].includes(field.k) && group === 'flyover') return [];
+    if (['planet', 'ring'].includes(field.k) && (group !== 'orbit' || scene.params.mode !== 'planet')) return [];
+    if (field.k === 'cam' && group === 'earthzoom' && field.type === 'seg') return [{ ...field, opts: field.opts.filter(([v]) => v !== 'none') }];
+    return [field];
+  });
+};
 
 export const defaultObjScene = (module: OModule = 'meteor'): OScene => ({
   ratio: '9:16',
@@ -199,6 +222,10 @@ export const normalizeObjScene = (raw: Partial<OScene>, fallback: OModule = 'met
     if (raw.params?.size === undefined) params.size = params.mode === 'sun' ? 0.34 : 0.46;
     if (raw.params?.y === undefined) params.y = 0.36;
   }
+  const cosmosGroup = module === 'cosmos' && (['orbit', 'flyover', 'earthzoom'] as const).includes(raw.cosmosGroup!) ? raw.cosmosGroup : undefined;
+  if (cosmosGroup === 'orbit' && !['planet', 'sun', 'moon', 'earth'].includes(String(params.mode))) params.mode = 'planet';
+  if (cosmosGroup === 'flyover') params.mode = 'flyby';
+  if (cosmosGroup === 'earthzoom') { params.mode = 'earth'; if (params.cam === 'none') params.cam = 'in'; }
   for (const k of ['x', 'y']) if (Number.isFinite(Number(raw.params?.[k]))) params[k] = Math.max(0, Math.min(1, Number(raw.params![k])));
   const t = raw.text ?? base.text;
   const text: OText = {
@@ -211,7 +238,7 @@ export const normalizeObjScene = (raw: Partial<OScene>, fallback: OModule = 'met
     delay: Math.max(0, Math.min(10, Number(t.delay ?? 0.6))),
   };
   const bg = typeof raw.bg === 'string' && /^(transparent|#[0-9a-f]{3,8}(,\s*#[0-9a-f]{3,8})?)$/i.test(raw.bg.trim()) ? raw.bg.trim() : base.bg;
-  return { ratio, loop, module, bg, params, text, ...(typeof raw.font === 'string' && /^[a-z]{2,12}$/.test(raw.font) ? { font: raw.font } : {}) };
+  return { ratio, loop, module, bg, params, text, ...(cosmosGroup ? { cosmosGroup } : {}), ...(typeof raw.font === 'string' && /^[a-z]{2,12}$/.test(raw.font) ? { font: raw.font } : {}) };
 };
 
 /** words 裡以 { 開頭的字串視為場景 JSON；否則當成文字行，並套用該卡片的預設參數 */
@@ -231,4 +258,12 @@ export const objSceneFromWords = (w: string[], module: OModule, preset: Record<s
   if (typeof preset.tcolor === 'string') sc.text.color = preset.tcolor;
   sc.text.lines = w.filter((x) => x && !x.startsWith('{')).slice(0, 4);
   return sc;
+};
+
+/** 卡片、Combo 與預設共用合併卡的預設，避免空 words 回到閃爍星空。 */
+export const objSceneForEffect = (words: string[], effect: string): OScene => {
+  const group = (Object.keys(OBJECT_COSMOS_GROUPS) as (keyof typeof OBJECT_COSMOS_GROUPS)[]).find(k => OBJECT_COSMOS_GROUPS[k].id === effect);
+  const scene = objSceneFromWords(words, objFxModule(effect), group ? OBJECT_COSMOS_GROUPS[group].preset : {});
+  if (group && scene.module === 'cosmos' && !scene.cosmosGroup) scene.cosmosGroup = group;
+  return normalizeObjScene(scene, scene.module);
 };

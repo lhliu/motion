@@ -1,6 +1,6 @@
 import type { Fx } from '../types';
 import { esc } from '../util';
-import { objSceneFromWords, type OModule } from '../objkit';
+import { objSceneFromWords, objSceneForEffect, OBJECT_COSMOS_GROUPS, type OModule } from '../objkit';
 
 const CSS = `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
 
@@ -51,7 +51,11 @@ const make = (
   ...(module === 'ocean' ? { duration: 8 } : {}),
   hint: module === 'ocean' ? '預設無文字。可在物件工作室調整主角、動作、配色與透明背景；字幕可在文字面板開啟。' : '一行一句，~ 開頭為英文小字（最多 4 行）。形狀、材質、顏色請在物件工作室調整，或由 AI 透過 MCP 的 build_object_scene 產生',
   css: CSS,
-  html: (w) => `<canvas data-scene="${esc(JSON.stringify(objSceneFromWords(w, module, preset)))}"></canvas>`,
+  html: (w) => {
+    const id = `obj-${module}-${variant}`;
+    const scene = Object.values(OBJECT_COSMOS_GROUPS).some(g => g.id === id) ? objSceneForEffect(w, id) : objSceneFromWords(w, module, preset);
+    return `<canvas data-scene="${esc(JSON.stringify(scene))}"></canvas>`;
+  },
   engine: 'obj',
   run,
   ...o,
@@ -148,3 +152,13 @@ objects.push(
   prop('gacha', 'capsule', 310, {}, { zh: '扭蛋機', en: 'Gacha Machine', desc: '轉動把手，扭蛋掉出滾到前面打開，冒出星星', tags: ['抽獎', '揭曉', '活潑'], sample: ['抽到哪一戶？'], motion: `橘色扭蛋機，透明圓頂裡有各色扭蛋輕輕晃動；黑色把手轉一圈後，一顆扭蛋從出口掉出彈跳、滾到前面，上半殼掀開，冒出一圈白色與黃色星星。${FLAT}`, motionEn: `An orange gacha machine with coloured capsules jiggling in its clear dome; the black handle turns a full circle, a capsule drops out, bounces and rolls forward, its top shell flips open and a ring of white and yellow stars pops out. ${FLAT_EN}` }),
   prop('gacha', 'lots', 311, { color: '#c0392b', color2: '#f2b705', bg: '#fff3e2' }, { zh: '搖籤筒', en: 'Fortune Sticks', desc: '籤筒左右搖晃，一支籤往上跳出來', tags: ['抽籤', '揭曉', '節慶'], sample: ['今天的好運'], motion: `紅色籤筒裡插著一把木籤（籤頭塗色），先左右快速搖晃再停下，中間一支籤往上跳出並回彈，頂端冒出放射狀的黃色短線。${FLAT}`, motionEn: `A red fortune cylinder holds a bundle of wooden sticks with painted tips; it shakes rapidly side to side, stops, and one stick in the middle pops up with a bounce as short yellow rays burst above it. ${FLAT_EN}` }),
 );
+
+// 合併非精修天體與飛越卡；舊樣式 ID 及原繪製程式繼續保留。
+for (const [key, info] of Object.entries(OBJECT_COSMOS_GROUPS)) {
+  const fx = objects.find(f => f.id === info.id)!;
+  fx.zh = info.zh;
+  fx.en = ({ orbit: 'Celestial Collection', flyover: 'Planet Flyover', earthzoom: 'Earth Approach' })[key as keyof typeof OBJECT_COSMOS_GROUPS];
+  fx.desc = info.desc;
+  fx.hint = '按「編輯物件」開啟本招獨立編輯器，切換樣式與調整大小、速度、配色、文字及透明背景。';
+  fx.motion += ' ' + info.desc;
+}

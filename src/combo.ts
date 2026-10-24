@@ -82,10 +82,10 @@ const byId = new Map(ALL_EFFECTS.map((f) => [f.id, f]));
 export const findEffect = (id: string): Fx | undefined => {
   const exact=byId.get(id);if(exact)return exact;
   const number=String(id).replace(/^#/, '').replace(/^0+/, '');
-  // A retained public number opens the merged editor; explicit legacy IDs still play the original.
+  // Exact IDs preserve saved scenes; numeric links use the visible catalog.
   return EFFECTS.find(f=>String(NUM.get(f.id))===number)
     ?? ALL_EFFECTS.find(f=>String(NUM.get(f.id))===number)
-    ?? ALL_EFFECTS.find(f=>String(f.no)===number); // Previously published #253–255 remain valid aliases.
+    ?? ALL_EFFECTS.find(f=>String(f.no)===number);
 };
 
 const isHex = (s: unknown): s is string => typeof s === 'string' && /^#[0-9a-f]{6}$/i.test(s);

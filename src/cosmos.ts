@@ -11,9 +11,9 @@ export interface CosmicScene{
 export interface CosmicField{key:keyof CosmicScene;label:string;min:number;max:number;step:number}
 export function cosmicEngine(){
  const modes:Record<CosmicMode,{zh:string;en:string;id:string;no:number;desc:string}>={
-  orbit:{zh:'精修天體',en:'Illustrated Celestial Collection',id:'cosmos-illustrated-orbit',no:169,desc:'行星光環、太陽、月球、地球四樣式；球面紋理隨自轉移動，光環與衛星有前後遮擋'},
-  flyover:{zh:'精修星球飛越',en:'Illustrated Planet Flyover',id:'cosmos-illustrated-flyover',no:195,desc:'地球、月球、火星、太陽四種地表；細緻地景依透視從地平線迎面掠過'},
-  earthzoom:{zh:'精修推近地球',en:'Illustrated Earth Approach',id:'cosmos-illustrated-earthzoom',no:199,desc:'從太空推近自轉地球，可調起訖倍率、聚焦位置與拉遠方向'},
+  orbit:{zh:'精修天體',en:'Illustrated Celestial Collection',id:'cosmos-illustrated-orbit',no:253,desc:'行星光環、太陽、月球、地球四樣式；球面紋理隨自轉移動，光環與衛星有前後遮擋'},
+  flyover:{zh:'精修星球飛越',en:'Illustrated Planet Flyover',id:'cosmos-illustrated-flyover',no:254,desc:'地球、月球、火星、太陽四種地表；細緻地景依透視從地平線迎面掠過'},
+  earthzoom:{zh:'精修推近地球',en:'Illustrated Earth Approach',id:'cosmos-illustrated-earthzoom',no:255,desc:'從太空推近自轉地球，可調起訖倍率、聚焦位置與拉遠方向'},
  };
  const bodies:Record<CosmicBody,{zh:string;desc:string}>={gas:{zh:'行星光環',desc:'細緻雲帶與多層環帶'},sun:{zh:'太陽',desc:'光球顆粒與細緻日珥'},moon:{zh:'月球',desc:'隕石坑與月面紋理'},earth:{zh:'地球',desc:'海陸、雲層與衛星'},mars:{zh:'火星',desc:'赤褐岩層與峽谷'}};
  const variants=(mode:CosmicMode):CosmicBody[]=>mode==='orbit'?['gas','sun','moon','earth']:mode==='flyover'?['earth','moon','mars','sun']:['earth'];

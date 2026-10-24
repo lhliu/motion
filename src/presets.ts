@@ -6,7 +6,7 @@ import { normalizeIllustration, illustrationFxId, illustrationFromWords, isIllus
 import { parseDrop } from './drop';
 import { sceneLength, type MScene } from './mapkit';
 import { isPhotoFx, normalizePhotoScene, photoFxId, type PScene } from './photokit';
-import { isObjFx, normalizeObjScene, objFxId, objFxModule, type OScene } from './objkit';
+import { isObjFx, normalizeObjScene, objSceneFxId, objSceneForEffect, type OScene } from './objkit';
 import { isPlanFx, normalizePlanScene, planFxId, planFxMode, planLength, planSceneFromWords, type PlanScene } from './plankit';
 
 export type PresetKind = 'map' | 'drop' | 'photo' | 'object' | 'illustration' | 'plan' | 'transport' | 'nature' | 'cosmos';
@@ -60,7 +60,7 @@ export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, 
   const words = (p.data as { words: string[] }).words ?? [];
   if (p.kind === 'object') {
     const sc = normalizeObjScene(p.data as OScene);
-    return { effect: objFxId(sc.module), words: [JSON.stringify(sc)], seconds: sc.loop, ...(sc.font ? { font: sc.font } : {}), note };
+    return { effect: objSceneFxId(sc), words: [JSON.stringify(sc)], seconds: sc.loop, ...(sc.font ? { font: sc.font } : {}), note };
   }
   const d = parseDrop(words).o;
   return { effect: 'crisp-drop', words, seconds: d.loop, ...(d.font ? { font: d.font } : {}), note };
@@ -83,9 +83,8 @@ export const sceneToPresetData = (effect: string, words: string[]): { kind: Pres
   if (effect === 'crisp-drop') return { kind: 'drop', data: { words } };
   if (isPlanFx(effect)) return { kind: 'plan', data: planSceneFromWords(words, planFxMode(effect)) };
   if (isObjFx(effect)) {
-    const j = words.find((w) => w.trim().startsWith('{'));
     try {
-      return { kind: 'object', data: normalizeObjScene(j ? (JSON.parse(j) as OScene) : { module: objFxModule(effect), text: { lines: words } as OScene['text'] }, objFxModule(effect)) };
+      return { kind: 'object', data: objSceneForEffect(words, effect) };
     } catch {
       return null;
     }

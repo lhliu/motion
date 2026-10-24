@@ -73,7 +73,7 @@ export const CATEGORIES: Category[] = [
   { id: 'liquid', sec: 'object', code: 'DROP', zh: '水滴泡泡', tagline: '柔軟、透明、會呼吸' },
   { id: 'meteor', sec: 'illus', code: 'SPACE', zh: '星空物件', tagline: '天體、低空飛越、推近地球、隕石與太空船，五招各有獨立編輯器' },
   { id: 'cube', sec: 'object', code: 'CUBE', zh: '魔術方塊', tagline: '塑膠、金屬、花色、單色' },
-  { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '閃爍星空、光速穿越、旋轉星系' },
+  { id: 'cosmos', sec: 'object', code: 'COSMOS', zh: '星空宇宙', tagline: '星空背景、四種天體、四種地表飛越與獨立推近地球；非精修版' },
   { id: 'site', sec: 'object', code: 'SITE', zh: '建案工地', tagline: '樓層蓋高、起重機、防塵網' },
   { id: 'keys', sec: 'object', code: 'KEYS', zh: '交屋鑰匙', tagline: '鑰匙串、門牌、開門' },
   { id: 'furniture', sec: 'object', code: 'MOVE-IN', zh: '家具進場', tagline: '沙發、立燈、邊桌、掛畫一件件進場' },
@@ -133,7 +133,7 @@ export const ALL_EFFECTS: Fx[] = [
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 從前台隱藏（代碼、編號保留，舊 Combo 與預設仍可用）
-const HIDE = new Set(['obj-cosmos-planet','obj-cosmos-sun','obj-cosmos-moon','obj-cosmos-earth','obj-cosmos-flyby-earth','obj-cosmos-flyby-moon','obj-cosmos-flyby-mars','obj-cosmos-flyby-sun','obj-cosmos-zoom-earth','vehicle-illustrated-car', 'vehicle-illustrated-carriage', 'vehicle-illustrated-train']);
+const HIDE = new Set(['obj-cosmos-sun','obj-cosmos-moon','obj-cosmos-earth','obj-cosmos-flyby-moon','obj-cosmos-flyby-mars','obj-cosmos-flyby-sun','vehicle-illustrated-car', 'vehicle-illustrated-carriage', 'vehicle-illustrated-train']);
 ALL_EFFECTS.forEach((f) => {
   if (HIDE.has(f.id)) f.hidden = true;
 });
@@ -143,7 +143,7 @@ const THREE_D = new Set([
   'text-tunnel', 'ring-tunnel', 'text-orbit', 'text-cylinder', 'extrude', 'star-crawl', 'qa-card', 'flip-cards', 'blinds', 'domino', 'flip-chars', 'text-cube', 'text-corridor', 'paper-cut', 'synthwave',
   'photo-tilt', 'photo-parallax', 'photo-flip',
   'map-flyover',
-  'obj-cube-plastic', 'obj-cube-metal', 'obj-cube-pattern', 'obj-cube-mono', 'obj-cosmos-moon', 'obj-cosmos-earth', 'obj-cosmos-zoom-earth', 'obj-cosmos-flyby-earth', 'obj-cosmos-flyby-moon', 'obj-cosmos-flyby-mars', 'obj-cosmos-flyby-sun',
+  'obj-cosmos-planet', 'obj-cosmos-flyby-earth', 'obj-cosmos-zoom-earth', 'obj-cube-plastic', 'obj-cube-metal', 'obj-cube-pattern', 'obj-cube-mono', 'obj-cosmos-moon', 'obj-cosmos-earth', 'obj-cosmos-flyby-moon', 'obj-cosmos-flyby-mars', 'obj-cosmos-flyby-sun',
   'plan-tilt',
   'layer-section',
 ]);

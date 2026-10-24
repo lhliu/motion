@@ -17,7 +17,7 @@ import { esc } from './util';
 import { initCombos } from './combo-ui';
 import { isPhotoFx, photoSceneFromWords, type PModule } from './photokit';
 import { isPlanFx, planFxMode, planSceneFromWords } from './plankit';
-import { isObjFx, objFxModule, objSceneFromWords, OBJ_MODULES, type OModule, type OScene } from './objkit';
+import { isObjFx, objFxModule, objSceneForEffect, OBJ_MODULES, type OModule, type OScene } from './objkit';
 import { comboHtmlReady, findEffect } from './combo';
 import { engineReady, ensureEngines, loadEngine } from './engines';
 import { sceneFromWords } from './effects/map';
@@ -1212,7 +1212,7 @@ const combos = initCombos({
     }
     if (effect.startsWith('mx-')) return mxStudio.open(effect, words);
     if (isObjFx(effect)) {
-      const data = objSceneFromWords(words, objFxModule(effect));
+      const data = objSceneForEffect(words, effect);
       return meta ? objStudio.loadPreset({ ...meta, data }) : objStudio.load(data);
     }
     return meta ? studio.loadPreset({ ...meta, data: { words } }) : studio.load(words);

@@ -5,16 +5,40 @@ import{ALL_EFFECTS,EFFECTS,PALETTES,NUM,secOf}from'/src/data.ts';
 import{findEffect,normalizeCombo,sceneSeconds}from'/src/combo.ts';
 import{presetToScene,sceneToPresetData}from'/src/presets.ts';
 import{TOOLS}from'/functions/_lib/tools.ts';
+import{objSceneForEffect,objFields,normalizeObjScene,OBJECT_COSMOS_GROUPS}from'/src/objkit.ts';
+import{drawObj}from'/src/render/obj.ts';
 import{exportHtml}from'/src/prompts.ts';import{toneVars}from'/src/engine.ts';
 const results=[],items=[],check=(v,m)=>{if(!v)throw Error(m)},cv=()=>{const c=document.createElement('canvas');c.width=270;c.height=480;return c},pixels=c=>c.getContext('2d').getImageData(0,0,c.width,c.height).data;
 async function test(name,fn){try{await fn();results.push({name,passed:true})}catch(e){results.push({name,passed:false,error:String(e)})}}
-await test('沿用 169／195／199，各自編輯，原版保留且前台編號唯一',()=>{
- for(const [mode,no,previous] of [['orbit',169,253],['flyover',195,254],['earthzoom',199,255]]){const fx=findEffect(String(no));check(fx.id===cosmicFxId(mode)&&!fx.hidden&&NUM.get(fx.id)===no,'Wrong canonical number '+no);check(findEffect('#'+no)===fx&&findEffect(String(previous))===fx,'Number alias broken');check(R.modes[mode].no===no&&secOf(fx)==='illus'&&fx.cat==='meteor','Wrong editor or workspace');}
- for(const id of ['planet','sun','moon','earth','flyby-earth','flyby-moon','flyby-mars','flyby-sun','zoom-earth'])check(findEffect('obj-cosmos-'+id).hidden,'Original removed '+id);
+await test('非精修與精修分區、編號唯一，六個合併樣式隱藏保留',()=>{
+ for(const [mode,no,original] of [['orbit',253,169],['flyover',254,195],['earthzoom',255,199]]){
+  const fx=findEffect(String(no)),raw=findEffect(String(original));
+  check(fx.id===cosmicFxId(mode)&&!fx.hidden&&NUM.get(fx.id)===no,'Wrong refined number '+no);
+  check(R.modes[mode].no===no&&secOf(fx)==='illus'&&fx.cat==='meteor','Wrong refined workspace');
+  check(raw.id===OBJECT_COSMOS_GROUPS[mode].id&&!raw.hidden&&secOf(raw)==='object'&&raw.cat==='cosmos','Wrong original workspace');
+ }
  for(const no of [185,186,187,196,197,198])check(findEffect(String(no)).hidden,'Merged extra still visible '+no);
  check(new Set(EFFECTS.map(f=>NUM.get(f.id))).size===EFFECTS.length,'Duplicate public numbers');
- check(EFFECTS.filter(f=>f.id.startsWith('cosmos-illustrated-')).length===3,'Wrong card count');check(EFFECTS.filter(f=>f.cat==='cosmos').length===3&&EFFECTS.filter(f=>f.cat==='meteor').length===5,'Wrong cosmos count');check(new Set(ALL_EFFECTS.map(f=>f.no)).size===ALL_EFFECTS.length,'Duplicate numbers');
+ check(EFFECTS.filter(f=>f.id.startsWith('cosmos-illustrated-')).length===3,'Wrong card count');check(EFFECTS.filter(f=>f.cat==='cosmos').length===6&&EFFECTS.filter(f=>f.cat==='meteor').length===5,'Wrong cosmos count');check(new Set(ALL_EFFECTS.map(f=>f.no)).size===ALL_EFFECTS.length,'Duplicate numbers');
  check(norm({mode:'orbit',body:'mars'}).body==='gas'&&norm({mode:'earthzoom',body:'sun'}).body==='earth','Invalid body accepted');check(norm({mode:'__proto__',body:'constructor',spin:Infinity,size:999}).size===2,'Unsafe normalization');
+});
+await test('非精修九樣式可繪製、獨立控制範圍與 Combo／預設往返',()=>{
+ for(const [group,variants] of [['orbit',['planet','sun','moon','earth']],['flyover',['earth','moon','mars','sun']],['earthzoom',['earth']]]){
+  const info=OBJECT_COSMOS_GROUPS[group],scene=objSceneForEffect([],info.id),fields=objFields(scene),images=new Set(),a=cv();
+  check(scene.cosmosGroup===group,'Missing editor group');
+  if(group==='orbit')check(fields.find(f=>f.k==='mode').opts.length===4&&!fields.some(f=>f.k==='surface'),'Wrong orbit controls');
+  if(group==='flyover')check(fields.find(f=>f.k==='surface').opts.length===4&&!fields.some(f=>f.k==='mode'),'Wrong flyover controls');
+  if(group==='earthzoom')check(scene.params.mode==='earth'&&scene.params.cam==='in'&&!fields.some(f=>['mode','surface'].includes(f.k)),'Wrong zoom controls');
+  for(const variant of variants){
+   const sc=normalizeObjScene({...scene,params:{...scene.params,[group==='flyover'?'surface':'mode']:variant}});
+   drawObj(a.getContext('2d'),a.width,a.height,sc,3);const frame=a.toDataURL();images.add(frame);drawObj(a.getContext('2d'),a.width,a.height,sc,4);check(frame!==a.toDataURL(),'Static original '+variant);
+   const preset=sceneToPresetData(info.id,[JSON.stringify(sc)]),combo=presetToScene({kind:'object',data:preset.data,name:group});
+   check(combo.effect===info.id&&JSON.parse(combo.words[0]).cosmosGroup===group,'Lost original editor in Combo');
+   check(objSceneForEffect(combo.words,combo.effect).params[group==='flyover'?'surface':'mode']===variant,'Lost original style');
+  }
+  check(images.size===variants.length,'Styles do not differ');
+  check(sceneToPresetData(info.id,[]).data.cosmosGroup===group,'Default Combo lost group');
+ }
 });
 for(const mode of Object.keys(R.modes))for(const body of R.variants(mode))await test(mode+'/'+body+'：載入、動態、重現、透明輸出',async()=>{
  const a=cv(),b=cv(),scene=norm({mode,body}),r=R.createRenderer(a,b,scene,location.origin);await r.ready;r.render(4);const p=a.toDataURL();r.render(7);check(p!==a.toDataURL(),'Static');r.render(4);check(p===a.toDataURL(),'Nondeterministic');
