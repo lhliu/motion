@@ -60,7 +60,7 @@ const handle = async (m: RpcReq, ctx: Ctx, origin: string) => {
           title: t.title,
           description: t.write && !writable ? `${t.description}（目前連線沒有金鑰，呼叫會被拒絕）` : t.description,
           inputSchema: t.inputSchema,
-          ...(t.annotations ? { annotations: { title: t.title, ...t.annotations } } : {}),
+          ...(t.annotations ? { annotations: t.annotations } : {}),
         })),
       });
     }

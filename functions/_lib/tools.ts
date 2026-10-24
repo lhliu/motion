@@ -143,6 +143,9 @@ const comboView = (c: Combo, origin: string, withHtml = false) => ({
   ...(withHtml ? { html: comboHtml(c) } : {}),
 });
 
+/** 拿掉 schema 裡的說明文字（save_combo 的欄位與 compose_combo 相同，說明只留一份） */
+const bare = <T,>(v: T): T => (Array.isArray(v) ? (v.map(bare) as T) : v && typeof v === 'object' ? (Object.fromEntries(Object.entries(v).filter(([k]) => k !== 'description').map(([k, x]) => [k, bare(x)])) as T) : v);
+
 const comboInput = {
   title: { type: 'string', description: 'Combo 名稱，例如「建案開箱片頭」' },
   brief: { type: 'string', description: '原始需求或用途說明（之後搜尋用）' },
@@ -211,7 +214,7 @@ const resolvePresets = async (a: Args, env: Env): Promise<string[]> => {
   return errors;
 };
 
-export const TOOLS: ToolDef[] = [
+const TOOLS_FULL: ToolDef[] = [
   {
     name: 'list_categories',
     title: '列出分類與配色',
@@ -792,8 +795,8 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'save_combo',
     title: '儲存 Combo',
-    description: '把 Combo 存進 Combo 庫（Cloudflare D1），之後可在網站的 Combo 庫瀏覽、播放與複製。帶 id 代表更新既有的 Combo。需要寫入金鑰。',
-    inputSchema: { type: 'object', required: ['title', 'scenes'], properties: { id: { type: 'string', description: '要更新的 Combo id；省略則新增' }, ...comboInput } },
+    description: '把 Combo 存進 Combo 庫（Cloudflare D1），之後可在網站的 Combo 庫瀏覽、播放與複製。帶 id 代表更新既有的 Combo。需要寫入金鑰。欄位與 compose_combo 相同，說明見 compose_combo。',
+    inputSchema: { type: 'object', required: ['title', 'scenes'], properties: { id: { type: 'string', description: '要更新的 Combo id；省略則新增' }, ...bare(comboInput) } },
     annotations: { readOnlyHint: false, destructiveHint: false },
     write: true,
     run: async (a, ctx) => {
@@ -847,6 +850,25 @@ export const TOOLS: ToolDef[] = [
     },
   },
 ];
+
+/** 精修插畫工具的微調參數很多（25 項以上），清單只列常用欄位；其他照回傳的 params_doc 直接當參數或放進 scene 傳入，伺服器一樣接受 */
+const KEEP: Record<string, string[]> = {
+  build_illustration_scene: ['scene', 'mode', 'animal', 'ratio', 'background', 'duration', 'speed', 'size', 'x', 'y', 'color', 'title'],
+  build_transport_scene: ['scene', 'mode', 'ratio', 'background', 'duration', 'speed', 'size', 'x', 'y', 'direction', 'color', 'title'],
+  build_nature_scene: ['scene', 'mode', 'style', 'ratio', 'background', 'duration', 'speed', 'size', 'x', 'y', 'color', 'title'],
+  build_cosmos_scene: ['scene', 'mode', 'body', 'variant', 'ratio', 'background', 'duration', 'speed', 'size', 'x', 'y', 'title'],
+};
+export const TOOLS: ToolDef[] = TOOLS_FULL.map((t) => {
+  const keep = KEEP[t.name];
+  if (!keep) return t;
+  const props = (t.inputSchema as { properties?: Record<string, unknown> }).properties ?? {};
+  const kept = Object.fromEntries(Object.entries(props).filter(([k]) => keep.includes(k)));
+  return {
+    ...t,
+    description: `${t.description}（其他專屬微調參數見回傳的 params_doc，可直接當參數或放進 scene 傳入）`,
+    inputSchema: { ...t.inputSchema, properties: kept, additionalProperties: true },
+  };
+});
 
 export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音動態素材庫，共 ${EFFECTS.length} 招，分十個工作區：文字特效、轉場（cut-*：色塊推擠、形狀擦除、開門、翻頁、閃白閃黑、甩鏡、故障；整段就是一次換場，放在兩段之間）、元件（ui-* 社群介面、hook-* 開場收尾、estate-* 房產資訊；數字、評分、工程進度只用使用者提供或可查證的資料，資料來源用 estate-source 標註）、圖片運鏡（${EFFECTS.filter((f) => secOf(f) === 'photo').length} 個照片模組）、地圖區位（含捷運／鐵路路網 transit-*；mx-* 地圖招式：台灣定位、兩區對照、通勤賽跑、地圖導航、生活機能地圖、行程串連、聚光燈、重劃區分期、重大建設、分區、地籍、著色圖、泡泡、立體長條、嫌惡設施、淹水潛勢、學區、雷達、導航、指北針比例尺、新舊對照，words 格式見 get_effect 的 word_hint；底圖是示意，官方圖資類標註示意）、物件特效（水滴、魔術方塊、星空宇宙，以及建案工地、交屋鑰匙、家具進場、等角小屋、合約文件、城市天際線、天氣、交通號誌、植物、時間、慶祝、錢幣存錢筒、抽籤扭蛋，用 build_object_scene 的 module 指定）、插畫（星空物件系列：天體／飛越／推近地球用 build_cosmos_scene，隕石與俯瞰用 build_nature_scene、交通工具用 build_transport_scene、海底世界用 build_illustration_scene）、格局（plan-*：戶別定位、逐間高亮、看屋動線、單房聚焦、公設導覽、戶型比較、平面立體傾斜，用 build_plan_scene）、圖表特效（chart-* 共 20 種，words 一行一筆「標籤 數值」，格式見 get_effect 的 word_hint）、圖解動畫（工法剖面等客製示意圖，文字可換、構圖需改寫原始碼）。所有特效都是原生 HTML/CSS/JS。
 你可以：查特效（search_effects / get_effect）、把多個特效組成 Combo 動畫（compose_combo），並存進 Combo 庫（save_combo）當作日後參考（list_combos / get_combo）。
