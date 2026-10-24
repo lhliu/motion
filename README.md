@@ -165,6 +165,18 @@ npm run preview
 npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 ```
 
+### 自動畫面檢查
+
+改完特效或共用引擎後跑一次，確認沒有招式壞掉：
+
+```sh
+npm run check:visual                   # 每招截兩格，抓執行錯誤、素材 404、整格空白
+npm run check:visual -- --base main    # 另外跟 main 逐像素比對，列出畫面有變的招式
+npm run check:visual -- mx- cut-       # 只檢查 id 含這些字的招式
+```
+
+報告在 `visual-report/index.html`（不進版控）。用假時鐘與固定亂數種子截圖，同一版本兩次結果一致；少數以畫格計數的招式（例如 LED 看板）會列在「不穩定」，不算改動。有錯誤或空白時結束碼為 1。需要本機 Chromium（雲端環境的 `/opt/pw-browsers/chromium` 會自動使用；其他電腦先跑 `npx playwright-core install chromium`）。
+
 ## 結構
 
 | 路徑 | 用途 |
