@@ -389,6 +389,9 @@ const renderWs = () => {
     (x) =>
       `<button type="button" data-sec="${x.id}" aria-pressed="${!kitsOn && state.sec === x.id}" title="${esc(x.desc)}">${SEC_ICON[x.id]}<span>${x.zh}</span><small>${secFx(x.id).length}</small></button>`,
   ).join('') + `<button type="button" data-kits aria-pressed="${kitsOn}" title="常見段落順序的現成 Combo，一鍵帶進草稿">${KITS_ICON}<span>套組</span><small>${KITS.length}</small></button>`;
+  // 手機上分頁列可左右滑：把目前的工作區捲到看得到的位置
+  const on = wsEl.querySelector<HTMLElement>('[aria-pressed="true"]');
+  if (on && wsEl.scrollWidth > wsEl.clientWidth) wsEl.scrollLeft = on.offsetLeft - (wsEl.clientWidth - on.offsetWidth) / 2;
 };
 const renderHeroCopy = () => {
   const x = SECTIONS.find((y) => y.id === state.sec)!;
@@ -1326,6 +1329,25 @@ $('#heroStudio').addEventListener('click', () => {
 });
 // 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊
 new ResizeObserver(([e]) => document.documentElement.style.setProperty('--top-h', `${Math.round(e.borderBoxSize?.[0]?.blockSize ?? (e.target as HTMLElement).offsetHeight)}px`)).observe($('.ma-top'));
+// 手機：往下捲收起站頂、往上捲叫回來
+{
+  let lastY = scrollY;
+  addEventListener(
+    'scroll',
+    () => {
+      const y = scrollY;
+      if (Math.abs(y - lastY) < 8) return;
+      document.body.classList.toggle('hide-top', y > lastY && y > 240 && matchMedia('(max-width: 720px)').matches);
+      lastY = y;
+    },
+    { passive: true },
+  );
+}
+const wbMore = $('#wbMore');
+wbMore.addEventListener('click', () => {
+  const open = wbMore.closest('.workbench')!.classList.toggle('open');
+  wbMore.setAttribute('aria-expanded', String(open));
+});
 const startHero = () => heroShow(0);
 if (document.fonts?.ready) document.fonts.ready.then(startHero);
 else startHero();

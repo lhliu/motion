@@ -110,7 +110,7 @@ kbd {
   align-items: center;
   gap: 16px;
   padding: 12px clamp(16px, 4vw, 40px);
-  background: color-mix(in srgb, var(--page) 82%, transparent);
+  background: color-mix(in srgb, var(--page) 94%, transparent);
   backdrop-filter: blur(14px) saturate(1.4);
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
   border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
@@ -780,6 +780,7 @@ select {
 }
 .card-en {
   left: 9px;
+  transition: opacity 0.2s;
   font-family: var(--mono);
   color: #fff;
   background: #0000006b;
@@ -796,6 +797,51 @@ select {
   padding: 2px 9px;
   border-radius: 999px;
   box-shadow: 0 1px 4px #0003;
+}
+/* 英文名稱小標滑過才出現，不擋住卡片內容；精修插畫卡已有徽章就不顯示 */
+@media (hover: hover) {
+  .ma-card .card-en {
+    opacity: 0;
+  }
+  .ma-card:hover .card-en,
+  .ma-card:focus-within .card-en {
+    opacity: 1;
+  }
+}
+@media (hover: none) {
+  .ma-card .card-en {
+    display: none;
+  }
+}
+.card-stage:has(.ill-badge) .card-en {
+  display: none;
+}
+.wb-more {
+  display: none;
+}
+@media (max-width: 720px) {
+  .wb-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line-2);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-2);
+  }
+  .wb-more::after {
+    content: '▾';
+    transition: transform 0.2s;
+  }
+  .workbench.open .wb-more::after {
+    transform: rotate(180deg);
+  }
+}
+body {
+  overflow-x: clip;
 }
 .card-meta {
   display: flex;
@@ -1285,7 +1331,10 @@ pre.code {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 28px;
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  width: max-content;
+  max-width: min(92vw, 560px);
+  text-align: center;
   z-index: 100;
   transform: translate(-50%, 20px);
   opacity: 0;
@@ -1293,7 +1342,7 @@ pre.code {
   background: var(--ink);
   color: var(--page);
   padding: 10px 18px;
-  border-radius: 999px;
+  border-radius: 18px;
   font-size: 14px;
   font-weight: 700;
   box-shadow: var(--shadow-lg);
@@ -1886,8 +1935,16 @@ pre.code {
     var(--page);
   box-shadow: var(--shadow);
 }
-.dr-preview[data-ratio='9:16'] {
-  aspect-ratio: 4/5;
+.dr-preview[data-ratio='9:16'],
+.dr-preview[data-ratio='1:1'] {
+  /* 直式預覽限制高度，存檔與輸出按鈕不會被擠到畫面外 */
+  aspect-ratio: 9/16;
+  height: min(58vh, 640px);
+  width: auto;
+  margin-inline: auto;
+}
+.dr-preview[data-ratio='1:1'] {
+  aspect-ratio: 1;
 }
 .dr-meta {
   margin: 0;
@@ -2624,17 +2681,41 @@ pre.code {
   .brand-t small {
     display: none;
   }
+  /* 十個工作區放不下：分頁列改成可左右滑，右側淡出提示還有 */
   .ws {
     order: 3;
     flex: 1 1 100%;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    mask: linear-gradient(90deg, #000 88%, transparent);
+  }
+  .ws::-webkit-scrollbar {
+    display: none;
   }
   .ws button {
-    flex: 1 1 0;
-    min-width: 0;
+    flex: 0 0 auto;
     justify-content: center;
     gap: 4px;
-    padding: 0 4px;
-    font-size: 13px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+  /* 往下捲時收起站頂，篩選列貼到最上面；往上捲再出現 */
+  .ma-top {
+    transition: transform 0.25s var(--ease);
+  }
+  body.hide-top .ma-top {
+    transform: translateY(-100%);
+  }
+  .filters {
+    transition: top 0.25s var(--ease);
+  }
+  body.hide-top .filters {
+    top: 0;
+  }
+  /* 預覽設定只先顯示文字框，配色、字型收進「更多」 */
+  .workbench:not(.open) > :not(.wb-text):not(.wb-more) {
+    display: none;
   }
 }
 @media (max-width: 440px) {
@@ -2937,3 +3018,10 @@ pre.code {
 :is(#nsControls,#asControls,#csControls,#fsControls,#ezControls) input:disabled{opacity:.35}
 :is(.nature-studio,.cosmic-studio) .st-out button:disabled{opacity:.5;cursor:wait}
 @media(max-width:700px){:is(.nature-studio,.cosmic-studio) .st-panel{min-width:0}:is(.nature-studio,.cosmic-studio) .st-left{padding:14px}:is(.nature-studio,.cosmic-studio) .st-row{grid-template-columns:80px minmax(0,1fr) auto}:is(.nature-studio,.cosmic-studio) .d-controls{gap:8px}}
+
+/* 手機首屏：統計只留前三項，避免第四項單獨掉到下一行 */
+@media (max-width: 440px) {
+  .stats li:nth-child(4) {
+    display: none;
+  }
+}
