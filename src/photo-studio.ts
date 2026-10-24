@@ -1,8 +1,7 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
+import { coverParams, drawPhoto, placeholder } from './render/photo';
 import {
-  coverParams,
   defaultPhotoScene,
-  drawPhoto,
   MODULE_DEFAULTS,
   MODULE_INFO,
   normalizePhotoScene,
@@ -12,7 +11,6 @@ import {
   PHOTO_MODULES,
   PHOTO_GROUPS,
   slotsOf,
-  placeholder,
   RATIO_PX,
   type PField,
   type PModule,

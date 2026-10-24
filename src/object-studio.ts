@@ -1,5 +1,6 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
-import { defaultObjScene, drawObj, METEOR_COLORS, OCEAN_PRESETS, objFxId, normalizeObjScene, OBJ_DEFAULTS, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from './objkit';
+import { drawObj } from './render/obj';
+import { defaultObjScene, METEOR_COLORS, OCEAN_PRESETS, objFxId, normalizeObjScene, OBJ_DEFAULTS, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from './objkit';
 import type { PField } from './photokit';
 import { esc } from './util';
 import { FONT_PACKS, preloadFonts } from './fonts';

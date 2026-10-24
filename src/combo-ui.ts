@@ -2,7 +2,7 @@ import { isCosmicFx } from './cosmos';
 import { isNatureFx } from './nature';
 import { isTransportFx } from './transport';
 import { isIllustrationFx } from './illustration';
-import { comboHtml, comboOutline, comboPrompt, sceneSummary, decodeCombo, encodeCombo, findEffect, normalizeCombo, sceneSeconds, totalSeconds, TRANSITIONS, TRANSITION_INFO, type Combo, type ComboOverlay, type ComboScene, type Transition } from './combo';
+import { comboHtmlReady, isMxSet, comboOutline, comboPrompt, sceneSummary, decodeCombo, encodeCombo, findEffect, normalizeCombo, sceneSeconds, totalSeconds, TRANSITIONS, TRANSITION_INFO, type Combo, type ComboOverlay, type ComboScene, type Transition } from './combo';
 import { EFFECTS, NUM, secOf } from './data';
 import type { Ratio } from './prompts';
 import type { Tone } from './types';
@@ -67,14 +67,15 @@ export const initCombos = (deps: ComboDeps) => {
 
   const sceneRow = (s: ComboScene, i: number) => {
     const fx = findEffect(s.effect);
-    const words = (s.words ?? fx?.sample ?? []).join(' / ');
+    const words = (s.words ?? fx?.sample ?? []).filter((x) => !isMxSet(x)).join(' / ');
+    const mxSet = (s.words ?? []).find(isMxSet);
     const diagram = fx?.cat === 'diagram';
     const long = isCosmicFx(s.effect) || isNatureFx(s.effect) || isTransportFx(s.effect) || isIllustrationFx(s.effect) || s.effect === 'map-overlay' || s.effect === 'crisp-drop' || isPhotoFx(s.effect) || (isObjFx(s.effect) && !!s.words?.[0]?.trim().startsWith('{'));
     return `<li class="dr-scene" data-i="${i}">
       <div class="dr-s-head"><span class="ma-num">${pad(i + 1)}</span><button class="dr-fx" data-act="open" title="打開特效">${fx ? `${esc(fx.zh)} <small>#${pad(NUM.get(fx.id)!)} ${esc(fx.en)}</small>` : esc(s.effect)}</button>
-        <span class="dr-s-tools"><button class="ic" data-act="up" aria-label="上移"${i === 0 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg></button><button class="ic" data-act="down" aria-label="下移"${i === draft.scenes.length - 1 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>${long ? '<button class="ic" data-act="studio" aria-label="在工作室開啟" title="在工作室開啟">✎</button>' : ''}<button class="ic" data-act="dup" aria-label="複製這段"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><button class="ic" data-act="del" aria-label="刪除這段"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span></div>
+        <span class="dr-s-tools"><button class="ic" data-act="up" aria-label="上移"${i === 0 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg></button><button class="ic" data-act="down" aria-label="下移"${i === draft.scenes.length - 1 ? ' disabled' : ''}><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>${long || s.effect.startsWith('mx-') ? '<button class="ic" data-act="studio" aria-label="在工作室開啟" title="在工作室開啟">✎</button>' : ''}<button class="ic" data-act="dup" aria-label="複製這段"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><button class="ic" data-act="del" aria-label="刪除這段"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span></div>
       <div class="dr-s-body">
-        ${long ? `<label><span>內容</span><input value="${esc(sceneSummary(s.effect, s.words ?? fx?.sample ?? []))}" readonly title="這段的內容請在工作室編輯後重新加入"></label>` : diagram ? `<label><span>部位文字（每行一項，保留空行）</span><textarea data-k="words" rows="4" aria-label="圖解部位文字" placeholder="${esc(fx?.hint ?? '')}">${esc((s.words ?? fx?.sample ?? []).join('\n'))}</textarea></label>` : `<label><span>文字（/ 分隔）</span><input data-k="words" value="${esc(words)}" placeholder="${esc(fx?.hint ?? '')}"></label>`}
+        ${long ? `<label><span>內容</span><input value="${esc(sceneSummary(s.effect, s.words ?? fx?.sample ?? []))}" readonly title="這段的內容請在工作室編輯後重新加入"></label>` : diagram ? `<label><span>部位文字（每行一項，保留空行）</span><textarea data-k="words" rows="4" aria-label="圖解部位文字" placeholder="${esc(fx?.hint ?? '')}">${esc((s.words ?? fx?.sample ?? []).join('\n'))}</textarea></label>` : `<label><span>文字（/ 分隔）${mxSet ? `<em class="dr-set">${/"bg"/.test(mxSet) ? '含自訂底圖' : ''}${/"bg"/.test(mxSet) && /"pos"/.test(mxSet) ? '・' : ''}${/"pos"/.test(mxSet) ? '已調位置' : ''}（按 ✎ 修改）</em>` : ''}</span><input data-k="words" value="${esc(words)}" placeholder="${esc(fx?.hint ?? '')}"></label>`}
         <label class="sm"><span>秒數</span><input data-k="seconds" type="number" min="0.8" max="20" step="0.1" value="${sceneSeconds(s)}"></label>
         <label class="sm"><span>字型</span><select data-k="font"><option value="">跟整支</option>${FONT_PACKS.map((f) => `<option value="${f.id}"${s.font === f.id ? ' selected' : ''}>${f.zh}</option>`).join('')}</select></label>
         ${i ? `<label class="sm"><span>進場轉場</span><select data-k="transition"><option value="">跟整支</option>${TRANSITIONS.map((t) => `<option value="${t}"${s.transition === t ? ' selected' : ''}>${TRANSITION_INFO[t].zh}</option>`).join('')}</select></label>` : ''}
@@ -254,7 +255,7 @@ export const initCombos = (deps: ComboDeps) => {
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise<void>((res) => (rec.onstop = () => res()));
       rec.start(250);
-      frame.srcdoc = comboHtml(combo, { hud: false, loop: false });
+      frame.srcdoc = await comboHtmlReady(combo, { hud: false, loop: false });
       const stopAt = setTimeout(() => rec.state !== 'inactive' && rec.stop(), total * 1000 + 900);
       wrap.querySelector('button')!.addEventListener('click', () => rec.state !== 'inactive' && rec.stop());
       track.addEventListener('ended', () => rec.state !== 'inactive' && rec.stop());
@@ -274,11 +275,11 @@ export const initCombos = (deps: ComboDeps) => {
   let previewTimer = 0;
   const renderPreview = () => {
     clearTimeout(previewTimer);
-    previewTimer = window.setTimeout(() => {
+    previewTimer = window.setTimeout(async () => {
       const frame = $<HTMLIFrameElement>('#drPreview');
       const ok = draft.scenes.length > 0;
       $('#drPreviewWrap').dataset.ratio = draft.ratio ?? '16:9';
-      frame.srcdoc = ok ? comboHtml(withPalette({ ...draft, title: draft.title || '未命名 Combo' }), { safe: safeOn }) : '';
+      frame.srcdoc = ok ? await comboHtmlReady(withPalette({ ...draft, title: draft.title || '未命名 Combo' }), { safe: safeOn }) : '';
       restartAudio();
       $('#drMeta').textContent = ok ? `${draft.scenes.length} 段 · 約 ${totalSeconds(draft)} 秒 · ${draft.ratio} · ${editingId ? `編輯中：${editingId}` : '尚未儲存'}` : '';
     }, 250);
@@ -360,8 +361,11 @@ export const initCombos = (deps: ComboDeps) => {
     if (el.dataset.k === 'words') {
       const diagram = findEffect(s.effect)?.cat === 'diagram';
       const w = el.value.split(diagram ? '\n' : /\s*\/\s*/).map((x) => x.trim());
+      // 地圖招式的位置／底圖設定不在文字欄裡顯示，改文字時保留
+      const keep = (s.words ?? []).filter(isMxSet);
       if (diagram) s.words = w;
-      else if (w.some(Boolean)) s.words = w.filter(Boolean);
+      else if (w.some(Boolean)) s.words = [...w.filter(Boolean), ...keep];
+      else if (keep.length) s.words = [...(findEffect(s.effect)?.sample ?? []), ...keep];
       else delete s.words;
     } else if (el.dataset.k === 'seconds') {
       const v = parseFloat(el.value);
@@ -387,7 +391,7 @@ export const initCombos = (deps: ComboDeps) => {
     renderPreview();
   });
   $('#drCopyPrompt').addEventListener('click', () => draft.scenes.length && deps.copy(comboPrompt(draftCombo().combo), '已複製 Combo 提示詞'));
-  $('#drCopyHtml').addEventListener('click', () => draft.scenes.length && deps.copy(comboHtml(draftCombo().combo, { hud: false }), '已複製 Combo HTML'));
+  $('#drCopyHtml').addEventListener('click', () => draft.scenes.length && void comboHtmlReady(draftCombo().combo, { hud: false }).then((h) => deps.copy(h, '已複製 Combo HTML')));
   $('#drCopyJson').addEventListener('click', () => draft.scenes.length && deps.copy(JSON.stringify(draftCombo().combo, null, 2), '已複製 JSON，可以直接貼給 AI'));
   $('#drClear').addEventListener('click', () => {
     const b = $('#drClear');
@@ -460,7 +464,7 @@ export const initCombos = (deps: ComboDeps) => {
         const f = e.target as HTMLIFrameElement;
         if (e.isIntersecting && !f.srcdoc) {
           const c = library.find((x) => x.id === f.dataset.id) ?? shared;
-          if (c) f.srcdoc = comboHtml(c, { hud: true });
+          if (c) void comboHtmlReady(c, { hud: true }).then((h) => f.isConnected && (f.srcdoc = h));
         } else if (!e.isIntersecting && f.srcdoc) f.removeAttribute('srcdoc');
       }),
     { rootMargin: '80px' },
@@ -531,7 +535,7 @@ export const initCombos = (deps: ComboDeps) => {
     const c = id ? library.find((x) => x.id === id) : shared;
     if (!c) return;
     if (b.dataset.act === 'prompt') return deps.copy(comboPrompt(c), '已複製 Combo 提示詞');
-    if (b.dataset.act === 'html') return deps.copy(comboHtml(c, { hud: false }), '已複製 Combo HTML');
+    if (b.dataset.act === 'html') return void comboHtmlReady(c, { hud: false }).then((h) => deps.copy(h, '已複製 Combo HTML'));
     if (b.dataset.act === 'edit') {
       draft = structuredClone({ ...c, id: undefined, created_at: undefined, updated_at: undefined });
       editingId = c.id;

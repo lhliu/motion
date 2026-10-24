@@ -1,10 +1,6 @@
 import type { Fx } from '../types';
 import { blobPath, esc, lobes, pick, rand, range, rep } from '../util';
-import { fnSource } from '../engine';
-import { FONTS_GLOBALS } from '../fonts';
-import { buildMapScene, mapRenderer, type MScene } from '../mapkit';
-
-export const MAP_GLOBALS = `${FONTS_GLOBALS}window.MA_MAP=${fnSource(mapRenderer)}();`;
+import { buildMapScene, type MScene } from '../mapkit';
 
 /** words 裡第一個以 { 開頭的字串視為場景 JSON；沒有就用鳥瞰範本 */
 export const sceneFromWords = (w: string[]): MScene => {
@@ -100,7 +96,7 @@ export const map: Fx[] = [
     css: `${MAP_CSS}
 .S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`,
     html: (w) => `${svg(base(true))}<canvas data-scene="${esc(JSON.stringify(sceneFromWords(w)))}"></canvas>`,
-    globals: MAP_GLOBALS,
+    engine: 'map',
     run: (root) => {
       const R = (globalThis as unknown as { MA_MAP: { drawScene: (...a: unknown[]) => unknown } }).MA_MAP;
       const cv = root.querySelector('canvas')!;
@@ -170,7 +166,7 @@ export const map: Fx[] = [
           });
       return `${svg(base(true))}<canvas data-scene="${esc(JSON.stringify(sc))}"></canvas>`;
     },
-    globals: MAP_GLOBALS,
+    engine: 'map',
     run: (root) => {
       const R = (globalThis as unknown as { MA_MAP: { drawScene: (...a: unknown[]) => unknown } }).MA_MAP;
       const cv = root.querySelector('canvas')!;

@@ -7,6 +7,8 @@ import { pathToFileURL } from 'node:url';
 
 const [root = '.', out = 'visual-report/cur', ...only] = process.argv.slice(2);
 const load = (p: string) => import(pathToFileURL(resolve(root, p)).href);
+// 繪製引擎改成按需載入後，命令列要先同步載入全部（舊版本沒有這個檔就略過）
+await load('src/engines-all.ts').catch(() => {});
 const { ALL_EFFECTS } = await load('src/data.ts');
 const { comboHtml } = await load('src/combo.ts');
 

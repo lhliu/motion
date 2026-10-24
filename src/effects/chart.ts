@@ -1,9 +1,6 @@
 import type { CatId, Fx } from '../types';
 import { esc } from '../util';
-import { fnSource } from '../engine';
-import { chartRenderer, CHART_HELP } from '../chart';
-
-export const CHART_GLOBALS = `window.MA_CHART=${fnSource(chartRenderer)}();`;
+import { CHART_HELP } from '../chart';
 
 const CSS = `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
 
@@ -43,7 +40,7 @@ const make = (kind: string, cat: CatId, sample: string[], o: Pick<Fx, 'no' | 'zh
   hint: CHART_HELP,
   css: CSS,
   html: (w) => `<canvas data-kind="${kind}" data-w="${esc(JSON.stringify(w))}"></canvas>`,
-  globals: CHART_GLOBALS,
+  engine: 'chart',
   run,
   sample,
   duration: 8,

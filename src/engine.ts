@@ -1,4 +1,5 @@
 import type { Fx, Palette, Tone } from './types';
+import { engineReady, loadEngine } from './engines';
 import { ensureFonts, faceOf, familiesFor, fontStack, NUM_FONT_CSS, weightOf } from './fonts';
 
 /** 每個特效根節點共用的基礎樣式 */
@@ -87,20 +88,28 @@ export const mount = (host: HTMLElement, fx: Fx, words: string[], vars: Vars, sp
   root.innerHTML = fx.html(words);
   host.appendChild(root);
   let cleanup: (() => void) | void;
+  let raf = 0;
+  let stopped = false;
   // 等一個 frame 讓尺寸就緒（canvas 特效需要）
-  const raf = requestAnimationFrame(() => {
-    if (!root.isConnected) return;
-    try {
-      cleanup = fx.run?.(root, words);
-    } catch (e) {
-      console.error(fx.id, e);
-    }
-    setSpeed(root, speed);
-  });
+  const start = () => {
+    raf = requestAnimationFrame(() => {
+      if (!root.isConnected || stopped) return;
+      try {
+        cleanup = fx.run?.(root, words);
+      } catch (e) {
+        console.error(fx.id, e);
+      }
+      setSpeed(root, speed);
+    });
+  };
+  // 繪製引擎按需載入：還沒載入就先載，載完再跑
+  if (engineReady(fx)) start();
+  else loadEngine(fx.engine!).then(start, (e) => console.error(fx.id, e));
   setSpeed(root, speed);
   return {
     root,
     stop: () => {
+      stopped = true;
       cancelAnimationFrame(raf);
       if (typeof cleanup === 'function') cleanup();
       root.remove();

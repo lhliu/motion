@@ -1,5 +1,6 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
-import { drawScene, makeEl, RATIO_PX, sceneLength, syncRoutes, TEMPLATES, TYPE_NAME, type MEl, type MScene, type MType } from './mapkit';
+import { drawScene } from './render/map';
+import { makeEl, RATIO_PX, sceneLength, syncRoutes, TEMPLATES, TYPE_NAME, type MEl, type MScene, type MType } from './mapkit';
 import { esc } from './util';
 import { FONT_PACKS, preloadFonts } from './fonts';
 import { presetBar } from './preset-bar';

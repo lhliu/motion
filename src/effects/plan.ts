@@ -1,10 +1,6 @@
 import type { Fx } from '../types';
 import { esc } from '../util';
-import { fnSource } from '../engine';
-import { FONTS_GLOBALS } from '../fonts';
-import { PLAN_INFO, planLength, planRenderer, planSceneFromWords, type PlanMode } from '../plankit';
-
-export const PLAN_GLOBALS = `${FONTS_GLOBALS}window.MA_PLAN=(()=>{const r=${fnSource(planRenderer)}();return {drawPlan:r.draw};})();`;
+import { PLAN_INFO, planLength, planSceneFromWords, type PlanMode } from '../plankit';
 
 const CSS = `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
 
@@ -55,7 +51,7 @@ const make = (mode: PlanMode, o: Pick<Fx, 'no' | 'tags' | 'sample' | 'motion' | 
     const sc = planSceneFromWords(w, mode);
     return `<canvas data-loop="${planLength(sc)}" data-scene="${esc(JSON.stringify(sc))}"></canvas>`;
   },
-  globals: PLAN_GLOBALS,
+  engine: 'plan',
   run,
   added: '2026-10-23',
   duration: 8,

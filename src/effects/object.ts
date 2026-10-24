@@ -1,11 +1,6 @@
 import type { Fx } from '../types';
 import { esc } from '../util';
-import { fnSource } from '../engine';
-import { FONTS_GLOBALS } from '../fonts';
-import { objRenderer, objSceneFromWords, type OModule } from '../objkit';
-import { propRenderer } from '../propkit';
-
-export const OBJ_GLOBALS = `${FONTS_GLOBALS}window.MA_PROP=${fnSource(propRenderer)}();window.MA_OBJ=${fnSource(objRenderer)}();`;
+import { objSceneFromWords, type OModule } from '../objkit';
 
 const CSS = `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
 
@@ -57,7 +52,7 @@ const make = (
   hint: module === 'ocean' ? '預設無文字。可在物件工作室調整主角、動作、配色與透明背景；字幕可在文字面板開啟。' : '一行一句，~ 開頭為英文小字（最多 4 行）。形狀、材質、顏色請在物件工作室調整，或由 AI 透過 MCP 的 build_object_scene 產生',
   css: CSS,
   html: (w) => `<canvas data-scene="${esc(JSON.stringify(objSceneFromWords(w, module, preset)))}"></canvas>`,
-  globals: OBJ_GLOBALS,
+  engine: 'obj',
   run,
   ...o,
 });

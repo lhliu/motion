@@ -230,6 +230,7 @@
                 <button class="btn-ghost" id="dPhotoStudio" hidden><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m21 16-5-5-8 8" /></svg>放自己的照片（圖片工作室）</button>
                 <button class="ma-btn" id="dIllustrationStudio" hidden>編輯精修插畫</button>
                 <button class="btn-ghost" id="dPlanStudio" hidden><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1" /><path d="M3 12h9V3M12 12v9" /></svg>放自己的平面圖（格局工作室）</button>
+                <button class="btn-ghost" id="dMxStudio" hidden><svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z" /><circle cx="15" cy="11" r="2" /></svg>拖曳位置、換自己的底圖</button>
                 <button class="btn-ghost" id="dObjStudio" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /></svg>打開專屬編輯器調整</button>
                 <button class="btn-ghost" id="dStudio" hidden><svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" /></svg>在水滴工作室調整</button>
                 <button class="btn-ghost" id="dAddCombo"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>加入 Combo</button>
@@ -560,6 +561,46 @@
               <label class="st-row"><span>透明</span><input type="checkbox" id="plTrans" /></label>
               <label class="st-row"><span>字型</span><select id="plFont" class="st-select"></select></label>
             </fieldset>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="mxstudio" class="detail st ms ps" aria-labelledby="mxTitle">
+      <div class="d-inner">
+        <header class="d-head">
+          <div class="d-title">
+            <span class="ma-num cb-badge">⌖</span>
+            <div>
+              <h2 id="mxTitle" tabindex="-1" autofocus>地圖招式編輯器</h2>
+              <p id="mxDesc">拖曳畫面上的圓點調整位置；上傳自己的底圖（截圖、建商區位圖）後，把點拖到正確位置。</p>
+            </div>
+          </div>
+          <div class="d-nav"><button class="ic" id="mxClose" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg></button></div>
+        </header>
+        <div class="st-body">
+          <div class="st-left">
+            <div class="st-stage ms-stage" id="mxStage" data-ratio="9:16"><canvas id="mxCanvas"></canvas></div>
+            <div class="d-controls">
+              <div class="seg" id="mxRatio" role="radiogroup" aria-label="比例"><button data-v="9:16">9:16 手機</button><button data-v="16:9">16:9</button><button data-v="1:1">1:1</button></div>
+              <button class="btn-ghost" id="mxPlay">▶ 播放</button>
+              <label class="ms-loop">時間 <input type="range" id="mxTime" min="0" max="1" step="0.005" value="0.9" /></label>
+            </div>
+            <div class="st-out">
+              <button class="ma-btn" id="mxCombo"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>加入 Combo</button>
+              <button class="btn-ghost" id="mxPng">PNG</button>
+              <button class="btn-ghost" id="mxCopy">複製文字與位置設定</button>
+            </div>
+            <p class="st-note" id="mxNote"></p>
+          </div>
+          <div class="st-panel">
+            <fieldset><legend>招式</legend><select id="mxMode" class="st-select"></select></fieldset>
+            <fieldset><legend>文字</legend><textarea id="mxWords" rows="6" class="mx-words"></textarea><p class="ms-hint" id="mxHint"></p></fieldset>
+            <fieldset><legend>底圖</legend>
+              <div class="st-presets"><label class="btn-ghost mx-file">上傳底圖<input type="file" id="mxFile" accept="image/*" hidden /></label><button type="button" class="btn-ghost" id="mxBgDel">改回示意底圖</button></div>
+              <p class="ms-hint">底圖會壓成 JPEG 一起存進 Combo。請用自己有權使用的圖（自己截的圖要注意地圖服務的使用規範）。</p>
+            </fieldset>
+            <fieldset><legend>位置</legend><div id="mxPts" class="mx-pts"></div><button type="button" class="btn-ghost" id="mxReset">全部回到預設位置</button></fieldset>
           </div>
         </div>
       </div>

@@ -1,3 +1,5 @@
+// 伺服器端一次載入全部繪製引擎，comboHtml／匯出可同步產生
+import '../../src/engines-all';
 // 分享頁：/c/<id> 直接全螢幕播放 Combo
 import { comboHtml, decodeCombo, normalizeCombo, type Combo } from '../../src/combo';
 import type { Ctx } from '../_lib/env';

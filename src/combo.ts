@@ -1,4 +1,5 @@
 import { isCosmicFx, cosmicFromWords, COSMOS } from './cosmos';
+import { ensureEngines, fxGlobals } from './engines';
 import { isNatureFx, natureFromWords, NATURE } from './nature';
 import { isTransportFx, transportFromWords, TRANSPORT } from './transport';
 import { isIllustrationFx, illustrationFromWords, ILLUSTRATION } from './illustration';
@@ -211,8 +212,17 @@ export const sceneSummary = (effect: string, words: string[], quote = false): st
     const opts = words.filter((x) => x.startsWith('@')).join(' ');
     return `${lines.map(q).join(quote ? '、' : ' / ')}${opts ? `（水滴設定 ${opts}）` : ''}`;
   }
+  if (effect.startsWith('mx-')) {
+    // 地圖招式的「@set」行是拖曳位置與底圖（可能是很長的圖片資料），摘要只說明有沒有調過
+    const set = words.find(isMxSet) ?? '', text = words.filter((x) => !isMxSet(x));
+    const tags = [/"pos"/.test(set) ? '已調整位置' : '', /"bg"/.test(set) ? '自訂底圖' : ''].filter(Boolean).join('・');
+    return `${quote ? text.map(q).join('、') : text.join(' / ')}${tags ? `（${tags}）` : ''}`;
+  }
   return quote ? words.map(q).join('、') : words.join(' / ');
 };
+
+/** 地圖招式編輯器寫入的設定行 */
+export const isMxSet = (l: string) => /^@set\s*\{/.test(String(l).trim());
 
 export const sceneSeconds = (s: ComboScene): number => {
   if (s.seconds) return s.seconds;
@@ -280,7 +290,13 @@ const ratioCss: Record<Ratio, string> = {
   '1:1': 'width:min(100vw,100vh);aspect-ratio:1',
 };
 
-/** 產生可獨立播放的 Combo HTML（依序播放、可循環） */
+/** 網站前端用：先載入用到的繪製引擎再產生 HTML */
+export const comboHtmlReady = async (c: Combo, opts: Parameters<typeof comboHtml>[1] = {}): Promise<string> => {
+  await ensureEngines([...c.scenes.map((s) => findEffect(s.effect)), ...(c.overlays ?? []).map((o) => findEffect(o.effect))]);
+  return comboHtml(c, opts);
+};
+
+/** 產生可獨立播放的 Combo HTML（依序播放、可循環）。用到的繪製引擎必須已載入（前端請用 comboHtmlReady） */
 export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean; safe?: boolean } = {}): string => {
   const pal = comboPalette(c);
   const ovs = (c.overlays ?? []).map((o) => ({ o, fx: findEffect(o.effect) })).filter((x): x is { o: ComboOverlay; fx: Fx } => !!x.fx);
@@ -375,7 +391,7 @@ ${css}
 ${templates}
 <script>
 const SCENES=${data.replace(/</g, '\\u003c')};
-${[...new Set(used.map((f) => f.globals).filter(Boolean))].join('\n')}
+${[...new Set(used.map(fxGlobals).filter(Boolean))].join('\n')}
 const RUNS={${runs}};
 const OVERLAYS=${ovData.replace(/</g, '\\u003c')};
 const TRANSITION=${JSON.stringify(t)};

@@ -1,5 +1,6 @@
 import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
-import { defaultPlanScene, drawPlan, planAutoCrop, normalizePlanScene, PLAN_INFO, PLAN_MODES, PLAN_RATIO_PX, planFxId, planLength, planSample, type PlanMode, type PlanScene, type PRoom } from './plankit';
+import { drawPlan, planAutoCrop, planSample } from './render/plan';
+import { defaultPlanScene, normalizePlanScene, PLAN_INFO, PLAN_MODES, PLAN_RATIO_PX, planFxId, planLength, type PlanMode, type PlanScene, type PRoom } from './plankit';
 import { esc } from './util';
 import { FONT_PACKS, preloadFonts } from './fonts';
 import { presetBar } from './preset-bar';

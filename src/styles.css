@@ -3025,3 +3025,12 @@ pre.code {
     display: none;
   }
 }
+
+/* 地圖招式編輯器 */
+#mxstudio .mx-words{width:100%;resize:vertical;font:inherit;font-size:14px;line-height:1.5;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit}
+#mxstudio .mx-pts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+#mxstudio .mx-pt{font-size:13px;padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+#mxstudio .mx-pt.moved{border-color:#3b82f6;color:#3b82f6}
+#mxstudio .mx-file{cursor:pointer}
+#mxstudio .ms-stage canvas{touch-action:none}
+#combos .dr-set{font-style:normal;font-weight:600;color:var(--brand);margin-left:6px;font-size:12px}

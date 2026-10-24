@@ -1,10 +1,6 @@
 import type { Fx } from '../types';
 import { esc } from '../util';
-import { fnSource } from '../engine';
-import { FONTS_GLOBALS } from '../fonts';
-import { MODULE_INFO, photoRenderer, photoSceneFromWords, type PModule } from '../photokit';
-
-export const PHOTO_GLOBALS = `${FONTS_GLOBALS}window.MA_PHOTO=${fnSource(photoRenderer)}();`;
+import { MODULE_INFO, photoSceneFromWords, type PModule } from '../photokit';
 
 const CSS = `.S{background:#151515}
 .S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
@@ -52,7 +48,7 @@ const make = (module: PModule, o: Pick<Fx, 'no' | 'desc' | 'tags' | 'sample' | '
   hint: '在圖片工作室放入照片、調整後加入 Combo；或由 AI 透過 MCP 的 build_photo_scene 產生。文字會當成字幕',
   css: CSS,
   html: (w) => `<canvas data-scene="${esc(JSON.stringify(photoSceneFromWords(w, module)))}"></canvas>`,
-  globals: PHOTO_GLOBALS,
+  engine: 'photo',
   run,
   ...o,
 });

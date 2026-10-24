@@ -1,4 +1,5 @@
 import { isCosmicFx, cosmicFromWords } from './cosmos';
+import { fxGlobals } from './engines';
 import { isNatureFx, natureFromWords, NATURE } from './nature';
 import { isTransportFx, transportFromWords, TRANSPORT } from './transport';
 import { illustrationFromWords, isIllustrationFx, ILLUSTRATION } from './illustration';
@@ -143,7 +144,7 @@ const ratioCss: Record<Ratio, string> = {
 export const exportHtml = (fx: Fx, words: string[], v: Vars, ratio: Ratio): string => {
   const css = scopeCss(fx).trim();
   const script = fx.run
-    ? `\n<script>\n${fx.globals ?? ''}\n${fnSource(fx.run)}(document.querySelector('.fx'), ${JSON.stringify(words)});\n</script>`
+    ? `\n<script>\n${fxGlobals(fx)}\n${fnSource(fx.run)}(document.querySelector('.fx'), ${JSON.stringify(words)});\n</script>`
     : '';
   return `<!doctype html>
 <html lang="zh-Hant-TW">

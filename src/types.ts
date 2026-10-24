@@ -95,6 +95,8 @@ export interface Fx {
   run?: (root: HTMLElement, w: string[]) => (() => void) | void;
   /** 匯出時要先定義的全域程式碼（例如共用繪製引擎） */
   globals?: string;
+  /** 用到的按需載入繪製引擎（見 engines.ts）；匯出時引擎原始碼會接在 globals 後面 */
+  engine?: EngineId;
   /** 建議字數 */
   hint?: string;
   /** 加入時間，用於「最新」排序 */
@@ -135,3 +137,6 @@ export interface Palette {
   accent: string;
   accent2: string;
 }
+
+/** 按需載入的繪製引擎代碼 */
+export type EngineId = 'obj' | 'photo' | 'plan' | 'map' | 'mapfx' | 'chart' | 'transit';

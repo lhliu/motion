@@ -1,9 +1,6 @@
 import type { CatId, Fx } from '../types';
 import { esc } from '../util';
-import { fnSource } from '../engine';
-import { mapfxRenderer, MAPFX_HELP, MAPFX_LOOP } from '../mapfx';
-
-export const MAPFX_GLOBALS = `window.MA_MAPX=${fnSource(mapfxRenderer)}();`;
+import { MAPFX_HELP, MAPFX_LOOP } from '../mapfx';
 
 const CSS = `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
 
@@ -47,7 +44,7 @@ const make = (mode: string, no: number, cat: CatId, sample: string[], o: Pick<Fx
   hint: MAPFX_HELP[mode],
   css: CSS,
   html: (w) => `<canvas data-mode="${mode}" data-w="${esc(JSON.stringify(w.length ? w : sample))}"></canvas>`,
-  globals: MAPFX_GLOBALS,
+  engine: 'mapfx',
   run,
   sample,
   duration: MAPFX_LOOP[mode] + 1.2,

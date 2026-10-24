@@ -3,14 +3,8 @@ import { NATURE_GLOBALS } from '../../src/effects/nature';
 import { TRANSPORT_GLOBALS } from '../../src/effects/transport';
 import { ILLUSTRATION_GLOBALS } from '../../src/effects/illustrated';
 // 繪製引擎：讓本機（例如 Claude Code + Playwright）逐格渲染，跟網站畫出來的一模一樣
-import { PHOTO_GLOBALS } from '../../src/effects/photo';
-import { MAP_GLOBALS } from '../../src/effects/map';
 import { DROP_GLOBALS } from '../../src/drop';
-import { OBJ_GLOBALS } from '../../src/effects/object';
-import { CHART_GLOBALS } from '../../src/effects/chart';
-import { MAPFX_GLOBALS } from '../../src/effects/mapfx';
-import { PLAN_GLOBALS } from '../../src/effects/plan';
-import { TRANSIT_GLOBALS } from '../../src/effects/transit';
+import { CHART_GLOBALS, MAP_GLOBALS, MAPFX_GLOBALS, OBJ_GLOBALS, PHOTO_GLOBALS, PLAN_GLOBALS, TRANSIT_GLOBALS } from '../../src/engines-all';
 import type { Ctx } from '../_lib/env';
 import { NUM_FONT_CSS } from '../../src/fonts';
 

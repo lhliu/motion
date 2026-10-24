@@ -1,9 +1,6 @@
 import type { Fx } from '../types';
 import { esc } from '../util';
-import { fnSource } from '../engine';
-import { transitRenderer, TRANSIT_HELP } from '../transit';
-
-export const TRANSIT_GLOBALS = `window.MA_TRANSIT=${fnSource(transitRenderer)}();`;
+import { TRANSIT_HELP } from '../transit';
 
 const CSS = `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
 
@@ -42,7 +39,7 @@ const make = (id: string, sample: string[], duration: number, o: Pick<Fx, 'no' |
   hint: TRANSIT_HELP,
   css: CSS,
   html: (w) => `<canvas data-w="${esc(JSON.stringify(w))}"></canvas>`,
-  globals: TRANSIT_GLOBALS,
+  engine: 'transit',
   run,
   sample,
   duration,

@@ -8,7 +8,7 @@ import { mount, setSpeed, toneVars, type Mounted } from './engine';
 import { buildPrompt, exportHtml, PROMPT_MODES, type PromptMode, type Ratio } from './prompts';
 import type { Fx, Palette, SecId, Tone } from './types';
 import { KITS, MOOD_PREVIEW, PICKS, TEXT_TAGS, USES } from './uses';
-import { FACE_IDS, FACES, FONT_IDS, FONT_PACKS, NUM_FONT_CSS, preloadFace, preloadFonts, WEIGHT_IDS, WEIGHTS } from './fonts';
+import { FACE_IDS, FACES, FONT_IDS, FONT_PACKS, fontStack, NUM_FONT_CSS, preloadFace, preloadFonts, WEIGHT_IDS, WEIGHTS } from './fonts';
 
 // 數字字型（Anton）在任何特效掛載前就先註冊，工作室的畫布才用得到
 document.head.insertAdjacentHTML('beforeend', `<style id="ma-num-font">${NUM_FONT_CSS}</style>`);
@@ -18,7 +18,8 @@ import { initCombos } from './combo-ui';
 import { isPhotoFx, photoSceneFromWords, type PModule } from './photokit';
 import { isPlanFx, planFxMode, planSceneFromWords } from './plankit';
 import { isObjFx, objFxModule, objSceneFromWords, OBJ_MODULES, type OModule, type OScene } from './objkit';
-import { comboHtml, findEffect } from './combo';
+import { comboHtmlReady, findEffect } from './combo';
+import { engineReady, ensureEngines, loadEngine } from './engines';
 import { sceneFromWords } from './effects/map';
 import { decodeJson, unpackJson, type Preset, type PresetData } from './presets';
 
@@ -471,7 +472,7 @@ const kitIo = new IntersectionObserver(
       const frame = card.querySelector('iframe')!;
       const k = KITS.find((x) => x.id === card.dataset.kit);
       if (!k) continue;
-      if (e.isIntersecting && !gridPaused) frame.srcdoc = comboHtml({ ...k.combo, palette: state.pal, ...(state.custom ? { accent: state.custom } : {}) }, { hud: true });
+      if (e.isIntersecting && !gridPaused) void comboHtmlReady({ ...k.combo, palette: state.pal, ...(state.custom ? { accent: state.custom } : {}) }, { hud: true }).then((h) => frame.isConnected && (frame.srcdoc = h));
       else if (!e.isIntersecting) frame.removeAttribute('srcdoc');
     }
   },
@@ -926,6 +927,13 @@ const renderStage = () => {
 };
 
 const renderPrompt = () => {
+  // 原始碼分頁要內嵌繪製引擎；還沒載入就先顯示載入中，載完重畫
+  if (d.mode === 'code' && !engineReady(d.fx)) {
+    dPrompt.textContent = '載入原始碼中⋯';
+    const fx = d.fx;
+    void loadEngine(fx.engine!).then(() => d.fx === fx && renderPrompt());
+    return;
+  }
   const text = buildPrompt(d.fx, d.mode, d.words, dVars(), d.ratio);
   dPrompt.textContent = text;
   dPrompt.classList.toggle('code', d.mode === 'code');
@@ -969,6 +977,7 @@ const renderDetail = () => {
   $('#dPhotoStudio').hidden = !isPhotoFx(fx.id);
   $('#dPlanStudio').hidden = !isPlanFx(fx.id);
   $('#dObjStudio').hidden = !isObjFx(fx.id)||isIllustrationFx(fx.id);
+  $('#dMxStudio').hidden = !fx.id.startsWith('mx-') || fx.id === 'mx-compass';
   $('#dIllustrationStudio').hidden = !isCosmicFx(fx.id)&&!isIllustrationFx(fx.id)&&!isTransportFx(fx.id)&&!isNatureFx(fx.id);
   dWords.closest('label')!.hidden = isCosmicFx(fx.id)||isIllustrationFx(fx.id)||isTransportFx(fx.id)||isNatureFx(fx.id);
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
@@ -1096,7 +1105,8 @@ $('#dCopy').addEventListener('click', () => {
     }, 1400);
   });
 });
-$('#dDownload').addEventListener('click', () => {
+$('#dDownload').addEventListener('click', async () => {
+  await ensureEngines([d.fx]);
   const html = exportHtml(d.fx, d.words, dVars(), d.ratio);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
@@ -1200,6 +1210,7 @@ const combos = initCombos({
       const data=illustrationFromWords(words,effect);
       return meta ? illustrationStudio.loadPreset({...meta,data}) : illustrationStudio.load(data);
     }
+    if (effect.startsWith('mx-')) return mxStudio.open(effect, words);
     if (isObjFx(effect)) {
       const data = objSceneFromWords(words, objFxModule(effect));
       return meta ? objStudio.loadPreset({ ...meta, data }) : objStudio.load(data);
@@ -1255,10 +1266,20 @@ const transportStudio = lazyStudio(() => import('./transport-studio').then((m) =
 const illustrationStudio = lazyStudio(() => import('./illustration-studio').then((m) => m.initIllustrationStudio(sdeps)));
 $('#dIllustrationStudio').addEventListener('click',()=>{if(isCosmicFx(d.fx.id)){const sc=cosmicFromWords(d.words,d.fx.id);sc.ratio=d.ratio;const hasSettings=d.words.some(w=>w.trim().startsWith('{'));closeDetail();if(hasSettings)cosmicStudio.load(sc);else cosmicStudio.load({...sc,...store.get('cosmic-'+sc.mode,{}),ratio:sc.ratio});return;}if(isNatureFx(d.fx.id)){const mode=natureMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=natureFromWords(words,d.fx.id);sc.ratio=ratio;natureStudio.load(sc);}else natureStudio.openMode(mode,ratio);return;}if(isTransportFx(d.fx.id)){const mode=transportMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=transportFromWords(words,d.fx.id);sc.ratio=ratio;transportStudio.load(sc);}else transportStudio.openMode(mode,ratio);return;}const mode=illustrationMode(d.fx.id),words=d.words,ratio=d.ratio;closeDetail();if(words.some(w=>w.trim().startsWith('{'))){const sc=illustrationFromWords(words,mode);sc.ratio=ratio;illustrationStudio.load(sc);}else illustrationStudio.openMode(mode,ratio);});
 const objStudio = lazyStudio(() => import('./object-studio').then((m) => m.initObjectStudio(sdeps)));
+const mxOpt = (tone: Tone) => {
+  const v = toneVars(palette(), tone, state.font);
+  return { fg: v.fg, bg: v.bg, ac: v.ac, ac2: v.ac2, font: fontStack(v.font) };
+};
+const mxStudio = lazyStudio(() => import('./mapfx-studio').then((m) => m.initMapfxStudio({ ...sdeps, opt: mxOpt })));
+$('#dMxStudio').addEventListener('click', () => {
+  const { id } = d.fx, words = [...d.words], ratio = d.ratio as '9:16' | '16:9' | '1:1';
+  closeDetail();
+  mxStudio.open(id, words, ratio);
+});
 // 網址直接指定工作室（?view=photo 等）時，先把工作室載進來，讓它自己判斷要不要打開
 {
   const v = new URLSearchParams(location.search).get('view');
-  const byView: Record<string, { warm: () => Promise<unknown> }> = { drop: studio, map: mapStudio, photo: photoStudio, plan: planStudio, object: objStudio, cosmic: cosmicStudio, cosmos: cosmicStudio, nature: natureStudio, meteor: natureStudio, aerial: natureStudio, transport: transportStudio, illustration: illustrationStudio };
+  const byView: Record<string, { warm: () => Promise<unknown> }> = { drop: studio, map: mapStudio, photo: photoStudio, plan: planStudio, object: objStudio, mapfx: mxStudio, cosmic: cosmicStudio, cosmos: cosmicStudio, nature: natureStudio, meteor: natureStudio, aerial: natureStudio, transport: transportStudio, illustration: illustrationStudio };
   if (v && v !== 'combos') void (byView[v] ? byView[v].warm() : Promise.all(Object.values(byView).map((x) => x.warm())));
 }
 $('#dObjStudio').addEventListener('click', () => {

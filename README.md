@@ -190,6 +190,8 @@ npm run check:visual -- mx- cut-       # 只檢查 id 含這些字的招式
 | `src/combo.ts` | Combo 驗證、HTML 播放器、提示詞（網站與伺服器共用） |
 | `src/combo-ui.ts` | 網站的 Combo 庫、草稿編輯、MCP 說明 |
 | `src/photokit.ts`、`src/photo-studio.ts` | 圖片運鏡引擎（21 模組、參數規格）與圖片工作室 |
+| `src/render/*.ts`、`src/engines.ts` | 大型繪製引擎（物件、照片、格局、地圖、地圖招式、圖表、路網）。網站第一次用到才載入；`engines-all.ts` 給伺服器與命令列同步載入全部 |
+| `src/mapfx-studio.ts` | 地圖招式編輯器：拖曳點位、換自己的底圖，寫成 words 最後一行 `@set {"pos":…,"bg":…}` |
 | `functions/r/` | 繪製引擎 JS（本機逐格渲染用） |
 | `functions/mcp.ts` | MCP 伺服器（JSON-RPC） |
 | `functions/_lib/tools.ts` | MCP 工具定義 |
@@ -214,6 +216,7 @@ npm run check:visual -- mx- cut-       # 只檢查 id 含這些字的招式
 - 可用變數：`--bg` `--fg` `--ac` `--ac2` `--mu`、字體 `--sans` `--serif` `--mono`；尺寸用 `cqw`／`cqh`／`cqmin`
 - `html(words)`：回傳特效 DOM；`run(root, words)`（選填）處理 JS 動畫並回傳清除函式。`run` 必須自給自足、不可引用模組變數，因為匯出時會用 `toString()` 內嵌
 - `motion`／`motionEn`：給 AI 的動態描述，會組進提示詞
+- 用到大型繪製引擎時設 `engine: 'obj'` 等（見 `src/engines.ts`），不要直接 import `src/render/*`，主程式才不會把引擎打包進去；`run` 透過 `globalThis.MA_*` 取用引擎
 - 用 `@property` 註冊的自訂屬性是全域的，名稱請加特效專屬前綴
 
 ## 部署
