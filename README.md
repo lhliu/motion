@@ -167,12 +167,12 @@ npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 
 ### 小地圖公版（build_minimap，#339）
 
-使用者給地圖截圖時，AI 用 `build_minimap` 描出道路中心線、區塊輪廓與地標（座標以設計畫布像素為準，預設 1410×1128），系統畫成透明背景的簡化小地圖：道路深灰 #34464C（主要 70、次要 56）、路名白字順著路段、公園 #72B98D、社宅 #F0B849（只標 A/B/C/D）、一般住宅 #82BFDB、公共設施 #5795C0，外緣細白描邊與淡陰影。
+使用者給地圖截圖時，AI 用 `build_minimap` 描出道路中心線、區塊輪廓與地標（座標以設計畫布像素為準，預設 1410×1128），系統畫成透明背景的簡化小地圖：道路深灰 #34464C（主要 70、次要 56）、路名白字順著路段、公園 #72B98D、社宅 #F0B849（只標 A/B/C/D）、一般住宅 #82BFDB、公共設施 #5795C0，外緣細白描邊與淡陰影。另有平面街廓示意風格（`style: "flat"`：無外緣陰影、色塊無框、道路平頭，道路可自訂 `color`、巷道 `dash: true` 畫方點虛線），可加指北針（`north` 角度、`north_at` 位置）；`place: "full"` 會把整張畫布等比例置中，1920×1080 畫布即滿版。
 
 - 輸出：`/m/svg?z=`（可編輯向量，halo／areas／roads／road-labels／labels 分層）、`/m/png?z=`（透明 PNG，Browser Run 截圖）、`/m/view?z=&check=1`（檢查頁：原尺寸＋影片實際尺寸疊在模擬街景）
 - 自動檢查：路名比路段長、文字互相重疊（旋轉矩形精確判斷）、超出畫布
 - 影片位置：`place` 為 `tr` 右上角版（1920×1080 的 x1400 y55 寬 470）、`duo` 雙人鏡頭避臉版（x600 y40 寬 460）或自訂 `{x,y,w}`；可當段落或疊加圖層
-- 規格與範例在 `src/minimap.ts`（`MINI_SAMPLE` 為林口運動公園周邊）
+- 規格與範例在 `src/minimap.ts`（`MINI_SAMPLE` 為 1920×1080 平面街廓示意圖）
 
 ### 地籍棟距圖（build_parcel_map，#340）
 

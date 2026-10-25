@@ -29,17 +29,17 @@ export const minimapFx: Fx = {
   cat: 'mkit',
   zh: '小地圖',
   en: 'Mini Map Overlay',
-  desc: '透明背景的簡化區位小地圖：主要道路帶路名、公園社宅等色塊、地標名稱，疊在影片角落',
+  desc: '透明背景的簡化區位地圖：道路（可帶路名、可畫方點巷道）、公園社宅等街廓色塊、地標名稱與指北針，可滿版或疊在影片角落',
   tags: ['地圖', '疊加', '區位', '步行'],
   tone: 'ink',
   sample: [JSON.stringify(MINI_SAMPLE)],
-  hint: 'words 第一行放小地圖 JSON（roads 道路中心線、areas 區塊、places 地標、place 位置）；建議用 MCP 的 build_minimap 產生與檢查',
+  hint: 'words 第一行放小地圖 JSON（roads 道路中心線、areas 區塊、places 地標、place 位置、style flat 平面風格、north 指北針）；建議用 MCP 的 build_minimap 產生與檢查',
   preferredRatio: '16:9',
   added: '2026-10-25',
   motion:
-    '透明背景的平面小地圖：深灰粗線條道路由起點畫到終點，路名白字順著路段方向排列；公園綠色、社宅金黃色（只標 A、B、C、D 圓形代號）、一般住宅淺藍、公共設施深藍等色塊淡入；地標名稱膠囊與短引線最後彈出；整張圖外緣有細白色描邊與淡陰影，沒有底板。16:9 預設放右上角（1920×1080 畫面的 x1400、y55、寬 470），也有雙人鏡頭避臉版（x600、y40、寬 460）。依真實道路與街廓簡化，不加路線、目前位置、指北針或圖例。',
+    '透明背景的平面街廓示意圖（1920×1080 滿版）：灰色粗細道路由起點畫到終點、路口平頭相接，方點虛線巷道淡入；淺青色一般街廓、綠色公園、橘色與米黃色重點基地等色塊淡入；左上角藍色圓形指北針（淺色導航箭頭、灰色 N 字）最後彈出；沒有外框、陰影與文字。同一個公版也能改成右上角小地圖（x1400、y55、寬 470）或雙人鏡頭避臉版（x600、y40、寬 460），加上白色路名、地標膠囊與白色外緣陰影。',
   motionEn:
-    'A transparent simplified area map: thick dark-grey roads draw in from end to end with white road names running along each segment; color blocks fade in — green parks, golden social-housing sites tagged only A/B/C/D, light-blue housing, deep-blue civic buildings; landmark name pills with short leaders pop in last; the whole map has a thin white outline and soft shadow with no backing plate. On 16:9 it sits top right by default (x1400, y55, 470 wide on a 1920×1080 frame) or in a between-two-faces spot (x600, y40, 460 wide). Simplified from real streets; no route, current position, compass or legend.',
+    'A transparent flat block-plan map (full 1920×1080): grey roads of two widths draw in end to end with square-cut junctions, dotted lanes fade in; light-cyan blocks, green parks and orange / beige highlighted sites fade in; a blue round compass with a pale navigation arrow and grey N pops in top left; no outline, shadow or text. The same template also works as a top-right mini map (x1400, y55, 470 wide) or between-two-faces spot (x600, y40, 460 wide) with white road names, landmark pills and a white outline with soft shadow.',
   css: `
 .S{background:transparent}
 .S .mm{position:absolute;left:var(--x);top:var(--y);width:var(--w)}
@@ -48,7 +48,9 @@ export const minimapFx: Fx = {
   html: (w) => {
     const m = miniFromWords(w);
     const p = m.place === 'tr' || m.place === 'duo' ? MINI_PLACES[m.place] : m.place && typeof m.place === 'object' ? m.place : null;
-    const pos = p ? `--x:${((p.x / 1920) * 100).toFixed(2)}%;--y:${((p.y / 1080) * 100).toFixed(2)}%;--w:${((p.w / 1920) * 100).toFixed(2)}%` : '--x:6%;--y:4%;--w:88%';
+    // full：整張畫布等比例塞進 16:9 畫面置中（1920×1080 畫布剛好滿版）
+    const r = (m.w ?? 1410) / (m.h ?? 1128) / (16 / 9), fw = Math.min(100, r * 100), fh = fw / r;
+    const pos = p ? `--x:${((p.x / 1920) * 100).toFixed(2)}%;--y:${((p.y / 1080) * 100).toFixed(2)}%;--w:${((p.w / 1920) * 100).toFixed(2)}%` : `--x:${((100 - fw) / 2).toFixed(2)}%;--y:${((100 - fh) / 2).toFixed(2)}%;--w:${fw.toFixed(2)}%`;
     return `<div class="mm" style="${pos}">${miniSvg(m, { anim: true, id: uid(w.join('')) })}</div>`;
   },
 };
