@@ -321,8 +321,6 @@ export const comboHtml = (c: Combo, opts: { hud?: boolean; loop?: boolean; safe?
       words: o.words?.length ? o.words : fx.sample,
       from: (o.from ?? 1) - 1,
       to: (o.to ?? scenes.length) - 1,
-      // 疊加元件播到進場完成就定格，不重複進出
-      hold: Math.round(Math.min(3, loopSeconds(fx) * 0.5) * 1000),
       // 沒指定配色＝自動：深底段落用深色系、淺底段落用淺色系，換段時跟著換
       ...(o.tone ? { vars: varsCss(toneVars(pal, o.tone, c.font)) } : { varsD: varsCss(toneVars(pal, 'ink', c.font)), varsL: varsCss(toneVars(pal, 'paper', c.font)) }),
     })),
@@ -482,7 +480,8 @@ const ovVars=(o)=>o.vars||(curLt?o.varsL:o.varsD);
 function paintOv(){ovOn.forEach((m,n)=>{if(m&&!OVERLAYS[n].vars)m.el.setAttribute('style',ovVars(OVERLAYS[n]));});}
 function syncOverlays(k){OVERLAYS.forEach((o,n)=>{const want=k>=o.from&&k<=o.to;const m=ovOn[n];
   if(want&&!m){const el=document.createElement('div');el.className='fx fx-'+o.id;el.setAttribute('style',ovVars(o));el.innerHTML=document.getElementById('o'+n).innerHTML;ovEl.appendChild(el);
-    const rec={el,clean:null,t:setTimeout(()=>el.getAnimations({subtree:true}).forEach(a=>{try{a.pause()}catch(e){}}),o.hold)};ovOn[n]=rec;
+    // 疊加圖層也播一次就停在完成畫面（跟段落同一套定格規則）
+    const rec={el,clean:null,t:0};ovOn[n]=rec;freeze(el);[120,400,900,1600,2500].forEach((ms)=>setTimeout(()=>el.isConnected&&freeze(el),ms));
     requestAnimationFrame(()=>{const r=RUNS[o.id];if(r&&el.isConnected){try{rec.clean=r(el,o.words)||null}catch(e){console.error(e)}}});}
   else if(!want&&m){ovOn[n]=null;clearTimeout(m.t);m.el.classList.add('bye');setTimeout(()=>{m.clean&&m.clean();m.el.remove();},320);}
 });}

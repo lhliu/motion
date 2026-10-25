@@ -14,6 +14,7 @@ import { dropToWords, parseDrop, type DropOpts } from '../../src/drop';
 import { KITS, USES } from '../../src/uses';
 import { scriptToCombo } from '../../src/script-combo';
 import { SHEET_CELL, sheetCells } from '../../src/combo-sheet';
+import { miniLayout, normalizeMini } from '../../src/minimap';
 import { canShoot, SHOT_SETUP, snapshot } from './shot';
 import { FONT_IDS, FONT_PACKS } from '../../src/fonts';
 import { defaultObjScene, normalizeObjScene, objFxId, OBJ_INFO, OBJ_MODULES, OBJ_PARAMS, type OModule, type OScene } from '../../src/objkit';
@@ -797,6 +798,57 @@ const TOOLS_FULL: ToolDef[] = [
     },
   },
   {
+    name: 'build_minimap',
+    title: '小地圖（透明背景區位圖）',
+    description:
+      '把使用者給的地圖截圖轉成公版小地圖：只留指定的主要道路（深灰粗線、白色路名順著路段）、公園／社宅（A、B、C、D 代號）／一般住宅／公共設施色塊與地標名稱，透明背景、外緣細白描邊與淡陰影。座標以設計畫布像素為準（預設 1410×1128，可用 w、h 改），請照截圖描：道路畫中心線（每條 2–8 點，轉彎才加點），區塊畫輪廓（4–10 點），不要移動地標或改變道路連接；刪掉店家、支路與零碎建築。回傳檢查截圖（左原尺寸、右縮到影片實際尺寸疊在模擬街景上）與 warnings（路名太長、文字重疊、超出畫布），請比對原截圖修正後再交付。輸出：svg_url（可編輯向量，道路／區塊／文字分層）、png_url（透明 PNG）、combo_scene／overlay（放進 Combo 疊在影片上）。不要加路線、目前位置、指北針或圖例；地圖來源要標示（例如 © OSM contributors）。',
+    inputSchema: {
+      type: 'object',
+      required: ['roads'],
+      properties: {
+        title: { type: 'string' },
+        w: { type: 'number', description: '設計畫布寬，預設 1410' },
+        h: { type: 'number', description: '設計畫布高，預設 1128' },
+        roads: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '中心線 [[x,y],…]' }, w: { description: 'main（預設，寬 70）｜minor（寬 56）｜數字' }, seg: { type: 'number', description: '路名放第幾段（0 起算），預設最長段' }, at: { type: 'number', description: '路名在該段的位置 0–1' } }, required: ['pts'] } },
+        areas: { type: 'array', items: { type: 'object', properties: { kind: { type: 'string', enum: ['park', 'social', 'housing', 'civic', 'water', 'custom'], description: 'park 公園綠、social 社宅金黃、housing 一般住宅淺藍、civic 公共設施藍' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } } }, label: { type: 'string' }, label_at: { type: 'array', items: { type: 'number' } }, tag: { type: 'string', description: '圓形代號，例如 A' }, tag_at: { type: 'array', items: { type: 'number' } }, leader: { type: 'boolean', description: '名稱與區塊之間畫短引線' }, color: { type: 'string' } }, required: ['kind', 'pts'] } },
+        places: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, at: { type: 'array', items: { type: 'number' } }, label_at: { type: 'array', items: { type: 'number' } } }, required: ['name', 'at'] }, description: '地標：小圓點＋名稱膠囊＋引線' },
+        source: { type: 'string', description: '地圖來源標示，例如 © OSM contributors' },
+        place: { description: '疊在 16:9 影片的位置：tr 右上角版（預設，x1400 y55 寬 470）｜duo 雙人鏡頭避臉版（x600 y40 寬 460）｜full｜{x,y,w}（1920×1080 座標）' },
+        scale: { type: 'number', description: '道路與文字整體放大倍率 0.6–2，小尺寸疊加看不清楚時調大' },
+        preview: { type: 'boolean', description: '回傳檢查截圖，預設 true' },
+        local: { type: 'boolean', description: '能在使用者電腦執行程式時設 true，改回傳 local_preview 自己截圖' },
+      },
+    },
+    annotations: { readOnlyHint: true },
+    run: async (a, ctx) => {
+      const { map, errors } = normalizeMini(a);
+      if (errors.length) return { ok: false, errors };
+      const warnings = miniLayout(map).warnings;
+      const z = await packJson(map);
+      const W = map.w ?? 1410, H = map.h ?? 1128;
+      const words = [JSON.stringify(map)];
+      const out = {
+        ok: true,
+        warnings,
+        svg_url: `${ctx.origin}/m/svg?z=${z}&dl=1`,
+        png_url: `${ctx.origin}/m/png?z=${z}&dl=1`,
+        png_note: canShoot(ctx.env) ? `透明 PNG ${W}×${H}；要其他寬度加 &w=` : '伺服器截圖未設定，PNG 請用 local_preview 的方法在本機輸出',
+        check_url: `${ctx.origin}/m/view?z=${z}&check=1`,
+        combo_scene: { effect: 'minimap', words, seconds: 6 },
+        overlay: { effect: 'minimap', words, from: 1, to: 1 },
+        local_preview: `在使用者電腦用 Playwright 開 check_url（viewport 1400×900），等 #ready（state: attached）後整頁截圖檢查；要透明 PNG 就開 ${ctx.origin}/m/view?z=${z}，viewport ${W}×${H}，screenshot 加 omitBackground: true。`,
+        next: warnings.length ? '先依 warnings 調整座標（seg／at 移路名、label_at／tag_at 移標籤）再交付。' : '比對檢查截圖與原截圖：道路走向、交叉、地標相對位置正確，縮小後路名與代號清楚。',
+      };
+      if (a.preview === false || a.local === true || !canShoot(ctx.env)) return out;
+      try {
+        const shot = await snapshot(ctx.env, out.check_url, { width: 1400, height: 900 }, 3000);
+        return { __image: { data: shot.image, mimeType: shot.mime }, ...out };
+      } catch (e) {
+        return { ...out, preview_error: e instanceof Error ? e.message : String(e) };
+      }
+    },
+  },
+  {
     name: 'preview_combo',
     title: '預覽 Combo 畫面（截圖）',
     description:
@@ -930,7 +982,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 3. 用 compose_combo 驗證，再用 preview_combo 拿分格截圖自己檢查（能在使用者電腦執行程式時加 local: true 用本機瀏覽器截圖；文字被切、太小、重疊、對比不足、空白），有問題先修再預覽，確認沒問題才把 play_url 給使用者看。段落之間可用 transition（整支）或 scenes[].transition（單段）選新轉場；系列角標、資料來源條等元件用 overlays 常駐疊在段落上方。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
 省 token 的用法：要看多招的文字格式時用 get_effect 的 ids 一次查（不要逐一呼叫）；get_effect 預設不附提示詞，使用者要提示詞或 HTML 才加 format；list_categories 的套組只列摘要，選定後用 kit 參數取完整段落；compose_combo 預設不附重做提示詞（include_prompt）。回傳的預覽與編輯網址是壓縮過的，請原樣轉給使用者。
-地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、魔術方塊／星空背景請用 build_object_scene；天體、低空飛越及推近地球精修插畫用 build_cosmos_scene（mode=orbit｜flyover｜earthzoom，body=gas｜sun｜moon｜earth｜mars，依 mode 選擇）；隕石及俯瞰精修插畫請用 build_nature_scene（隕石 mode=meteor，style=rock｜ice｜lava｜gold；俯瞰 mode=city｜river｜mountain｜grass｜farm｜coast｜forest｜highway）；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+使用者給地圖截圖、要做疊在影片角落的區位小地圖時用 build_minimap（照截圖描道路中心線與區塊座標，看檢查截圖修正）；地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、魔術方塊／星空背景請用 build_object_scene；天體、低空飛越及推近地球精修插畫用 build_cosmos_scene（mode=orbit｜flyover｜earthzoom，body=gas｜sun｜moon｜earth｜mars，依 mode 選擇）；隕石及俯瞰精修插畫請用 build_nature_scene（隕石 mode=meteor，style=rock｜ice｜lava｜gold；俯瞰 mode=city｜river｜mountain｜grass｜farm｜coast｜forest｜highway）；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 字型：Combo 的 font（整支）與 scenes[].font（單段）可選字型組合，依段落情緒挑：數據、資訊、標題用 sharp（預設）；開箱、生活、通勤用 round；質感建案、片頭大標用 serif；旁白金句、心得用 hand；俏皮吐槽用 cute。一支影片以 2–3 組為限，同類段落維持同一組，避免每段都換。\n手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

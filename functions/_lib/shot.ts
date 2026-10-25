@@ -42,3 +42,25 @@ export const snapshot = async (env: Env, url: string, viewport: { width: number;
   if (!r.screenshot) throw new Error('截圖服務沒有回傳圖片');
   return { image: r.screenshot, mime: 'image/jpeg', html: r.content ?? '' };
 };
+
+/** 透明背景 PNG 截圖（小地圖輸出用） */
+export const screenshotPng = async (env: Env, url: string, viewport: { width: number; height: number }): Promise<ArrayBuffer> => {
+  const body = {
+    url,
+    viewport: { ...viewport, deviceScaleFactor: 1 },
+    gotoOptions: { waitUntil: 'load', timeout: 30000 },
+    waitForSelector: { selector: '#ready', timeout: 20000 },
+    screenshotOptions: { type: 'png', omitBackground: true },
+  };
+  let res: Response;
+  if (env.BROWSER?.quickAction) res = await env.BROWSER.quickAction('screenshot', body);
+  else if (env.CF_ACCOUNT_ID && env.CF_BROWSER_TOKEN)
+    res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/browser-run/screenshot`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.CF_BROWSER_TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  else throw new Error(SHOT_SETUP);
+  if (!res.ok) throw new Error(res.status === 429 ? '今天的截圖額度用完了，請改下載 SVG 或明天再試。' : `截圖服務回應 ${res.status}：${(await res.text()).slice(0, 300)}`);
+  return res.arrayBuffer();
+};

@@ -27,6 +27,7 @@ import { cuts } from './effects/cut';
 import { mapfx } from './effects/mapfx';
 import { ui } from './effects/ui';
 import { newsFx } from './effects/news';
+import { minimapFx } from './effects/minimap';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
@@ -70,7 +71,7 @@ export const CATEGORIES: Category[] = [
   { id: 'mplan', sec: 'map', code: 'PLAN', zh: '規劃建設', tagline: '重劃區分期、重大建設、分區、地籍（示意）' },
   { id: 'mdata', sec: 'map', code: 'DATA', zh: '數據地圖', tagline: '著色圖、泡泡、立體長條，數字附來源' },
   { id: 'mrisk', sec: 'map', code: 'LIFE', zh: '生活機能與風險', tagline: '生活機能地圖、學區、雷達、手機導航、嫌惡設施、淹水潛勢' },
-  { id: 'mkit', sec: 'map', code: 'KIT', zh: '地圖元件', tagline: '指北針比例尺、新舊對照' },
+  { id: 'mkit', sec: 'map', code: 'KIT', zh: '地圖元件', tagline: '小地圖、指北針比例尺、新舊對照' },
   { id: 'transit', sec: 'map', code: 'METRO', zh: '捷運鐵路路網', tagline: '路網圖、路線條、轉乘與規劃中路線' },
   { id: 'liquid', sec: 'object', code: 'DROP', zh: '水滴泡泡', tagline: '柔軟、透明、會呼吸' },
   { id: 'meteor', sec: 'illus', code: 'SPACE', zh: '星空物件', tagline: '天體、低空飛越、推近地球、隕石與太空船，五招各有獨立編輯器' },
@@ -133,6 +134,7 @@ export const ALL_EFFECTS: Fx[] = [
   ...cuts,
   ...ui,
   ...newsFx,
+  minimapFx,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 從前台隱藏（代碼、編號保留，舊 Combo 與預設仍可用）
