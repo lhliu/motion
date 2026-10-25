@@ -23,18 +23,25 @@ export interface PcRoad {
 export interface PcBuilding {
   name?: string;
   pts: Pt[];
-  /** 主要建物（只能一棟） */
+  /** 主角建物（紅字紅框，可以不只一棟，例如同一建案的 A、B 棟） */
   main?: boolean;
-  /** 補充說明，例如「地上 28 層」 */
+  /** 第二行，例如「20F」「地上 28 層」 */
   note?: string;
 }
 export interface PcDistance {
-  /** 目標建物名稱 */
-  to: string;
+  /** 起點建物名稱（省略＝第一棟主角建物） */
+  from?: string;
+  /** 目標建物名稱；畫兩棟之間最近的距離 */
+  to?: string;
+  /** 直接指定起訖點（例如退縮：建物邊到路邊），優先於 from／to */
+  p?: Pt;
+  q?: Pt;
   /** 距離（公尺）；省略時依 m_per_px 換算並標「約」 */
   m?: number;
-  /** 自訂標註文字（優先於 m） */
+  /** 自訂標註文字（優先於 m），例如「約48公尺」 */
   label?: string;
+  /** major 紅色粗雙箭頭＋紅底白字（主角到鄰棟預設）｜minor 紅色細線＋白底紅字｜setback 退縮 */
+  kind?: 'major' | 'minor' | 'setback';
 }
 export interface ParcelMap {
   title?: string;
@@ -46,7 +53,7 @@ export interface ParcelMap {
   bg?: 'paper' | 'transparent';
   /** 底圖（第一層）：地圖截圖網址（/u/… 上傳後的網址或 https），座標就是這張圖的像素 */
   base?: string;
-  /** 底圖壓暗 0–0.7，讓套繪線更清楚；有底圖時預設 0.15 */
+  /** 底圖壓暗 0–0.7，讓套繪更清楚；有底圖時預設 0 */
   dim?: number;
   /** 指北方向（度，0＝畫面上方），省略＝不畫指北針 */
   north?: number;
@@ -54,11 +61,11 @@ export interface ParcelMap {
   roads?: PcRoad[];
   buildings: PcBuilding[];
   distances?: PcDistance[];
-  /** 資料來源與時間，例如「地籍圖資：國土測繪圖資服務雲（2026-10 查詢）」 */
+  /** 資料來源與時間，例如「底圖：Google 地圖｜距離：建照圖說」 */
   source?: string;
 }
 
-export const PC = { paper: '#f6f2e8', line: '#9b9484', lot: '#8a8373', road: '#e3ddcf', roadText: '#6b6455', bld: '#cfc9bb', bldEdge: '#77705f', main: '#E8553A', dim: '#1d2433' };
+export const PC = { paper: '#f6f2e8', line: '#9b9484', lot: '#8a8373', road: '#e3ddcf', ink: '#1d1d1f', bld: '#FBE38E', bldEdge: '#3d3a33', red: '#E0262C', dim: '#1d2433' };
 
 const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const ptOf = (v: unknown): Pt | null => (Array.isArray(v) && v.length >= 2 && Number.isFinite(+v[0]) && Number.isFinite(+v[1]) ? [+v[0], +v[1]] : null);
@@ -84,14 +91,17 @@ export const normalizeParcel = (raw: unknown): { map: ParcelMap; errors: string[
     if (p.length < 3) return errors.push(`buildings[${i}] 至少要 3 個點`), [];
     return [{ name: str(o.name, 16) || undefined, pts: p, main: o.main === true, note: str(o.note, 20) || undefined }];
   });
-  const mains = buildings.filter((b) => b.main);
   if (!buildings.length) errors.push('buildings 至少要一棟建物');
-  else if (mains.length !== 1) errors.push(`主要建物（main: true）要剛好一棟，目前 ${mains.length} 棟`);
+  else if (!buildings.some((b) => b.main)) errors.push('至少要一棟主角建物（main: true）');
   const names = new Set(buildings.map((b) => b.name));
-  const distances = list('distances').slice(0, 12).flatMap((o, i) => {
-    const to = str(o.to, 16);
-    if (!to || !names.has(to)) return errors.push(`distances[${i}].to「${to}」找不到同名建物`), [];
-    return [{ to, m: typeof o.m === 'number' && o.m > 0 ? o.m : undefined, label: str(o.label, 20) || undefined }];
+  const KINDS = ['major', 'minor', 'setback'];
+  const distances = list('distances').slice(0, 16).flatMap((o, i) => {
+    const p = ptOf(o.p), q = ptOf(o.q), to = str(o.to, 16), from = str(o.from, 16);
+    if (!(p && q)) {
+      if (!to || !names.has(to)) return errors.push(`distances[${i}]：to「${to}」找不到同名建物（或改用 p、q 直接指定起訖點）`), [];
+      if (from && !names.has(from)) return errors.push(`distances[${i}]：from「${from}」找不到同名建物`), [];
+    }
+    return [{ from: from || undefined, to: to || undefined, p: p ?? undefined, q: q ?? undefined, m: typeof o.m === 'number' && o.m > 0 ? o.m : undefined, label: str(o.label, 20) || undefined, kind: KINDS.includes(String(o.kind)) ? (o.kind as PcDistance['kind']) : undefined }];
   });
   return {
     map: {
@@ -120,40 +130,111 @@ const closestOnSeg = (p: Pt, a: Pt, b: Pt): Pt => {
   return [a[0] + dx * t, a[1] + dy * t];
 };
 export const nearestPair = (A: Pt[], B: Pt[]): [Pt, Pt] => {
-  let best: [Pt, Pt] = [A[0], B[0]], bd = Infinity;
+  const cand: { d: number; p: Pt; q: Pt }[] = [];
   const scan = (P: Pt[], Q: Pt[], flip: boolean) => {
     for (const p of P)
       for (let i = 0; i < Q.length; i++) {
-        const q = closestOnSeg(p, Q[i], Q[(i + 1) % Q.length]), d = len(p, q);
-        if (d < bd) [bd, best] = [d, flip ? [q, p] : [p, q]];
+        const q = closestOnSeg(p, Q[i], Q[(i + 1) % Q.length]);
+        cand.push(flip ? { d: len(p, q), p: q, q: p } : { d: len(p, q), p, q });
       }
   };
   scan(A, B, false);
   scan(B, A, true);
-  return best;
+  const best = cand.reduce((a, c) => (c.d < a.d ? c : a)), bd = best.d;
+  // 兩棟平行相對時，最近的點對有一整段：取那段的中點，箭頭才不會貼在牆角。
+  // 只平均方向相同、距離幾乎相同的點對（牆角斜過去的那組不算）
+  const ux = (best.q[0] - best.p[0]) / (bd || 1), uy = (best.q[1] - best.p[1]) / (bd || 1);
+  const near = cand.filter((c) => c.d <= bd * 1.02 + 0.5 && (c.d < 1e-6 || ((c.q[0] - c.p[0]) * ux + (c.q[1] - c.p[1]) * uy) / c.d > 0.999));
+  const avg = (k: 'p' | 'q'): Pt => [near.reduce((s, c) => s + c[k][0], 0) / near.length, near.reduce((s, c) => s + c[k][1], 0) / near.length];
+  return [avg('p'), avg('q')];
 };
 const centroid = (p: Pt[]): Pt => [p.reduce((s, q) => s + q[0], 0) / p.length, p.reduce((s, q) => s + q[1], 0) / p.length];
 const fmtM = (m: number) => (m >= 100 ? Math.round(m).toString() : m.toFixed(1).replace(/\.0$/, ''));
 
-/** 距離標註：起訖點、文字、是否為換算值 */
+/* ───────── 標註版面（渲染與重疊檢查共用） ───────── */
+interface Dim {
+  key: string;
+  p: Pt;
+  q: Pt;
+  px: number;
+  /** 一行或兩行（直向的線用兩行，數字框才不會太寬） */
+  lines: string[];
+  kind: 'major' | 'minor' | 'setback';
+  est: boolean;
+  /** 數字框中心與尺寸（不旋轉） */
+  box: { cx: number; cy: number; w: number; h: number };
+}
+const DIM_PX: Record<Dim['kind'], number> = { major: 34, minor: 26, setback: 24 };
+
+/** 數字框放在線的旁邊（不壓住箭頭）：side 1＝左側／上方、-1＝另一側，t＝沿線位置 */
+const placeLabel = (p: Pt, q: Pt, lines: string[], px: number, side = 1, t = 0.5) => {
+  const w = Math.max(...lines.map((l) => textW(l, px))) + px * 0.8, h = lines.length * px * 1.15 + px * 0.5;
+  const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy) || 1;
+  let nx = -dy / L, ny = dx / L;
+  if (ny > 0 || (Math.abs(ny) < 1e-6 && nx > 0)) [nx, ny] = [-nx, -ny];
+  nx *= side;
+  ny *= side;
+  // 沿法線往外推：框在法線方向的半寬＋間距
+  const off = Math.abs(nx) * (w / 2) + Math.abs(ny) * (h / 2) + 12;
+  return { cx: p[0] + dx * t + nx * off, cy: p[1] + dy * t + ny * off, w, h };
+};
+/** 建物的外接框（避讓用） */
+const bboxOf = (pts: Pt[], name: string): Box => {
+  const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  return { kind: 'bld', name, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, w: (x1 - x0) / 0.9, h: (y1 - y0) / 0.9, a: 0 };
+};
+
 export const parcelDims = (m: ParcelMap) => {
-  const main = m.buildings.find((b) => b.main);
   const warnings: string[] = [];
-  if (!main) return { dims: [], warnings };
-  const dims = (m.distances ?? []).flatMap((d) => {
-    const t = m.buildings.find((b) => b.name === d.to);
-    if (!t) return [];
-    const [p, q] = nearestPair(main.pts, t.pts), px = len(p, q);
-    const est = !d.label && d.m === undefined;
-    if (est && !m.m_per_px) warnings.push(`到「${d.to}」沒有距離數字也沒有 m_per_px，只畫標註線不標數字`);
-    if (px < 30) warnings.push(`到「${d.to}」的標註線太短（${Math.round(px)} 像素），數字會擠不下`);
-    const text = d.label ?? (d.m !== undefined ? `${fmtM(d.m)} m` : m.m_per_px ? `約 ${fmtM(px * m.m_per_px)} m` : '');
-    return [{ to: d.to, p, q, px, text, est: est && !!m.m_per_px }];
+  const mains = m.buildings.filter((b) => b.main);
+  const byName = (n?: string) => m.buildings.find((b) => b.name === n);
+  const dims: Dim[] = (m.distances ?? []).flatMap((d) => {
+    let p = d.p, q = d.q;
+    const src = d.from ? byName(d.from) : mains[0], dst = byName(d.to);
+    if (!(p && q)) {
+      if (!src || !dst) return [];
+      [p, q] = nearestPair(src.pts, dst.pts);
+      // 幾乎垂直或水平的線拉直（平均點對可能差幾個像素）
+      const dx = q[0] - p[0], dy = q[1] - p[1];
+      if (Math.abs(dx) < Math.abs(dy) * 0.06) p = [(p[0] + q[0]) / 2, p[1]], q = [p[0], q[1]];
+      else if (Math.abs(dy) < Math.abs(dx) * 0.06) p = [p[0], (p[1] + q[1]) / 2], q = [q[0], p[1]];
+    }
+    const px = len(p!, q!), key = d.label ?? d.to ?? '標註';
+    const kind = d.kind ?? (d.p && d.q ? 'minor' : src?.main && !dst?.main ? 'major' : 'minor');
+    const est = !d.label && d.m === undefined && !!m.m_per_px;
+    if (!d.label && d.m === undefined && !m.m_per_px) warnings.push(`「${key}」沒有距離數字也沒有 m_per_px，只畫線不標數字`);
+    if (px < 24) warnings.push(`「${key}」的標註線太短（${Math.round(px)} 像素）`);
+    const val = d.label ?? (d.m !== undefined ? `${fmtM(d.m)}公尺` : est ? `約${fmtM(px * m.m_per_px!)}公尺` : '');
+    const text = kind === 'setback' && val && !val.startsWith('退縮') ? `退縮 ${val}` : val;
+    const vertical = Math.abs(q![1] - p![1]) > Math.abs(q![0] - p![0]);
+    // 直向的線、或主要距離：數字與「公尺」分兩行（跟常見的棟距圖一樣）
+    const sp = text.match(/^(.*?)(\d[\d.]*\s*)(公尺|m)$/);
+    const lines = text && (vertical || kind !== 'minor') && sp ? [`${sp[1]}${sp[2].trim()}`, sp[3]] : text ? [text] : [];
+    return [{ key, p: p!, q: q!, px, lines, kind, est, box: { cx: 0, cy: 0, w: 0, h: 0 } }];
   });
+  // 逐一找數字框位置：兩側 × 沿線幾個位置，挑第一個不蓋到建物、路名與已放好的數字框的位置
+  const W = m.w ?? 1200, H = m.h ?? 1200;
+  const obstacles: Box[] = m.buildings.map((b) => bboxOf(b.pts, b.name ?? ''));
+  for (const r of m.roads ?? []) if (r.name) obstacles.push(roadBox(r));
+  for (const d of dims) {
+    if (!d.lines.length) continue;
+    let best = placeLabel(d.p, d.q, d.lines, DIM_PX[d.kind]), bestHits = Infinity;
+    for (const [side, t] of [[1, 0.5], [-1, 0.5], [1, 0.3], [1, 0.7], [-1, 0.3], [-1, 0.7]] as const) {
+      const b = placeLabel(d.p, d.q, d.lines, DIM_PX[d.kind], side, t);
+      const box: Box = { kind: 'dim', name: '', cx: b.cx, cy: b.cy, w: b.w, h: b.h, a: 0 };
+      const out = b.cx - b.w / 2 < 0 || b.cy - b.h / 2 < 0 || b.cx + b.w / 2 > W || b.cy + b.h / 2 > H ? 1 : 0;
+      const n = obstacles.filter((o) => hits(box, o)).length + out;
+      if (n < bestHits) [best, bestHits] = [b, n];
+      if (!n) break;
+    }
+    d.box = best;
+    obstacles.push({ kind: 'dim', name: '', cx: best.cx, cy: best.cy, w: best.w, h: best.h, a: 0 });
+  }
   return { dims, warnings };
 };
 
-/** 路名位置：最長一段的中點，文字順著路段且不倒過來 */
+/** 路名：南北向（接近直立）的路字直排、每個字正立；其他順著路段方向並拉開字距 */
 const roadNameAt = (r: PcRoad) => {
   let k = 0;
   for (let j = 1; j < r.pts.length - 1; j++) if (len(r.pts[j], r.pts[j + 1]) > len(r.pts[k], r.pts[k + 1])) k = j;
@@ -161,48 +242,43 @@ const roadNameAt = (r: PcRoad) => {
   let ang = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
   if (ang > 90) ang -= 180;
   if (ang < -90) ang += 180;
-  return { x: r.name_at?.[0] ?? (a[0] + b[0]) / 2, y: r.name_at?.[1] ?? (a[1] + b[1]) / 2, ang, px: Math.round(Math.min(34, (r.w ?? 60) * 0.5)) };
+  const px = Math.round(Math.min(46, Math.max(30, (r.w ?? 60) * 0.6)));
+  return { x: r.name_at?.[0] ?? (a[0] + b[0]) / 2, y: r.name_at?.[1] ?? (a[1] + b[1]) / 2, ang, px, vertical: Math.abs(ang) > 60 };
+};
+/** 路名佔的範圍 */
+const roadBox = (r: PcRoad): Box => {
+  const n = roadNameAt(r), cnt = [...(r.name ?? '')].length;
+  return n.vertical ? { kind: 'road', name: r.name ?? '', cx: n.x, cy: n.y, w: n.px, h: cnt * n.px * 1.3, a: 0 } : { kind: 'road', name: r.name ?? '', cx: n.x, cy: n.y, w: textW(r.name ?? '', n.px) + cnt * n.px * 0.5, h: n.px * 1.2, a: n.ang };
 };
 /** 地號位置：指定位置或地塊左上角內側（文字左上對齊） */
 const lotAt = (p: PcParcel): Pt => p.no_at ?? [Math.min(...p.pts.map((q) => q[0])) + 14, Math.min(...p.pts.map((q) => q[1])) + 30];
-
-/** 距離數字放在標註線靠目標那一側：多條線從主建物同一個角出發時才不會擠在一起；
- *  線比數字框短（框會蓋住兩端的短線）就把數字移到線的旁邊 */
-const DIM_AT = 0.6;
-const dimLabelAt = (p: Pt, q: Pt, text: string): Pt => {
-  const L = len(p, q), w = textW(text, 30) + 22, ang = Math.atan2(q[1] - p[1], q[0] - p[0]);
-  const x = p[0] + (q[0] - p[0]) * (L > w * 1.5 ? DIM_AT : 0.5), y = p[1] + (q[1] - p[1]) * (L > w * 1.5 ? DIM_AT : 0.5);
-  if (L > w * 1.25) return [x, y];
-  // 往法線方向（畫面上偏上或偏左）移開
-  let nx = -Math.sin(ang), ny = Math.cos(ang);
-  if (ny > 0 || (ny === 0 && nx > 0)) [nx, ny] = [-nx, -ny];
-  return [x + nx * 38, y + ny * 38];
-};
+/** 建物名稱兩行：名稱、樓層 */
+const bldLines = (b: PcBuilding) => [b.name ?? '', b.note ?? ''].filter(Boolean);
+const BLD_PX = 30;
 
 /** 檢查文字重疊與超出畫布 */
 export const parcelLayout = (m: ParcelMap) => {
   const { dims, warnings } = parcelDims(m);
   const W = m.w ?? 1200, H = m.h ?? 1200, boxes: Box[] = [];
-  const dimPx = 30, namePx = 30;
-  for (const d of dims) {
-    if (!d.text) continue;
-    const ang = (Math.atan2(d.q[1] - d.p[1], d.q[0] - d.p[0]) * 180) / Math.PI;
-    const a = ang > 90 ? ang - 180 : ang < -90 ? ang + 180 : ang;
-    const c = dimLabelAt(d.p, d.q, d.text);
-    boxes.push({ kind: 'dim', name: d.text, cx: c[0], cy: c[1], w: textW(d.text, dimPx) + 20, h: dimPx * 1.4, a });
+  for (const d of dims) if (d.lines.length) boxes.push({ kind: 'dim', name: d.lines.join(''), cx: d.box.cx, cy: d.box.cy, w: d.box.w, h: d.box.h, a: 0 });
+  for (const b of m.buildings) {
+    const ls = bldLines(b);
+    if (!ls.length) continue;
+    const c = centroid(b.pts);
+    boxes.push({ kind: 'name', name: ls.join(' '), cx: c[0], cy: c[1], w: Math.max(...ls.map((l) => textW(l, BLD_PX))), h: ls.length * BLD_PX * 1.25, a: 0 });
   }
-  for (const b of m.buildings) if (b.name) {
-    const c = centroid(b.pts), px = b.main ? 36 : namePx;
-    boxes.push({ kind: 'name', name: b.name, cx: c[0], cy: c[1], w: textW(b.name, px) + (b.main ? 36 : 8), h: px * 1.5, a: 0 });
-    if (b.main && b.note) boxes.push({ kind: 'note', name: b.note, cx: c[0], cy: c[1] + 52, w: textW(b.note, 24), h: 30, a: 0 });
-  }
-  for (const r of m.roads ?? []) if (r.name) {
-    const n = roadNameAt(r);
-    boxes.push({ kind: 'road', name: r.name, cx: n.x, cy: n.y, w: textW(r.name, n.px) + r.name.length * 4, h: n.px * 1.2, a: n.ang });
-  }
+  for (const r of m.roads ?? []) if (r.name) boxes.push(roadBox(r));
   for (const p of m.parcels ?? []) if (p.no) {
     const [x, y] = lotAt(p), w = textW(p.no, 22);
     boxes.push({ kind: 'lot', name: `地號 ${p.no}`, cx: x + w / 2, cy: y - 8, w, h: 24, a: 0 });
+  }
+  // 距離數字框蓋到建物（用建物外接框判斷）
+  for (const d of dims) {
+    if (!d.lines.length) continue;
+    const lb: Box = { kind: 'dim', name: d.lines.join(''), cx: d.box.cx, cy: d.box.cy, w: d.box.w, h: d.box.h, a: 0 };
+    for (const b of m.buildings) {
+      if (hits(lb, bboxOf(b.pts, b.name ?? ''))) warnings.push(`「${lb.name}」蓋到建物「${b.name ?? '未命名'}」，可改 kind 或把標註線移到空處（p、q）`);
+    }
   }
   for (let i = 0; i < boxes.length; i++) {
     const c = corners(boxes[i]);
@@ -219,116 +295,124 @@ const scaleBar = (mpp: number) => {
   return { m, px: m / mpp };
 };
 
+const f1 = (v: number) => v.toFixed(1);
+/** 雙箭頭（主要距離）：線＋兩端三角形 */
+const arrow = (p: Pt, q: Pt, w: number) => {
+  const ang = Math.atan2(q[1] - p[1], q[0] - p[0]), c = Math.cos(ang), s = Math.sin(ang), hl = w * 2.6, hw = w * 1.6;
+  const head = (t: Pt, dir: number) => {
+    const bx = t[0] - c * hl * dir, by = t[1] - s * hl * dir;
+    return `M${f1(t[0])} ${f1(t[1])}L${f1(bx - s * hw)} ${f1(by + c * hw)}L${f1(bx + s * hw)} ${f1(by - c * hw)}Z`;
+  };
+  // 線段縮到箭頭底部，避免線頭從三角形尖端露出
+  const a: Pt = [p[0] + c * hl * 0.9, p[1] + s * hl * 0.9], b: Pt = [q[0] - c * hl * 0.9, q[1] - s * hl * 0.9];
+  return { line: `M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`, heads: head(q, 1) + head(p, -1) };
+};
+
 export const parcelSvg = (m: ParcelMap, opts: { anim?: boolean; id?: string } = {}): string => {
   const W = m.w ?? 1200, H = m.h ?? 1200, id = opts.id ?? 'pc';
   const { dims } = parcelLayout(m);
   const an = (cls: string, i: number) => (opts.anim ? ` class="${cls}" style="--i:${i}"` : '');
-  // 套繪模式：有底圖或透明底時，線條與文字都加白色外框、建物半透明，疊在任何地圖上都看得清楚
+  // 套繪模式：有底圖或透明底時不畫路面（底圖已經有路），線條與文字加白框
   const ov = !!m.base || m.bg === 'transparent';
-  const dim = m.dim ?? (m.base ? 0.15 : 0);
+  const dimBase = m.dim ?? 0;
+  const HALO = '#ffffff';
   const bg = m.base
-    ? `<g id="base"><image href="${e(m.base)}" width="${W}" height="${H}" preserveAspectRatio="none"/>${dim ? `<rect width="${W}" height="${H}" fill="#000" opacity="${dim}"/>` : ''}</g>`
+    ? `<g id="base"><image href="${e(m.base)}" width="${W}" height="${H}" preserveAspectRatio="none"/>${dimBase ? `<rect width="${W}" height="${H}" fill="#000" opacity="${dimBase}"/>` : ''}</g>`
     : m.bg === 'transparent'
       ? ''
       : `<rect width="${W}" height="${H}" fill="${PC.paper}"/>`;
-  const HALO = '#ffffff';
-  // 套繪模式不畫道路帶（底圖已經有路），只保留路名
-  const roads = ov ? '' : (m.roads ?? []).map((r, i) => `<path${an('pc-f', i)} d="${path(r.pts)}" fill="none" stroke="${PC.road}" stroke-width="${r.w}" stroke-linecap="butt" stroke-linejoin="round"/>`).join('');
+  const roads = ov ? '' : (m.roads ?? []).map((r, i) => `<path${an('pc-f', i)} d="${path(r.pts)}" fill="none" stroke="${PC.road}" stroke-width="${r.w}" stroke-linejoin="round"/>`).join('');
   const roadNames = (m.roads ?? [])
     .filter((r) => r.name)
     .map((r, i) => {
-      const n = roadNameAt(r);
-      return `<text${an('pc-t', i)} transform="translate(${n.x.toFixed(1)} ${n.y.toFixed(1)}) rotate(${n.ang.toFixed(1)})" font-size="${n.px}" font-weight="700" fill="${ov ? PC.dim : PC.roadText}"${ov ? ` stroke="${HALO}" stroke-width="7" paint-order="stroke"` : ''} text-anchor="middle" dominant-baseline="central" letter-spacing="4">${e(r.name!)}</text>`;
+      const n = roadNameAt(r), chars = [...r.name!];
+      const style = `font-size="${n.px}" font-weight="900" fill="${PC.ink}" stroke="${HALO}" stroke-width="${Math.round(n.px * 0.22)}" paint-order="stroke" stroke-linejoin="round" text-anchor="middle" dominant-baseline="central"`;
+      if (n.vertical) {
+        const step = n.px * 1.3, y0 = n.y - ((chars.length - 1) * step) / 2;
+        return `<g${an('pc-t', i)}>${chars.map((ch, k) => `<text x="${f1(n.x)}" y="${f1(y0 + k * step)}" ${style}>${e(ch)}</text>`).join('')}</g>`;
+      }
+      return `<text${an('pc-t', i)} transform="translate(${f1(n.x)} ${f1(n.y)}) rotate(${f1(n.ang)})" ${style} letter-spacing="${Math.round(n.px * 0.5)}">${e(r.name!)}</text>`;
     })
     .join('');
   const parcels = (m.parcels ?? [])
     .map((p, i) =>
       ov
-        ? `<g${an('pc-f', i)}><path d="${path(p.pts)}Z" fill="none" stroke="${HALO}" stroke-width="${p.site ? 11 : 7}" stroke-linejoin="round" opacity=".9"/><path d="${path(p.pts)}Z" fill="none" stroke="${PC.dim}" stroke-width="${p.site ? 5 : 2.5}" stroke-linejoin="round"/></g>`
+        ? `<g${an('pc-f', i)}><path d="${path(p.pts)}Z" fill="none" stroke="${HALO}" stroke-width="${p.site ? 11 : 7}" stroke-linejoin="round" opacity=".9"/><path d="${path(p.pts)}Z" fill="none" stroke="${PC.dim}" stroke-width="${p.site ? 5 : 2.5}" stroke-linejoin="round"${p.site ? '' : ' stroke-dasharray="14 8"'}/></g>`
         : `<path${an('pc-l', i)} d="${path(p.pts)}Z" pathLength="1" fill="none" stroke="${p.site ? PC.dim : PC.line}" stroke-width="${p.site ? 4 : 2}" stroke-linejoin="round"/>`,
     )
     .join('');
   const lots = (m.parcels ?? [])
     .filter((p) => p.no)
     .map((p, i) => {
-      // 地號放在地塊左上角內側（或指定位置），避免被建物蓋住
       const [x, y] = lotAt(p);
-      return `<text${an('pc-t', i)} x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="22" font-weight="${ov ? 800 : 500}" fill="${ov ? PC.dim : PC.lot}"${ov ? ` stroke="${HALO}" stroke-width="5" paint-order="stroke"` : ''}>${e(p.no!)}</text>`;
+      return `<text${an('pc-t', i)} x="${f1(x)}" y="${f1(y)}" font-size="22" font-weight="800" fill="${PC.dim}" stroke="${HALO}" stroke-width="5" paint-order="stroke">${e(p.no!)}</text>`;
     })
     .join('');
-  const others = m.buildings.filter((b) => !b.main);
-  const main = m.buildings.find((b) => b.main);
-  const bld = others
-    .map((b, i) =>
-      ov
-        ? `<g${an('pc-b', i)}><path d="${path(b.pts)}Z" fill="none" stroke="${HALO}" stroke-width="8" stroke-linejoin="round"/><path d="${path(b.pts)}Z" fill="#ffffff" fill-opacity=".35" stroke="${PC.dim}" stroke-width="3" stroke-linejoin="round"/></g>`
-        : `<path${an('pc-b', i)} d="${path(b.pts)}Z" fill="url(#${id}-h)" stroke="${PC.bldEdge}" stroke-width="2.5" stroke-linejoin="round"/>`,
-    )
-    .join('');
-  const bldNames = others
-    .filter((b) => b.name)
+  // 建物：黃色色塊＋深色框，名稱與樓層兩行；主角建物紅框紅字
+  const blds = m.buildings
     .map((b, i) => {
-      const c = centroid(b.pts);
-      return `<text${an('pc-t', i)} x="${c[0].toFixed(1)}" y="${c[1].toFixed(1)}" font-size="30" font-weight="900" fill="${ov ? PC.dim : '#3d3a33'}" stroke="${ov ? HALO : PC.paper}" stroke-width="6" paint-order="stroke" text-anchor="middle" dominant-baseline="central">${e(b.name!)}</text>`;
+      const c = centroid(b.pts), ls = bldLines(b), lh = BLD_PX * 1.2, y0 = c[1] - ((ls.length - 1) * lh) / 2;
+      const col = b.main ? PC.red : PC.ink;
+      return `<g${an(b.main ? 'pc-m' : 'pc-b', i)}>${ov ? `<path d="${path(b.pts)}Z" fill="none" stroke="${HALO}" stroke-width="9" stroke-linejoin="round"/>` : ''}<path d="${path(b.pts)}Z" fill="${PC.bld}" fill-opacity=".96" stroke="${b.main ? PC.red : PC.bldEdge}" stroke-width="${b.main ? 5 : 3}" stroke-linejoin="round"/>${ls.map((l, k) => `<text x="${f1(c[0])}" y="${f1(y0 + k * lh)}" font-size="${BLD_PX}" font-weight="900" fill="${col}" text-anchor="middle" dominant-baseline="central">${e(l)}</text>`).join('')}</g>`;
     })
     .join('');
-  let mainSvg = '';
-  if (main) {
-    const c = centroid(main.pts), name = main.name ?? '本案', w = textW(name, 36) + 36;
-    mainSvg = `<g${an('pc-m', 0)}>${ov ? `<path d="${path(main.pts)}Z" fill="none" stroke="${HALO}" stroke-width="12" stroke-linejoin="round"/>` : ''}<path d="${path(main.pts)}Z" fill="${PC.main}"${ov ? ' fill-opacity=".55"' : ''} stroke="${ov ? PC.main : darken(PC.main)}" stroke-width="${ov ? 6 : 4}" stroke-linejoin="round"/><g transform="translate(${c[0].toFixed(1)} ${c[1].toFixed(1)})"><rect x="${(-w / 2).toFixed(1)}" y="-27" width="${w.toFixed(1)}" height="54" rx="10" fill="#fff" stroke="${darken(PC.main)}" stroke-width="3"/><text font-size="36" font-weight="900" fill="${darken(PC.main)}" text-anchor="middle" dominant-baseline="central">${e(name)}</text>${main.note ? `<text y="52" font-size="24" font-weight="700" fill="#fff" stroke="${darken(PC.main)}" stroke-width="5" paint-order="stroke" text-anchor="middle" dominant-baseline="central">${e(main.note)}</text>` : ''}</g></g>`;
-  }
-  // 距離標註：兩端垂直短線＋中間白底數字，數字順著標註線方向
+  // 距離：主要＝紅色粗雙箭頭＋紅底白字；次要／退縮＝紅色細線兩端短線＋白底紅字（退縮紅底）
   const dimSvg = dims
     .map((d, i) => {
-      const ang = Math.atan2(d.q[1] - d.p[1], d.q[0] - d.p[0]), nx = -Math.sin(ang) * 14, ny = Math.cos(ang) * 14;
-      let deg = (ang * 180) / Math.PI;
-      if (deg > 90) deg -= 180;
-      if (deg < -90) deg += 180;
-      const [mx, my] = dimLabelAt(d.p, d.q, d.text), tw = textW(d.text, 30) + 22;
-      const tick = (p: Pt) => `M${(p[0] + nx).toFixed(1)} ${(p[1] + ny).toFixed(1)}L${(p[0] - nx).toFixed(1)} ${(p[1] - ny).toFixed(1)}`;
-      const halo = ov ? `<path d="M${d.p[0].toFixed(1)} ${d.p[1].toFixed(1)}L${d.q[0].toFixed(1)} ${d.q[1].toFixed(1)}${tick(d.p)}${tick(d.q)}" stroke="${HALO}" stroke-width="9" stroke-linecap="round"/>` : '';
-      return `<g${an('pc-d', i)}>${halo}<path d="M${d.p[0].toFixed(1)} ${d.p[1].toFixed(1)}L${d.q[0].toFixed(1)} ${d.q[1].toFixed(1)}" pathLength="1" stroke="${PC.dim}" stroke-width="3.5"${d.est ? ' stroke-dasharray="0.04 0.025"' : ''}/><path d="${tick(d.p)}${tick(d.q)}" stroke="${PC.dim}" stroke-width="3.5"/>${d.text ? `<g transform="translate(${mx.toFixed(1)} ${my.toFixed(1)}) rotate(${deg.toFixed(1)})"><rect x="${(-tw / 2).toFixed(1)}" y="-21" width="${tw.toFixed(1)}" height="42" rx="8" fill="#fff" stroke="${PC.dim}" stroke-width="2.5"/><text font-size="30" font-weight="900" fill="${PC.dim}" text-anchor="middle" dominant-baseline="central">${e(d.text)}</text></g>` : ''}</g>`;
+      const major = d.kind === 'major', px = DIM_PX[d.kind];
+      let body: string;
+      if (major) {
+        const a = arrow(d.p, d.q, 9);
+        body = `<path d="${a.line}" stroke="${HALO}" stroke-width="17" stroke-linecap="round"/><path d="${a.heads}" fill="${HALO}" stroke="${HALO}" stroke-width="8" stroke-linejoin="round"/><path d="${a.line}" stroke="${PC.red}" stroke-width="9"/><path d="${a.heads}" fill="${PC.red}"/>`;
+      } else {
+        const ang = Math.atan2(d.q[1] - d.p[1], d.q[0] - d.p[0]), nx = -Math.sin(ang) * 11, ny = Math.cos(ang) * 11;
+        const tick = (p: Pt) => `M${f1(p[0] + nx)} ${f1(p[1] + ny)}L${f1(p[0] - nx)} ${f1(p[1] - ny)}`;
+        const ln = `M${f1(d.p[0])} ${f1(d.p[1])}L${f1(d.q[0])} ${f1(d.q[1])}${tick(d.p)}${tick(d.q)}`;
+        body = `<path d="${ln}" stroke="${HALO}" stroke-width="8" stroke-linecap="round"/><path d="${ln}" stroke="${PC.red}" stroke-width="3.5"${d.est ? ' stroke-dasharray="10 6"' : ''}/>`;
+      }
+      const filled = major || d.kind === 'setback', b = d.box;
+      const label = d.lines.length
+        ? `<g transform="translate(${f1(b.cx)} ${f1(b.cy)})"><rect x="${f1(-b.w / 2)}" y="${f1(-b.h / 2)}" width="${f1(b.w)}" height="${f1(b.h)}" rx="4" fill="${filled ? PC.red : '#ffffff'}" fill-opacity="${filled ? 1 : 0.92}"${filled ? '' : ` stroke="${PC.red}" stroke-width="2"`}/>${d.lines.map((l, k) => `<text y="${f1((k - (d.lines.length - 1) / 2) * px * 1.15)}" font-size="${px}" font-weight="900" fill="${filled ? '#ffffff' : PC.red}" text-anchor="middle" dominant-baseline="central">${e(l)}</text>`).join('')}</g>`
+        : '';
+      return `<g${an('pc-d', i)}>${body}${label}</g>`;
     })
     .join('');
   const sb = m.m_per_px ? scaleBar(m.m_per_px) : null;
   const scale = sb
-    ? `<g transform="translate(${W - 40 - sb.px} ${H - 70})"><rect width="${(sb.px / 2).toFixed(1)}" height="12" fill="${PC.dim}"/><rect x="${(sb.px / 2).toFixed(1)}" width="${(sb.px / 2).toFixed(1)}" height="12" fill="#fff" stroke="${PC.dim}" stroke-width="2"/><text y="-12" font-size="22" font-weight="700" fill="${PC.dim}">0</text><text x="${sb.px.toFixed(1)}" y="-12" font-size="22" font-weight="700" fill="${PC.dim}" text-anchor="end">${fmtM(sb.m)} m</text></g>`
+    ? `<g transform="translate(${f1(W - 40 - sb.px)} ${H - 70})"><rect x="-10" y="-40" width="${f1(sb.px + 20)}" height="62" rx="6" fill="#fff" fill-opacity=".85"/><rect width="${f1(sb.px / 2)}" height="12" fill="${PC.dim}"/><rect x="${f1(sb.px / 2)}" width="${f1(sb.px / 2)}" height="12" fill="#fff" stroke="${PC.dim}" stroke-width="2"/><text y="-12" font-size="22" font-weight="700" fill="${PC.dim}">0</text><text x="${f1(sb.px)}" y="-12" font-size="22" font-weight="700" fill="${PC.dim}" text-anchor="end">${fmtM(sb.m)} 公尺</text></g>`
     : '';
   const north = m.north !== undefined ? `<g transform="translate(${W - 70} 80) rotate(${m.north})"><circle r="40" fill="#fff" stroke="${PC.dim}" stroke-width="3"/><path d="M0 -30L14 14L0 6L-14 14Z" fill="${PC.dim}"/><text y="-48" font-size="26" font-weight="900" fill="${PC.dim}" text-anchor="middle">N</text></g>` : '';
   const anyEst = dims.some((d) => d.est);
-  const note = [`地籍與建物位置為示意，以地政機關地籍圖為準${anyEst ? '；標「約」的距離由圖面比例換算' : ''}`, m.source].filter(Boolean).join('｜');
+  const note = [`位置為示意${m.parcels?.length ? '，地籍以地政機關地籍圖為準' : ''}${anyEst ? '；標「約」的距離由圖面比例換算' : ''}`, m.source].filter(Boolean).join('｜');
   const css = opts.anim
-    ? `<style>.pc-f,.pc-b{opacity:0;animation:${id}F 7s ease infinite both;animation-delay:calc(var(--i)*.06s)}.pc-l{stroke-dasharray:1 1;stroke-dashoffset:1;animation:${id}L 7s cubic-bezier(.5,0,.2,1) infinite both;animation-delay:calc(var(--i)*.04s)}.pc-t{opacity:0;animation:${id}T 7s ease infinite both}.pc-m{opacity:0;transform-box:fill-box;transform-origin:center;animation:${id}M 7s cubic-bezier(.3,1.4,.5,1) infinite both}.pc-d{opacity:0;animation:${id}D 7s ease infinite both;animation-delay:calc(var(--i)*.35s)}@keyframes ${id}F{0%{opacity:0}12%,94%{opacity:1}100%{opacity:0}}@keyframes ${id}L{0%{stroke-dashoffset:1;opacity:1}22%,94%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}@keyframes ${id}T{0%,18%{opacity:0}26%,94%{opacity:1}100%{opacity:0}}@keyframes ${id}M{0%,26%{opacity:0;transform:scale(.8)}36%,94%{opacity:1;transform:none}100%{opacity:0}}@keyframes ${id}D{0%,40%{opacity:0}48%,94%{opacity:1}100%{opacity:0}}</style>`
+    ? `<style>.pc-f,.pc-b{opacity:0;animation:${id}F 7s ease infinite both;animation-delay:calc(var(--i)*.06s)}.pc-l{stroke-dasharray:1 1;stroke-dashoffset:1;animation:${id}L 7s cubic-bezier(.5,0,.2,1) infinite both;animation-delay:calc(var(--i)*.04s)}.pc-t{opacity:0;animation:${id}T 7s ease infinite both}.pc-m{opacity:0;transform-box:fill-box;transform-origin:center;animation:${id}M 7s cubic-bezier(.3,1.4,.5,1) infinite both}.pc-d{opacity:0;animation:${id}D 7s ease infinite both;animation-delay:calc(var(--i)*.3s)}@keyframes ${id}F{0%{opacity:0}12%,94%{opacity:1}100%{opacity:0}}@keyframes ${id}L{0%{stroke-dashoffset:1;opacity:1}22%,94%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}@keyframes ${id}T{0%,18%{opacity:0}26%,94%{opacity:1}100%{opacity:0}}@keyframes ${id}M{0%,26%{opacity:0;transform:scale(.85)}36%,94%{opacity:1;transform:none}100%{opacity:0}}@keyframes ${id}D{0%,40%{opacity:0}48%,94%{opacity:1}100%{opacity:0}}</style>`
     : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='${FONT}'>${m.title ? `<title>${e(m.title)}</title>` : ''}${css}<defs><pattern id="${id}-h" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="14" height="14" fill="${PC.bld}"/><path d="M0 0V14" stroke="#b3ad9e" stroke-width="3"/></pattern></defs>${bg}<g id="roads">${roads}${roadNames}</g><g id="parcels">${parcels}</g><g id="buildings">${bld}${bldNames}</g><g id="main">${mainSvg}</g><g id="lot-numbers">${lots}</g><g id="distances">${dimSvg}</g><g id="furniture">${north}${scale}<text x="36" y="${H - 34}" font-size="20" font-weight="700" fill="${ov ? PC.dim : PC.lot}"${ov ? ` stroke="${HALO}" stroke-width="5" paint-order="stroke"` : ''}>${e(note)}</text></g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='${FONT}'>${m.title ? `<title>${e(m.title)}</title>` : ''}${css}${bg}<g id="roads">${roads}</g><g id="parcels">${parcels}</g><g id="buildings">${blds}</g><g id="road-names">${roadNames}</g><g id="lot-numbers">${lots}</g><g id="distances">${dimSvg}</g><g id="furniture">${north}${scale}<text x="36" y="${H - 34}" font-size="20" font-weight="700" fill="${PC.dim}" stroke="${HALO}" stroke-width="5" paint-order="stroke">${e(note)}</text></g></svg>`;
 };
 
-/** 範例（虛構，示意）：街角基地上的本案與三棟鄰棟 */
+/** 範例（虛構，示意）：本案 A、B 兩棟與周邊三棟 */
 export const PARCEL_SAMPLE: ParcelMap = {
   title: '本案棟距示意',
   w: 1200,
   h: 1200,
   m_per_px: 0.1,
-  north: 0,
   bg: 'paper',
   roads: [
-    { name: '某某路（示意）', w: 110, pts: [[0, 150], [1200, 150]] },
-    { name: '某某街（示意）', w: 80, pts: [[150, 0], [150, 1200]] },
-  ],
-  parcels: [
-    { no: '101', site: true, pts: [[210, 210], [640, 210], [640, 640], [210, 640]] },
-    { no: '102', pts: [[640, 210], [1000, 210], [1000, 520], [640, 520]] },
-    { no: '103', pts: [[1000, 210], [1200, 210], [1200, 520], [1000, 520]] },
-    { no: '104', pts: [[640, 520], [1200, 520], [1200, 860], [640, 860]] },
-    { no: '105', pts: [[210, 640], [640, 640], [640, 1000], [210, 1000]] },
-    { no: '106', pts: [[210, 1000], [700, 1000], [700, 1200], [210, 1200]] },
-    { no: '107', pts: [[700, 860], [1200, 860], [1200, 1200], [700, 1200]] },
+    { name: '某某路', w: 110, pts: [[0, 1010], [1200, 1010]], name_at: [420, 1010] },
+    { name: '某某街', w: 90, pts: [[110, 0], [110, 1200]] },
   ],
   buildings: [
-    { name: '本案', main: true, note: '地上 24 層（示意）', pts: [[290, 280], [560, 280], [560, 560], [290, 560]] },
-    { name: 'A 棟', pts: [[740, 270], [940, 270], [940, 460], [740, 460]] },
-    { name: 'B 棟', pts: [[760, 620], [1100, 620], [1100, 790], [760, 790]] },
-    { name: 'C 棟', pts: [[270, 760], [560, 760], [560, 940], [270, 940]] },
+    { name: '本案 A 棟', note: '20F', main: true, pts: [[300, 700], [520, 700], [520, 880], [300, 880]] },
+    { name: '本案 B 棟', note: '20F', main: true, pts: [[640, 700], [880, 700], [880, 880], [640, 880]] },
+    { name: '某某大樓', note: '14F', pts: [[300, 160], [520, 160], [520, 360], [300, 360]] },
+    { name: '某某華廈', note: '13F', pts: [[680, 80], [880, 80], [880, 280], [680, 280]] },
+    { name: '某某社區', note: '15F', pts: [[620, 1090], [880, 1090], [880, 1200], [620, 1200]] },
   ],
-  distances: [{ to: 'A 棟' }, { to: 'B 棟' }, { to: 'C 棟' }],
+  distances: [
+    { from: '本案 A 棟', to: '某某大樓' },
+    { from: '本案 B 棟', to: '某某華廈' },
+    { from: '本案 A 棟', to: '本案 B 棟', kind: 'minor' },
+    { from: '本案 B 棟', to: '某某社區' },
+    { p: [880, 790], q: [960, 790], kind: 'setback', m: 8 },
+  ],
 };

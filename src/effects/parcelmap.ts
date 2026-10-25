@@ -27,7 +27,7 @@ export const parcelMapFx: Fx = {
   cat: 'mplan',
   zh: '地籍棟距圖',
   en: 'Cadastral Building Distances',
-  desc: '類似地籍套繪圖：地籍線與地號、主要建物主色突顯，標出到周邊建物的距離',
+  desc: '兩層棟距圖：地圖截圖當底圖，建物用黃色名牌（主角紅字），紅色箭頭標出到周邊建物的距離與退縮',
   tags: ['地籍', '棟距', '基地', '鄰棟'],
   tone: 'paper',
   sample: [JSON.stringify(PARCEL_SAMPLE)],
@@ -35,9 +35,9 @@ export const parcelMapFx: Fx = {
   preferredRatio: '16:9',
   added: '2026-10-25',
   motion:
-    '米白底的地籍套繪圖：道路以淺灰帶狀淡入並標路名，地籍分割細線一筆畫出、各地塊角落標地號，基地外框加粗；周邊建物以灰色斜線填充淡入並標名稱；主要建物以主色塊彈出，中央白底名稱標籤與樓層註記；最後從主要建物最近的一邊，逐條拉出到各鄰棟的距離標註線（兩端垂直短線、白底數字順著線方向），換算的距離用虛線並標「約」；右上指北針、右下比例尺、左下註明示意與資料來源。',
+    '地圖截圖（或米白底）上，各棟建物以黃色色塊加深色框標出名稱與樓層，主角建物紅框紅字並彈出；接著逐條畫出距離：主要距離是紅色粗雙箭頭，旁邊紅底白字「約48／公尺」；次要距離與建物之間是紅色細線兩端短線、白底紅字；退縮標「退縮 4 公尺」；路名用大字黑體加白框，南北向直排；數字框自動避開建物與文字；左下註明示意與資料來源。',
   motionEn:
-    'A cadastral overlay on off-white: roads fade in as light-grey bands with names, parcel lines draw in stroke by stroke with lot numbers in each corner, the site outline in bold; neighboring buildings fade in with grey hatching and names; the main building pops in as an accent block with a white name tag and floor note; finally dimension lines extend one by one from the main building’s nearest side to each neighbor (end ticks, white-backed numbers along the line), estimated distances dashed and marked “approx.”; north arrow top right, scale bar bottom right, a note on accuracy and source bottom left.',
+    'On a map screenshot (or off-white): each building is a yellow block with a dark outline showing its name and floors, the subject buildings in red outline and red text popping in; then distances draw in one by one — main ones as thick red double arrows with a red tag “approx. 48 / m” beside them, secondary ones and gaps between buildings as thin red lines with end ticks and white tags with red text, setbacks tagged “setback 4 m”; road names in large bold type with a white halo, set vertically for north–south roads; tags automatically avoid buildings and text; a note on accuracy and sources at the bottom left.',
   css: `
 .S{background:var(--bg)}
 .S .pc{position:absolute;inset:3%;display:grid;place-items:center}

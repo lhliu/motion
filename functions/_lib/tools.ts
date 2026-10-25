@@ -853,7 +853,7 @@ const TOOLS_FULL: ToolDef[] = [
     name: 'build_parcel_map',
     title: '地籍棟距圖（地籍套繪＋主建物到鄰棟距離）',
     description:
-      '兩層的地籍套繪大地圖：第一層是使用者從 Google 地圖等網站截的地圖（base，先上傳拿網址：Claude Code 等可執行程式時 POST 圖片到 /api/uploads（帶寫入金鑰），聊天中請使用者在網站 Combo → MCP 連線分頁「上傳底圖」後把網址貼給你），第二層是照截圖描出的地籍分割線與地號、周邊建物邊界（半透明）、一棟主要建物主色突顯，並從主要建物最近的一邊畫出到指定鄰棟的距離標註。座標＝截圖像素（w、h 填截圖寬高）；沒有底圖也能做（米白底，或 bg: transparent 只輸出套繪層，同尺寸疊回截圖）。地塊與建物畫輪廓，道路畫中心線加路寬。底圖來源（例如「底圖：Google 地圖」）寫進 source，截圖保留原地圖的版權標示。距離優先用使用者提供或圖面標示的數字（distances[].m，公尺）；沒有數字時給 m_per_px（每像素幾公尺，可由截圖比例尺換算）會自動換算並標「約」、虛線；兩者都沒有就只畫線。不要自己編距離。地籍與建物位置一律註明示意。回傳檢查截圖與 warnings（文字重疊、超出畫布、線太短、缺數字），修正後再交付；輸出 svg_url（分層，含底圖連結）、png_url（底圖＋套繪合成）、overlay_png_url（只有套繪的透明 PNG，跟截圖同尺寸）、combo_scene。',
+      '兩層的地籍套繪大地圖：第一層是使用者從 Google 地圖等網站截的地圖（base，先上傳拿網址：Claude Code 等可執行程式時 POST 圖片到 /api/uploads（帶寫入金鑰），聊天中請使用者在網站 Combo → MCP 連線分頁「上傳底圖」後把網址貼給你），第二層是照截圖描出的地籍分割線與地號、周邊建物邊界（半透明）、建物用黃色色塊標名稱與樓層、主角建物紅框紅字（可多棟），距離用紅色雙箭頭（主要）或細線（次要、退縮）標出，數字框自動找不蓋到建物與文字的位置。座標＝截圖像素（w、h 填截圖寬高）；沒有底圖也能做（米白底，或 bg: transparent 只輸出套繪層，同尺寸疊回截圖）。地塊與建物畫輪廓，道路畫中心線加路寬。底圖來源（例如「底圖：Google 地圖」）寫進 source，截圖保留原地圖的版權標示。距離優先用使用者提供或圖面標示的數字（distances[].m，公尺）；沒有數字時給 m_per_px（每像素幾公尺，可由截圖比例尺換算）會自動換算並標「約」、虛線；兩者都沒有就只畫線。不要自己編距離。地籍與建物位置一律註明示意。回傳檢查截圖與 warnings（文字重疊、超出畫布、線太短、缺數字），修正後再交付；輸出 svg_url（分層，含底圖連結）、png_url（底圖＋套繪合成）、overlay_png_url（只有套繪的透明 PNG，跟截圖同尺寸）、combo_scene。',
     inputSchema: {
       type: 'object',
       required: ['buildings'],
@@ -868,8 +868,8 @@ const TOOLS_FULL: ToolDef[] = [
         base: { type: 'string', description: '第一層底圖：地圖截圖的網址（/u/… 上傳後的網址或 https）。有底圖時座標就是這張截圖的像素、w/h 填截圖寬高，套繪改成白框線條與半透明建物' },
         dim: { type: 'number', description: '底圖壓暗 0–0.7，預設 0.15' },
         roads: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '中心線' }, w: { type: 'number', description: '路寬（像素），預設 60；有底圖時不畫路面只標路名' }, name_at: { type: 'array', items: { type: 'number' }, description: '路名位置 [x,y]，避開其他文字時用' } }, required: ['pts'] } },
-        buildings: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } } }, main: { type: 'boolean', description: '主要建物，剛好一棟' }, note: { type: 'string', description: '補充，例如「地上 28 層」' } }, required: ['pts'] } },
-        distances: { type: 'array', items: { type: 'object', properties: { to: { type: 'string', description: '目標建物名稱（要跟 buildings 的 name 一致）' }, m: { type: 'number', description: '距離（公尺），請用實測或圖面數字' }, label: { type: 'string', description: '自訂標註文字' } }, required: ['to'] } },
+        buildings: { type: 'array', items: { type: 'object', properties: { name: { type: 'string', description: '建物名稱（第一行）' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } } }, main: { type: 'boolean', description: '主角建物（紅框紅字），至少一棟，可多棟（同建案 A、B 棟）' }, note: { type: 'string', description: '第二行，例如「20F」' } }, required: ['pts'] }, description: '黃色色塊＋深色框，名稱與樓層兩行' },
+        distances: { type: 'array', items: { type: 'object', properties: { from: { type: 'string', description: '起點建物名稱（省略＝第一棟主角）' }, to: { type: 'string', description: '目標建物名稱（跟 buildings 的 name 一致），畫兩棟最近的距離' }, p: { type: 'array', items: { type: 'number' }, description: '直接指定起點 [x,y]（退縮到路邊、或要避開其他標註時用）' }, q: { type: 'array', items: { type: 'number' }, description: '直接指定終點 [x,y]' }, m: { type: 'number', description: '距離（公尺），請用實測或圖面數字' }, label: { type: 'string', description: '自訂文字，例如「約48公尺」' }, kind: { type: 'string', enum: ['major', 'minor', 'setback'], description: 'major 紅色粗雙箭頭＋紅底白字（主角到鄰棟預設）｜minor 紅色細線＋白底紅字（主角之間、次要距離）｜setback 退縮' } } } },
         source: { type: 'string', description: '資料來源與時間，例如「地籍圖資：國土測繪圖資服務雲（2026-10 查詢）」' },
         preview: { type: 'boolean', description: '回傳檢查截圖，預設 true' },
         local: { type: 'boolean', description: '能在使用者電腦執行程式時設 true，改回傳 local_preview 自己截圖' },
@@ -888,7 +888,7 @@ const TOOLS_FULL: ToolDef[] = [
       const out = {
         ok: true,
         warnings,
-        distances: dims.map((d) => ({ to: d.to, text: d.text || '（未標數字）', estimated: d.est })),
+        distances: dims.map((d) => ({ name: d.key, kind: d.kind, text: d.lines.join('') || '（未標數字）', estimated: d.est })),
         svg_url: `${ctx.origin}/m/svg?z=${z}&t=parcel&dl=1`,
         png_url: `${ctx.origin}/m/png?z=${z}&t=parcel&dl=1`,
         ...(map.base ? { overlay_png_url: `${ctx.origin}/m/png?z=${await packJson({ ...map, base: undefined, bg: 'transparent' })}&t=parcel&dl=1` } : {}),
