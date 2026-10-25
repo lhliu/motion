@@ -3034,3 +3034,4 @@ pre.code {
 #mxstudio .mx-file{cursor:pointer}
 #mxstudio .ms-stage canvas{touch-action:none}
 #combos .dr-set{font-style:normal;font-weight:600;color:var(--brand);margin-left:6px;font-size:12px}
+#combos .mcp-up{margin:18px 0;padding:14px 16px;border:1px solid var(--line);border-radius:12px}#combos .mcp-up h4{margin:0 0 6px}#combos .mcp-file{cursor:pointer;display:inline-flex;margin:6px 0}

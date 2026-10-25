@@ -418,6 +418,41 @@ export const initCombos = (deps: ComboDeps) => {
     $('#drKeyState').textContent = keyInput.value.trim() ? '已設定' : '未設定';
   });
 
+  /* ───────── 上傳底圖（地籍套繪大地圖用） ───────── */
+  // 原圖 1.4 MB 以內直接上傳（座標才跟原截圖一致）；太大先存成 JPEG，還是太大才縮小
+  const shrinkImage = async (f: File): Promise<Blob> => {
+    if (f.size <= 1_400_000) return f;
+    const bmp = await createImageBitmap(f);
+    for (const k of [1, 0.85, 0.7, 0.55]) {
+      const c = document.createElement('canvas');
+      c.width = Math.round(bmp.width * k);
+      c.height = Math.round(bmp.height * k);
+      c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
+      const b = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/jpeg', 0.85));
+      if (b && b.size <= 1_400_000) return b;
+    }
+    throw new Error('圖片太大，請先裁小一點再上傳');
+  };
+  $<HTMLInputElement>('#upFile').addEventListener('change', async (e) => {
+    const f = (e.target as HTMLInputElement).files?.[0];
+    (e.target as HTMLInputElement).value = '';
+    if (!f) return;
+    if (!deps.store.get('key', '')) return deps.toast('請先在「我的草稿」設定寫入金鑰');
+    try {
+      deps.toast('上傳中⋯');
+      const body = await shrinkImage(f);
+      const res = await fetch('/api/uploads', { method: 'POST', headers: { 'content-type': body.type || 'image/jpeg', authorization: `Bearer ${deps.store.get('key', '')}` }, body });
+      const j = (await res.json()) as { ok: boolean; url?: string; w?: number; h?: number; error?: string };
+      if (!j.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
+      $('#upUrl').textContent = `底圖 ${j.url}（${j.w}×${j.h}）`;
+      $('#upOut').hidden = false;
+      deps.toast(body === f ? '已上傳' : '已上傳（為了符合大小上限有壓縮，座標以回傳尺寸為準）');
+    } catch (err) {
+      deps.toast(err instanceof Error ? err.message : '上傳失敗');
+    }
+  });
+  $('#upCopy').addEventListener('click', () => void deps.copy($('#upUrl').textContent ?? '', '已複製，貼給 AI 即可'));
+
   const api = async (path: string, init: RequestInit = {}) => {
     const key = deps.store.get('key', '');
     const res = await fetch(path, {

@@ -91,6 +91,10 @@ export const findEffect = (id: string): Fx | undefined => {
 const isHex = (s: unknown): s is string => typeof s === 'string' && /^#[0-9a-f]{6}$/i.test(s);
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
+/** words 是整段 JSON 或設定（可能含底圖資料）的招式：不截短 */
+const longWords = (id: string) =>
+  isCosmicFx(id) || isNatureFx(id) || isTransportFx(id) || isIllustrationFx(id) || isPhotoFx(id) || isObjFx(id) || ['map-overlay', 'crisp-drop', 'minimap', 'parcel-dist'].includes(id) || id.startsWith('mx-');
+
 /** 驗證並整理 Combo；回傳錯誤清單，讓 AI 知道哪裡要改 */
 export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[] } => {
   const errors: string[] = [];
@@ -104,7 +108,7 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
     const r = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>;
     const fx = findEffect(str(r.effect, 40));
     if (!fx) errors.push(`scenes[${i}].effect「${String(r.effect)}」不存在，請先用 search_effects 查 id`);
-    const long = isCosmicFx(fx?.id??'') || isNatureFx(fx?.id??'') || isTransportFx(fx?.id??'') || isIllustrationFx(fx?.id ?? '') || fx?.id === 'map-overlay' || fx?.id === 'crisp-drop' || isPhotoFx(fx?.id ?? '') || isObjFx(fx?.id ?? '');
+    const long = longWords(fx?.id ?? '');
     const diagram = fx?.cat === 'diagram';
     const max = long ? 900_000 : diagram ? 180 : 60;
     const rows = Array.isArray(r.words) ? r.words.map((w) => str(w, max)) : typeof r.words === 'string' ? (long ? [str(r.words, max)] : diagram ? str(r.words, 4320).split('\n').map((w) => str(w, max)) : str(r.words, 200).split(/\s*\/\s*|\n/)) : undefined;
@@ -136,7 +140,7 @@ export const normalizeCombo = (input: unknown): { combo: Combo; errors: string[]
       return [];
     }
     if (fx.cat === 'diagram' || isPhotoFx(fx.id) || isObjFx(fx.id) || fx.id === 'map-overlay') errors.push(`overlays[${i}]：${fx.zh}不適合當疊加圖層，建議用元件（ui-*、hook-*、estate-source）或字幕條`);
-    const words = Array.isArray(r.words) ? r.words.map((w) => str(w, 60)).filter(Boolean).slice(0, 12) : typeof r.words === 'string' ? str(r.words, 200).split(/\s*\/\s*|\n/).filter(Boolean) : [];
+    const words = Array.isArray(r.words) ? r.words.map((w) => str(w, longWords(fx.id) ? 900_000 : 60)).filter(Boolean).slice(0, 12) : typeof r.words === 'string' ? str(r.words, 200).split(/\s*\/\s*|\n/).filter(Boolean) : [];
     const n = rawScenes.length || 1;
     const from = Math.min(n, Math.max(1, Math.round(Number(r.from) || 1)));
     const to = Math.min(n, Math.max(from, Math.round(Number(r.to) || n)));

@@ -853,7 +853,7 @@ const TOOLS_FULL: ToolDef[] = [
     name: 'build_parcel_map',
     title: '地籍棟距圖（地籍套繪＋主建物到鄰棟距離）',
     description:
-      '類似地籍套繪圖：地籍分割線與地號、道路、周邊建物（灰色斜線），一棟主要建物主色突顯，並從主要建物最近的一邊畫出到指定鄰棟的距離標註。照使用者給的地籍圖／地圖截圖描座標（設計畫布像素，預設 1200×1200）：地塊與建物畫輪廓，道路畫中心線加路寬。距離優先用使用者提供或圖面標示的數字（distances[].m，公尺）；沒有數字時給 m_per_px（每像素幾公尺，可由截圖比例尺換算）會自動換算並標「約」、虛線；兩者都沒有就只畫線。不要自己編距離。地籍與建物位置一律註明示意。回傳檢查截圖與 warnings（文字重疊、超出畫布、線太短、缺數字），修正後再交付；輸出 svg_url、png_url、combo_scene。',
+      '兩層的地籍套繪大地圖：第一層是使用者從 Google 地圖等網站截的地圖（base，先上傳拿網址：Claude Code 等可執行程式時 POST 圖片到 /api/uploads（帶寫入金鑰），聊天中請使用者在網站 Combo → MCP 連線分頁「上傳底圖」後把網址貼給你），第二層是照截圖描出的地籍分割線與地號、周邊建物邊界（半透明）、一棟主要建物主色突顯，並從主要建物最近的一邊畫出到指定鄰棟的距離標註。座標＝截圖像素（w、h 填截圖寬高）；沒有底圖也能做（米白底，或 bg: transparent 只輸出套繪層，同尺寸疊回截圖）。地塊與建物畫輪廓，道路畫中心線加路寬。底圖來源（例如「底圖：Google 地圖」）寫進 source，截圖保留原地圖的版權標示。距離優先用使用者提供或圖面標示的數字（distances[].m，公尺）；沒有數字時給 m_per_px（每像素幾公尺，可由截圖比例尺換算）會自動換算並標「約」、虛線；兩者都沒有就只畫線。不要自己編距離。地籍與建物位置一律註明示意。回傳檢查截圖與 warnings（文字重疊、超出畫布、線太短、缺數字），修正後再交付；輸出 svg_url（分層，含底圖連結）、png_url（底圖＋套繪合成）、overlay_png_url（只有套繪的透明 PNG，跟截圖同尺寸）、combo_scene。',
     inputSchema: {
       type: 'object',
       required: ['buildings'],
@@ -864,8 +864,10 @@ const TOOLS_FULL: ToolDef[] = [
         m_per_px: { type: 'number', description: '每像素幾公尺（比例尺與自動換算距離用）' },
         north: { type: 'number', description: '指北方向（度，0＝畫面上方）；省略不畫指北針' },
         bg: { type: 'string', enum: ['paper', 'transparent'] },
-        parcels: { type: 'array', items: { type: 'object', properties: { pts: { type: 'array', items: { type: 'array', items: { type: 'number' } } }, no: { type: 'string', description: '地號' }, site: { type: 'boolean', description: '主要建物所在基地，外框加粗' } }, required: ['pts'] } },
-        roads: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '中心線' }, w: { type: 'number', description: '路寬（像素），預設 60' } }, required: ['pts'] } },
+        parcels: { type: 'array', items: { type: 'object', properties: { pts: { type: 'array', items: { type: 'array', items: { type: 'number' } } }, no: { type: 'string', description: '地號' }, no_at: { type: 'array', items: { type: 'number' }, description: '地號位置 [x,y]（省略＝左上角內側）' }, site: { type: 'boolean', description: '主要建物所在基地，外框加粗' } }, required: ['pts'] } },
+        base: { type: 'string', description: '第一層底圖：地圖截圖的網址（/u/… 上傳後的網址或 https）。有底圖時座標就是這張截圖的像素、w/h 填截圖寬高，套繪改成白框線條與半透明建物' },
+        dim: { type: 'number', description: '底圖壓暗 0–0.7，預設 0.15' },
+        roads: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '中心線' }, w: { type: 'number', description: '路寬（像素），預設 60；有底圖時不畫路面只標路名' }, name_at: { type: 'array', items: { type: 'number' }, description: '路名位置 [x,y]，避開其他文字時用' } }, required: ['pts'] } },
         buildings: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } } }, main: { type: 'boolean', description: '主要建物，剛好一棟' }, note: { type: 'string', description: '補充，例如「地上 28 層」' } }, required: ['pts'] } },
         distances: { type: 'array', items: { type: 'object', properties: { to: { type: 'string', description: '目標建物名稱（要跟 buildings 的 name 一致）' }, m: { type: 'number', description: '距離（公尺），請用實測或圖面數字' }, label: { type: 'string', description: '自訂標註文字' } }, required: ['to'] } },
         source: { type: 'string', description: '資料來源與時間，例如「地籍圖資：國土測繪圖資服務雲（2026-10 查詢）」' },
@@ -877,6 +879,8 @@ const TOOLS_FULL: ToolDef[] = [
     run: async (a, ctx) => {
       const { map, errors } = normalizeParcel(a);
       if (errors.length) return { ok: false, errors };
+      // 上傳的底圖用相對網址時補成完整網址，下載的 SVG 才找得到
+      if (map.base?.startsWith('/u/')) map.base = ctx.origin + map.base;
       const { warnings, dims } = parcelLayout(map);
       const z = await packJson(map);
       const W = map.w ?? 1200, H = map.h ?? 1200;
@@ -887,6 +891,7 @@ const TOOLS_FULL: ToolDef[] = [
         distances: dims.map((d) => ({ to: d.to, text: d.text || '（未標數字）', estimated: d.est })),
         svg_url: `${ctx.origin}/m/svg?z=${z}&t=parcel&dl=1`,
         png_url: `${ctx.origin}/m/png?z=${z}&t=parcel&dl=1`,
+        ...(map.base ? { overlay_png_url: `${ctx.origin}/m/png?z=${await packJson({ ...map, base: undefined, bg: 'transparent' })}&t=parcel&dl=1` } : {}),
         view_url: view,
         combo_scene: { effect: 'parcel-dist', words: [JSON.stringify(map)], seconds: 7 },
         local_preview: `在使用者電腦用 Playwright 開 view_url（viewport ${W}×${H}），等 #ready（state: attached）後截圖檢查；透明底請把 bg 設 transparent 並在 screenshot 加 omitBackground: true。`,

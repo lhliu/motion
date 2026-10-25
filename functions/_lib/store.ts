@@ -24,6 +24,16 @@ const SCHEMA_PRESETS = `CREATE TABLE IF NOT EXISTS presets (
   updated_at TEXT NOT NULL
 )`;
 
+// 底圖上傳（地籍套繪等需要截圖當底圖）：base64 存在 D1，單張上限約 1.4 MB（D1 單列上限 2 MB）
+const SCHEMA_UPLOADS = `CREATE TABLE IF NOT EXISTS uploads (
+  id TEXT PRIMARY KEY,
+  mime TEXT NOT NULL,
+  w INTEGER,
+  h INTEGER,
+  data TEXT NOT NULL,
+  created_at TEXT NOT NULL
+)`;
+
 let ready: Promise<unknown> | null = null;
 
 export class StoreError extends Error {}
@@ -36,6 +46,7 @@ export const db = async (env: Env): Promise<D1Database> => {
     .prepare(SCHEMA)
     .run()
     .then(() => d1.prepare(SCHEMA_PRESETS).run())
+    .then(() => d1.prepare(SCHEMA_UPLOADS).run())
     .catch((e) => {
       ready = null;
       throw e;
@@ -185,4 +196,53 @@ export const deletePreset = async (env: Env, id: string): Promise<boolean> => {
   const d = await db(env);
   const r = await d.prepare('DELETE FROM presets WHERE id = ?1').bind(id).run();
   return (r.meta?.changes ?? 0) > 0;
+};
+
+/* ───────── 底圖上傳 ───────── */
+export const UPLOAD_MAX = 1_400_000;
+
+/** 讀 PNG／JPEG／WebP 的寬高（不解碼） */
+export const imageSize = (b: Uint8Array): { mime: string; w: number; h: number } | null => {
+  const u32 = (i: number) => (b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3];
+  if (b[0] === 0x89 && b[1] === 0x50) return { mime: 'image/png', w: u32(16), h: u32(20) };
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    for (let i = 2; i < b.length - 9; ) {
+      if (b[i] !== 0xff) return null;
+      const m = b[i + 1], L = (b[i + 2] << 8) | b[i + 3];
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { mime: 'image/jpeg', h: (b[i + 5] << 8) | b[i + 6], w: (b[i + 7] << 8) | b[i + 8] };
+      i += 2 + L;
+    }
+    return null;
+  }
+  if (String.fromCharCode(...b.slice(0, 4)) === 'RIFF' && String.fromCharCode(...b.slice(8, 12)) === 'WEBP') {
+    const k = String.fromCharCode(...b.slice(12, 16));
+    if (k === 'VP8X') return { mime: 'image/webp', w: 1 + (b[24] | (b[25] << 8) | (b[26] << 16)), h: 1 + (b[27] | (b[28] << 8) | (b[29] << 16)) };
+    if (k === 'VP8 ') return { mime: 'image/webp', w: ((b[26] | (b[27] << 8)) & 0x3fff), h: ((b[28] | (b[29] << 8)) & 0x3fff) };
+    if (k === 'VP8L') return { mime: 'image/webp', w: 1 + (((b[22] & 0x3f) << 8) | b[21]), h: 1 + (((b[24] & 0x0f) << 10) | (b[23] << 2) | ((b[22] & 0xc0) >> 6)) };
+  }
+  return null;
+};
+
+const b64 = (b: Uint8Array) => {
+  let s = '';
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000));
+  return btoa(s);
+};
+
+export const saveUpload = async (env: Env, bytes: Uint8Array) => {
+  if (bytes.length > UPLOAD_MAX) throw new StoreError(`圖片太大（${Math.round(bytes.length / 1024)} KB），上限 ${Math.round(UPLOAD_MAX / 1024)} KB；請縮小或存成 JPEG`);
+  const info = imageSize(bytes);
+  if (!info) throw new StoreError('只接受 PNG、JPEG、WebP 圖片');
+  const d = await db(env);
+  const a = crypto.getRandomValues(new Uint8Array(8));
+  const id = 'u' + Array.from(a, (x) => (x % 36).toString(36)).join('');
+  await d.prepare('INSERT INTO uploads (id, mime, w, h, data, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(id, info.mime, info.w, info.h, b64(bytes), new Date().toISOString()).run();
+  return { id, ...info };
+};
+
+export const getUpload = async (env: Env, id: string) => {
+  const d = await db(env);
+  const r = await d.prepare('SELECT mime, w, h, data FROM uploads WHERE id = ?').bind(id).first<{ mime: string; w: number; h: number; data: string }>();
+  if (!r) return null;
+  return { mime: r.mime, w: r.w, h: r.h, bytes: Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0)) };
 };

@@ -331,6 +331,12 @@
               <div class="mcp-url"><code id="mcpUrl"></code><button class="btn-ghost" id="mcpCopy">複製網址</button></div>
               <p class="mcp-note">只讀取時直接用這個網址。要讓 AI 能儲存或刪除 Combo，網址後面加上 <code>?key=你的金鑰</code>，或用 <code>Authorization: Bearer</code> 標頭。</p>
             </div>
+            <div class="mcp-up">
+              <h4>上傳底圖給 AI</h4>
+              <p class="mcp-note">做地籍套繪大地圖時，先把 Google 地圖等截圖上傳，再把網址和尺寸貼給 AI。需要寫入金鑰（在「我的草稿」設定）。</p>
+              <label class="btn-ghost mcp-file">選擇截圖<input type="file" id="upFile" accept="image/png,image/jpeg,image/webp" hidden /></label>
+              <div class="mcp-url" id="upOut" hidden><code id="upUrl"></code><button class="btn-ghost" id="upCopy">複製給 AI</button></div>
+            </div>
             <div class="mcp-grid">
               <article>
                 <h4>Claude（網頁版／App）</h4>
