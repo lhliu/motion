@@ -26,12 +26,13 @@ import { plans } from './effects/plan';
 import { cuts } from './effects/cut';
 import { mapfx } from './effects/mapfx';
 import { ui } from './effects/ui';
+import { newsFx } from './effects/news';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
   { id: 'text', code: 'TEXT', zh: '文字', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字' },
   { id: 'cut', code: 'CUT', zh: '轉場', en: 'Transitions', desc: '段落之間的換場：色塊推擠、形狀擦除、開門、翻頁、閃白、甩鏡、故障' },
-  { id: 'ui', code: 'UI', zh: '元件', en: 'Overlay Kit', desc: '社群介面、開場收尾、房產資訊：留言回覆、通知、搜尋框、片尾卡、通勤碼錶、優缺點、日照方位……' },
+  { id: 'ui', code: 'UI', zh: '元件', en: 'Overlay Kit', desc: '社群介面、開場收尾、房產資訊、新聞讀報：留言回覆、通知、搜尋框、片尾卡、通勤碼錶、優缺點、日照方位……' },
   { id: 'photo', code: 'PHOTO', zh: '圖片', en: 'Photo Motion', desc: '照片、截圖、影片定格變成運鏡片段', studio: 'photo' },
   { id: 'map', code: 'MAP', zh: '地圖', en: 'Map Motion', desc: '基地、路名、距離、通勤，把位置講清楚', studio: 'map' },
   { id: 'object', code: 'OBJECT', zh: '物件', en: 'Object Motion', desc: '水滴、魔術方塊、星空宇宙；一系列可調形狀材質的主角物件', studio: 'object' },
@@ -59,6 +60,7 @@ export const CATEGORIES: Category[] = [
   { id: 'social', sec: 'ui', code: 'SOCIAL', zh: '社群介面', tagline: '留言回覆、通知、搜尋、愛心、點擊、瀏覽器、聲波、子母畫面' },
   { id: 'hook', sec: 'ui', code: 'HOOK', zh: '開場收尾', tagline: '系列角標、結果先講、POV、片尾推薦卡' },
   { id: 'estate', sec: 'ui', code: 'ESTATE', zh: '房產資訊', tagline: '通勤碼錶、資料來源、優缺點、日照、樓層、規格、評分、工程進度' },
+  { id: 'news', sec: 'ui', code: 'NEWS', zh: '新聞讀報', tagline: '報紙頭版、剪報螢光筆、網路新聞卡、逐句讀報；內容請用真實新聞並保留媒體與日期' },
   { id: 'photo', sec: 'photo', code: 'MOVE', zh: '單張運鏡', tagline: '一張照片也能有鏡頭感' },
   { id: 'pmulti', sec: 'photo', code: 'MULTI', zh: '多張組合', tagline: '前後對比、宮格、並排' },
   { id: 'pmark', sec: 'photo', code: 'FOCUS', zh: '標註轉場', tagline: '圈重點、定格、穿越' },
@@ -130,6 +132,7 @@ export const ALL_EFFECTS: Fx[] = [
   ...plans,
   ...cuts,
   ...ui,
+  ...newsFx,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 從前台隱藏（代碼、編號保留，舊 Combo 與預設仍可用）

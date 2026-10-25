@@ -38,6 +38,7 @@ export type CatId =
   | 'social'
   | 'hook'
   | 'estate'
+  | 'news'
   | 'site'
   | 'keys'
   | 'furniture'

@@ -413,8 +413,9 @@ function freeze(root){
     for(let j=0;j+1<ks.length;j++){const o1=ks[j].computedOffset,o2=ks[j+1].computedOffset;
       // steps(1)／step-end 的區段雖然前後值不同，中間其實停在前一格
       if(o2-o1<0.1||(kfSig(ks[j])!==kfSig(ks[j+1])&&!/^steps[(]1[,)]|^step-end/.test(ks[j].easing||'')))continue;
-      if(!any||o2-o1>any.e-any.s)any={s:o1,e:o2};
-      if(!hidden(ks[j])&&(!vis||o2-o1>vis.e-vis.s))vis={s:o1,e:o2};}
+      if(!any||o2-o1>any.e-any.s+0.001)any={s:o1,e:o2};
+      // 從 0% 開始的停住是「進場前」的狀態，後面還有看得見的停住區段時不選它
+      if(!hidden(ks[j])&&(!vis||(vis.s===0&&o1>0)||(o1>0||vis.s===0)&&o2-o1>vis.e-vis.s+0.001))vis={s:o1,e:o2};}
     // 優先停在看得見的停住區段；只有隱藏區段的（例如擦除色塊）停在隱藏狀態；都沒有的是持續動態，保持循環
     let best=vis||any;
     // 來回動畫（0%=100%，中間一格，例如日出、上下漂浮）：停在中間那一格；中間比較淡（閃爍）就停在頭尾
