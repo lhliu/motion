@@ -15,6 +15,7 @@ import { KITS, USES } from '../../src/uses';
 import { scriptToCombo } from '../../src/script-combo';
 import { SHEET_CELL, sheetCells } from '../../src/combo-sheet';
 import { miniLayout, normalizeMini } from '../../src/minimap';
+import { simplifyMini } from '../../src/minimap-simplify';
 import { normalizeParcel, parcelLayout } from '../../src/parcelmap';
 import { canShoot, SHOT_SETUP, snapshot } from './shot';
 import { FONT_IDS, FONT_PACKS } from '../../src/fonts';
@@ -802,13 +803,13 @@ const TOOLS_FULL: ToolDef[] = [
     name: 'build_minimap',
     title: '小地圖（透明背景區位圖）',
     description:
-      '把使用者給的地圖截圖轉成公版小地圖：只留指定的主要道路（深灰粗線、白色路名順著路段）、公園／社宅（A、B、C、D 代號）／一般住宅／公共設施色塊與地標名稱，透明背景、外緣細白描邊與淡陰影。座標以設計畫布像素為準（預設 1410×1128，可用 w、h 改），請照截圖描：道路畫中心線（每條 2–8 點，轉彎才加點），區塊畫輪廓（4–10 點），不要移動地標或改變道路連接；刪掉店家、支路與零碎建築。回傳檢查截圖（左原尺寸、右縮到影片實際尺寸疊在模擬街景上）與 warnings（路名太長、文字重疊、超出畫布），請比對原截圖修正後再交付。輸出：svg_url（可編輯向量，道路／區塊／文字分層）、png_url（透明 PNG）、combo_scene／overlay（放進 Combo 疊在影片上）。不要加路線、目前位置或圖例；指北針只在使用者的圖有時才加（north）。街廓示意圖（灰色道路、方點巷道、色塊街廓、無文字）用 style: flat、w/h 1920×1080、place: full，區塊標 kind 用途、道路標 w 等級（巷道 lane），顏色交給配色表。地圖來源要標示（例如 © OSM contributors）。',
+      '把使用者給的地圖截圖轉成公版小地圖：只留指定的主要道路（深灰粗線、白色路名順著路段）、公園／社宅（A、B、C、D 代號）／一般住宅／公共設施色塊與地標名稱，透明背景、外緣細白描邊與淡陰影。座標以設計畫布像素為準（預設 1410×1128，可用 w、h 改），請照截圖描：道路畫中心線（每條 2–8 點，轉彎才加點），區塊畫輪廓（4–10 點），不要移動地標或改變道路連接；刪掉店家、支路與零碎建築。回傳檢查截圖（左原尺寸、右縮到影片實際尺寸疊在模擬街景上）與 warnings（路名太長、文字重疊、超出畫布），請比對原截圖修正後再交付。輸出：svg_url（可編輯向量，道路／區塊／文字分層）、png_url（透明 PNG）、combo_scene／overlay（放進 Combo 疊在影片上）。不要加路線、目前位置或圖例；指北針只在使用者的圖有時才加（north）。街廓示意圖（灰色道路、方點巷道、色塊街廓、無文字）用 style: flat、w/h 1920×1080、place: full，區塊標 kind 用途、道路標 w 等級（巷道 lane），顏色交給配色表。使用者給土地使用分區圖、重劃區規劃圖這類斜的街廓圖時用 simplify: true：照截圖描道路與外框、每個街廓點一個用途點（uses），轉正拉直與街廓上色交給系統；不要在圖上放住、公、文之類的字。地圖來源要標示（例如 © OSM contributors）。',
     inputSchema: {
       type: 'object',
       required: ['roads'],
       properties: {
         title: { type: 'string' },
-        w: { type: 'number', description: '設計畫布寬，預設 1410' },
+        w: { type: 'number', description: '設計畫布寬，預設 1410（簡化模式自動決定）' },
         h: { type: 'number', description: '設計畫布高，預設 1128' },
         roads: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '中心線 [[x,y],…]' }, w: { description: 'main（預設）｜minor｜lane 巷道（方點虛線）｜數字線寬' }, seg: { type: 'number', description: '路名放第幾段（0 起算），預設最長段' }, at: { type: 'number', description: '路名在該段的位置 0–1' }, color: { type: 'string', description: '單條道路顏色覆寫，一般不用給（顏色走 palette 的道路等級）' } }, required: ['pts'] } },
         areas: { type: 'array', items: { type: 'object', properties: { kind: { type: 'string', enum: ['housing', 'commercial', 'school', 'park', 'civic', 'social', 'water', 'other', 'custom'], description: '用途：housing 住宅區、commercial 商業區、school 文教區、park 公園用地、civic 機關用地、social 社會住宅、water 水域、other 其他；顏色由 palette 決定，custom 只用 color 且不進圖例' }, pts: { type: 'array', items: { type: 'array', items: { type: 'number' } } }, label: { type: 'string', description: '區塊名稱膠囊（土地使用分區圖不要放住、公、文之類的字）' }, label_at: { type: 'array', items: { type: 'number' } }, tag: { type: 'string', description: '圓形代號，例如 A' }, tag_at: { type: 'array', items: { type: 'number' } }, leader: { type: 'boolean', description: '名稱與區塊之間畫短引線' }, color: { type: 'string', description: '單塊顏色覆寫，一般不用給' } }, required: ['kind', 'pts'] } },
@@ -822,15 +823,22 @@ const TOOLS_FULL: ToolDef[] = [
         legend_at: { type: 'array', items: { type: 'number' }, description: '圖例左上角座標，預設畫布左下角，請放在空白處' },
         north: { type: 'number', description: '加指北針：北方角度（0 正上、順時針為正，例如 -45 指左上）' },
         north_at: { type: 'array', items: { type: 'number' }, description: '指北針圓心座標，預設左上角' },
+        simplify: { type: 'boolean', description: '簡化模式（土地使用分區、重劃區街廓圖用）：roads 與 boundary 直接用截圖像素座標照描，不必自己轉正拉直；系統自動轉正（指北針跟著轉）、拉直對齊道路，再用 uses 的用途點把道路切出的街廓上色。這時不用給 areas，style 預設 flat、圖例預設開' },
+        uses: { type: 'array', items: { type: 'object', properties: { kind: { type: 'string', enum: ['housing', 'commercial', 'school', 'park', 'civic', 'social', 'water', 'other'] }, at: { type: 'array', items: { type: 'number' } } }, required: ['kind', 'at'] }, description: '簡化模式：每個街廓點一個用途點（截圖座標，點在街廓中央、不要點在路上）；原圖上的「住」「公」「文」字樣位置就是好的點' },
+        boundary: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '簡化模式：重劃區／基地外框（截圖座標），框外不上色' },
+        splits: { type: 'array', items: { type: 'array', items: { type: 'array', items: { type: 'number' } } }, description: '簡化模式：同一個街廓內不同用途的分界線（沒有路的地方，例如社宅和住宅相鄰），只切街廓不畫出來；端點會自動接到附近的路' },
+        rotate: { type: 'number', description: '簡化模式：手動指定旋轉角度（度，順時針為正），自動轉正不理想時用' },
         preview: { type: 'boolean', description: '回傳檢查截圖，預設 true' },
         local: { type: 'boolean', description: '能在使用者電腦執行程式時設 true，改回傳 local_preview 自己截圖' },
       },
     },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
-      const { map, errors } = normalizeMini(a);
+      // 簡化模式：原始截圖座標 → 轉正、拉直、用 uses 生成街廓
+      const sim = a.simplify ? simplifyMini(a as Record<string, unknown>, { rotate: typeof a.rotate === 'number' ? a.rotate : undefined }) : null;
+      const { map, errors } = sim ? { map: sim.map, errors: sim.errors } : normalizeMini(a);
       if (errors.length) return { ok: false, errors };
-      const warnings = miniLayout(map).warnings;
+      const warnings = [...(sim?.warnings ?? []), ...miniLayout(map).warnings];
       const z = await packJson(map);
       const W = map.w ?? 1410, H = map.h ?? 1128;
       const words = [JSON.stringify(map)];
@@ -844,6 +852,7 @@ const TOOLS_FULL: ToolDef[] = [
         combo_scene: { effect: 'minimap', words, seconds: 6 },
         overlay: { effect: 'minimap', words, from: 1, to: 1 },
         local_preview: `在使用者電腦用 Playwright 開 check_url（viewport 1400×900），等 #ready（state: attached）後整頁截圖檢查；要透明 PNG 就開 ${ctx.origin}/m/view?z=${z}，viewport ${W}×${H}，screenshot 加 omitBackground: true。`,
+        ...(sim ? { simplified: { ...sim.info, note: '回傳的 combo_scene／overlay 已是簡化後的規格；要微調就改 uses、splits 或原始道路再呼叫一次（保持 simplify: true），不要直接改簡化後的座標' } } : {}),
         next: warnings.length ? '先依 warnings 調整座標（seg／at 移路名、label_at／tag_at 移標籤）再交付。' : '比對檢查截圖與原截圖：道路走向、交叉、地標相對位置正確，縮小後路名與代號清楚。',
       };
       if (a.preview === false || a.local === true || !canShoot(ctx.env)) return out;
@@ -1046,7 +1055,7 @@ export const INSTRUCTIONS = `Motion Atlas（motion.leichthub.com）是短影音�
 3. 用 compose_combo 驗證，再用 preview_combo 拿分格截圖自己檢查（能在使用者電腦執行程式時加 local: true 用本機瀏覽器截圖；文字被切、太小、重疊、對比不足、空白），有問題先修再預覽，確認沒問題才把 play_url 給使用者看。段落之間可用 transition（整支）或 scenes[].transition（單段）選新轉場；系列角標、資料來源條等元件用 overlays 常駐疊在段落上方。
 4. 依回饋調整後，用 save_combo 儲存，並附上 tags 與 brief 方便日後搜尋。
 省 token 的用法：要看多招的文字格式時用 get_effect 的 ids 一次查（不要逐一呼叫）；get_effect 預設不附提示詞，使用者要提示詞或 HTML 才加 format；list_categories 的套組只列摘要，選定後用 kit 參數取完整段落；compose_combo 預設不附重做提示詞（include_prompt）。回傳的預覽與編輯網址是壓縮過的，請原樣轉給使用者。
-使用者給地圖截圖、要做疊在影片角落的區位小地圖時用 build_minimap（照截圖描道路中心線與區塊座標，看檢查截圖修正）；要畫地籍套繪、主建物到鄰棟距離（棟距）用 build_parcel_map（距離用使用者提供或圖面數字，不要自己編）；地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、魔術方塊／星空背景請用 build_object_scene；天體、低空飛越及推近地球精修插畫用 build_cosmos_scene（mode=orbit｜flyover｜earthzoom，body=gas｜sun｜moon｜earth｜mars，依 mode 選擇）；隕石及俯瞰精修插畫請用 build_nature_scene（隕石 mode=meteor，style=rock｜ice｜lava｜gold；俯瞰 mode=city｜river｜mountain｜grass｜farm｜coast｜forest｜highway）；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
+使用者給地圖截圖、要做疊在影片角落的區位小地圖時用 build_minimap（照截圖描道路中心線與區塊座標，看檢查截圖修正；土地使用分區、重劃區這類斜的街廓圖加 simplify: true，只描道路、外框與每塊的用途點，轉正拉直交給系統）；要畫地籍套繪、主建物到鄰棟距離（棟距）用 build_parcel_map（距離用使用者提供或圖面數字，不要自己編）；地圖片段請用 build_map_scene（「從太空降落到基地、畫出 A/B 棟」用 site 範本或 descend 參數；「從這裡到 A、B、C 都方便」用 routes 參數或 routes 範本）、水滴請用 build_drop_scene、照片運鏡請用 build_photo_scene、魔術方塊／星空背景請用 build_object_scene；天體、低空飛越及推近地球精修插畫用 build_cosmos_scene（mode=orbit｜flyover｜earthzoom，body=gas｜sun｜moon｜earth｜mars，依 mode 選擇）；隕石及俯瞰精修插畫請用 build_nature_scene（隕石 mode=meteor，style=rock｜ice｜lava｜gold；俯瞰 mode=city｜river｜mountain｜grass｜farm｜coast｜forest｜highway）；交通工具七招精修插畫請用 build_transport_scene（mode=car｜carriage｜plane｜rocket｜train｜ship｜balloon）；海底世界七招精修插畫請用 build_illustration_scene（mode=fish｜dolphins｜whale｜shark｜coral｜deep｜submarine；每招有專屬參數） 產生段落，再把回傳的 combo_scene 放進 compose_combo / save_combo。\n圖片在使用者電腦上時，用 build_photo_scene 回傳的 local_render 方法在本機逐格渲染（引擎 /r/photo.js，地圖 /r/map.js、水滴 /r/drop.js 同理），不要自己重寫動畫。\n銳利水滴（crisp-drop）也可直接在 words 加入設定行，例如 "@shape=circle;color=#a6d4f2;color2=#5b9bd5;pos=beside;sats=6"：shape＝circle｜cloud｜flower｜pebble｜random，pos＝inside｜beside｜above｜below，seed 改變隨機形狀，x/y、tx/ty 為 0–1 的水滴與文字位置；~ 開頭的行是英文小字。此特效完全不用模糊，適合疊進影片。
 字型：Combo 的 font（整支）與 scenes[].font（單段）可選字型組合，依段落情緒挑：數據、資訊、標題用 sharp（預設）；開箱、生活、通勤用 round；質感建案、片頭大標用 serif；旁白金句、心得用 hand；俏皮吐槽用 cute。一支影片以 2–3 組為限，同類段落維持同一組，避免每段都換。\n手動微調的來回流程：build_* 或 get_combo 會回傳 edit_url，使用者在網站工作室調整後「存回」得到預設代碼（例如 p7k2x）；之後用 get_preset 讀取，或在 scenes 直接寫 { \"preset\": \"p7k2x\" }。使用者提到代碼時，一律以預設內容為準，不要自行重做。\n寫入工具需要金鑰；文字內容若涉及價格或數據，請使用使用者提供、可查證的資料，不要自行編造。`;
 
 export const isWriteTool = (name: string) => TOOLS.find((t) => t.name === name)?.write === true;

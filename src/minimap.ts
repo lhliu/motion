@@ -73,8 +73,10 @@ export interface MiniMap {
   palette?: MiniPalette;
   /** 圖例：列出圖上出現的用途 */
   legend?: boolean;
-  /** 圖例左上角座標；省略＝畫布左下角 */
+  /** 圖例左上角座標；省略＝畫布左下角（橫排時右上角） */
   legend_at?: Pt;
+  /** 圖例排成一列（放在地圖上方空白處） */
+  legend_row?: boolean;
 }
 
 export const MINI_COLORS = { road: '#34464C', park: '#72B98D', social: '#F0B849', housing: '#82BFDB', civic: '#5795C0', water: '#8CC8E8' };
@@ -142,7 +144,7 @@ export const normalizeMini = (raw: unknown): { map: MiniMap; errors: string[] } 
   const pl = r.place;
   const place: MiniPlace16 =
     pl === 'tr' || pl === 'duo' || pl === 'full' ? pl : pl && typeof pl === 'object' ? { x: num((pl as Record<string, unknown>).x, 1400), y: num((pl as Record<string, unknown>).y, 55), w: Math.max(120, num((pl as Record<string, unknown>).w, 470)) } : 'tr';
-  return { map: { title: str(r.title, 40) || undefined, w: W, h: H, roads, areas, places, source: str(r.source, 60) || undefined, place, scale: Math.min(2, Math.max(0.6, num(r.scale, 1))), style: r.style === 'flat' ? 'flat' : undefined, north: typeof r.north === 'number' && Number.isFinite(r.north) ? ((r.north % 360) + 360) % 360 : undefined, north_at: pt(r.north_at) ?? undefined, palette: pal(r.palette), legend: r.legend === true || undefined, legend_at: pt(r.legend_at) ?? undefined }, errors };
+  return { map: { title: str(r.title, 40) || undefined, w: W, h: H, roads, areas, places, source: str(r.source, 60) || undefined, place, scale: Math.min(2, Math.max(0.6, num(r.scale, 1))), style: r.style === 'flat' ? 'flat' : undefined, north: typeof r.north === 'number' && Number.isFinite(r.north) ? ((r.north % 360) + 360) % 360 : undefined, north_at: pt(r.north_at) ?? undefined, palette: pal(r.palette), legend: r.legend === true || undefined, legend_at: pt(r.legend_at) ?? undefined, legend_row: r.legend_row === true || undefined }, errors };
 };
 
 /* ───────── 版面計算 ───────── */
@@ -205,14 +207,19 @@ const centroid = (p: Pt[]): Pt => [p.reduce((s, q) => s + q[0], 0) / p.length, p
 
 /** 圖例：只列圖上出現的用途（依 MINI_KINDS 順序），白底圓角框，色塊＋名稱 */
 const legendLayout = (m: MiniMap) => {
-  const k = m.scale ?? 1, H = m.h ?? 1128;
+  const k = m.scale ?? 1, W = m.w ?? 1410, H = m.h ?? 1128;
   const used = MINI_KINDS.filter((x) => (m.areas ?? []).some((a) => a.kind === x));
   if (!used.length) return null;
-  const px = 34 * k, sw = 34 * k, gap = 14 * k, pad = 20 * k, row = px * 1.45;
-  const w = pad * 2 + sw + gap + Math.max(...used.map((x) => textW(KIND_NAME[x], px)));
-  const h = pad * 2 + row * used.length - (row - px);
-  const [x, y] = m.legend_at ?? [24 * k, H - h - 24 * k];
-  return { x, y, w, h, px, sw, gap, pad, row, used };
+  const px = 34 * k, sw = 34 * k, gap = 14 * k, pad = 20 * k, row = px * 1.45, col = 36 * k;
+  // 橫排：每項寬度各自算，項目間隔 col
+  const itemW = used.map((x) => sw + gap + textW(KIND_NAME[x], px));
+  const horiz = !!m.legend_row;
+  const w = horiz ? pad * 2 + itemW.reduce((t, v) => t + v, 0) + col * (used.length - 1) : pad * 2 + Math.max(...itemW);
+  const h = horiz ? pad * 2 + px : pad * 2 + row * used.length - (row - px);
+  const [x, y] = m.legend_at ?? (horiz ? [W - w - 24 * k, 24 * k] : [24 * k, H - h - 24 * k]);
+  // 每項左上角（相對圖例框）
+  const pos = used.map((_, i) => (horiz ? [pad + itemW.slice(0, i).reduce((t, v) => t + v + col, 0), pad] : [pad, pad + i * row]));
+  return { x, y, w, h, px, sw, gap, pad, row, used, pos };
 };
 
 /** 算出所有文字的位置，並檢查互相重疊、超出畫布、路名比路段長 */
@@ -244,7 +251,7 @@ export const miniLayout = (m: MiniMap) => {
     return { p, pill };
   });
   const legend = m.legend ? legendLayout(m) : null;
-  if (legend) boxes.push({ kind: 'legend', name: '圖例', cx: legend.x + legend.w / 2, cy: legend.y + legend.h / 2, w: legend.w / 0.9, h: legend.h / 0.9, a: 0 });
+  if (legend) boxes.push({ kind: 'legend', name: '圖例', cx: legend.x + legend.w / 2, cy: legend.y + legend.h / 2, w: legend.w, h: legend.h, a: 0 });
   for (let i = 0; i < boxes.length; i++) {
     const A = aabb(boxes[i]);
     if (A.x0 < 0 || A.y0 < 0 || A.x1 > W || A.y1 > H) warnings.push(`「${boxes[i].name}」超出畫布`);
@@ -275,7 +282,7 @@ export const miniSvg = (m: MiniMap, opts: { anim?: boolean; id?: string } = {}):
     ...(m.areas ?? []).map((a) => `<path d="${path(a.pts)}Z" fill="#fff" stroke="#fff" stroke-width="${12 * k}" stroke-linejoin="round"/>`),
     ...m.roads.map((r) => `<path d="${path(r.pts)}" fill="none" stroke="#fff" stroke-width="${roadW(r, k, flat) + 14 * k}" stroke-linecap="round" stroke-linejoin="round"/>`),
   ].join('');
-  const areas = (m.areas ?? []).map((a, i) => `<path${an('mm-a', i)} d="${path(a.pts)}Z" fill="${fillOf(a)}"${flat ? '' : ` stroke="${edgeOf(a)}" stroke-width="${3 * k}" stroke-linejoin="round"`}/>`).join('');
+  const areas = (m.areas ?? []).map((a, i) => `<path${an('mm-a', i)} d="${path(a.pts)}Z" fill="${fillOf(a)}"${flat ? ` stroke="${fillOf(a)}" stroke-width="1.5"` : ` stroke="${edgeOf(a)}" stroke-width="${3 * k}" stroke-linejoin="round"`}/>`).join('');
   // 實線道路用 pathLength 畫出；虛線（方點）不能用同一招，改成淡入
   const roads = m.roads
     .map((r, i) => {
@@ -315,8 +322,8 @@ export const miniSvg = (m: MiniMap, opts: { anim?: boolean; id?: string } = {}):
   const legend = lg
     ? `<g id="legend"${an('mm-l', li++)}><rect x="${lg.x.toFixed(1)}" y="${lg.y.toFixed(1)}" width="${lg.w.toFixed(1)}" height="${lg.h.toFixed(1)}" rx="${(12 * k).toFixed(1)}" fill="#fff" fill-opacity=".94" stroke="#D5DCE0" stroke-width="${2 * k}"/>${lg.used
         .map((x, i) => {
-          const y = lg.y + lg.pad + i * lg.row;
-          return `<rect x="${(lg.x + lg.pad).toFixed(1)}" y="${y.toFixed(1)}" width="${lg.sw.toFixed(1)}" height="${lg.sw.toFixed(1)}" rx="${(5 * k).toFixed(1)}" fill="${P[x]}" stroke="${darken(P[x])}" stroke-width="${2 * k}"/><text x="${(lg.x + lg.pad + lg.sw + lg.gap).toFixed(1)}" y="${(y + lg.sw / 2).toFixed(1)}" font-size="${lg.px.toFixed(1)}" font-weight="700" fill="#34464C" dominant-baseline="central">${KIND_NAME[x]}</text>`;
+          const lx = lg.x + lg.pos[i][0], y = lg.y + lg.pos[i][1];
+          return `<rect x="${lx.toFixed(1)}" y="${y.toFixed(1)}" width="${lg.sw.toFixed(1)}" height="${lg.sw.toFixed(1)}" rx="${(5 * k).toFixed(1)}" fill="${P[x]}" stroke="${darken(P[x])}" stroke-width="${2 * k}"/><text x="${(lx + lg.sw + lg.gap).toFixed(1)}" y="${(y + lg.sw / 2).toFixed(1)}" font-size="${lg.px.toFixed(1)}" font-weight="700" fill="#34464C" dominant-baseline="central">${KIND_NAME[x]}</text>`;
         })
         .join('')}</g>`
     : '';
