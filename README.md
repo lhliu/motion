@@ -174,6 +174,10 @@ npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 - 影片位置：`place` 為 `tr` 右上角版（1920×1080 的 x1400 y55 寬 470）、`duo` 雙人鏡頭避臉版（x600 y40 寬 460）或自訂 `{x,y,w}`；可當段落或疊加圖層
 - 規格與範例在 `src/minimap.ts`（`MINI_SAMPLE` 為林口運動公園周邊）
 
+### 地籍棟距圖（build_parcel_map，#340）
+
+類似地籍套繪圖：地籍分割線與地號（基地外框加粗）、道路、周邊建物（灰色斜線），一棟主要建物主色突顯，從主要建物最近的一邊畫出到指定鄰棟的距離標註（兩端垂直短線、數字順著線）。距離優先用提供的數字（`distances[].m` 或 `label`）；沒有數字時依 `m_per_px` 換算，畫虛線並標「約」；兩者都沒有只畫線。圖面固定註明示意，可加指北針（`north`）、比例尺（有 `m_per_px` 時）與資料來源。輸出同小地圖（`/m/svg|view|png?…&t=parcel`），規格與虛構範例在 `src/parcelmap.ts`。
+
 ### MCP 預覽截圖（preview_combo）
 
 AI 組好 Combo 後呼叫 `preview_combo`，伺服器用 Cloudflare Browser Run 打開分格預覽頁 `/c/sheet?z=…`（每段在 45%、90% 各一格，全部同時停在目標時間），回傳一張截圖與執行錯誤，讓 AI 自己檢查文字被切、重疊、對比、空白。

@@ -28,6 +28,7 @@ import { mapfx } from './effects/mapfx';
 import { ui } from './effects/ui';
 import { newsFx } from './effects/news';
 import { minimapFx } from './effects/minimap';
+import { parcelMapFx } from './effects/parcelmap';
 import { canonTags, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
@@ -68,7 +69,7 @@ export const CATEGORIES: Category[] = [
   { id: 'pcut', sec: 'photo', code: 'MASK', zh: '裁切與遮罩', tagline: '切片、拼塊、撕紙、剪報與遮擋換景' },
   { id: 'map', sec: 'map', code: 'MAP', zh: '地圖區位', tagline: '把位置、距離、通勤講清楚' },
   { id: 'mcompare', sec: 'map', code: 'COMPARE', zh: '區位與路線', tagline: '台灣定位、兩區對照、通勤賽跑、地圖導航、行程串連、聚光燈' },
-  { id: 'mplan', sec: 'map', code: 'PLAN', zh: '規劃建設', tagline: '重劃區分期、重大建設、分區、地籍（示意）' },
+  { id: 'mplan', sec: 'map', code: 'PLAN', zh: '規劃建設', tagline: '重劃區分期、重大建設、分區、地籍（示意）、地籍棟距圖' },
   { id: 'mdata', sec: 'map', code: 'DATA', zh: '數據地圖', tagline: '著色圖、泡泡、立體長條，數字附來源' },
   { id: 'mrisk', sec: 'map', code: 'LIFE', zh: '生活機能與風險', tagline: '生活機能地圖、學區、雷達、手機導航、嫌惡設施、淹水潛勢' },
   { id: 'mkit', sec: 'map', code: 'KIT', zh: '地圖元件', tagline: '小地圖、指北針比例尺、新舊對照' },
@@ -135,6 +136,7 @@ export const ALL_EFFECTS: Fx[] = [
   ...ui,
   ...newsFx,
   minimapFx,
+  parcelMapFx,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 從前台隱藏（代碼、編號保留，舊 Combo 與預設仍可用）

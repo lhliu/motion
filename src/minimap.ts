@@ -105,12 +105,12 @@ export const normalizeMini = (raw: unknown): { map: MiniMap; errors: string[] } 
 };
 
 /* ───────── 版面計算 ───────── */
-const len = (a: Pt, b: Pt) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+export const len = (a: Pt, b: Pt) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 const roadW = (r: MiniRoad, k: number) => (typeof r.w === 'number' ? r.w : r.w === 'minor' ? 56 : 70) * k;
 /** 粗估文字寬度：中文全形 1em、英數 0.6em */
-const textW = (s: string, px: number) => [...s].reduce((a, c) => a + (/[\u0000-ÿ]/.test(c) ? 0.6 : 1), 0) * px;
+export const textW = (s: string, px: number) => [...s].reduce((a, c) => a + (/[\u0000-ÿ]/.test(c) ? 0.6 : 1), 0) * px;
 
-interface Box {
+export interface Box {
   kind: string;
   name: string;
   cx: number;
@@ -127,11 +127,11 @@ const aabb = (b: Box) => {
 };
 
 /** 兩個（可旋轉的）矩形是否重疊：分離軸檢查，各邊先內縮一成，擦邊不算 */
-const corners = (b: Box) => {
+export const corners = (b: Box) => {
   const r = (b.a * Math.PI) / 180, c = Math.cos(r), s = Math.sin(r), w = b.w * 0.45, h = b.h * 0.45;
   return ([[-w, -h], [w, -h], [w, h], [-w, h]] as Pt[]).map(([x, y]) => [b.cx + x * c - y * s, b.cy + x * s + y * c] as Pt);
 };
-const hits = (A: Box, B: Box) => {
+export const hits = (A: Box, B: Box) => {
   const pa = corners(A), pb = corners(B);
   for (const poly of [pa, pb])
     for (let i = 0; i < 4; i++) {
@@ -197,10 +197,10 @@ export const miniLayout = (m: MiniMap) => {
 };
 
 /** 自訂顏色的邊框：同色系調暗 */
-const darken = (c: string) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(c.slice(i, i + 2), 16) * 0.7).toString(16).padStart(2, '0')).join('');
-const e = (s: string) => s.replace(/[&<>"]/g, (c) => `&${{ '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot' }[c]};`);
-const path = (p: Pt[]) => p.map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)} ${q[1].toFixed(1)}`).join('');
-const FONT = `"Chiron Hei HK","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif`;
+export const darken = (c: string) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(c.slice(i, i + 2), 16) * 0.7).toString(16).padStart(2, '0')).join('');
+export const e = (s: string) => s.replace(/[&<>"]/g, (c) => `&${{ '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot' }[c]};`);
+export const path = (p: Pt[]) => p.map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)} ${q[1].toFixed(1)}`).join('');
+export const FONT = `"Chiron Hei HK","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif`;
 
 /**
  * 產生 SVG。anim=true 時加上進場動畫的 class（給影片用：區塊淡入、道路畫出、文字彈出）；
