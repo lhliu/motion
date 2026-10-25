@@ -144,7 +144,7 @@ export const normalizeMini = (raw: unknown): { map: MiniMap; errors: string[] } 
   const pl = r.place;
   const place: MiniPlace16 =
     pl === 'tr' || pl === 'duo' || pl === 'full' ? pl : pl && typeof pl === 'object' ? { x: num((pl as Record<string, unknown>).x, 1400), y: num((pl as Record<string, unknown>).y, 55), w: Math.max(120, num((pl as Record<string, unknown>).w, 470)) } : 'tr';
-  return { map: { title: str(r.title, 40) || undefined, w: W, h: H, roads, areas, places, source: str(r.source, 60) || undefined, place, scale: Math.min(2, Math.max(0.6, num(r.scale, 1))), style: r.style === 'flat' ? 'flat' : undefined, north: typeof r.north === 'number' && Number.isFinite(r.north) ? ((r.north % 360) + 360) % 360 : undefined, north_at: pt(r.north_at) ?? undefined, palette: pal(r.palette), legend: r.legend === true || undefined, legend_at: pt(r.legend_at) ?? undefined, legend_row: r.legend_row === true || undefined }, errors };
+  return { map: { title: str(r.title, 40) || undefined, w: W, h: H, roads, areas, places, source: str(r.source, 60) || undefined, place, scale: Math.min(2, Math.max(0.6, num(r.scale, 1))), style: r.style === 'flat' ? 'flat' : undefined, north: typeof r.north === 'number' && Number.isFinite(r.north) ? ((((r.north % 360) + 540) % 360) - 180) : undefined, north_at: pt(r.north_at) ?? undefined, palette: pal(r.palette), legend: r.legend === true || undefined, legend_at: pt(r.legend_at) ?? undefined, legend_row: r.legend_row === true || undefined }, errors };
 };
 
 /* ───────── 版面計算 ───────── */

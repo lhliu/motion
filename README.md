@@ -172,6 +172,7 @@ npx wrangler pages dev dist --d1 DB=motion-local --binding MOTION_KEY=test
 - 輸出：`/m/svg?z=`（可編輯向量，halo／areas／roads／road-labels／labels 分層）、`/m/png?z=`（透明 PNG，Browser Run 截圖）、`/m/view?z=&check=1`（檢查頁：原尺寸＋影片實際尺寸疊在模擬街景）
 - 自動檢查：路名比路段長、文字互相重疊（旋轉矩形精確判斷）、超出畫布
 - 影片位置：`place` 為 `tr` 右上角版（1920×1080 的 x1400 y55 寬 470）、`duo` 雙人鏡頭避臉版（x600 y40 寬 460）或自訂 `{x,y,w}`；可當段落或疊加圖層
+- 小地圖編輯器（#339 卡片的「編輯用途與配色」、`?view=minimap`、build_minimap 回傳的 `edit_url`）：點區塊改用途、點道路改等級或路名、配色表一次改同一種用途的顏色、切換位置／風格／圖例／指北針，「影片畫面」看實際疊在 16:9 的大小；可存成預設代碼（kind `minimap`），AI 用 get_preset 讀取或在 scenes 寫 `{ "preset": "代碼" }`。形狀不在編輯器改，交給 AI 照截圖描
 - 簡化模式（`simplify: true`，`src/minimap-simplify.ts`）：AI 只照截圖描道路、基地外框（`boundary`），每個街廓點一個用途點（`uses`），同街廓不同用途的分界畫 `splits`；系統自動轉正（依道路主軸，指北針跟著轉，`rotate` 可手動指定）、把接近水平／垂直的路拉直、相近的平行路對齊同一條線、路端接到最近的路，再用道路中心線把基地切成街廓、依用途點上色。回傳 `simplified`（旋轉角度、街廓數、沒標用途的街廓數）與 warnings（用途點落在路上、兩種用途落在同一街廓）。
 - 規格與範例在 `src/minimap.ts`（`MINI_SAMPLE` 為右上角版的土地使用分區示意圖）
 

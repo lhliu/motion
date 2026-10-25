@@ -16,6 +16,14 @@ export const miniFromWords = (w: string[]): MiniMap => {
   return MINI_SAMPLE;
 };
 
+/** 在 16:9 畫面上的位置（CSS 變數 --x --y --w，百分比） */
+export const miniPos = (m: MiniMap) => {
+  const p = m.place === 'tr' || m.place === 'duo' ? MINI_PLACES[m.place] : m.place && typeof m.place === 'object' ? m.place : null;
+  // full：整張畫布等比例塞進 16:9 畫面置中（1920×1080 畫布剛好滿版）
+  const r = (m.w ?? 1410) / (m.h ?? 1128) / (16 / 9), fw = Math.min(100, r * 100), fh = fw / r;
+  return p ? `--x:${((p.x / 1920) * 100).toFixed(2)}%;--y:${((p.y / 1080) * 100).toFixed(2)}%;--w:${((p.w / 1920) * 100).toFixed(2)}%` : `--x:${((100 - fw) / 2).toFixed(2)}%;--y:${((100 - fh) / 2).toFixed(2)}%;--w:${fw.toFixed(2)}%`;
+};
+
 /** 同一頁可能有很多張小地圖（卡片牆），濾鏡與動畫名稱要各自獨立 */
 const uid = (s: string) => {
   let h = 0;
@@ -47,10 +55,6 @@ export const minimapFx: Fx = {
 @container (max-aspect-ratio:1/1){.S .mm{left:4cqw;top:7cqh;width:92cqw}}`,
   html: (w) => {
     const m = miniFromWords(w);
-    const p = m.place === 'tr' || m.place === 'duo' ? MINI_PLACES[m.place] : m.place && typeof m.place === 'object' ? m.place : null;
-    // full：整張畫布等比例塞進 16:9 畫面置中（1920×1080 畫布剛好滿版）
-    const r = (m.w ?? 1410) / (m.h ?? 1128) / (16 / 9), fw = Math.min(100, r * 100), fh = fw / r;
-    const pos = p ? `--x:${((p.x / 1920) * 100).toFixed(2)}%;--y:${((p.y / 1080) * 100).toFixed(2)}%;--w:${((p.w / 1920) * 100).toFixed(2)}%` : `--x:${((100 - fw) / 2).toFixed(2)}%;--y:${((100 - fh) / 2).toFixed(2)}%;--w:${fw.toFixed(2)}%`;
-    return `<div class="mm" style="${pos}">${miniSvg(m, { anim: true, id: uid(w.join('')) })}</div>`;
+    return `<div class="mm" style="${miniPos(m)}">${miniSvg(m, { anim: true, id: uid(w.join('')) })}</div>`;
   },
 };

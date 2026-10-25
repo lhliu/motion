@@ -978,6 +978,7 @@ const renderDetail = () => {
   $('#dPlanStudio').hidden = !isPlanFx(fx.id);
   $('#dObjStudio').hidden = !isObjFx(fx.id)||isIllustrationFx(fx.id);
   $('#dMxStudio').hidden = !fx.id.startsWith('mx-') || fx.id === 'mx-compass';
+  $('#dMiniStudio').hidden = fx.id !== 'minimap';
   $('#dIllustrationStudio').hidden = !isCosmicFx(fx.id)&&!isIllustrationFx(fx.id)&&!isTransportFx(fx.id)&&!isNatureFx(fx.id);
   dWords.closest('label')!.hidden = isCosmicFx(fx.id)||isIllustrationFx(fx.id)||isTransportFx(fx.id)||isNatureFx(fx.id);
   if (document.activeElement !== dWords) dWords.value = d.words.join('\n');
@@ -1271,6 +1272,12 @@ const mxOpt = (tone: Tone) => {
   return { fg: v.fg, bg: v.bg, ac: v.ac, ac2: v.ac2, font: fontStack(v.font) };
 };
 const mxStudio = lazyStudio(() => import('./mapfx-studio').then((m) => m.initMapfxStudio({ ...sdeps, opt: mxOpt })));
+const miniStudio = lazyStudio(() => import('./minimap-studio').then((m) => m.initMinimapStudio(sdeps)));
+$('#dMiniStudio').addEventListener('click', () => {
+  const words = [...d.words];
+  closeDetail();
+  miniStudio.open(words);
+});
 $('#dMxStudio').addEventListener('click', () => {
   const { id } = d.fx, words = [...d.words], ratio = d.ratio as '9:16' | '16:9' | '1:1';
   closeDetail();
@@ -1279,7 +1286,7 @@ $('#dMxStudio').addEventListener('click', () => {
 // 網址直接指定工作室（?view=photo 等）時，先把工作室載進來，讓它自己判斷要不要打開
 {
   const v = new URLSearchParams(location.search).get('view');
-  const byView: Record<string, { warm: () => Promise<unknown> }> = { drop: studio, map: mapStudio, photo: photoStudio, plan: planStudio, object: objStudio, mapfx: mxStudio, cosmic: cosmicStudio, cosmos: cosmicStudio, nature: natureStudio, meteor: natureStudio, aerial: natureStudio, transport: transportStudio, illustration: illustrationStudio };
+  const byView: Record<string, { warm: () => Promise<unknown> }> = { drop: studio, map: mapStudio, photo: photoStudio, plan: planStudio, object: objStudio, mapfx: mxStudio, minimap: miniStudio, cosmic: cosmicStudio, cosmos: cosmicStudio, nature: natureStudio, meteor: natureStudio, aerial: natureStudio, transport: transportStudio, illustration: illustrationStudio };
   if (v && v !== 'combos') void (byView[v] ? byView[v].warm() : Promise.all(Object.values(byView).map((x) => x.warm())));
 }
 $('#dObjStudio').addEventListener('click', () => {
@@ -1303,8 +1310,8 @@ const openEdit = async () => {
   const edit = q.get('edit');
   if (!edit) return;
   const route = (p: Pick<Preset, 'id' | 'name' | 'data'> & { kind: string }) =>
-    p.kind === 'cosmos' ? cosmicStudio.loadPreset(p) : p.kind === 'nature' ? natureStudio.loadPreset(p) : p.kind === 'transport' ? transportStudio.loadPreset(p) : p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : studio.loadPreset(p);
-  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan' || edit === 'transport' || edit === 'nature' || edit === 'cosmos') {
+    p.kind === 'cosmos' ? cosmicStudio.loadPreset(p) : p.kind === 'nature' ? natureStudio.loadPreset(p) : p.kind === 'transport' ? transportStudio.loadPreset(p) : p.kind === 'illustration' ? illustrationStudio.loadPreset(p) : p.kind === 'map' ? mapStudio.loadPreset(p) : p.kind === 'photo' ? photoStudio.loadPreset(p) : p.kind === 'object' ? objStudio.loadPreset(p) : p.kind === 'plan' ? planStudio.loadPreset(p) : p.kind === 'minimap' ? miniStudio.loadPreset(p) : studio.loadPreset(p);
+  if (edit === 'map' || edit === 'drop' || edit === 'photo' || edit === 'object' || edit === 'illustration' || edit === 'plan' || edit === 'transport' || edit === 'nature' || edit === 'cosmos' || edit === 'minimap') {
     try {
       const z = q.get('z');
       route({ kind: edit, name: '', data: z ? await unpackJson<PresetData>(z) : decodeJson<PresetData>(q.get('d') ?? '') });

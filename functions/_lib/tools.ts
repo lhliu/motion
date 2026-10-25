@@ -694,7 +694,7 @@ const TOOLS_FULL: ToolDef[] = [
     name: 'list_presets',
     title: '列出預設',
     description: '列出使用者在網站工作室調好並存起來的預設（地圖場景、銳利水滴、圖片運鏡、物件特效、精修插畫）。使用者說「用 p7k2x」或「用外觀慢推那個」時，用這個查代碼。',
-    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature', 'cosmos'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
+    inputSchema: { type: 'object', properties: { kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature', 'cosmos', 'minimap'] }, query: { type: 'string', description: '名稱關鍵字或代碼' }, limit: { type: 'number' } } },
     annotations: { readOnlyHint: true },
     run: async (a, ctx) => {
       const list = await listPresets(ctx.env, String(a.kind ?? ''), String(a.query ?? ''), Number(a.limit) || 50);
@@ -725,7 +725,7 @@ const TOOLS_FULL: ToolDef[] = [
         name: { type: 'string', description: '好記的名稱，例如「外觀慢推_左到右」' },
         note: { type: 'string' },
         combo_scene: { type: 'object', description: 'build_map_scene / build_drop_scene / build_photo_scene 回傳的 combo_scene（擇一）' },
-        kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature', 'cosmos'] },
+        kind: { type: 'string', enum: ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature', 'cosmos', 'minimap'] },
         data: { type: 'object', description: 'map：場景物件；drop：{ words: [...] }；photo：build_photo_scene 回傳的 scene（擇一）' },
       },
     },
@@ -849,6 +849,8 @@ const TOOLS_FULL: ToolDef[] = [
         png_url: `${ctx.origin}/m/png?z=${z}&dl=1`,
         png_note: canShoot(ctx.env) ? `透明 PNG ${W}×${H}；要其他寬度加 &w=` : '伺服器截圖未設定，PNG 請用 local_preview 的方法在本機輸出',
         check_url: `${ctx.origin}/m/view?z=${z}&check=1`,
+        edit_url: `${ctx.origin}/?edit=minimap&z=${z}`,
+        edit_note: '使用者要自己改用途、顏色、位置時給 edit_url；在網站存成預設後會拿到代碼，用 get_preset 讀取或在 scenes 寫 { "preset": "代碼" }',
         combo_scene: { effect: 'minimap', words, seconds: 6 },
         overlay: { effect: 'minimap', words, from: 1, to: 1 },
         local_preview: `在使用者電腦用 Playwright 開 check_url（viewport 1400×900），等 #ready（state: attached）後整頁截圖檢查；要透明 PNG 就開 ${ctx.origin}/m/view?z=${z}，viewport ${W}×${H}，screenshot 加 omitBackground: true。`,

@@ -7,14 +7,15 @@ import { parseDrop } from './drop';
 import { sceneLength, type MScene } from './mapkit';
 import { isPhotoFx, normalizePhotoScene, photoFxId, type PScene } from './photokit';
 import { isObjFx, normalizeObjScene, objSceneFxId, objSceneForEffect, type OScene } from './objkit';
+import { normalizeMini, type MiniMap } from './minimap';
 import { isPlanFx, normalizePlanScene, planFxId, planFxMode, planLength, planSceneFromWords, type PlanScene } from './plankit';
 
-export type PresetKind = 'map' | 'drop' | 'photo' | 'object' | 'illustration' | 'plan' | 'transport' | 'nature' | 'cosmos';
-export const PRESET_KINDS: PresetKind[] = ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature', 'cosmos'];
-export const KIND_NAME: Record<PresetKind, string> = { map: '地圖場景', drop: '銳利水滴', photo: '圖片運鏡', object: '物件特效', illustration: '精修插畫', plan: '格局', transport:'交通精修插畫', cosmos:'星空宇宙精修插畫', nature:'隕石與俯瞰精修插畫' };
+export type PresetKind = 'map' | 'drop' | 'photo' | 'object' | 'illustration' | 'plan' | 'transport' | 'nature' | 'cosmos' | 'minimap';
+export const PRESET_KINDS: PresetKind[] = ['map', 'drop', 'photo', 'object', 'illustration', 'plan', 'transport', 'nature', 'cosmos', 'minimap'];
+export const KIND_NAME: Record<PresetKind, string> = { map: '地圖場景', drop: '銳利水滴', photo: '圖片運鏡', object: '物件特效', illustration: '精修插畫', plan: '格局', transport:'交通精修插畫', cosmos:'星空宇宙精修插畫', nature:'隕石與俯瞰精修插畫', minimap: '小地圖' };
 
 /** map：MScene；drop：{ words: string[] }（文字行＋@設定行）；photo：PScene（images 通常留空，渲染時再填） */
-export type PresetData = MScene | { words: string[] } | PScene | OScene | IScene | PlanScene | TScene | NScene | CosmicScene;
+export type PresetData = MScene | { words: string[] } | PScene | OScene | IScene | PlanScene | TScene | NScene | CosmicScene | MiniMap;
 
 export interface Preset {
   id?: string;
@@ -38,6 +39,7 @@ export interface SceneLike {
 /** 預設 → 可放進 Combo 的段落；圖片運鏡可用 images 換成這次要用的圖 */
 export const presetToScene = (p: Pick<Preset, 'kind' | 'data' | 'id' | 'name'>, o: { images?: string[] } = {}): SceneLike => {
   const note = p.id ? `預設 ${p.id}${p.name ? `「${p.name}」` : ''}` : undefined;
+  if (p.kind === 'minimap') return { effect: 'minimap', words: [JSON.stringify(normalizeMini(p.data).map)], seconds: 6, note };
   if(p.kind==='cosmos'){const sc=normalizeCosmos(p.data);return{effect:cosmicFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop,note};}
   if(p.kind==='nature'){const sc=normalizeNature(p.data);return{effect:natureFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop,note};}
   if(p.kind==='transport'){const sc=normalizeTransport(p.data);return{effect:transportFxId(sc.mode),words:[JSON.stringify(sc)],seconds:sc.loop,note};}
@@ -81,6 +83,14 @@ export const sceneToPresetData = (effect: string, words: string[]): { kind: Pres
     }
   }
   if (effect === 'crisp-drop') return { kind: 'drop', data: { words } };
+  if (effect === 'minimap') {
+    const j = words.find((w) => w.trim().startsWith('{'));
+    try {
+      return j ? { kind: 'minimap', data: normalizeMini(JSON.parse(j)).map } : null;
+    } catch {
+      return null;
+    }
+  }
   if (isPlanFx(effect)) return { kind: 'plan', data: planSceneFromWords(words, planFxMode(effect)) };
   if (isObjFx(effect)) {
     try {
@@ -114,6 +124,7 @@ export const checkPresetData = (kind: unknown, data: unknown): string => {
     if (!d.ratio) return '地圖場景缺少 ratio';
   }
   if (kind === 'photo' && !(data as Partial<PScene>).module) return '圖片運鏡缺少 module';
+  if (kind === 'minimap' && !Array.isArray((data as Partial<MiniMap>).roads)) return '小地圖缺少 roads';
   if (kind === 'plan' && !(data as Partial<PlanScene>).mode) return '格局缺少 mode';
   if (kind === 'object' && !(data as Partial<OScene>).module) return '物件特效缺少 module';
   if (kind === 'drop' && !Array.isArray((data as { words?: unknown }).words)) return '水滴設定缺少 words（文字行與 @設定行）';
