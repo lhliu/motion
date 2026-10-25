@@ -4,24 +4,33 @@
 // 伺服器與網站共用，不可碰 DOM。
 
 export type Pt = [number, number];
+/** 區塊用途，順序即圖例順序 */
+export const MINI_KINDS = ['housing', 'commercial', 'school', 'park', 'civic', 'social', 'water', 'other'] as const;
+export type MiniKind = (typeof MINI_KINDS)[number];
+export const KIND_NAME: Record<MiniKind, string> = { housing: '住宅區', commercial: '商業區', school: '文教區', park: '公園用地', civic: '機關用地', social: '社會住宅', water: '水域', other: '其他' };
+export type RoadCls = 'main' | 'minor' | 'lane';
+export const ROAD_NAME: Record<RoadCls, string> = { main: '主要道路', minor: '次要道路', lane: '巷道' };
+/** 配色表：各用途與各級道路的顏色 */
+export type MiniPalette = Partial<Record<MiniKind | RoadCls, string>>;
 export interface MiniRoad {
   name?: string;
   pts: Pt[];
-  /** main＝主要道路、minor＝次要道路，或直接給線寬 */
-  w?: 'main' | 'minor' | number;
+  /** main＝主要道路、minor＝次要道路、lane＝巷道（方點虛線），或直接給線寬 */
+  w?: 'main' | 'minor' | 'lane' | number;
   /** 路名放在第幾段（0 起算）；省略＝最長的一段 */
   seg?: number;
   /** 路名在該段的位置 0–1，預設 0.5 */
   at?: number;
-  /** 道路顏色，預設深灰 #34464C */
+  /** 單條道路顏色；省略＝照配色表的道路等級 */
   color?: string;
   /** 虛線（巷道、步道）：方點虛線，不畫路名 */
   dash?: boolean;
 }
 export interface MiniArea {
-  /** park 公園、social 社宅、housing 一般住宅、civic 公共設施、water 水域、custom 自訂顏色 */
-  kind: 'park' | 'social' | 'housing' | 'civic' | 'water' | 'custom';
+  /** 用途（顏色由配色表決定）：見 MINI_KINDS；custom＝只用 color、不進圖例 */
+  kind: MiniKind | 'custom';
   pts: Pt[];
+  /** 單塊顏色覆寫（優先於配色表） */
   color?: string;
   /** 區塊名稱（膠囊標籤） */
   label?: string;
@@ -60,10 +69,22 @@ export interface MiniMap {
   /** 指北針：north 為北方角度（0＝正上、順時針為正），north_at 為圓心座標 */
   north?: number;
   north_at?: Pt;
+  /** 配色表覆寫（只給要改的項目），其餘用風格預設 */
+  palette?: MiniPalette;
+  /** 圖例：列出圖上出現的用途 */
+  legend?: boolean;
+  /** 圖例左上角座標；省略＝畫布左下角 */
+  legend_at?: Pt;
 }
 
 export const MINI_COLORS = { road: '#34464C', park: '#72B98D', social: '#F0B849', housing: '#82BFDB', civic: '#5795C0', water: '#8CC8E8' };
-const EDGE: Record<string, string> = { park: '#3f8a5c', social: '#b07a1c', housing: '#4f8fae', civic: '#2f6690', water: '#4f9cc4' };
+/** 兩種風格的預設配色表 */
+export const MINI_PALETTES: Record<'outline' | 'flat', Required<MiniPalette>> = {
+  outline: { housing: '#82BFDB', commercial: '#F2A65A', school: '#B79AE0', park: '#72B98D', civic: '#5795C0', social: '#F0B849', water: '#8CC8E8', other: '#C9C9C9', main: '#34464C', minor: '#34464C', lane: '#34464C' },
+  flat: { housing: '#CCF3F5', commercial: '#E89AAE', school: '#A98BD8', park: '#65943F', civic: '#D97236', social: '#F0B849', water: '#8CC8E8', other: '#D0D0D0', main: '#A6A6A6', minor: '#A6A6A6', lane: '#A6A6A6' },
+};
+export const paletteOf = (m: MiniMap): Required<MiniPalette> => ({ ...MINI_PALETTES[m.style === 'flat' ? 'flat' : 'outline'], ...(m.palette ?? {}) });
+export const roadCls = (r: MiniRoad): RoadCls => (r.dash || r.w === 'lane' ? 'lane' : r.w === 'minor' ? 'minor' : typeof r.w === 'number' && r.w <= 24 ? 'minor' : 'main');
 /** 名稱膠囊：淺底、深色字與框 */
 const PILL: Record<string, [string, string]> = { park: ['#e8f5ec', '#2f6b45'], social: ['#fff4dc', '#7a5410'], housing: ['#e6f3fa', '#2f6b8a'], civic: ['#eef4fa', '#1f3f5c'], water: ['#e6f3fa', '#2f6b8a'], place: ['#f3eefa', '#6d4c9f'] };
 export const MINI_PLACES: Record<'tr' | 'duo', { x: number; y: number; w: number }> = { tr: { x: 1400, y: 55, w: 470 }, duo: { x: 600, y: 40, w: 460 } };
@@ -73,6 +94,16 @@ const pt = (v: unknown): Pt | null => (Array.isArray(v) && v.length >= 2 && Numb
 const pts = (v: unknown): Pt[] => (Array.isArray(v) ? v.map(pt).filter((p): p is Pt => !!p) : []);
 const str = (v: unknown, max = 40) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const hex = (v: unknown) => (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : undefined);
+
+const pal = (v: unknown): MiniPalette | undefined => {
+  if (!v || typeof v !== 'object') return undefined;
+  const o: MiniPalette = {};
+  for (const key of [...MINI_KINDS, 'main', 'minor', 'lane'] as const) {
+    const c = hex((v as Record<string, unknown>)[key]);
+    if (c) o[key] = c;
+  }
+  return Object.keys(o).length ? o : undefined;
+};
 
 /** 整理輸入，回傳規格與錯誤 */
 export const normalizeMini = (raw: unknown): { map: MiniMap; errors: string[] } => {
@@ -85,13 +116,13 @@ export const normalizeMini = (raw: unknown): { map: MiniMap; errors: string[] } 
       errors.push(`roads[${i}] 至少要 2 個點`);
       return [];
     }
-    const w = o.w === 'main' || o.w === 'minor' ? o.w : typeof o.w === 'number' ? Math.min(160, Math.max(4, o.w)) : 'main';
-    const dash = o.dash === true;
+    const w = o.w === 'main' || o.w === 'minor' || o.w === 'lane' ? o.w : typeof o.w === 'number' ? Math.min(160, Math.max(4, o.w)) : 'main';
+    const dash = o.dash === true || o.w === 'lane';
     return [{ name: dash ? undefined : str(o.name, 16) || undefined, pts: p, w, seg: typeof o.seg === 'number' ? Math.round(o.seg) : undefined, at: typeof o.at === 'number' ? Math.min(0.95, Math.max(0.05, o.at)) : undefined, color: hex(o.color), dash: dash || undefined } as MiniRoad];
   });
   if (!roads.length) errors.push('roads 至少要一條道路（pts 為道路中心線座標）');
-  const KINDS = ['park', 'social', 'housing', 'civic', 'water', 'custom'];
-  const areas = (Array.isArray(r.areas) ? r.areas : []).slice(0, 40).flatMap((x, i) => {
+  const KINDS: string[] = [...MINI_KINDS, 'custom'];
+  const areas = (Array.isArray(r.areas) ? r.areas : []).slice(0, 80).flatMap((x, i) => {
     const o = (x ?? {}) as Record<string, unknown>, p = pts(o.pts);
     if (p.length < 3) {
       errors.push(`areas[${i}] 至少要 3 個點`);
@@ -111,12 +142,14 @@ export const normalizeMini = (raw: unknown): { map: MiniMap; errors: string[] } 
   const pl = r.place;
   const place: MiniPlace16 =
     pl === 'tr' || pl === 'duo' || pl === 'full' ? pl : pl && typeof pl === 'object' ? { x: num((pl as Record<string, unknown>).x, 1400), y: num((pl as Record<string, unknown>).y, 55), w: Math.max(120, num((pl as Record<string, unknown>).w, 470)) } : 'tr';
-  return { map: { title: str(r.title, 40) || undefined, w: W, h: H, roads, areas, places, source: str(r.source, 60) || undefined, place, scale: Math.min(2, Math.max(0.6, num(r.scale, 1))), style: r.style === 'flat' ? 'flat' : undefined, north: typeof r.north === 'number' && Number.isFinite(r.north) ? ((r.north % 360) + 360) % 360 : undefined, north_at: pt(r.north_at) ?? undefined }, errors };
+  return { map: { title: str(r.title, 40) || undefined, w: W, h: H, roads, areas, places, source: str(r.source, 60) || undefined, place, scale: Math.min(2, Math.max(0.6, num(r.scale, 1))), style: r.style === 'flat' ? 'flat' : undefined, north: typeof r.north === 'number' && Number.isFinite(r.north) ? ((r.north % 360) + 360) % 360 : undefined, north_at: pt(r.north_at) ?? undefined, palette: pal(r.palette), legend: r.legend === true || undefined, legend_at: pt(r.legend_at) ?? undefined }, errors };
 };
 
 /* ───────── 版面計算 ───────── */
 export const len = (a: Pt, b: Pt) => Math.hypot(b[0] - a[0], b[1] - a[1]);
-const roadW = (r: MiniRoad, k: number) => (typeof r.w === 'number' ? r.w : r.w === 'minor' ? 56 : 70) * k;
+/** 道路寬：數字照給；等級寬度依風格（平面示意圖的路比較細） */
+const ROAD_W = { outline: { main: 70, minor: 56, lane: 14 }, flat: { main: 35, minor: 18, lane: 12 } };
+const roadW = (r: MiniRoad, k: number, flat = false) => (typeof r.w === 'number' ? r.w : ROAD_W[flat ? 'flat' : 'outline'][roadCls(r)]) * k;
 /** 粗估文字寬度：中文全形 1em、英數 0.6em */
 export const textW = (s: string, px: number) => [...s].reduce((a, c) => a + (/[\u0000-ÿ]/.test(c) ? 0.6 : 1), 0) * px;
 
@@ -154,7 +187,7 @@ export const hits = (A: Box, B: Box) => {
 };
 
 /** 路名位置：指定段或最長段的中點，文字順著路段方向且不倒過來 */
-const roadLabel = (r: MiniRoad, k: number) => {
+const roadLabel = (r: MiniRoad, k: number, flat: boolean) => {
   let i = r.seg ?? -1;
   if (i < 0 || i >= r.pts.length - 1) {
     i = 0;
@@ -165,10 +198,22 @@ const roadLabel = (r: MiniRoad, k: number) => {
   if (ang > 90) ang -= 180;
   if (ang < -90) ang += 180;
   // 次要道路的路名也至少 40（縮到影片尺寸才看得清楚）
-  const px = Math.round(Math.max(roadW(r, k) * 0.62, 40 * k));
+  const px = Math.round(Math.max(roadW(r, k, flat) * 0.62, 40 * k));
   return { x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, ang, px, segLen: len(a, b) };
 };
 const centroid = (p: Pt[]): Pt => [p.reduce((s, q) => s + q[0], 0) / p.length, p.reduce((s, q) => s + q[1], 0) / p.length];
+
+/** 圖例：只列圖上出現的用途（依 MINI_KINDS 順序），白底圓角框，色塊＋名稱 */
+const legendLayout = (m: MiniMap) => {
+  const k = m.scale ?? 1, H = m.h ?? 1128;
+  const used = MINI_KINDS.filter((x) => (m.areas ?? []).some((a) => a.kind === x));
+  if (!used.length) return null;
+  const px = 34 * k, sw = 34 * k, gap = 14 * k, pad = 20 * k, row = px * 1.45;
+  const w = pad * 2 + sw + gap + Math.max(...used.map((x) => textW(KIND_NAME[x], px)));
+  const h = pad * 2 + row * used.length - (row - px);
+  const [x, y] = m.legend_at ?? [24 * k, H - h - 24 * k];
+  return { x, y, w, h, px, sw, gap, pad, row, used };
+};
 
 /** 算出所有文字的位置，並檢查互相重疊、超出畫布、路名比路段長 */
 export const miniLayout = (m: MiniMap) => {
@@ -176,8 +221,8 @@ export const miniLayout = (m: MiniMap) => {
   const boxes: Box[] = [];
   const warnings: string[] = [];
   const roads = m.roads.map((r) => {
-    if (!r.name || r.dash) return { r, lb: null };
-    const lb = roadLabel(r, k);
+    if (!r.name || roadCls(r) === 'lane') return { r, lb: null };
+    const lb = roadLabel(r, k, m.style === 'flat');
     const w = textW(r.name, lb.px) + lb.px * 0.6;
     boxes.push({ kind: 'road', name: r.name, cx: lb.x, cy: lb.y, w, h: lb.px * 1.1, a: lb.ang });
     if (w > lb.segLen * 0.92) warnings.push(`路名「${r.name}」比所在路段長，請把路段畫長一點或用 seg 指定較長的一段`);
@@ -198,12 +243,14 @@ export const miniLayout = (m: MiniMap) => {
     boxes.push({ kind: 'place', name: p.name, cx: at[0], cy: at[1], w: pill.w, h: pill.h, a: 0 });
     return { p, pill };
   });
+  const legend = m.legend ? legendLayout(m) : null;
+  if (legend) boxes.push({ kind: 'legend', name: '圖例', cx: legend.x + legend.w / 2, cy: legend.y + legend.h / 2, w: legend.w / 0.9, h: legend.h / 0.9, a: 0 });
   for (let i = 0; i < boxes.length; i++) {
     const A = aabb(boxes[i]);
     if (A.x0 < 0 || A.y0 < 0 || A.x1 > W || A.y1 > H) warnings.push(`「${boxes[i].name}」超出畫布`);
     for (let j = i + 1; j < boxes.length; j++) if (hits(boxes[i], boxes[j])) warnings.push(`「${boxes[i].name}」和「${boxes[j].name}」重疊`);
   }
-  return { roads, areas, places, warnings, tagR, pillPx, k };
+  return { roads, areas, places, legend, warnings, tagR, pillPx, k };
 };
 
 /** 自訂顏色的邊框：同色系調暗 */
@@ -219,20 +266,21 @@ export const FONT = `"Chiron Hei HK","Noto Sans TC","PingFang TC","Microsoft Jhe
 export const miniSvg = (m: MiniMap, opts: { anim?: boolean; id?: string } = {}): string => {
   const L = miniLayout(m), W = m.w ?? 1410, H = m.h ?? 1128, k = L.k;
   const id = opts.id ?? 'mm';
-  const fillOf = (a: MiniArea) => a.color ?? (a.kind === 'custom' ? '#cccccc' : MINI_COLORS[a.kind]);
-  const edgeOf = (a: MiniArea) => (a.color ? darken(a.color) : EDGE[a.kind] ?? '#888');
+  const P = paletteOf(m);
+  const fillOf = (a: MiniArea) => a.color ?? (a.kind === 'custom' ? '#cccccc' : P[a.kind]);
+  const edgeOf = (a: MiniArea) => darken(fillOf(a));
   const an = (cls: string, i: number) => (opts.anim ? ` class="${cls}" style="--i:${i}"` : '');
   const flat = m.style === 'flat';
   const halo = flat ? '' : [
     ...(m.areas ?? []).map((a) => `<path d="${path(a.pts)}Z" fill="#fff" stroke="#fff" stroke-width="${12 * k}" stroke-linejoin="round"/>`),
-    ...m.roads.map((r) => `<path d="${path(r.pts)}" fill="none" stroke="#fff" stroke-width="${roadW(r, k) + 14 * k}" stroke-linecap="round" stroke-linejoin="round"/>`),
+    ...m.roads.map((r) => `<path d="${path(r.pts)}" fill="none" stroke="#fff" stroke-width="${roadW(r, k, flat) + 14 * k}" stroke-linecap="round" stroke-linejoin="round"/>`),
   ].join('');
   const areas = (m.areas ?? []).map((a, i) => `<path${an('mm-a', i)} d="${path(a.pts)}Z" fill="${fillOf(a)}"${flat ? '' : ` stroke="${edgeOf(a)}" stroke-width="${3 * k}" stroke-linejoin="round"`}/>`).join('');
   // 實線道路用 pathLength 畫出；虛線（方點）不能用同一招，改成淡入
   const roads = m.roads
     .map((r, i) => {
-      const w = roadW(r, k), col = r.color ?? MINI_COLORS.road;
-      if (r.dash) return `<path${an('mm-t', i)} d="${path(r.pts)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-dasharray="${w} ${w}" stroke-linecap="butt"/>`;
+      const w = roadW(r, k, flat), col = r.color ?? P[roadCls(r)];
+      if (roadCls(r) === 'lane') return `<path${an('mm-t', i)} d="${path(r.pts)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-dasharray="${w} ${w}" stroke-linecap="butt"/>`;
       return `<path${an('mm-r', i)} d="${path(r.pts)}" pathLength="1" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="${flat ? 'butt' : 'round'}" stroke-linejoin="${flat ? 'miter' : 'round'}"/>`;
     })
     .join('');
@@ -263,33 +311,47 @@ export const miniSvg = (m: MiniMap, opts: { anim?: boolean; id?: string } = {}):
       return `<g${an('mm-l', li++)}><path d="M${p.at[0].toFixed(1)} ${p.at[1].toFixed(1)}L${(pill.at[0] - pill.w * 0.3).toFixed(1)} ${edgeY.toFixed(1)}" stroke="${col}" stroke-width="${3.5 * k}"/><circle cx="${p.at[0]}" cy="${p.at[1]}" r="${11 * k}" fill="${col}" stroke="#fff" stroke-width="${3 * k}"/></g>${pillSvg(pill.at[0], pill.at[1], pill.w, pill.h, p.name, [PILL.place[0], col], li++)}`;
     }),
   ].join('');
+  const lg = L.legend;
+  const legend = lg
+    ? `<g id="legend"${an('mm-l', li++)}><rect x="${lg.x.toFixed(1)}" y="${lg.y.toFixed(1)}" width="${lg.w.toFixed(1)}" height="${lg.h.toFixed(1)}" rx="${(12 * k).toFixed(1)}" fill="#fff" fill-opacity=".94" stroke="#D5DCE0" stroke-width="${2 * k}"/>${lg.used
+        .map((x, i) => {
+          const y = lg.y + lg.pad + i * lg.row;
+          return `<rect x="${(lg.x + lg.pad).toFixed(1)}" y="${y.toFixed(1)}" width="${lg.sw.toFixed(1)}" height="${lg.sw.toFixed(1)}" rx="${(5 * k).toFixed(1)}" fill="${P[x]}" stroke="${darken(P[x])}" stroke-width="${2 * k}"/><text x="${(lg.x + lg.pad + lg.sw + lg.gap).toFixed(1)}" y="${(y + lg.sw / 2).toFixed(1)}" font-size="${lg.px.toFixed(1)}" font-weight="700" fill="#34464C" dominant-baseline="central">${KIND_NAME[x]}</text>`;
+        })
+        .join('')}</g>`
+    : '';
   const src = m.source ? `<text x="${W - 30}" y="${H - 30}" font-size="${22 * k}" font-weight="700" fill="#34464C" stroke="#fff" stroke-width="${5 * k}" paint-order="stroke" text-anchor="end">${e(m.source)}</text>` : '';
   const css = opts.anim
     ? `<style>.mm-a{opacity:0;transform-box:fill-box;transform-origin:center;animation:${id}A 6s cubic-bezier(.2,.8,.2,1) infinite both;animation-delay:calc(var(--i)*.08s)}.mm-r{stroke-dasharray:1 1;stroke-dashoffset:1;animation:${id}R 6s cubic-bezier(.5,0,.2,1) infinite both;animation-delay:calc(var(--i)*.07s)}.mm-t,.mm-l{opacity:0;animation:${id}T 6s ease infinite both;animation-delay:calc(var(--i)*.06s)}@keyframes ${id}A{0%,4%{opacity:0;transform:scale(.92)}16%,94%{opacity:1;transform:none}100%{opacity:0}}@keyframes ${id}R{0%,6%{stroke-dashoffset:1;opacity:1}30%,94%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}@keyframes ${id}T{0%,30%{opacity:0}40%,94%{opacity:1}100%{opacity:0}}</style>`
     : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='${FONT}'>${m.title ? `<title>${e(m.title)}</title>` : ''}${css}<defs><filter id="${id}-sh" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="${4 * k}" stdDeviation="${6 * k}" flood-color="#000" flood-opacity=".28"/></filter></defs><g id="halo" ${flat ? '' : ` filter="url(#${id}-sh)"`}>${halo}</g><g id="areas">${areas}</g><g id="roads">${roads}</g><g id="road-labels">${roadLabels}</g><g id="labels">${labels}${compass}</g>${src}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='${FONT}'>${m.title ? `<title>${e(m.title)}</title>` : ''}${css}<defs><filter id="${id}-sh" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="${4 * k}" stdDeviation="${6 * k}" flood-color="#000" flood-opacity=".28"/></filter></defs><g id="halo" ${flat ? '' : ` filter="url(#${id}-sh)"`}>${halo}</g><g id="areas">${areas}</g><g id="roads">${roads}</g><g id="road-labels">${roadLabels}</g><g id="labels">${labels}${compass}${legend}</g>${src}</svg>`;
 };
 
-/** 範例：重劃區街廓示意圖（平面風格：灰色道路、方點巷道、色塊街廓、指北針；1920×1080 滿版） */
-const G = '#A6A6A6';
-const rect = (x0: number, y0: number, x1: number, y1: number): Pt[] => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+/**
+ * 範例：重劃區土地使用分區示意圖（平面風格，轉正後的棋盤街廓、方點巷道、指北針、圖例），預設放右上角。
+ * 座標先照 1920×1080 描，再整體平移裁掉留白。
+ */
+const O: Pt = [300, 40];
+const sh = (p: Pt[]): Pt[] => p.map(([x, y]) => [x - O[0], y - O[1]]);
+const rect = (x0: number, y0: number, x1: number, y1: number): Pt[] => sh([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+const road = (w: MiniRoad['w']) => (pts: Pt[]): MiniRoad => ({ pts: sh(pts), w });
 export const MINI_SAMPLE: MiniMap = {
-  title: '街廓示意小地圖',
-  w: 1920,
-  h: 1080,
-  place: 'full',
+  title: '重劃區土地使用分區（示意）',
+  w: 1470,
+  h: 870,
+  place: 'tr',
   style: 'flat',
   north: -45,
-  north_at: [404, 122],
+  north_at: [404 - O[0], 122 - O[1]],
+  legend: true,
   areas: [
-    { kind: 'custom', color: '#CCF3F5', pts: [[327, 222], [1705, 222], [1705, 811], [573, 811], [573, 661], [404, 661], [404, 285], [327, 285]] },
-    { kind: 'custom', color: '#D97236', pts: rect(502, 222, 643, 503) },
-    { kind: 'custom', color: '#E8DCA0', pts: rect(588, 222, 1070, 285) },
-    { kind: 'custom', color: '#65943F', pts: rect(792, 368, 1070, 576) },
-    { kind: 'custom', color: '#65943F', pts: rect(1105, 611, 1367, 811) },
+    { kind: 'housing', pts: sh([[327, 222], [1705, 222], [1705, 811], [573, 811], [573, 661], [404, 661], [404, 285], [327, 285]]) },
+    { kind: 'housing', color: '#E8DCA0', pts: rect(588, 222, 1070, 285) },
+    { kind: 'civic', pts: rect(502, 222, 643, 503) },
+    { kind: 'park', pts: rect(792, 368, 1070, 576) },
+    { kind: 'school', pts: rect(1105, 611, 1367, 811) },
   ],
   roads: [
-    // 方點巷道
     ...([
       [[502, 291], [643, 291]],
       [[502, 376], [643, 376]],
@@ -300,10 +362,10 @@ export const MINI_SAMPLE: MiniMap = {
       [[972, 729], [972, 811]],
       [[1540, 729], [1540, 811]],
       [[1660, 729], [1660, 811]],
-    ] as Pt[][]).map((pts) => ({ pts, w: 12, color: G, dash: true })),
-    // 次要道路
+    ] as Pt[][]).map(road('lane')),
     ...([
       [[660, 358], [1070, 358]],
+      [[784.5, 368], [784.5, 576]],
       [[1377, 611], [1377, 811]],
       [[678, 719], [1070, 719]],
       [[1478, 719], [1705, 719]],
@@ -311,9 +373,7 @@ export const MINI_SAMPLE: MiniMap = {
       [[1234, 346], [1234, 576]],
       [[1225, 488], [1443, 488]],
       [[1595, 346], [1595, 576]],
-    ] as Pt[][]).map((pts) => ({ pts, w: 18, color: G })),
-    { pts: [[784.5, 368], [784.5, 576]], w: 15, color: G },
-    // 主要道路
+    ] as Pt[][]).map(road('minor')),
     ...([
       [[327, 204.5], [1740, 204.5]],
       [[1722, 186], [1722, 884]],
@@ -323,6 +383,6 @@ export const MINI_SAMPLE: MiniMap = {
       [[467, 593.5], [1740, 593.5]],
       [[1087.5, 204], [1087.5, 828]],
       [[1460.5, 204], [1460.5, 828]],
-    ] as Pt[][]).map((pts) => ({ pts, w: 35, color: G })),
+    ] as Pt[][]).map(road('main')),
   ],
 };
