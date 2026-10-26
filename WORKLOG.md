@@ -1,5 +1,10 @@
 # WORKLOG
 
+## 2026-10-26（UTC+8）feat/effects-341-345
+- 從 main（afb1509）開分支；程式碼全部由 Motion Coder 內建模型撰寫（未使用 Codex、Claude Code、agy）。
+- 依 `/workspace/zikaji/new-effects-2026-10-26/PLAN.md` 三階段：共用準備（可變 Noto Sans TC、`--vf`、`data-vw`、數字小工具）→ `src/effects/estate-extra.ts` 五招（341–345）→ 驗證。
+- 驗證：`npm run build` 通過；以 comboHtml／exportHtml 產生 68 頁、Playwright 截 100+ 張（3 比例、黑體／明體 × 粗中細、ink／paper 色調、逐幀 0.2–3.5 秒、下載 HTML），無 console／page error。截圖在 `out/effects-341-345/`（不進 git）。
+
 ## 2026-10-23（UTC+8）feat/font-picker
 - 從 main（9fd5d00）開分支 `feat/font-picker`。
 - 現況調查：字型由 `index.html` 的 Google Fonts 連結載入（7 個家族、依 unicode-range 分片）；特效用 CSS 變數 `--sans`／`--serif`，字重多寫死在各特效 CSS（900／700／500…）。

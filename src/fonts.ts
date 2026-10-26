@@ -89,7 +89,8 @@ const FAMILY_QS: Record<string, string> = {
   'JetBrains Mono': 'JetBrains+Mono:wght@400;700',
   'Chiron Hei HK': 'Chiron+Hei+HK:wght@300;500;700;900',
   'Chiron GoRound TC': 'Chiron+GoRound+TC:wght@400;500;700;900',
-  'Noto Sans TC': 'Noto+Sans+TC:wght@300;500;700;900',
+  // 思源黑體在 Google Fonts 是可變字型（wght 100–900）；用範圍查詢拿到的分片檔跟固定字重相同，不會變大
+  'Noto Sans TC': 'Noto+Sans+TC:wght@100..900',
   'Noto Serif TC': 'Noto+Serif+TC:wght@300;500;700;900',
   'LXGW WenKai TC': 'LXGW+WenKai+TC:wght@400;700',
   Huninn: 'Huninn',
@@ -105,6 +106,8 @@ export const familiesFor = (o: { font?: string; face?: string; css?: string }): 
   ...fontPack(o.font).families,
   ...(o.face ? [faceOf(o.face)?.family ?? ''] : []),
   ...(o.css && /var\(--serif\)|Noto Serif/.test(o.css) ? ['Noto Serif TC'] : []),
+  // 可變字重特效（var(--vf)）：預設用思源黑體可變版；選了明體就用明體
+  ...(o.css && /var\(--vf\)/.test(o.css) ? [o.face === 'ming' ? 'Noto Serif TC' : 'Noto Sans TC'] : []),
 ].filter((f) => FAMILY_QS[f]);
 const loadedFamilies = new Set(['JetBrains Mono', 'Chiron Hei HK']);
 /** 瀏覽器端：第一次需要某套字型時才插入它的樣式表 */

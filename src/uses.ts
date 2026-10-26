@@ -25,10 +25,10 @@ const g = (use: UseId, ids: string) => ids.split(/\s+/).filter(Boolean).map((id)
 export const USE_OF: Record<string, UseId> = Object.fromEntries([
   ...g('open', 'punch-zoom slam mask-rise box-wipe curtain split-reveal line-unfold iris spin-in text-tunnel ring-tunnel text-orbit text-cylinder extrude star-crawl lens-flare particle-form spotlight shine-sweep crisp-drop glass-blob-title drop-splash countdown circle-badge crt-power'),
   ...g('caption', 'shorts-caption location-pin lower-third callout highlighter subscribe-cta news-ticker chat-bubbles karaoke danmaku hashtag-pop typewriter handwrite marquee-stack credits-roll'),
-  ...g('info', 'big-number versus checklist title-checklist timeline chapter-card qa-card progress-bar ranking quote-card odometer headline-swap split-flap led-board newspaper-spin'),
+  ...g('info', 'receipt-print price-strike road-sign big-number versus checklist title-checklist timeline chapter-card qa-card progress-bar ranking quote-card odometer headline-swap split-flap led-board newspaper-spin'),
   ...g('trans', 'zoom-through flip-cards split-halves blinds scramble diagonal-bands domino flip-chars text-cube split-invert shatter noise-dissolve gooey-merge bubble-pop squeeze'),
-  ...g('emph', 'word-burst letter-hit stamp stretch shake-alert bounce-in swing-sign gravity-fall jelly heartbeat scatter-gather wave-text kinetic-stack lightning pixelate slot-reel tape-cross'),
-  ...g('mood', 'blur-focus fade-chars ink-spread tracking-breathe huge-scroll vertical-flow repeat-wave ribbon parallax-columns text-corridor text-vortex outline-fill glitch-slices pattern-mask long-shadow liquid-fill text-echo offset-stroke paper-cut neon-flicker glow-pulse laser-scan sunrise smoke-away halftone heat-distort matrix-rain bubbles-rise water-ripple vhs terminal old-film synthwave pixel-game'),
+  ...g('emph', 'sticker-title word-burst letter-hit stamp stretch shake-alert bounce-in swing-sign gravity-fall jelly heartbeat scatter-gather wave-text kinetic-stack lightning pixelate slot-reel tape-cross'),
+  ...g('mood', 'weight-wave blur-focus fade-chars ink-spread tracking-breathe huge-scroll vertical-flow repeat-wave ribbon parallax-columns text-corridor text-vortex outline-fill glitch-slices pattern-mask long-shadow liquid-fill text-echo offset-stroke paper-cut neon-flicker glow-pulse laser-scan sunrise smoke-away halftone heat-distort matrix-rain bubbles-rise water-ripple vhs terminal old-film synthwave pixel-game'),
 ]);
 
 /** 建案片常用（文字區最上方） */
