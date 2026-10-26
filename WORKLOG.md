@@ -4,6 +4,7 @@
 - 從 main（afb1509）開分支；程式碼全部由 Motion Coder 內建模型撰寫（未使用 Codex、Claude Code、agy）。
 - 依 `/workspace/zikaji/new-effects-2026-10-26/PLAN.md` 三階段：共用準備（可變 Noto Sans TC、`--vf`、`data-vw`、數字小工具）→ `src/effects/estate-extra.ts` 五招（341–345）→ 驗證。
 - 驗證：`npm run build` 通過；以 comboHtml／exportHtml 產生 68 頁、Playwright 截 100+ 張（3 比例、黑體／明體 × 粗中細、ink／paper 色調、逐幀 0.2–3.5 秒、下載 HTML），無 console／page error。截圖在 `out/effects-341-345/`（不進 git）。
+- 10:51 修收據撕紙邊接縫、貼紙標題最低字重 700；PR #2 squash merge（eafaecf），Cloudflare Pages 部署成功；正式站 JS 含五個 id、`data-vw`、`wght@100..900`，/api/effects 310 招含五招，Playwright 開 `?fx=` 五招皆掛載、無 page error，截圖 `out/prod-341-345/`。程式碼皆由 Motion Coder 內建模型撰寫。
 
 ## 2026-10-23（UTC+8）feat/font-picker
 - 從 main（9fd5d00）開分支 `feat/font-picker`。
