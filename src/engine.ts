@@ -7,7 +7,8 @@ export const BASE_FX_CSS = `${NUM_FONT_CSS}
 .fx{position:absolute;inset:0;overflow:hidden;display:grid;place-items:center;background:var(--bg);color:var(--fg);font-family:var(--sans);font-weight:900;line-height:1;--u:min(1cqw,1.7778cqh);-webkit-font-smoothing:antialiased}
 .fx .c{display:inline-block;white-space:pre}
 .fx *{box-sizing:border-box}
-.fx[data-fw],.fx[data-fw] *{font-weight:var(--fw)!important}`;
+.fx[data-fw],.fx[data-fw] *:not([data-vw]){font-weight:var(--fw)!important}`;
+// data-vw：逐字可變字重動畫（例如字重呼吸波浪）自己控制字重，不被字重選擇器的 !important 蓋掉；改以 --fw 當波峰
 
 export const scopeCss = (fx: Fx): string =>
   fx.css.replace(/\.S\b/g, `.fx-${fx.id}`).replace(/\bK_/g, `k_${fx.id.replace(/-/g, '_')}_`);
@@ -44,7 +45,9 @@ export const varsCss = (v: Vars): string => {
   // 選了字體：--sans 與 --serif 都換成同一套，讓用 var(--serif) 的特效也一致
   const sans = f ? f.stack : fontStack(v.font);
   const serif = f ? f.stack : '"Noto Serif TC",serif';
-  return `--bg:${v.bg};--fg:${v.fg};--ac:${v.ac};--ac2:${v.ac2};--hl:${v.ac2};--mu:color-mix(in srgb,${v.fg} 30%,transparent);--sans:${sans};--serif:${serif};--mono:"JetBrains Mono",ui-monospace,monospace${w ? `;--fw:${w.w}` : ''}`;
+  // --vf：可變字重用的字體。思源黑體有 wght 100–900 可變版；明體沒有可變版，只能在已載入的字重間跳動
+  const vf = v.face === 'ming' ? f!.stack : '"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif';
+  return `--bg:${v.bg};--fg:${v.fg};--ac:${v.ac};--ac2:${v.ac2};--hl:${v.ac2};--mu:color-mix(in srgb,${v.fg} 30%,transparent);--sans:${sans};--serif:${serif};--vf:${vf};--mono:"JetBrains Mono",ui-monospace,monospace${w ? `;--fw:${w.w}` : ''}`;
 };
 
 /** 字重覆寫用的屬性（掛在 .fx 根節點） */
