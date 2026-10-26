@@ -37,7 +37,7 @@ export const estateExtra: Fx[] = [
 .S .prn{width:calc(var(--r)*11.4);height:calc(var(--r)*.7);background:#15171c;border-radius:calc(var(--r)*.2);box-shadow:0 calc(var(--r)*.12) 0 #000,inset 0 calc(var(--r)*-.12) 0 #2c3038;position:relative;z-index:2}
 .S .clip{width:calc(var(--r)*10);overflow:hidden;margin-top:calc(var(--r)*-.1);padding-bottom:calc(var(--r)*.6)}
 .S .paper{background:#fbfaf6;color:#222;padding:calc(var(--r)*.8) calc(var(--r)*.8) calc(var(--r)*1);font-size:calc(var(--lh)*.5);line-height:1;transform-origin:50% 0;
- -webkit-mask:linear-gradient(#000,#000) top/100% calc(100% - var(--r)*.3) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/calc(var(--r)*.4) calc(var(--r)*.3) repeat-x;
+ -webkit-mask:linear-gradient(#000,#000) top/100% calc(100% - var(--r)*.3 + 2px) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/calc(var(--r)*.4) calc(var(--r)*.3) repeat-x;
  filter:drop-shadow(0 calc(var(--r)*.3) calc(var(--r)*.4) #0006);animation:K_feed 7s infinite both}
 .S .h{text-align:center;font-size:calc(var(--r)*.62);letter-spacing:.2em;font-family:var(--mono);font-weight:700}
 .S .sub{text-align:center;font-size:calc(var(--r)*.34);opacity:.6;margin:calc(var(--r)*.18) 0 calc(var(--r)*.4);font-weight:500}
@@ -176,7 +176,7 @@ export const estateExtra: Fx[] = [
 .S{--u:calc(min(1cqw,1.7778cqh)*1.2)}
 .S .g{display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*3)}
 .S .row{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;max-width:94cqw}
-.S .s{display:inline-block;font-size:calc(var(--u)*12*min(1,6/var(--n)));color:var(--c);paint-order:stroke fill;-webkit-text-stroke:.2em #fff;letter-spacing:.02em;padding:0 .08em;margin:0 -.04em;filter:drop-shadow(.06em .07em 0 #0003);transform-origin:50% 100%;animation:K_s 4.4s ease infinite both;animation-delay:calc(var(--i)*.08s)}
+.S .s{display:inline-block;font-weight:max(700,var(--fw,900));font-size:calc(var(--u)*12*min(1,6/var(--n)));color:var(--c);paint-order:stroke fill;-webkit-text-stroke:.2em #fff;letter-spacing:.02em;padding:0 .08em;margin:0 -.04em;filter:drop-shadow(.06em .07em 0 #0003);transform-origin:50% 100%;animation:K_s 4.4s ease infinite both;animation-delay:calc(var(--i)*.08s)}
 .S .s:nth-child(3n+1){--c:var(--ac)}.S .s:nth-child(3n+2){--c:var(--ac2)}.S .s:nth-child(3n){--c:var(--fg)}
 .S .s:nth-child(odd){--r:-4deg}.S .s:nth-child(even){--r:4deg}
 .S .sub{background:#fff;color:#222;font-size:calc(var(--u)*3.6);padding:.3em 1em;border-radius:2em;filter:drop-shadow(.12em .15em 0 #0003);animation:K_b 4.4s cubic-bezier(.3,1.8,.5,1) infinite both}
@@ -186,7 +186,8 @@ export const estateExtra: Fx[] = [
       const [t, sub] = [w[0] || (w.length ? '' : '採光好！'), w.length ? w[1] : '離捷運 5 分鐘'];
       const cs = stickerChunks(t);
       const n = cs.reduce((a, c) => a + Math.max(1, c.length * 0.6), 0);
-      return `<div class="g"><div class="row" style="--n:${n.toFixed(1)}">${cs.map((c, i) => `<span class="s" style="--i:${i}">${esc(c)}</span>`).join('')}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>`;
+      // data-vw＋最低 700：選了細字重（尤其明體細）時貼紙字仍夠粗，白框不會吃掉筆畫
+      return `<div class="g"><div class="row" style="--n:${n.toFixed(1)}">${cs.map((c, i) => `<span data-vw class="s" style="--i:${i}">${esc(c)}</span>`).join('')}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>`;
     },
   },
   {
