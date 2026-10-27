@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-27（main 92f634e，已上線；PR #10）
+## 2026-10-27（feat/objects-o2，PR 待審）
 ### 新增
 - 物件擴充批次 O2：有趣道具 7 個＋房屋看屋 1 個，純 CSS，house style：
   - 384 泡泡糖吹破 `obj-fun-gum`
