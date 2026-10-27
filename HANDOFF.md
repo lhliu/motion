@@ -1,7 +1,7 @@
 # HANDOFF：物件擴充批次 O2，有趣道具 384–390＋售屋吊牌 391（feat/objects-o2）
 
 ## 狀態
-- PR 待審，未 merge。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- 已於 2026-10-27 squash merge（92f634e，PR #10）並部署；正式站 384–391 正常、「房屋看屋」出現 1 招、無 console 錯誤。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
 - O1（376–383）已於 2026-10-27 squash merge 為 b3535ff 並上線；物件區自動隱藏 0 個特效的子分類。
 - 整體計畫：物件 47 → 100，分 O1–O6（/workspace/zikaji/objects-100/PLAN.md）。這是第二批。
 
