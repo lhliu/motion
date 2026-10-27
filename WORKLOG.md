@@ -35,3 +35,6 @@
 - 新增 card-explain.ts 五個特效，card.ts 兩個變體（舊預設不變）；build 通過；Playwright 截圖 108 張於 out/effects-352-356/。
 - 修正：翻面章位置鏡像、直式卡片過寬、收納盒箱蓋過長、蓋章被裁、對決表格過高。
 - 已開 PR，未 merge。
+
+## 2026-10-27 21:10（UTC+8）B2 上線
+- PR #4 squash merge → b172102；Cloudflare Pages success；正式站 5 個新特效＋versus／progress-bar 新舊輸入皆正常、無 console error，截圖 out/prod-352-356/。

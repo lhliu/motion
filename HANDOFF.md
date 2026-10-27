@@ -1,7 +1,7 @@
 # HANDOFF：圖解批次 B2，特效 352–356＋兩個變體（feat/effects-352-356）
 
 ## 狀態
-- PR 已開，待 KC 審核；**尚未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- 已於 2026-10-27 squash merge（b172102，PR #4），Cloudflare Pages 部署成功；正式站 352–356 與 versus／progress-bar 新舊輸入皆經 Playwright 驗證，無 console error。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
 - 上一批 B1（346–351）已於 2026-10-27 merge（c9ceffc，PR #3）並上線驗證。
 
 ## 內容
