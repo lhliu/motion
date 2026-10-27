@@ -208,7 +208,7 @@ ${OUT}`,
 @keyframes K_dm{0%,58%{filter:none;opacity:1}64%,100%{filter:grayscale(.8);opacity:.35}}
 @keyframes K_hi{0%,58%{background:var(--ac)}62%,100%{background:var(--ac2);box-shadow:0 0 calc(var(--u)*4) var(--ac2)}}
 @keyframes K_tg{0%,64%{opacity:0;transform:scale(.3)}69%,100%{opacity:1;transform:none}}
-@container (aspect-ratio < 1){.S{--u:calc(min(1cqw,1.7778cqh)*1.35)}.S .ch{gap:calc(var(--u)*1.4)}.S .b{width:calc(var(--u)*8)}}
+@container (aspect-ratio < 1){.S{--u:calc(min(1cqw,1.7778cqh)*1.35)}.S .ch{gap:calc(var(--u)*1.4)}.S .b{width:calc(var(--u)*8)}.S .tg{left:var(--x);translate:-50% 0;bottom:calc(var(--h) + var(--u)*5)}.S h3{margin-bottom:calc(var(--u)*12)}}
 ${OUT}`,
     html: (w) => {
       const g = given(w, ['月成交量（件）', '1月 120', '2月 132', '3月 128', '>4月 210', '5月 125', '6月 130']);
