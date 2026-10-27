@@ -38,7 +38,7 @@ export const PROP_DEFAULTS: Record<PropModule, Record<string, number | string>> 
   party: { mode: 'popper', amount: 1, color: '#ff5a36', color2: '#ffd23f', ...XY },
   coins: { mode: 'stack', count: 4, color: '#f2b705', color2: '#f6a5c0', ...XY, y: 0.42 },
   gacha: { mode: 'capsule', color: '#ff5a36', color2: '#2f6db5', ...XY, y: 0.42 },
-  drink: { mode: 'boba', color: '#c8925f', color2: '#ff5a36', ...XY, y: 0.4 },
+  drink: { mode: 'boba', color: '#c8925f', color2: '#ff5a36', ...XY, y: 0.42 },
 };
 
 export const PROP_BG: Record<PropModule, string> = {
@@ -55,7 +55,7 @@ export const PROP_BG: Record<PropModule, string> = {
   party: '#1d2433',
   coins: '#1d2433',
   gacha: '#fff3e2',
-  drink: '#f6e3cc',
+  drink: '#fff3e2',
 };
 
 const common = (zh = '主色', zh2 = '輔色'): PField[] => [
