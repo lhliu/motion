@@ -15,6 +15,7 @@ import { estateExtra } from './effects/estate-extra';
 import { flowExplain } from './effects/flow-explain';
 import { statExplain } from './effects/stat-explain';
 import { visualExplain } from './effects/visual-explain';
+import { finalExplain } from './effects/final-explain';
 import { cardExplain } from './effects/card-explain';
 import { estateExplain } from './effects/estate-explain';
 import { kinetic } from './effects/kinetic';
@@ -130,6 +131,7 @@ export const ALL_EFFECTS: Fx[] = [
   ...flowExplain,
   ...statExplain,
   ...visualExplain,
+  ...finalExplain,
   ...retro,
   ...map,
   ...liquid,

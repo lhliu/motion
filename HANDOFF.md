@@ -1,24 +1,32 @@
-# HANDOFF：圖解批次 B5，特效 368–373（feat/effects-368-373）
+# HANDOFF：圖解批次 B6，特效 374–375（feat/effects-374-375）
 
 ## 狀態
-- 已於 2026-10-27 squash merge（545b802，PR #7）並部署；正式站 368–373 與 spotlight-bar 皆正常渲染、無 console 錯誤。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
-- B4（364–367＋圖表選項）已於 2026-10-27 merge（69b8e9a，PR #6）並上線驗證。
+- PR 已開，待 KC 審核；**尚未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- B5（368–373＋spotlight-bar 修正）已於 2026-10-27 merge（545b802，PR #7）並上線驗證。
 
 ## 內容
-- `src/effects/visual-explain.ts`：gear-formula、iso-explode（diagram），zoom-detail、lens-annotate（pmark），before-after-drag（pmulti），plan-callouts（punit），no 368–373，純 CSS＋inline SVG。
-- 示意底圖（街廓俯視、空屋／佈置客廳、格局、實價登錄表）都由程式用 SVG／HTML 畫出，跟著配色變；不需要也不使用外部照片。
-- `src/effects/stat-explain.ts`：spotlight-bar 9:16 標籤位置修正。
-- `src/data.ts`、`src/uses.ts`：註冊（歸 info）。
+- `src/effects/final-explain.ts`：updown-board（caption，374）、clause-mark（news，375），純 CSS。
+- `src/data.ts`、`src/uses.ts`：註冊（updown-board 歸 caption、clause-mark 歸 info）。
+- 條文框選的預設文件是自擬的「不動產買賣契約書（示意）」，畫面標「示意文件」；不是真實新聞或真實契約。
 
 ## 怎麼測
-1. `npm ci && npm run build && npm run preview`，搜尋「齒輪」「等角」「推進」「放大鏡」「拖曳」「引線」。
-2. 放大鏡：在要停的那筆前加「>」，「!」開頭寫註解；推進：「>」標目標。
-3. 截圖重產：`npx tsx out/effects-368-373/gen.ts && python3 out/effects-368-373/shoot.py`（out/ 不進 git）。
+1. `npm ci && npm run build && npm run preview`，搜尋「漲跌」「條文」。
+2. 漲跌牌：每行「名稱 +24%」或「名稱 −8%」。條文框選：第 1 行標題，要框的行加「>」，「!」開頭寫註記。
+3. 截圖重產：`npx tsx out/effects-374-375/gen.ts && python3 out/effects-374-375/shoot.py`（out/ 不進 git）。
 
 ## 已知限制
-- 這批沒有接現有的照片／格局 studio（canvas 引擎），而是純 CSS 示意圖版；不能換成使用者自己的照片或格局圖。
-- 前後拖曳的數字用 `@property` 整數計數，只顯示整數、不加千分位；需要 Chromium 系瀏覽器（Safari 16.4+、Firefox 128+ 也支援）。
-- 格局引線標註固定 6 間示意格局，輸入只改名稱與坪數；9:16 時格局圖偏小。
-- 放大鏡掃表最多 6 列、4 欄；路徑固定（左上→右→左下→目標）。
-- 齒輪最多 4 個因子；等角圖層最多 5 層，太小的比例最少 3u 厚。
-- 放大鏡掃表會輸出一段 inline `<style>`（選擇器用 `.fx-lens-annotate`）；同一個 Combo 放兩段且目標列不同時，以後者為準。
+- 漲跌牌顏色固定為漲紅 #e63946／跌綠 #2a9d8f（台灣慣例），不跟配色走；最多 4 張；牌面是深色固定底。
+- 條文框選最多 10 行；目標行停點用固定行高估算，條文太長換三行以上時框和停點會偏一點；文件固定米白底。
+- 條文框選的註記固定在框的右上方；目標在第 1 行時會被標題擋到一點。
+
+## 圖解動畫 48 選：六批總結（2026-10-27）
+| 批次 | 分類 | 新增 | 合併到既有 | PR | 狀態 |
+|---|---|---|---|---|---|
+| B1 | estate | 6 | — | 已 merge | 已上線 |
+| B2 | card＋hook | 5 | 2（02、26） | 已 merge | 已上線 |
+| B3 | chier＋kinetic＋impact | 7 | — | 已 merge | 已上線 |
+| B4 | cstat＋cpie＋cbar＋cline | 4（364–367） | 3（23、35、38：圖表選項 @quad／@badge／@board） | #6（69b8e9a） | 已上線 |
+| B5 | diagram＋pmark＋pmulti＋punit | 6（368–373） | — | #7（545b802） | 已上線 |
+| B6 | caption＋news | 2（374–375） | — | 待審 | 未 merge |
+- 合計：48 選 → **新增 30、合併 5、跳過 13**（跳過的都是跟既有特效重疊）。
+- 新增特效全由 Grok Bot 自寫，未用 Codex／Claude Code／agy；照片／格局／文件類底圖都是自繪示意圖，無外部版權素材。
