@@ -22,3 +22,8 @@
 - KC 核准「先上字型」。分支 merge 最新 main 後 build 通過，PR #1 squash merge → main `835a87d`。
 - Cloudflare Pages Git 自動部署（check run：Cloudflare Pages success），約 1.5 分鐘上線。
 - 正式站驗證：JS 含「跟字型組合／原字重」；黑體粗、明體細切換正常（`data-fw` 900／300，只載對應字重），無 page error。
+
+## 2026-10-27 20:34（UTC+8）特效 346–351（批次 B1）
+- 新增 estate-explain.ts 六個特效，build 通過；Playwright 截圖 72 張於 out/effects-346-351/（不進 git）。
+- 修正：車子不動（offset-path 移到 .car）、總價標籤溢出（改成圖例）、開門鏡像（backface 隱藏、開到 -112°）、直式字級放大。
+- 已開 PR，未 merge、未部署。

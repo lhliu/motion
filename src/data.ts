@@ -12,6 +12,7 @@ import { reveal } from './effects/reveal';
 import { caption } from './effects/caption';
 import { card } from './effects/card';
 import { estateExtra } from './effects/estate-extra';
+import { estateExplain } from './effects/estate-explain';
 import { kinetic } from './effects/kinetic';
 import { texture } from './effects/texture';
 import { retro } from './effects/retro';
@@ -120,6 +121,7 @@ export const ALL_EFFECTS: Fx[] = [
   ...caption,
   ...card,
   ...estateExtra,
+  ...estateExplain,
   ...retro,
   ...map,
   ...liquid,

@@ -1,22 +1,20 @@
-# HANDOFF：新特效 341–345（feat/effects-341-345）
+# HANDOFF：新特效 346–351（feat/effects-346-351）
 
 ## 狀態
-- 已於 2026-10-26 squash merge（eafaecf，PR #2），Cloudflare Pages 部署成功並於正式站驗證。程式碼由 Motion Coder 內建模型撰寫（未用 Codex／Claude Code／agy）。
+- PR 已開，待 KC 審核；**尚未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
 
 ## 內容
-- `src/effects/estate-extra.ts`：收據列印、開價劃掉換成交價、字重呼吸波浪、貼紙標題、路標指示牌（no 341–345）。
-- `src/fonts.ts`：Noto Sans TC 改 `wght@100..900`；`familiesFor` 偵測 `var(--vf)`。
-- `src/engine.ts`：`[data-fw] *:not([data-vw])`；新增 `--vf`。
-- `src/util.ts`：`parseNum`／`fmtLike`／`pctDrop`／`unitOf`。
-- `src/data.ts`、`src/uses.ts`：註冊與用途分類。
+- `src/effects/estate-explain.ts`：route-drive、party-links、yes-no-sign、price-split、good-bad-light、door-pick（no 346–351，cat estate，tone ink）。
+- `src/data.ts`、`src/uses.ts`：註冊，用途歸到 `info`。
 
 ## 怎麼測
-1. `npm ci && npm run build && npm run preview` → 搜尋「收據」「成交價」「字重」「貼紙」「路標」。
-2. 切換字體（黑體／明體）與字重（粗中細），看字重波浪是否仍在動（黑體平滑、明體分段）。
-3. 下載 HTML、加入 Combo 播放，確認定格畫面正確。
-4. 截圖重產：`npx tsx out/effects-341-345/gen.ts && cd out/effects-341-345 && python3 shoot.py`（腳本不進 git）。
+1. `npm ci && npm run build && npm run preview`，搜尋「路線」「關係人」「岔路」「總價」「紅綠燈」「開門」。
+2. 切 16:9／9:16 與不同配色；加入 Combo 播放看定格。
+3. 截圖重產：`npx tsx out/effects-346-351/gen.ts && python3 out/effects-346-351/shoot.py`（out/ 不進 git）。
 
 ## 已知限制
-- 字重波浪在明體與預設昭源黑體下只能分段跳動（無可變版）；在 Combo 影片模式維持循環（不定格）。
-- 開價成交價的往下數由 JS 依實際時間跑，跟 big-number 相同；逐幀離線算圖若用虛擬時鐘需另外處理。
-- 選了字重時，路標、收據也會整體變細（字重選擇器「全部套用」的既有取捨）。
+- 紅綠燈用固定紅／綠（#ef4444／#22c55e），不跟配色變。
+- 剪刀是一路劃過，不會在每個切點停一下。
+- 路線圖站點點亮時間按站序平均分配，不是依實際弧長。
+- 每個站點各輸出一段 inline `<style>` keyframes。
+- 開門在 3D 透視下，門板會稍微蓋到左邊那扇門。
