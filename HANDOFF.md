@@ -1,26 +1,23 @@
-# HANDOFF：物件擴充批次 O1，有趣道具 376–383（feat/objects-o1）
+# HANDOFF：圖解批次 B6，特效 374–375（feat/effects-374-375）
 
 ## 狀態
-- PR 已開，待 KC 審核；**尚未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
-- 整體計畫：物件分類由 47 個擴充到 100 個，分 O1–O6 共 53 個（計畫書：/workspace/zikaji/objects-100/PLAN.md）。這是第一批。
+- 已於 2026-10-27 squash merge（eacaa1d，PR #8）並部署；正式站 374–375 正常渲染、無 console 錯誤。**六批全部上線。**程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- B5（368–373＋spotlight-bar 修正）已於 2026-10-27 merge（545b802，PR #7）並上線驗證。
 
 ## 內容
-- `src/types.ts`、`src/data.ts`：新增子分類 `fun` 有趣道具、`twlife` 台灣生活、`homecheck` 房屋看屋（sec: object）。
-- `src/effects/fun-objects.ts`：376–383 八個有趣道具，純 CSS＋HTML，id 前綴 `obj-fun-`。
-- `src/uses.ts`：八個都歸到「強調」emph 用途。
+- `src/effects/final-explain.ts`：updown-board（caption，374）、clause-mark（news，375），純 CSS。
+- `src/data.ts`、`src/uses.ts`：註冊（updown-board 歸 caption、clause-mark 歸 info）。
+- 條文框選的預設文件是自擬的「不動產買賣契約書（示意）」，畫面標「示意文件」；不是真實新聞或真實契約。
 
 ## 怎麼測
-1. `npm ci && npm run build && npm run preview`，進「物件」→「有趣道具」，或開 `?fx=obj-fun-toaster`。
-2. 截圖重產：`npx tsx out/objects-o1/gen.ts && python3 out/objects-o1/shoot.py`（out/ 不進 git）。
+1. `npm ci && npm run build && npm run preview`，搜尋「漲跌」「條文」。
+2. 漲跌牌：每行「名稱 +24%」或「名稱 −8%」。條文框選：第 1 行標題，要框的行加「>」，「!」開頭寫註記。
+3. 截圖重產：`npx tsx out/effects-374-375/gen.ts && python3 out/effects-374-375/shoot.py`（out/ 不進 git）。
 
 ## 已知限制
-- 這批是 CSS 特效，不是 propkit 的 canvas 物件，所以在「有趣道具」分頁按上方的「物件工作室」不會有專屬編輯器（會開預設的物件工作室）。
-- 台灣生活、房屋看屋目前是 0 個，分類列上會顯示 0，等 O3–O6 補上。
-- 抓娃娃機在 9:16 時機台偏小；夾子的位置是固定的，永遠夾第 1 顆膠囊。
-- 彈簧拳擊手套：9:16 時盒蓋翻開會稍微超出左邊；出拳只有約 0.7 秒，暫停截圖不一定拍得到。
-- 紙飛機的航線是固定的，在 9:16 時會被拉成直長形。
-- 彈簧下樓梯：3–5 階；每階 1.1 秒，5 階時最後一階大約在 4.4 秒才走到。
-- 便當盒最多 4 格。
+- 漲跌牌顏色固定為漲紅 #e63946／跌綠 #2a9d8f（台灣慣例），不跟配色走；最多 4 張；牌面是深色固定底。
+- 條文框選最多 10 行；目標行停點用固定行高估算，條文太長換三行以上時框和停點會偏一點；文件固定米白底。
+- 條文框選的註記固定在框的右上方；目標在第 1 行時會被標題擋到一點。
 
 ## 圖解動畫 48 選：六批總結（2026-10-27）
 | 批次 | 分類 | 新增 | 合併到既有 | PR | 狀態 |

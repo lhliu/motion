@@ -16,7 +16,6 @@ import { flowExplain } from './effects/flow-explain';
 import { statExplain } from './effects/stat-explain';
 import { visualExplain } from './effects/visual-explain';
 import { finalExplain } from './effects/final-explain';
-import { funObjects } from './effects/fun-objects';
 import { cardExplain } from './effects/card-explain';
 import { estateExplain } from './effects/estate-explain';
 import { kinetic } from './effects/kinetic';
@@ -99,9 +98,6 @@ export const CATEGORIES: Category[] = [
   { id: 'party', sec: 'object', code: 'PARTY', zh: '慶祝', tagline: '拉炮彩帶、煙火' },
   { id: 'coins', sec: 'object', code: 'COINS', zh: '錢幣存錢筒', tagline: '硬幣疊高、存錢筒（示意）' },
   { id: 'gacha', sec: 'object', code: 'GACHA', zh: '抽籤扭蛋', tagline: '扭蛋機、籤筒' },
-  { id: 'fun', sec: 'object', code: 'FUN', zh: '有趣道具', tagline: '烤吐司機、微波爐、娃娃機、紙飛機……好笑又好記的道具' },
-  { id: 'twlife', sec: 'object', code: 'TW-LIFE', zh: '台灣生活', tagline: '紅包、發票、超商、手搖飲：台灣人一看就懂的日常' },
-  { id: 'homecheck', sec: 'object', code: 'HOME', zh: '房屋看屋', tagline: '售屋吊牌、謄本、捲尺、漏水壁癌：看屋買房的道具' },
   { id: 'aerial', sec: 'illus', code: 'AERIAL', zh: '俯瞰', tagline: '八種精修地景，各有專屬動態與運鏡' },
   { id: 'vehicle', sec: 'illus', code: 'VEHICLE', zh: '天空物件', tagline: '飛機、熱氣球，各有專屬編輯' },
   { id: 'ocean', sec: 'illus', code: 'OCEAN', zh: '海洋世界', tagline: '七種精修海底場景與輪船，各有專屬編輯與透明輸出' },
@@ -136,7 +132,6 @@ export const ALL_EFFECTS: Fx[] = [
   ...statExplain,
   ...visualExplain,
   ...finalExplain,
-  ...funObjects,
   ...retro,
   ...map,
   ...liquid,
