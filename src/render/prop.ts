@@ -1239,7 +1239,7 @@ export const propRenderer = () => {
         const d = bounce(seg(q, st, st + 0.12));
         if (d <= 0) continue;
         const bob = Math.sin(after * 2.4 + k * 1.3) * S * 0.004;
-        circle(x, X * (row === 2 ? 0.8 : 1), Y - (1 - d) * (Y - lvl) + bob, pr, '#3a2418');
+        circle(x, X * (row === 2 ? 0.8 : 1), Y - (1 - d) * (Y - lvl - pr * 1.2) + bob, pr, '#3a2418');
       }
     }
     // 一道受光亮條（同色調亮一階）
