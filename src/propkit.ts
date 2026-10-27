@@ -3,7 +3,7 @@
 // propRenderer 內部必須自給自足，匯出 HTML 時以 toString() 內嵌。
 import type { PField } from './photokit';
 
-export type PropModule = 'site' | 'keys' | 'furniture' | 'house' | 'contract' | 'skyline' | 'weather' | 'signal' | 'plant' | 'clock' | 'party' | 'coins' | 'gacha';
+export type PropModule = 'site' | 'keys' | 'furniture' | 'house' | 'contract' | 'skyline' | 'weather' | 'signal' | 'plant' | 'clock' | 'party' | 'coins' | 'gacha' | 'drink';
 
 export const PROP_INFO: Record<PropModule, { zh: string; en: string; desc: string }> = {
   site: { zh: '建案工地', en: 'Construction Site', desc: '樓層一層層蓋高，起重機吊鋼樑或鷹架防塵網慢慢降下，地面有施工圍籬' },
@@ -19,6 +19,7 @@ export const PROP_INFO: Record<PropModule, { zh: string; en: string; desc: strin
   party: { zh: '慶祝', en: 'Celebration', desc: '拉炮噴出彩帶紙片，或煙火升空綻放' },
   coins: { zh: '錢幣存錢筒', en: 'Coins & Piggy Bank', desc: '硬幣一枚枚疊高成長條，或掉進存錢筒；只做示意，不放真實金額' },
   gacha: { zh: '抽籤扭蛋', en: 'Gacha & Lots', desc: '扭蛋機轉動掉出扭蛋打開，或籤筒搖一搖跳出一支籤' },
+  drink: { zh: '手搖飲', en: 'Bubble Tea', desc: '透明杯珍珠奶茶落下，珍珠沉底、吸管戳破封膜' },
 };
 export const PROP_MODULES = Object.keys(PROP_INFO) as PropModule[];
 
@@ -37,6 +38,7 @@ export const PROP_DEFAULTS: Record<PropModule, Record<string, number | string>> 
   party: { mode: 'popper', amount: 1, color: '#ff5a36', color2: '#ffd23f', ...XY },
   coins: { mode: 'stack', count: 4, color: '#f2b705', color2: '#f6a5c0', ...XY, y: 0.42 },
   gacha: { mode: 'capsule', color: '#ff5a36', color2: '#2f6db5', ...XY, y: 0.42 },
+  drink: { mode: 'boba', color: '#c8925f', color2: '#ff5a36', ...XY, y: 0.4 },
 };
 
 export const PROP_BG: Record<PropModule, string> = {
@@ -53,6 +55,7 @@ export const PROP_BG: Record<PropModule, string> = {
   party: '#1d2433',
   coins: '#1d2433',
   gacha: '#fff3e2',
+  drink: '#f6e3cc',
 };
 
 const common = (zh = '主色', zh2 = '輔色'): PField[] => [
@@ -74,5 +77,6 @@ export const PROP_PARAMS: Record<PropModule, PField[]> = {
   clock: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['hourglass', '沙漏'], ['clock', '時鐘快轉'], ['calendar', '撕日曆']] }, { k: 'start', label: '日曆起始日', type: 'range', min: 1, max: 31, step: 1 }, ...common('本體', '強調色')],
   party: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['popper', '拉炮彩帶'], ['fireworks', '煙火']] }, { k: 'amount', label: '數量', type: 'range', min: 0.3, max: 2, step: 0.05 }, ...common('主色', '輔色')],
   coins: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['stack', '硬幣疊高'], ['piggy', '存錢筒']] }, { k: 'count', label: '疊幾排', type: 'range', min: 2, max: 6, step: 1 }, ...common('硬幣', '存錢筒')],
+  drink: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['boba', '珍珠奶茶']] }, ...common('奶茶', '吸管／封膜')],
   gacha: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['capsule', '扭蛋機'], ['lots', '籤筒']] }, ...common('機台／籤筒', '扭蛋／籤頭')],
 };

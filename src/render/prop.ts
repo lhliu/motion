@@ -1195,12 +1195,238 @@ export const propRenderer = () => {
     return { cx, cy, r: S * 0.62 };
   };
 
-  const MODS: Record<string, typeof site> = { site, keys, furniture, house, contract, skyline, weather, signal, plant, clock, party, coins, gacha };
+  /* ───────── 手搖飲 ───────── */
+  const drink = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
+    const S = Math.min(W, H) * num(P.size, 0.62), cx = num(P.x, 0.5) * W, cy = num(P.y, 0.42) * H;
+    const tea = String(P.color ?? '#c8925f'), c2 = String(P.color2 ?? '#ff5a36'), q = t / loop, sp = num(P.speed, 1);
+    const PEARL = '#2b1a14';
+    // 杯子：上寬下窄的梯形，原點在杯底中央
+    const h = S * 0.6, a = S * 0.2, b = S * 0.15, base = cy + S * 0.36;
+    const halfW = (y: number) => b + (a - b) * (-y / h); // y 從 0（杯底）到 -h（杯口）
+    // 登場：從上方掉下、落地壓扁回彈
+    const land = 0.2;
+    const fall = bounce(seg(q, 0, land));
+    const offY = -(1 - fall) * (H * 0.75);
+    const imp = seg(q, land * 0.36, land * 0.36 + 0.12);
+    const squash = imp > 0 && imp < 1 ? Math.sin(imp * Math.PI) * Math.exp(-imp * 2.2) * 0.09 : 0;
+    const after = Math.max(0, t - loop * land * 0.36) * sp;
+    const sway = q > land ? Math.sin(after * 1.7) * 0.025 * Math.min(1, after * 0.8) : 0;
+    x.save();
+    x.translate(cx, base + offY);
+    x.rotate(sway);
+    x.scale(1 + squash, 1 - squash);
+    const cupPath = () => {
+      x.beginPath();
+      x.moveTo(-a, -h);
+      x.lineTo(a, -h);
+      x.lineTo(b, -S * 0.03);
+      x.quadraticCurveTo(b, 0, b - S * 0.03, 0);
+      x.lineTo(-b + S * 0.03, 0);
+      x.quadraticCurveTo(-b, 0, -b, -S * 0.03);
+      x.closePath();
+    };
+    // 杯內
+    x.save();
+    cupPath();
+    x.clip();
+    x.fillStyle = 'rgba(255,255,255,.45)';
+    x.fillRect(-a, -h, a * 2, h);
+    // 液面晃動：落地後的波紋慢慢衰減，加上持續的細微晃
+    const slosh = Math.exp(-after * 0.9) * Math.sin(after * 6) * S * 0.035 + Math.sin(after * 1.7 + 0.6) * S * 0.006;
+    const top = -h * 0.84;
+    const surf = (X: number) => top + (X / a) * slosh + Math.sin(X / a * 3 + after * 3) * S * 0.004;
+    const liquid = (y0: number, y1: (X: number) => number, c: string) => {
+      x.beginPath();
+      x.moveTo(-a, y0);
+      for (let i = 0; i <= 24; i++) {
+        const X = -a + (i / 24) * a * 2;
+        x.lineTo(X, y1(X));
+      }
+      x.lineTo(a, y0);
+      x.closePath();
+      x.fillStyle = c;
+      x.fill();
+    };
+    liquid(0, surf, tea);
+    // 奶泡層（液面下一條亮帶）
+    liquid(0, surf, tea);
+    x.save();
+    liquid(0, surf, 'rgba(0,0,0,0)');
+    x.clip();
+    x.fillStyle = shade(tea, 0.32);
+    x.fillRect(-a, top - S * 0.08, a * 2, S * 0.11 + Math.abs(slosh));
+    // 下半部顏色略深（硬邊階層，不用漸層）
+    x.fillStyle = shade(tea, -0.08);
+    x.fillRect(-a, -h * 0.36, a * 2, h * 0.36);
+    // 黑糖虎紋：從液面沿杯壁往下流的幾道斜向深色糖漿（平滑曲線，硬邊）
+    const r0 = rng(11);
+    for (let i = 0; i < 4; i++) {
+      const X0 = -a * 0.7 + i * a * 0.48 + (r0() - 0.5) * a * 0.12, w0 = S * (0.026 + r0() * 0.014), tilt = S * (0.05 + r0() * 0.04);
+      const grow = ease(seg(q, 0.14 + i * 0.04, 0.5 + i * 0.04)), len = h * (0.42 + r0() * 0.12) * grow;
+      if (len <= 0) continue;
+      const y0 = top - S * 0.01, y1 = y0 + len;
+      x.beginPath();
+      x.moveTo(X0 - w0, y0);
+      x.bezierCurveTo(X0 - w0 + tilt, y0 + len * 0.35, X0 - w0 * 0.4 - tilt * 0.4, y0 + len * 0.7, X0 + tilt * 0.2, y1);
+      x.bezierCurveTo(X0 + w0 * 0.4 - tilt * 0.4, y0 + len * 0.7, X0 + w0 + tilt, y0 + len * 0.35, X0 + w0, y0);
+      x.closePath();
+      x.fillStyle = shade(tea, -0.32);
+      x.fill();
+    }
+    // 珍珠：從液中落下、彈一下沉底，之後在底部輕輕浮動
+    const r = rng(7), pr = S * 0.029;
+    const pearls: number[][] = [];
+    for (let row = 0; row < 4; row++) {
+      const yRow = -pr - row * pr * 1.62;
+      const hw = halfW(yRow) - pr * 1.05, n = Math.floor((hw * 2) / (pr * 2.05)) + 1;
+      for (let i = 0; i < n - (row === 3 ? 2 : 0); i++) {
+        const X = -hw + (i + (row % 2 ? 0.5 : 0)) * ((hw * 2) / Math.max(1, n - 1 + (row % 2 ? 0 : 0))) * (row % 2 ? 0.94 : 1);
+        if (X > hw + 1) continue;
+        pearls.push([X + (r() - 0.5) * pr * 0.3, yRow, r()]);
+      }
+    }
+    pearls.forEach(([X, Y, k], i) => {
+      const st = 0.1 + (1 - (i / pearls.length)) * 0.02 + k * 0.08;
+      const fallP = seg(q, st, st + 0.16);
+      const dropY = -(1 - bounce(fallP)) * h * 0.55;
+      const bob = Math.sin(after * 2.2 + i * 1.7) * S * 0.004 * (Y < -pr * 3 ? 1.6 : 0.6);
+      const swing = Math.sin(after * 1.7 + 0.6 + i * 0.2) * S * 0.006 * (-Y / h);
+      const px = X + swing, py = Y + dropY + bob;
+      circle(x, px, py, pr, PEARL);
+      circle(x, px - pr * 0.28, py - pr * 0.3, pr * 0.32, 'rgba(255,255,255,.28)');
+      circle(x, px - pr * 0.36, py - pr * 0.38, pr * 0.13, 'rgba(255,255,255,.75)');
+    });
+    x.restore();
+    // 吸管在杯內、液面以上的那一段（透過塑膠看到）
+    const sa = 0.2, sw = S * 0.06;
+    const pierce = back(seg(q, 0.42, 0.56));
+    const stIn = 1 - pierce; // 0 = 已插到底
+    x.save();
+    x.translate(S * 0.05, -h);
+    x.rotate(sa);
+    if (pierce > 0.05) {
+      x.save();
+      x.beginPath();
+      x.rect(-sw, 0, sw * 2, (top + h) / Math.cos(sa) * 0.98 + S * 0.01);
+      x.clip();
+      x.fillStyle = shade(c2, 0.25);
+      x.fillRect(-sw / 2, -S * 0.1, sw, S * 0.5);
+      x.restore();
+    }
+    x.restore();
+    // 塑膠杯壁：受光面一條亮帶、背光面一條暗帶、杯底厚度
+    poly(x, [[-a * 0.82, -h * 0.97], [-a * 0.66, -h * 0.97], [-b * 0.6, -S * 0.04], [-b * 0.78, -S * 0.04]], 'rgba(255,255,255,.5)');
+    poly(x, [[-a * 0.58, -h * 0.97], [-a * 0.53, -h * 0.97], [-b * 0.46, -S * 0.04], [-b * 0.51, -S * 0.04]], 'rgba(255,255,255,.35)');
+    poly(x, [[a * 0.86, -h], [a, -h], [b, 0], [b * 0.84, 0]], 'rgba(29,36,51,.10)');
+    x.fillStyle = 'rgba(255,255,255,.35)';
+    x.fillRect(-b, -S * 0.035, b * 2, S * 0.035);
+    // 水珠：慢慢冒出，偶爾一顆往下滑
+    const rd = rng(23), dropAppear = ease(seg(q, 0.3, 0.75));
+    for (let i = 0; i < 11; i++) {
+      const fy = -h * (0.15 + rd() * 0.7), fx = (rd() * 2 - 1) * halfW(fy) * 0.85, dr = S * (0.006 + rd() * 0.008), show = rd();
+      if (show > dropAppear) continue;
+      circle(x, fx, fy, dr, 'rgba(255,255,255,.7)');
+      circle(x, fx - dr * 0.3, fy - dr * 0.3, dr * 0.35, '#ffffff');
+    }
+    for (let j = 0; j < 2; j++) {
+      const ph = ((after * 0.12 + j * 0.5) % 1), sx = (j ? 0.45 : -0.2) * a, sy0 = -h * 0.7;
+      if (q < 0.35) break;
+      const yy = sy0 + ph * h * 0.55, dr = S * 0.012;
+      x.beginPath();
+      x.moveTo(sx - dr * 0.4, yy - ph * S * 0.08);
+      x.lineTo(sx + dr * 0.4, yy - ph * S * 0.08);
+      x.lineTo(sx + dr * 0.5, yy);
+      x.lineTo(sx - dr * 0.5, yy);
+      x.closePath();
+      x.fillStyle = 'rgba(255,255,255,.45)';
+      x.fill();
+      circle(x, sx, yy, dr, 'rgba(255,255,255,.8)');
+    }
+    x.restore();
+    // 杯緣與封膜
+    const ry = a * 0.2;
+    x.beginPath();
+    x.ellipse(0, -h, a * 1.06, ry * 1.12, 0, 0, TAU);
+    x.fillStyle = 'rgba(255,255,255,.8)';
+    x.fill();
+    x.beginPath();
+    x.ellipse(0, -h, a * 0.98, ry, 0, 0, TAU);
+    x.fillStyle = '#fffaf0';
+    x.fill();
+    // 封膜印花：外圈色帶＋中間小圓點
+    x.save();
+    x.beginPath();
+    x.ellipse(0, -h, a * 0.98, ry, 0, 0, TAU);
+    x.clip();
+    x.beginPath();
+    x.ellipse(0, -h, a * 0.98, ry, 0, 0, TAU);
+    x.ellipse(0, -h, a * 0.8, ry * 0.8, 0, 0, TAU);
+    x.fillStyle = c2;
+    x.fill('evenodd');
+    for (let i = 0; i < 6; i++) {
+      const an = (i / 6) * TAU + 0.3;
+      circle(x, Math.cos(an) * a * 0.5, -h + Math.sin(an) * ry * 0.5, S * 0.012, shade(c2, 0.45));
+    }
+    // 受光面一塊亮弧
+    x.beginPath();
+    x.ellipse(-a * 0.25, -h - ry * 0.35, a * 0.45, ry * 0.25, -0.05, 0, TAU);
+    x.fillStyle = 'rgba(255,255,255,.5)';
+    x.fill();
+    x.restore();
+    // 吸管戳破封膜：落下 → 刺入回彈；穿孔處有裂開的小三角
+    const hx = S * 0.05, hy = -h;
+    const lift = (1 - pierce) * S * 0.45;
+    if (pierce > 0.6) {
+      for (let i = 0; i < 5; i++) {
+        const an = (i / 5) * TAU + 0.4, L = sw * 0.9 * Math.min(1, (pierce - 0.6) * 3);
+        poly(x, [[hx + Math.cos(an - 0.35) * sw * 0.5, hy + Math.sin(an - 0.35) * sw * 0.18], [hx + Math.cos(an + 0.35) * sw * 0.5, hy + Math.sin(an + 0.35) * sw * 0.18], [hx + Math.cos(an) * L, hy + Math.sin(an) * L * 0.36]], shade('#fffaf0', -0.12));
+      }
+    }
+    x.save();
+    x.translate(hx, hy);
+    x.rotate(sa);
+    x.translate(0, -lift);
+    const L = S * 0.27, tip = pierce > 0.05 ? 0 : S * 0.0;
+    // 吸管本體（斜切口朝下）
+    x.beginPath();
+    x.moveTo(-sw / 2, -L);
+    x.lineTo(sw / 2, -L);
+    x.lineTo(sw / 2, tip + (pierce > 0.05 ? 0 : sw * 0.5));
+    x.lineTo(-sw / 2, tip);
+    x.closePath();
+    x.fillStyle = c2;
+    x.fill();
+    x.fillStyle = shade(c2, -0.22);
+    x.fillRect(sw * 0.22, -L, sw * 0.28, L + (pierce > 0.05 ? 0 : sw * 0.25));
+    x.fillStyle = 'rgba(255,255,255,.55)';
+    x.fillRect(-sw * 0.36, -L + sw * 0.3, sw * 0.16, L - sw * 0.5);
+    // 吸管口
+    x.beginPath();
+    x.ellipse(0, -L, sw / 2, sw * 0.2, 0, 0, TAU);
+    x.fillStyle = shade(c2, 0.2);
+    x.fill();
+    x.beginPath();
+    x.ellipse(0, -L, sw * 0.34, sw * 0.12, 0, 0, TAU);
+    x.fillStyle = shade(c2, -0.5);
+    x.fill();
+    x.restore();
+    // 刺入瞬間的小短線
+    const pop = seg(q, 0.5, 0.6);
+    if (pop > 0 && pop < 1)
+      for (let i = 0; i < 6; i++) {
+        const an = -Math.PI / 2 + (i - 2.5) * 0.45, d0 = sw * 0.7 + pop * S * 0.07;
+        line(x, hx + Math.cos(an) * d0, hy + Math.sin(an) * d0 * 0.7, hx + Math.cos(an) * (d0 + S * 0.035), hy + Math.sin(an) * (d0 + S * 0.035) * 0.7, S * 0.009, INK);
+      }
+    x.restore();
+    return { cx, cy: cy - S * 0.07, r: S * 0.5 };
+  };
+
+  const MODS: Record<string, typeof site> = { site, keys, furniture, house, contract, skyline, weather, signal, plant, clock, party, coins, gacha, drink };
   const has = (m: string) => Object.prototype.hasOwnProperty.call(MODS, m);
   const draw = (m: string, ctx: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
     ctx.save();
     // 「蓋起來」類的動作：速度越快越早完成、之後停住；持續循環的畫面（天氣、號誌、時鐘、四季）各自用 speed
-    const BUILD = ['site', 'furniture', 'house.build', 'contract.sign', 'skyline.grow', 'plant.grow', 'coins.stack', 'gacha', 'keys.door'];
+    const BUILD = ['site', 'furniture', 'house.build', 'contract.sign', 'skyline.grow', 'plant.grow', 'coins.stack', 'gacha', 'drink', 'keys.door'];
     const tt = BUILD.includes(m) || BUILD.includes(`${m}.${String(P.mode)}`) ? Math.min(loop, t * num(P.speed, 1)) : t;
     const o = MODS[m](ctx, W, H, P, tt, loop);
     ctx.restore();

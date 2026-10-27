@@ -98,6 +98,7 @@ export const CATEGORIES: Category[] = [
   { id: 'party', sec: 'object', code: 'PARTY', zh: '慶祝', tagline: '拉炮彩帶、煙火' },
   { id: 'coins', sec: 'object', code: 'COINS', zh: '錢幣存錢筒', tagline: '硬幣疊高、存錢筒（示意）' },
   { id: 'gacha', sec: 'object', code: 'GACHA', zh: '抽籤扭蛋', tagline: '扭蛋機、籤筒' },
+  { id: 'drink', sec: 'object', code: 'DRINK', zh: '手搖飲', tagline: '珍珠奶茶' },
   { id: 'aerial', sec: 'illus', code: 'AERIAL', zh: '俯瞰', tagline: '八種精修地景，各有專屬動態與運鏡' },
   { id: 'vehicle', sec: 'illus', code: 'VEHICLE', zh: '天空物件', tagline: '飛機、熱氣球，各有專屬編輯' },
   { id: 'ocean', sec: 'illus', code: 'OCEAN', zh: '海洋世界', tagline: '七種精修海底場景與輪船，各有專屬編輯與透明輸出' },

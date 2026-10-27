@@ -52,6 +52,7 @@ export type CatId =
   | 'party'
   | 'coins'
   | 'gacha'
+  | 'drink'
   | 'mcompare'
   | 'mplan'
   | 'mdata'
