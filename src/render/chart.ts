@@ -5,7 +5,7 @@ import { registerEngine } from '../engines';
 
 export const chartRenderer = () => {
   type Row = { label: string; v: number[]; raw: string };
-  type Data = { title: string; sub: string; series: string[]; unit: string; max: number; colors: string[]; rows: Row[] };
+  type Data = { title: string; sub: string; series: string[]; unit: string; max: number; colors: string[]; rows: Row[]; quad: string[]; badge: string; board: boolean };
   const clamp = (p: number) => Math.max(0, Math.min(1, p));
   const ease = (p: number) => 1 - Math.pow(1 - clamp(p), 3);
   const back = (p: number) => {
@@ -32,7 +32,7 @@ export const chartRenderer = () => {
   };
 
   const parse = (w: string[]): Data => {
-    const d: Data = { title: '', sub: '', series: [], unit: '', max: NaN, colors: [], rows: [] };
+    const d: Data = { title: '', sub: '', series: [], unit: '', max: NaN, colors: [], rows: [], quad: [], badge: '', board: false };
     let gotTitle = false;
     for (const raw of w) {
       const s = String(raw || '').trim();
@@ -43,6 +43,9 @@ export const chartRenderer = () => {
         if (k === 'series') d.series = val.split(/[,，、]/).map((x) => x.trim()).filter(Boolean);
         else if (k === 'unit') d.unit = val;
         else if (k === 'max') d.max = parseFloat(val);
+        else if (k === 'quad') d.quad = val.split(/[,，、]/).map((x) => x.trim());
+        else if (k === 'badge') d.badge = val.trim();
+        else if (k === 'board') d.board = true;
         else if (k === 'colors') d.colors = val.split(/[,\s]+/).filter((x) => /^#[0-9a-f]{3,8}$/i.test(x));
         continue;
       }
@@ -388,6 +391,36 @@ export const chartRenderer = () => {
           }
         });
       }
+      if (d.badge && n) {
+        const j = 0;
+        const lx = gx(n - 1);
+        const ly = yOf(rows[n - 1].v[j], max, min);
+        const kb = back((t - G - dur - 0.35) / 0.45);
+        if (kb > 0) {
+          const fs = fsV * 1.15;
+          ctx.font = `900 ${fs}px ${F}`;
+          const bw = ctx.measureText(d.badge).width + fs * 1.1;
+          const bh = fs * 1.7;
+          const bx = Math.min(lx - bw * 0.5, px1 + W * 0.05 - bw);
+          const by = Math.max(py0 - bh * 0.3, ly - fsV * 2.4 - bh * 1.3);
+          ctx.save();
+          ctx.translate(bx + bw / 2, by + bh / 2);
+          ctx.scale(kb, kb);
+          ctx.rotate(-0.05);
+          ctx.fillStyle = col(1);
+          ctx.beginPath();
+          (ctx.roundRect ? ctx.roundRect(-bw / 2, -bh / 2, bw, bh, bh / 2) : ctx.rect(-bw / 2, -bh / 2, bw, bh));
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(-fs * 0.3, bh / 2 - 1);
+          ctx.lineTo(fs * 0.3, bh / 2 - 1);
+          ctx.lineTo(0, bh / 2 + fs * 0.45);
+          ctx.closePath();
+          ctx.fill();
+          txt(d.badge, 0, 0, fs, lum(col(1)) > 150 ? '#1d2433' : '#ffffff', 'center', 'middle', 900);
+          ctx.restore();
+        }
+      }
       L = G + dur + m * 0.3 + 3;
     } else if (kind === 'pie' || kind === 'donut') {
       const vals = rows.map((r) => Math.max(0, r.v[0] || 0));
@@ -451,6 +484,50 @@ export const chartRenderer = () => {
         ctx.globalAlpha = 1;
       });
       L = G + 1.3 + n * 0.08 + 2.6;
+    } else if (kind === 'gauge' && d.board && n > 1) {
+      const list = rows.slice(0, 4);
+      const cols = list.length === 3 && pw > ph * 1.6 ? 3 : 2;
+      const rws = Math.ceil(list.length / cols);
+      const gap = S * 0.025;
+      const cw = (W * 0.86 - gap * (cols - 1)) / cols;
+      const ch = (py1 + H * 0.06 - py0 - gap * (rws - 1)) / rws;
+      list.forEach((r, i) => {
+        const x0 = W * 0.07 + (i % cols) * (cw + gap);
+        const y0 = py0 + Math.floor(i / cols) * (ch + gap);
+        const k = back((t - G - i * 0.18) / 0.5);
+        if (k <= 0) return;
+        ctx.save();
+        ctx.translate(x0 + cw / 2, y0 + ch / 2);
+        ctx.scale(0.6 + 0.4 * k, 0.6 + 0.4 * k);
+        ctx.globalAlpha = clamp(k);
+        ctx.fillStyle = mu;
+        ctx.beginPath();
+        (ctx.roundRect ? ctx.roundRect(-cw / 2, -ch / 2, cw, ch, S * 0.02) : ctx.rect(-cw / 2, -ch / 2, cw, ch));
+        ctx.fill();
+        const mx = Number.isFinite(d.max) ? d.max : unit === '%' ? 100 : nice((r.v[0] || 1) * 1.2);
+        const p = clamp(((r.v[0] || 0) / mx) * clamp(ease((t - G - i * 0.18 - 0.2) / 1.2)));
+        const R = Math.min(cw * 0.3, ch * 0.36);
+        const gcx = -cw / 2 + cw * 0.3;
+        const gcy = R * 0.35;
+        ctx.lineWidth = R * 0.22;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = bg;
+        ctx.beginPath();
+        ctx.arc(gcx, gcy, R, Math.PI, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = col(i);
+        if (p > 0.001) {
+          ctx.beginPath();
+          ctx.arc(gcx, gcy, R, Math.PI, Math.PI + Math.PI * p);
+          ctx.stroke();
+        }
+        const tw = cw * 0.42;
+        const tx = cw / 2 - cw * 0.05;
+        txt(r.label, tx, -ch * 0.16, fsL * 1.35, mu2, 'right', 'middle', 700, tw);
+        txt(fmt(cnt(r.v[0] || 0, clamp(ease((t - G - i * 0.18 - 0.2) / 1.2))), unit), tx, ch * 0.12, Math.min(S * 0.075, ch * 0.3), fg, 'right', 'middle', 900, tw);
+        ctx.restore();
+      });
+      L = G + list.length * 0.18 + 1.4 + 3;
     } else if (kind === 'gauge') {
       const r = rows[0] || { label: '', v: [0], raw: '' };
       const max = Number.isFinite(d.max) ? d.max : unit === '%' ? 100 : nice((r.v[0] || 1) * 1.2);
@@ -813,6 +890,33 @@ export const chartRenderer = () => {
           txt(d.series[1], px0, py0 - fsL * 1.1, fsL, mu2, 'left');
         }
         ctx.globalAlpha = 1;
+        if (d.quad.length >= 2) {
+          const qx = parseFloat(d.quad[0]);
+          const qy = parseFloat(d.quad[1]);
+          if (Number.isFinite(qx) && Number.isFinite(qy)) {
+            const X = px0 + (qx / xmax) * pw;
+            const Y = yOf(qy, ymax);
+            const qk = ease((t - G + 0.3) / 0.6);
+            const lab = d.quad.slice(2, 6);
+            const tint = [col(0), col(1), col(2), col(3)];
+            [[X, py0, px1 - X, Y - py0], [px0, py0, X - px0, Y - py0], [px0, Y, X - px0, py1 - Y], [X, Y, px1 - X, py1 - Y]].forEach(([x, y, w, h], q) => {
+              ctx.globalAlpha = 0.09 * qk;
+              ctx.fillStyle = tint[q];
+              ctx.fillRect(x, y, w, h);
+              if (lab[q]) {
+                ctx.globalAlpha = 0.85 * qk;
+                const right = q === 0 || q === 3;
+                const topq = q < 2;
+                txt(lab[q], right ? x + w - S * 0.015 : x + S * 0.015, topq ? y + fsL * 1.1 : y + h - fsL * 1.1, fsL, tint[q], right ? 'right' : 'left', 'middle', 900, w * 0.9);
+              }
+            });
+            ctx.globalAlpha = qk;
+            ctx.fillStyle = fg;
+            ctx.fillRect(X - S * 0.002, py1 - ph * qk, S * 0.004, ph * qk);
+            ctx.fillRect(px0, Y - S * 0.002, pw * qk, S * 0.004);
+            ctx.globalAlpha = 1;
+          }
+        }
         const sizes = rows.map((r) => r.v[2] || 1);
         const smax = Math.max(...sizes, 1);
         rows.forEach((r, i) => {

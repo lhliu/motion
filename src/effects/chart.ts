@@ -79,8 +79,8 @@ export const charts: Fx[] = [
   }),
   make('line', 'cline', ['房價走勢', '~單位：萬/坪（示意數據）', '2019 32', '2020 34', '2021 38', '2022 43', '2023 45', '2024 48', '2025 51'], {
     no: 209, zh: '折線圖', en: 'Line Chart', desc: '折線由左往右畫出，最後一點放大標出數字', tags: ['數據', '趨勢', '房價'],
-    motion: `格線出現後折線由左往右畫出，經過的資料點彈出空心圓與數字，最後一點是實心大圓並放大標出最新數值；可多條系列。${HARD}`,
-    motionEn: `After the gridlines appear the line draws from left to right, popping hollow dots and values as it passes; the last point is a large solid dot with an enlarged latest value; supports several series. ${HARD_EN}`,
+    motion: `格線出現後折線由左往右畫出，經過的資料點彈出空心圓與數字，最後一點是實心大圓並放大標出最新數值；可多條系列。加一行「@badge +38%」會在終點上方彈出副色膠囊徽章。${HARD}`,
+    motionEn: `After the gridlines appear the line draws from left to right, popping hollow dots and values as it passes; the last point is a large solid dot with an enlarged latest value; supports several series. Add “@badge +38%” to pop an accent-2 pill badge above the end point. ${HARD_EN}`,
   }),
   make('area', 'cline', ['兩區人口變化', '~單位：萬人（示意數據）', '@series 甲區,乙區', '2019 12,8', '2020 12.5,8.8', '2021 13,9.9', '2022 13.2,11', '2023 13.6,12.4', '2024 14,13.5'], {
     no: 210, zh: '區域圖', en: 'Area Chart', desc: '折線下方填色，看出量體與成長', tags: ['數據', '趨勢', '比較'],
@@ -104,8 +104,8 @@ export const charts: Fx[] = [
   }),
   make('gauge', 'cpie', ['貸款成數', '~（示意）', '@unit %', '@max 100', '可貸成數 80'], {
     no: 214, zh: '儀表板', en: 'Gauge', desc: '半圓儀表，指針甩到目標值', tags: ['數據', 'KPI', '重點'],
-    motion: `半圓刻度盤出現，外圈有三段淡色區間；彩色弧與指針一起從 0 甩到目標值並略為回彈，中央大數字跟著跳動。${HARD}`,
-    motionEn: `A half-circle dial appears with three faint zones; the colored arc and needle swing from zero to the target with a slight overshoot while the big number below counts up. ${HARD_EN}`,
+    motion: `半圓刻度盤出現，外圈有三段淡色區間；彩色弧與指針一起從 0 甩到目標值並略為回彈，中央大數字跟著跳動。加一行「@board」並寫 2–4 行指標，會改成 2×2 迷你卡看板，每張卡有小半圓弧與跳動數字（KPI 看板）。${HARD}`,
+    motionEn: `A half-circle dial appears with three faint zones; the colored arc and needle swing from zero to the target with a slight overshoot while the big number below counts up. Add “@board” with 2–4 metric rows to get a 2×2 board of mini cards, each with a small arc and counting number. ${HARD_EN}`,
   }),
   make('rings', 'cpie', ['公設比與綠覆率', '~（示意數據）', '@unit %', '公設比 33', '綠覆率 45', '建蔽率 28'], {
     no: 215, zh: '進度環', en: 'Progress Rings', desc: '同心圓環各自填到百分比', tags: ['數據', '比例', 'KPI'],
@@ -144,8 +144,8 @@ export const charts: Fx[] = [
   }),
   make('bubble', 'cstat', ['各案比較', '~x：距捷運（分鐘）　y：單價　大小：戶數（示意數據）', '@series 距捷運（分鐘）,單價（萬/坪）', 'A 案 5,62,320', 'B 案 12,48,180', 'C 案 8,55,450', 'D 案 18,40,120', 'E 案 3,70,90'], {
     no: 222, zh: '泡泡圖', en: 'Bubble Chart', desc: 'X、Y 再加上大小，一張比三件事', tags: ['統計', '比較', '數據'],
-    motion: `兩軸刻度出現，大小不同的半透明實色圓依序以回彈方式彈出，夠大的圓內寫名稱，小圓名稱標在旁邊。${HARD}`,
-    motionEn: `Axes appear and translucent flat circles of different sizes bounce in one by one; large bubbles carry their names inside, small ones beside. ${HARD_EN}`,
+    motion: `兩軸刻度出現，大小不同的半透明實色圓依序以回彈方式彈出，夠大的圓內寫名稱，小圓名稱標在旁邊。加一行「@quad x,y,右上,左上,左下,右下」會先畫出四象限十字軸與淡色象限底與角落名稱（定位象限）。${HARD}`,
+    motionEn: `Axes appear and translucent flat circles of different sizes bounce in one by one; large bubbles carry their names inside, small ones beside. Add “@quad x,y,TR,TL,BL,BR” to draw a quadrant cross with tinted quadrants and corner labels first. ${HARD_EN}`,
   }),
   make('radar', 'cstat', ['生活圈評分', '~滿分 10（示意數據）', '@series A 案,B 案', '@max 10', '交通 8,6', '學區 7,9', '公園 9,6', '商圈 6,8', '醫療 7,7', '價格 5,8'], {
     no: 223, zh: '雷達圖', en: 'Radar Chart', desc: '多項指標一圈比較，兩案疊在一起看', tags: ['比較', '評分', '數據'],
