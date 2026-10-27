@@ -64,3 +64,6 @@
 
 ## 2026-10-27 22:10（UTC+8）
 - PR #8 squash merge 為 eacaa1d 並上線；正式站驗證 374–375，無 console 錯誤（截圖 out/prod-374-375/）。圖解動畫六批全部上線（新增 30、合併 5、跳過 13）。
+
+## 2026-10-27 23:31（UTC+8）
+- 物件擴充 v2：feat/objects-v2 從 origin/main 切出並帶上珍奶；新增 393–409 共 17 個物件動畫（drink 汽水罐、fun 6、taiwan 4、estate 6），三個新子分類。build 通過、check:visual 0 問題；截圖 out/objects-v2/。PR 待審，未 merge。
