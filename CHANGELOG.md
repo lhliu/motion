@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-27（feat/effects-374-375，PR 待審）
+## 2026-10-27（main eacaa1d，已上線；PR #8）
 ### 新增
 - 圖解批次 B6（最後一批，caption＋news），兩個新特效：
   - 374 漲跌箭頭牌 `updown-board`（caption）：股價看板式翻牌翻出漲跌數字，箭頭彈跳，依台灣習慣漲紅跌綠。

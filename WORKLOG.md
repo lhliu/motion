@@ -61,3 +61,6 @@
 
 ## 2026-10-27 22:40（UTC+8）
 - B6（最後一批）：新增 374 updown-board、375 clause-mark；HANDOFF／PLAN 補六批總結（新增 30、合併 5、跳過 13）。截圖 out/effects-374-375/。PR 待審，未 merge。
+
+## 2026-10-27 22:10（UTC+8）
+- PR #8 squash merge 為 eacaa1d 並上線；正式站驗證 374–375，無 console 錯誤（截圖 out/prod-374-375/）。圖解動畫六批全部上線（新增 30、合併 5、跳過 13）。

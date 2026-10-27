@@ -1,7 +1,7 @@
 # HANDOFF：圖解批次 B6，特效 374–375（feat/effects-374-375）
 
 ## 狀態
-- PR 已開，待 KC 審核；**尚未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- 已於 2026-10-27 squash merge（eacaa1d，PR #8）並部署；正式站 374–375 正常渲染、無 console 錯誤。**六批全部上線。**程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
 - B5（368–373＋spotlight-bar 修正）已於 2026-10-27 merge（545b802，PR #7）並上線驗證。
 
 ## 內容
@@ -27,6 +27,6 @@
 | B3 | chier＋kinetic＋impact | 7 | — | 已 merge | 已上線 |
 | B4 | cstat＋cpie＋cbar＋cline | 4（364–367） | 3（23、35、38：圖表選項 @quad／@badge／@board） | #6（69b8e9a） | 已上線 |
 | B5 | diagram＋pmark＋pmulti＋punit | 6（368–373） | — | #7（545b802） | 已上線 |
-| B6 | caption＋news | 2（374–375） | — | 待審 | 未 merge |
+| B6 | caption＋news | 2（374–375） | — | #8（eacaa1d） | 已上線 |
 - 合計：48 選 → **新增 30、合併 5、跳過 13**（跳過的都是跟既有特效重疊）。
 - 新增特效全由 Grok Bot 自寫，未用 Codex／Claude Code／agy；照片／格局／文件類底圖都是自繪示意圖，無外部版權素材。
