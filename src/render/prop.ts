@@ -1453,6 +1453,70 @@ export const propRenderer = () => {
           }
         return [0.25, -0.3];
       }, { at: 0.5 });
+    if (mode === 'dice')
+      // 骰子：1–6 顆等角立體骰子，落下翻滾、落地停在最終點數，之後輕擺
+      return stage(x, W, H, P, t, loop, WH, RD, (x, q, after, c, c2) => {
+        const n = Math.max(1, Math.min(6, Math.round(num(P.dice, 2))));
+        type V3 = [number, number, number];
+        const rx = (v: V3, a: number): V3 => [v[0], v[1] * Math.cos(a) - v[2] * Math.sin(a), v[1] * Math.sin(a) + v[2] * Math.cos(a)];
+        const ry = (v: V3, a: number): V3 => [v[0] * Math.cos(a) + v[2] * Math.sin(a), v[1], -v[0] * Math.sin(a) + v[2] * Math.cos(a)];
+        const rz = (v: V3, a: number): V3 => [v[0] * Math.cos(a) - v[1] * Math.sin(a), v[0] * Math.sin(a) + v[1] * Math.cos(a), v[2]];
+        // 六面：法向、面內 u/v 軸、點數（對面相加 = 7）
+        const FACES: [V3, V3, V3, number][] = [
+          [[0, 0, 1], [1, 0, 0], [0, 1, 0], 1], [[0, 0, -1], [-1, 0, 0], [0, 1, 0], 6],
+          [[1, 0, 0], [0, 0, -1], [0, 1, 0], 2], [[-1, 0, 0], [0, 0, 1], [0, 1, 0], 5],
+          [[0, 1, 0], [1, 0, 0], [0, 0, -1], 3], [[0, -1, 0], [1, 0, 0], [0, 0, 1], 4],
+        ];
+        const PIPS: Record<number, number[][]> = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
+        // 每顆最終朝向（四分之一轉），讓不同骰子露出不同點數
+        const BASE: [number, number, number][] = [[0, 0, 0], [Math.PI / 2, 0, 0], [0, -Math.PI / 2, Math.PI / 2], [-Math.PI / 2, 0, Math.PI], [Math.PI, Math.PI / 2, 0], [0, Math.PI, Math.PI / 2]];
+        // 版面：直式最多兩欄（3 顆排成三角），橫式最多三欄
+        const wide = W > H * 1.1;
+        const cols = wide ? (n <= 3 ? n : Math.ceil(n / 2)) : n === 1 ? 1 : 2;
+        const rows = Math.ceil(n / cols);
+        const cell = Math.min((wide ? 1.35 : 0.98) / cols, 0.82 / rows, 0.7), hs = cell * 0.27;
+        const spots: [number, number, number][] = [];
+        for (let i = 0; i < n; i++) {
+          const r = Math.floor(i / cols), inRow = Math.min(cols, n - r * cols), k = i - r * cols;
+          spots.push([(k - (inRow - 1) / 2) * cell, -(rows - 1 - r) * cell * 0.9 - hs * 1.25, r]);
+        }
+        const LT: V3 = [-0.35, 0.8, 0.5];
+        const ln = Math.hypot(...LT);
+        spots.forEach(([X, Y], i) => {
+          const d = i * 0.025, land = seg(q, 0.05 + d, 0.3 + d), e = 1 - Math.pow(1 - land, 3);
+          const spin = (1 - e) * TAU * (2 + (i % 2)), wob = Math.sin(after * 1.6 + i * 1.3) * 0.05 * Math.min(1, after);
+          const hop = land < 1 ? Math.abs(Math.sin(land * Math.PI * 2.5)) * (1 - land) * 0.22 : 0;
+          const B = BASE[(i * 5 + 1) % 6];
+          const yaw = 0.62 + (i % 3 - 1) * 0.12 + wob, tilt = 0.5;
+          const tf = (v: V3): V3 => {
+            let w = rz(ry(rx(v, B[0]), B[1]), B[2]);
+            w = rx(ry(w, spin * (i % 2 ? 1 : -0.6)), spin * 0.8);
+            return rx(ry(w, yaw), tilt);
+          };
+          const cx0 = X, cy0 = Y - hop;
+          for (const [nrm, U, Vv, val] of FACES) {
+            const nn = tf(nrm);
+            if (nn[2] <= 0.01) continue;
+            const u = tf(U), v = tf(Vv);
+            // 螢幕座標：x 往右、y 往下（3D 的 y 往上）
+            const ox = cx0 + nn[0] * hs, oy = cy0 - nn[1] * hs;
+            const ux = u[0] * hs, uy = -u[1] * hs, vx = v[0] * hs, vy = -v[1] * hs;
+            const lit = (nn[0] * LT[0] + nn[1] * LT[1] + nn[2] * LT[2]) / ln;
+            const col = shade(c, Math.min(0, (lit - 0.95) * 0.2));
+            poly(x, [[ox - ux - vx, oy - uy - vy], [ox + ux - vx, oy + uy - vy], [ox + ux + vx, oy + uy + vy], [ox - ux + vx, oy - uy + vy]], col);
+            x.save();
+            x.transform(ux, uy, vx, vy, ox, oy);
+            for (const [a, b] of PIPS[val]) {
+              x.beginPath();
+              x.arc(a * 0.52, b * 0.52, val === 1 ? 0.28 : 0.17, 0, TAU);
+              x.fillStyle = val === 1 ? c2 : INK;
+              x.fill();
+            }
+            x.restore();
+          }
+        });
+        return [0, -(rows - 1) * cell * 0.9 - hs * 3.0];
+      }, { at: 0.34, sway: 0.015 });
     if (mode === 'bulb')
       // 電燈泡：閃兩下亮起，光芒伸縮
       return stage(x, W, H, P, t, loop, YL, O, (x, q, after, c, c2) => {

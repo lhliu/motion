@@ -20,7 +20,7 @@ export const PROP_INFO: Record<PropModule, { zh: string; en: string; desc: strin
   coins: { zh: '錢幣存錢筒', en: 'Coins & Piggy Bank', desc: '硬幣一枚枚疊高成長條，或掉進存錢筒；只做示意，不放真實金額' },
   gacha: { zh: '抽籤扭蛋', en: 'Gacha & Lots', desc: '扭蛋機轉動掉出扭蛋打開，或籤筒搖一搖跳出一支籤' },
   drink: { zh: '手搖飲', en: 'Bubble Tea', desc: '透明杯珍珠奶茶落下，珍珠沉底、吸管戳破封膜；或汽水罐搖一搖拉開冒泡' },
-  fun: { zh: '有趣道具', en: 'Fun Gadgets', desc: '微波爐、抓娃娃機、紙飛機、爆米花、磁鐵、電燈泡等生活小道具' },
+  fun: { zh: '有趣道具', en: 'Fun Gadgets', desc: '微波爐、抓娃娃機、紙飛機、爆米花、磁鐵、電燈泡、骰子等生活小道具' },
   taiwan: { zh: '台灣生活', en: 'Taiwan Life', desc: '紅包、夜市套圈圈、電子票證感應、刮刮樂等台灣日常' },
   estate: { zh: '看屋物件', en: 'Home Viewing', desc: '房貸計算機、電表、地震書櫃、搬家紙箱、社區公告欄、冷氣機' },
 };
@@ -42,7 +42,7 @@ export const PROP_DEFAULTS: Record<PropModule, Record<string, number | string>> 
   coins: { mode: 'stack', count: 4, color: '#f2b705', color2: '#f6a5c0', ...XY, y: 0.42 },
   gacha: { mode: 'capsule', color: '#ff5a36', color2: '#2f6db5', ...XY, y: 0.42 },
   drink: { mode: 'boba', color: '#c8925f', color2: '#ff5a36', ...XY, y: 0.42 },
-  fun: { mode: 'microwave', color: '#e9eef3', color2: '#ff5a36', ...XY, y: 0.42 },
+  fun: { mode: 'microwave', dice: 2, color: '#e9eef3', color2: '#ff5a36', ...XY, y: 0.42 },
   taiwan: { mode: 'hongbao', color: '#d64541', color2: '#ffd23f', ...XY, y: 0.42 },
   estate: { mode: 'calc', color: '#1d2433', color2: '#ff5a36', ...XY, y: 0.42 },
 };
@@ -87,7 +87,7 @@ export const PROP_PARAMS: Record<PropModule, PField[]> = {
   party: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['popper', '拉炮彩帶'], ['fireworks', '煙火']] }, { k: 'amount', label: '數量', type: 'range', min: 0.3, max: 2, step: 0.05 }, ...common('主色', '輔色')],
   coins: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['stack', '硬幣疊高'], ['piggy', '存錢筒']] }, { k: 'count', label: '疊幾排', type: 'range', min: 2, max: 6, step: 1 }, ...common('硬幣', '存錢筒')],
   drink: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['boba', '珍珠奶茶'], ['soda', '汽水罐']] }, ...common('奶茶／罐身', '吸管／字樣')],
-  fun: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['microwave', '微波爐'], ['claw', '抓娃娃機'], ['plane', '紙飛機'], ['popcorn', '爆米花'], ['magnet', '磁鐵'], ['bulb', '電燈泡']] }, ...common('本體', '強調色')],
+  fun: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['microwave', '微波爐'], ['claw', '抓娃娃機'], ['plane', '紙飛機'], ['popcorn', '爆米花'], ['magnet', '磁鐵'], ['bulb', '電燈泡'], ['dice', '骰子']] }, { k: 'dice', label: '骰子數', type: 'range', min: 1, max: 6, step: 1 }, ...common('本體', '強調色')],
   taiwan: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['hongbao', '紅包'], ['ringtoss', '夜市套圈圈'], ['card', '電子票證感應'], ['scratch', '刮刮樂']] }, ...common('本體', '強調色')],
   estate: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['calc', '房貸計算機'], ['meter', '電表'], ['quake', '地震書櫃'], ['boxes', '搬家紙箱'], ['board', '社區公告欄'], ['aircon', '冷氣機']] }, ...common('本體', '強調色')],
   gacha: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['capsule', '扭蛋機'], ['lots', '籤筒']] }, ...common('機台／籤筒', '扭蛋／籤頭')],
