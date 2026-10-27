@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-27（feat/effects-364-367，PR 待審）
+## 2026-10-27（main 69b8e9a，已上線；PR #6）
 ### 新增
 - 圖解批次 B4（cstat＋cpie＋cbar），四個新特效：
   - 364 便利貼四象限 `sticky-matrix`（cstat）：便利貼旋轉丟進「重要×急迫」四象限，左上格脈動。

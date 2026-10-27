@@ -49,3 +49,6 @@
 
 ## 2026-10-27 22:10（UTC+8）
 - B4：新增 364–367（sticky-matrix、relation-web、area-grid、spotlight-bar）；泡泡圖 @quad、折線圖 @badge、儀表板 @board 三個合併選項。截圖 out/effects-364-367/。PR 待審，未 merge。
+
+## 2026-10-27 21:50（UTC+8）
+- PR #6 squash merge 為 69b8e9a，Cloudflare Pages success；正式站驗證 364–367＋泡泡圖 @quad／折線圖 @badge／儀表板 @board 與舊預設，無 console 錯誤（截圖 out/prod-364-367/）。
