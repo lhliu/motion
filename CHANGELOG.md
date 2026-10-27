@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-27（feat/effects-368-373，PR 待審）
+## 2026-10-27（main 545b802，已上線；PR #7）
 ### 新增
 - 圖解批次 B5（diagram＋pmark＋pmulti＋punit），六個新特效：
   - 368 齒輪公式 `gear-formula`（diagram）：因子齒輪依序咬合轉動，帶出「＝結果」卡。

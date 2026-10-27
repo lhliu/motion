@@ -55,3 +55,6 @@
 
 ## 2026-10-27 22:30（UTC+8）
 - B5：新增 368–373（gear-formula、iso-explode、zoom-detail、lens-annotate、before-after-drag、plan-callouts），示意底圖皆自繪 SVG；修正 spotlight-bar 9:16 標籤重疊。截圖 out/effects-368-373/。PR 待審，未 merge。
+
+## 2026-10-27 22:05（UTC+8）
+- PR #7 squash merge 為 545b802 並上線；正式站驗證 368–373＋spotlight-bar，無 console 錯誤（截圖 out/prod-368-373/）。

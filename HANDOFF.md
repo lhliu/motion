@@ -1,7 +1,7 @@
 # HANDOFF：圖解批次 B5，特效 368–373（feat/effects-368-373）
 
 ## 狀態
-- PR 已開，待 KC 審核；**尚未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- 已於 2026-10-27 squash merge（545b802，PR #7）並部署；正式站 368–373 與 spotlight-bar 皆正常渲染、無 console 錯誤。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
 - B4（364–367＋圖表選項）已於 2026-10-27 merge（69b8e9a，PR #6）並上線驗證。
 
 ## 內容
