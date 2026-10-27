@@ -1,8 +1,8 @@
 # Changelog
 
-## 2026-10-27（main b3535ff，已上線；PR #9）
+## 2026-10-27（feat/objects-o1，PR 待審）
 ### 新增
-- 物件分類新增三個子分類：有趣道具 `fun`、台灣生活 `twlife`、房屋看屋 `homecheck`。後兩個目前是空的，會在 O3–O6 補上；物件區會自動隱藏 0 個特效的子分類。
+- 物件分類新增三個子分類：有趣道具 `fun`、台灣生活 `twlife`、房屋看屋 `homecheck`。後兩個目前是空的，會在 O3–O6 補上。
 - 物件擴充批次 O1：有趣道具 8 個，純 CSS，house style（調色盤變數、粗框、硬陰影）：
   - 376 烤吐司機 `obj-fun-toaster`
   - 377 微波爐倒數 `obj-fun-microwave`
