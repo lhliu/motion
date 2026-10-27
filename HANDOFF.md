@@ -1,26 +1,25 @@
-# HANDOFF：物件擴充批次 O1，有趣道具 376–383（feat/objects-o1）
+# HANDOFF：物件擴充批次 O2，有趣道具 384–390＋售屋吊牌 391（feat/objects-o2）
 
 ## 狀態
-- 已於 2026-10-27 squash merge（b3535ff，PR #9）並部署；正式站 376–383 正常、物件分類列不再出現 0 個的子分類、無 console 錯誤。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
-- 整體計畫：物件分類由 47 個擴充到 100 個，分 O1–O6 共 53 個（計畫書：/workspace/zikaji/objects-100/PLAN.md）。這是第一批。
+- PR 待審，未 merge。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- O1（376–383）已於 2026-10-27 squash merge 為 b3535ff 並上線；物件區自動隱藏 0 個特效的子分類。
+- 整體計畫：物件 47 → 100，分 O1–O6（/workspace/zikaji/objects-100/PLAN.md）。這是第二批。
 
 ## 內容
-- `src/types.ts`、`src/data.ts`：新增子分類 `fun` 有趣道具、`twlife` 台灣生活、`homecheck` 房屋看屋（sec: object）。
-- `src/effects/fun-objects.ts`：376–383 八個有趣道具，純 CSS＋HTML，id 前綴 `obj-fun-`。
-- `src/uses.ts`：八個都歸到「強調」emph 用途。
+- `src/effects/fun-objects-2.ts`：384–391 八個特效（有趣 9–15＋計畫第 36 項售屋吊牌）。
+- `src/data.ts`：匯入 `funObjects2`；`src/uses.ts`：八個都歸「強調」emph。
+- 售屋吊牌歸在 `homecheck`，所以「房屋看屋」子分類會開始顯示（1 個）。
 
 ## 怎麼測
-1. `npm ci && npm run build && npm run preview`，進「物件」→「有趣道具」，或開 `?fx=obj-fun-toaster`。
-2. 截圖重產：`npx tsx out/objects-o1/gen.ts && python3 out/objects-o1/shoot.py`（out/ 不進 git）。
+1. `npm ci && npm run build && npm run preview`，進「物件」→「有趣道具」／「房屋看屋」，或開 `?fx=obj-fun-gum`。
+2. 截圖重產：`npx tsx out/objects-o2/gen.ts && cd out/objects-o2 && python3 shoot.py && python3 sheet.py N`（out/ 不進 git）。
 
 ## 已知限制
-- 這批是 CSS 特效，不是 propkit 的 canvas 物件，所以在「有趣道具」分頁按上方的「物件工作室」不會有專屬編輯器（會開預設的物件工作室）。
-- 台灣生活、房屋看屋目前是 0 個；物件區會自動隱藏 0 個特效的子分類，等 O3–O6 補上就會出現。
-- 抓娃娃機在 9:16 時機台偏小；夾子的位置是固定的，永遠夾第 1 顆膠囊。
-- 彈簧拳擊手套：9:16 時盒蓋翻開會稍微超出左邊；出拳只有約 0.7 秒，暫停截圖不一定拍得到。
-- 紙飛機的航線是固定的，在 9:16 時會被拉成直長形。
-- 彈簧下樓梯：3–5 階；每階 1.1 秒，5 階時最後一階大約在 4.4 秒才走到。
-- 便當盒最多 4 格。
+- 骰子只畫正面，點數 1–6；第二幀才顯示總和。
+- 遙控器最多 4 台；轉台為瞬切加雜訊。
+- 磁鐵吸字標題建議 ≤12 字；爆米花最多 5 個關鍵字，9:16 時左右散開幅度減半。
+- 售屋吊牌的資訊列版面固定；「已成交」章蓋在吊牌下半部，會壓到資訊列文字。
+- 泡泡糖破掉那一瞬間（約 3.2 秒）畫面是空的，暫停截圖可能拍到空白。
 
 ## 圖解動畫 48 選：六批總結（2026-10-27）
 | 批次 | 分類 | 新增 | 合併到既有 | PR | 狀態 |
