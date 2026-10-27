@@ -154,8 +154,41 @@ export const card: Fx[] = [
 @keyframes K_l{0%{transform:translateX(-100cqw)}14%,88%{transform:none}100%{transform:translateX(-100cqw)}}
 @keyframes K_r{0%{transform:translateX(100cqw)}14%,88%{transform:none}100%{transform:translateX(100cqw)}}
 @keyframes K_vs{0%,16%{transform:scale(3);opacity:0}26%,86%{transform:none;opacity:1}96%,100%{transform:scale(0);opacity:0}}
-@keyframes K_sh{0%,25%,33%,100%{transform:none}27%{transform:translate(1%,1%)}29%{transform:translate(-1%,-.6%)}31%{transform:translate(.5%,.3%)}}`,
+@keyframes K_sh{0%,25%,33%,100%{transform:none}27%{transform:translate(1%,1%)}29%{transform:translate(-1%,-.6%)}31%{transform:translate(.5%,.3%)}}
+/* 變體：逐項打勾（輸入含「項目｜A/B/=」時才啟用；舊預設不受影響） */
+.S .vx{position:absolute;inset:0;display:grid;place-content:center;gap:calc(var(--u)*.6);--u:calc(min(1cqw,1.7778cqh)*.82);font-size:calc(var(--u)*3.8)}
+@container (aspect-ratio < 1){.S .vx{--u:calc(min(1cqw,1.7778cqh)*1.25)}}
+.S .vx .hd,.S .vx .ro{display:grid;grid-template-columns:calc(var(--u)*22) calc(var(--u)*20) calc(var(--u)*22);align-items:center;text-align:center}
+.S .vx .hd{font-size:calc(var(--u)*5.6);margin-bottom:calc(var(--u)*1.4)}
+.S .vx .hd span{padding:.15em 0;animation:K_vh 6s cubic-bezier(.2,.9,.2,1) infinite both}
+.S .vx .hd .a{background:var(--ac);color:var(--bg)}.S .vx .hd .b{background:var(--fg);color:var(--bg);animation-name:K_vh2}
+.S .vx .hd i{font-style:italic;color:var(--ac2)}
+.S .vx .ro{border-bottom:calc(var(--u)*.3) solid color-mix(in srgb,var(--fg) 25%,transparent);padding:calc(var(--u)*.8) 0;animation:K_vr 6s ease infinite both;animation-delay:calc(.5s + var(--i)*.55s)}
+.S .vx .ro b{font-weight:inherit;opacity:.8}
+.S .vx .ck{justify-self:center;width:calc(var(--u)*4.6);height:calc(var(--u)*4.6);border-radius:50%;display:grid;place-items:center;color:var(--bg);background:var(--c);opacity:0}
+.S .vx .ck.on{animation:K_vc 6s cubic-bezier(.3,1.8,.5,1) infinite both;animation-delay:calc(.8s + var(--i)*.55s)}
+.S .vx .ck svg{width:65%;fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+.S .vx .sc{text-align:center;font-family:var(--mono);font-size:calc(var(--u)*6);margin-top:calc(var(--u)*1.2);animation:K_vr 6s ease infinite both;animation-delay:calc(.9s + var(--n)*.55s)}
+.S .vx .sc em{font-style:normal;color:var(--ac)}
+@keyframes K_vh{0%{opacity:0;transform:translateX(-30%)}8%,100%{opacity:1;transform:none}}
+@keyframes K_vh2{0%{opacity:0;transform:translateX(30%)}8%,100%{opacity:1;transform:none}}
+@keyframes K_vr{0%{opacity:0;transform:translateY(30%)}6%,100%{opacity:1;transform:none}}
+@keyframes K_vc{0%{opacity:0;transform:scale(0) rotate(-40deg)}6%,100%{opacity:1;transform:none}}`,
     html: (w) => {
+      if (w.some((x) => String(x).includes('｜'))) {
+        const [a, b] = [w[0] || 'A 案', w[1] || 'B 案'];
+        const rows = w.slice(2).filter((x) => String(x).includes('｜')).slice(0, 6).map((r) => {
+          const [k, v = ''] = String(r).split('｜');
+          const t = v.trim().toUpperCase();
+          const win = t === 'A' || t === a.toUpperCase() ? 'a' : t === 'B' || t === b.toUpperCase() ? 'b' : '=';
+          return { k: k.trim(), win };
+        });
+        const tick = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+        const ca = rows.filter((r) => r.win === 'a' || r.win === '=').length, cb = rows.filter((r) => r.win === 'b' || r.win === '=').length;
+        return `<div class="vx" style="--n:${rows.length}"><div class="hd"><span class="a">${esc(a)}</span><i>VS</i><span class="b">${esc(b)}</span></div>${rows
+          .map((r, i) => `<div class="ro" style="--i:${i}"><span class="ck${r.win !== 'b' ? ' on' : ''}" style="--c:var(--ac)">${tick}</span><b>${esc(r.k)}</b><span class="ck${r.win !== 'a' ? ' on' : ''}" style="--c:var(--fg)">${tick}</span></div>`)
+          .join('')}<div class="sc"><em>${ca}</em> : ${cb}</div></div>`;
+      }
       const [a, b] = pick(w, 2, ['新成屋', '預售屋']);
       return `<div class="L"><span>${esc(a)}</span></div><div class="R"><span>${esc(b)}</span></div><div class="vs">VS</div>`;
     },
@@ -309,8 +342,35 @@ export const card: Fx[] = [
 @property --pv{syntax:'<integer>';inherits:false;initial-value:0}
 @keyframes K_c{0%{--pv:0}55%,90%{--pv:var(--target)}100%{--pv:0}}
 @keyframes K_f{0%{transform:scaleX(0)}55%,90%{transform:none}100%{transform:scaleX(0)}}
-@keyframes K_s{to{background-position:4.24cqw 0}}`,
+@keyframes K_s{to{background-position:4.24cqw 0}}
+/* 變體：分段刻度尺（輸入 3 個以上、且第 2 個不是百分比時啟用；舊預設不受影響） */
+.S .ru{width:80cqw;display:flex;flex-direction:column;gap:3cqw}
+.S .ru .hd .pc{counter-reset:none;animation:none}.S .ru .hd .pc::after{content:none}
+.S .ru .tk{position:relative;display:grid;grid-template-columns:repeat(var(--n),1fr);border:.5cqw solid var(--fg);height:6cqw}
+.S .ru .cl.dn::before,.S .ru .cl.now::before{content:'';position:absolute;inset:0;background:var(--ac);transform-origin:0 50%;animation:K_rc 6s cubic-bezier(.3,0,.2,1) infinite both;animation-delay:calc(.3s + var(--i)*.6s)}
+.S .ru .cl.now::before{opacity:.35;animation-name:K_rc,K_rn;animation-duration:6s,1s}
+.S .ru .cl{position:relative;border-left:.5cqw solid var(--fg)}.S .ru .cl:first-child{border-left:0}
+.S .ru .cl::after{content:'';position:absolute;left:0;bottom:100%;width:.5cqw;height:1.6cqw;background:var(--fg)}
+.S .ru .lb{display:grid;grid-template-columns:repeat(var(--n),1fr);text-align:center;font-size:3cqw}
+.S .ru .lb span{opacity:.5}.S .ru .lb span.dn{opacity:1;animation:K_rl 6s ease infinite both;animation-delay:calc(.6s + var(--i)*.6s)}
+.S .ru .lb span.now{opacity:1;color:var(--ac)}
+.S .ru .sp{position:absolute;inset:0;display:grid;place-items:center}
+.S .ru .sp b{font-size:2.6cqw;border:.4cqw solid var(--bg);color:var(--bg);padding:0 .4em;rotate:-10deg;animation:K_rs 6s cubic-bezier(.3,1.8,.5,1) infinite both;animation-delay:calc(.6s + var(--i)*.6s)}
+@keyframes K_rc{0%{transform:scaleX(0)}6%,100%{transform:none}}
+@keyframes K_rn{50%{opacity:.15}}
+@keyframes K_rs{0%{opacity:0;scale:2.4}5%,100%{opacity:1;scale:1}}
+@keyframes K_rl{0%{opacity:.5}5%,100%{opacity:1}}`,
     html: (w) => {
+      if (w.length >= 3 && !/%\s*$/.test(String(w[1] ?? ''))) {
+        const [t, ...raw] = w;
+        const steps = raw.slice(0, 8).map((x) => String(x).replace(/^[>＞]\s*/, ''));
+        const mk = raw.findIndex((x) => /^[>＞]/.test(String(x)));
+        const cur = mk >= 0 ? mk : steps.length - 1;
+        const n = steps.length;
+        return `<div class="g ru" style="--n:${n};--cur:${cur}"><div class="hd"><div class="ti">${esc(t)}</div><div class="pc">${cur}/${n}</div></div><div class="tk">${steps
+          .map((_, i) => `<div class="cl${i < cur ? ' dn' : i === cur ? ' now' : ''}" style="--i:${i}">${i < cur ? `<div class="sp"><b style="--i:${i}">OK</b></div>` : ''}</div>`)
+          .join('')}</div><div class="lb">${steps.map((x, i) => `<span class="${i < cur ? 'dn' : i === cur ? 'now' : ''}" style="--i:${i}">${esc(x)}</span>`).join('')}</div></div>`;
+      }
       const [t, p] = pick(w, 2, ['工程進度', '68%']);
       const v = Math.max(0, Math.min(100, parseInt(p, 10) || 0));
       return `<div class="g" style="--to:${v}%"><div class="hd"><div class="ti">${esc(t)}</div><div class="pc" style="--target:${v}"></div></div><div class="tr"><div class="fl"></div></div></div>`;
