@@ -1,30 +1,5 @@
 # Changelog
 
-## 2026-10-27（main 92f634e，已上線；PR #10）
-### 新增
-- 物件擴充批次 O2：有趣道具 7 個＋房屋看屋 1 個，純 CSS，house style：
-  - 384 泡泡糖吹破 `obj-fun-gum`
-  - 385 爆米花機 `obj-fun-popcorn`
-  - 386 磁鐵吸字 `obj-fun-magnet`
-  - 387 骰子滾動 `obj-fun-dice`
-  - 388 電燈泡想到了 `obj-fun-bulb`
-  - 389 遙控器轉台 `obj-fun-remote`
-  - 390 打地鼠 `obj-fun-whack`
-  - 391 售屋吊牌 `obj-home-sold`（房屋看屋子分類第一個特效，所以分類列會開始出現「房屋看屋」）
-
-## 2026-10-27（main b3535ff，已上線；PR #9）
-### 新增
-- 物件分類新增三個子分類：有趣道具 `fun`、台灣生活 `twlife`、房屋看屋 `homecheck`。後兩個目前是空的，會在 O3–O6 補上；物件區會自動隱藏 0 個特效的子分類。
-- 物件擴充批次 O1：有趣道具 8 個，純 CSS，house style（調色盤變數、粗框、硬陰影）：
-  - 376 烤吐司機 `obj-fun-toaster`
-  - 377 微波爐倒數 `obj-fun-microwave`
-  - 378 抓娃娃機 `obj-fun-claw`
-  - 379 彈簧拳擊手套 `obj-fun-punch`
-  - 380 紙飛機 `obj-fun-plane`
-  - 381 迴力鏢 `obj-fun-boomerang`
-  - 382 彈簧下樓梯 `obj-fun-slinky`
-  - 383 便當盒開蓋 `obj-fun-bento`
-
 ## 2026-10-27（main eacaa1d，已上線；PR #8）
 ### 新增
 - 圖解批次 B6（最後一批，caption＋news），兩個新特效：

@@ -526,8 +526,6 @@ const renderCats = () => {
   catsEl.innerHTML =
     `<button class="cat" data-cat="all" aria-pressed="${state.cat === 'all'}">全部 <small>${all.length}</small></button>` +
     groups()
-      // 物件區：還沒有任何可見特效的子分類先不顯示
-      .filter((g) => state.sec !== 'object' || all.some(g.has))
       .map((g) => `<button class="cat" data-cat="${g.id}" aria-pressed="${state.cat === g.id}" title="${esc(g.tagline)}"><code>${g.code}</code>${g.zh} <small>${all.filter(g.has).length}</small></button>`)
       .join('');
   // 第二層風格：只在文字區出現

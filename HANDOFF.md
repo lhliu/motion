@@ -1,25 +1,23 @@
-# HANDOFF：物件擴充批次 O2，有趣道具 384–390＋售屋吊牌 391（feat/objects-o2）
+# HANDOFF：圖解批次 B6，特效 374–375（feat/effects-374-375）
 
 ## 狀態
-- 已於 2026-10-27 squash merge（92f634e，PR #10）並部署；正式站 384–391 正常、「房屋看屋」出現 1 招、無 console 錯誤。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
-- O1（376–383）已於 2026-10-27 squash merge 為 b3535ff 並上線；物件區自動隱藏 0 個特效的子分類。
-- 整體計畫：物件 47 → 100，分 O1–O6（/workspace/zikaji/objects-100/PLAN.md）。這是第二批。
+- 已於 2026-10-27 squash merge（eacaa1d，PR #8）並部署；正式站 374–375 正常渲染、無 console 錯誤。**六批全部上線。**程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- B5（368–373＋spotlight-bar 修正）已於 2026-10-27 merge（545b802，PR #7）並上線驗證。
 
 ## 內容
-- `src/effects/fun-objects-2.ts`：384–391 八個特效（有趣 9–15＋計畫第 36 項售屋吊牌）。
-- `src/data.ts`：匯入 `funObjects2`；`src/uses.ts`：八個都歸「強調」emph。
-- 售屋吊牌歸在 `homecheck`，所以「房屋看屋」子分類會開始顯示（1 個）。
+- `src/effects/final-explain.ts`：updown-board（caption，374）、clause-mark（news，375），純 CSS。
+- `src/data.ts`、`src/uses.ts`：註冊（updown-board 歸 caption、clause-mark 歸 info）。
+- 條文框選的預設文件是自擬的「不動產買賣契約書（示意）」，畫面標「示意文件」；不是真實新聞或真實契約。
 
 ## 怎麼測
-1. `npm ci && npm run build && npm run preview`，進「物件」→「有趣道具」／「房屋看屋」，或開 `?fx=obj-fun-gum`。
-2. 截圖重產：`npx tsx out/objects-o2/gen.ts && cd out/objects-o2 && python3 shoot.py && python3 sheet.py N`（out/ 不進 git）。
+1. `npm ci && npm run build && npm run preview`，搜尋「漲跌」「條文」。
+2. 漲跌牌：每行「名稱 +24%」或「名稱 −8%」。條文框選：第 1 行標題，要框的行加「>」，「!」開頭寫註記。
+3. 截圖重產：`npx tsx out/effects-374-375/gen.ts && python3 out/effects-374-375/shoot.py`（out/ 不進 git）。
 
 ## 已知限制
-- 骰子只畫正面，點數 1–6；第二幀才顯示總和。
-- 遙控器最多 4 台；轉台為瞬切加雜訊。
-- 磁鐵吸字標題建議 ≤12 字；爆米花最多 5 個關鍵字，9:16 時左右散開幅度減半。
-- 售屋吊牌的資訊列版面固定；「已成交」章蓋在吊牌下半部，會壓到資訊列文字。
-- 泡泡糖破掉那一瞬間（約 3.2 秒）畫面是空的，暫停截圖可能拍到空白。
+- 漲跌牌顏色固定為漲紅 #e63946／跌綠 #2a9d8f（台灣慣例），不跟配色走；最多 4 張；牌面是深色固定底。
+- 條文框選最多 10 行；目標行停點用固定行高估算，條文太長換三行以上時框和停點會偏一點；文件固定米白底。
+- 條文框選的註記固定在框的右上方；目標在第 1 行時會被標題擋到一點。
 
 ## 圖解動畫 48 選：六批總結（2026-10-27）
 | 批次 | 分類 | 新增 | 合併到既有 | PR | 狀態 |
