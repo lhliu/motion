@@ -1,22 +1,24 @@
-# HANDOFF：圖解批次 B4，特效 364–367＋3 個圖表選項（feat/effects-364-367）
+# HANDOFF：圖解批次 B5，特效 368–373（feat/effects-368-373）
 
 ## 狀態
-- 已於 2026-10-27 squash merge（69b8e9a，PR #6），Cloudflare Pages 部署成功；正式站 364–367、三個圖表變體與其舊預設皆正常渲染、無 console 錯誤。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
-- B3（357–363）已於 2026-10-27 merge（9e57541，PR #5）並上線驗證。
+- PR 已開，待 KC 審核；**尚未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- B4（364–367＋圖表選項）已於 2026-10-27 merge（69b8e9a，PR #6）並上線驗證。
 
 ## 內容
-- `src/effects/stat-explain.ts`：sticky-matrix、relation-web（cstat），area-grid（cpie），spotlight-bar（cbar），no 364–367，純 CSS。
-- `src/render/chart.ts`：新指令 `@quad`（泡泡／散佈）、`@badge`（折線／區域）、`@board`（儀表板）；沒寫這些指令時走原本路徑，舊預設畫面不變。`src/chart.ts` 說明文字補上。
-- `src/effects/chart.ts`：三個圖表的動態說明補上新選項。`src/data.ts`、`src/uses.ts`：註冊（歸 info）。
+- `src/effects/visual-explain.ts`：gear-formula、iso-explode（diagram），zoom-detail、lens-annotate（pmark），before-after-drag（pmulti），plan-callouts（punit），no 368–373，純 CSS＋inline SVG。
+- 示意底圖（街廓俯視、空屋／佈置客廳、格局、實價登錄表）都由程式用 SVG／HTML 畫出，跟著配色變；不需要也不使用外部照片。
+- `src/effects/stat-explain.ts`：spotlight-bar 9:16 標籤位置修正。
+- `src/data.ts`、`src/uses.ts`：註冊（歸 info）。
 
 ## 怎麼測
-1. `npm ci && npm run build && npm run preview`，搜尋「便利貼」「關聯」「格子」「聚光」。
-2. 泡泡圖加 `@quad 50,55,高價成熟,高價待發展,平價待發展,平價高機能`；折線圖加 `@badge +38%`；儀表板加 `@board` 並寫 2–4 行指標。
-3. 截圖重產：`npx tsx out/effects-364-367/gen.ts && python3 out/effects-364-367/shoot.py`；網站實測 `python3 out/effects-364-367/site/v.py`（out/ 不進 git）。
+1. `npm ci && npm run build && npm run preview`，搜尋「齒輪」「等角」「推進」「放大鏡」「拖曳」「引線」。
+2. 放大鏡：在要停的那筆前加「>」，「!」開頭寫註解；推進：「>」標目標。
+3. 截圖重產：`npx tsx out/effects-368-373/gen.ts && python3 out/effects-368-373/shoot.py`（out/ 不進 git）。
 
 ## 已知限制
-- PLAN 寫「4 新＋3 合併」：合併的 3 個是既有圖表的選項，不另佔編號，所以新編號只到 367。
-- 圖表（canvas）在匯出的 Combo HTML 用 Playwright 暫停截圖時會停在中途，所以圖表變體改用網站詳情頁實測截圖。
-- `@board` 卡片沒寫 `@max` 時，每張卡的滿刻度各自取「數值×1.2」的整數，弧長只表示大概比例。
-- 關聯網最多 6 個因素、四象限最多 10 張便利貼、聚光直條最多 10 根；面積格子固定 100 格，比例小於 1% 也至少填 1 格。
-- 聚光標籤在 9:16 會稍微壓到右邊相鄰柱的數字。
+- 這批沒有接現有的照片／格局 studio（canvas 引擎），而是純 CSS 示意圖版；不能換成使用者自己的照片或格局圖。
+- 前後拖曳的數字用 `@property` 整數計數，只顯示整數、不加千分位；需要 Chromium 系瀏覽器（Safari 16.4+、Firefox 128+ 也支援）。
+- 格局引線標註固定 6 間示意格局，輸入只改名稱與坪數；9:16 時格局圖偏小。
+- 放大鏡掃表最多 6 列、4 欄；路徑固定（左上→右→左下→目標）。
+- 齒輪最多 4 個因子；等角圖層最多 5 層，太小的比例最少 3u 厚。
+- 放大鏡掃表會輸出一段 inline `<style>`（選擇器用 `.fx-lens-annotate`）；同一個 Combo 放兩段且目標列不同時，以後者為準。
