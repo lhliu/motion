@@ -1198,6 +1198,7 @@ export const propRenderer = () => {
   /* ───────── 手搖飲 ───────── */
   const drink = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
     const S = Math.min(W, H) * num(P.size, 0.62), cx = num(P.x, 0.5) * W, cy = num(P.y, 0.42) * H;
+    if (String(P.mode ?? 'boba') === 'soda') return soda(x, W, H, P, t, loop);
     const tea = String(P.color ?? '#c8925f'), c2 = String(P.color2 ?? '#ff5a36'), q = t / loop, sp = num(P.speed, 1);
     // 杯子：扁平梯形，原點在杯底中央（跟扭蛋機同樣的畫面佔比）
     const h = S * 0.62, a = S * 0.25, b = S * 0.19, base = cy + S * 0.4;
@@ -1264,12 +1265,548 @@ export const propRenderer = () => {
     return { cx, cy, r: S * 0.62 };
   };
 
-  const MODS: Record<string, typeof site> = { site, keys, furniture, house, contract, skyline, weather, signal, plant, clock, party, coins, gacha, drink };
+  /* ───────── 物件擴充 v2：共用（落下壓扁登場、結尾放射短線＋星星，跟扭蛋機／珍奶同一套） ───────── */
+  const dropIn = (q: number, H: number, end = 0.18) => {
+    const fall = bounce(seg(q, 0, end)), imp = seg(q, end * 0.36, end * 0.95);
+    return { off: -(1 - fall) * H * 0.75, sq: imp > 0 && imp < 1 ? Math.sin(imp * Math.PI) * (1 - imp) * 0.1 : 0 };
+  };
+  const cheer = (x: CanvasRenderingContext2D, X: number, Y: number, S: number, q: number, at: number) => {
+    const burst = seg(q, at, at + 0.12);
+    if (burst > 0 && burst < 1)
+      for (let i = 0; i < 8; i++) {
+        const an = (i / 8) * TAU, d0 = S * 0.08 + burst * S * 0.1;
+        line(x, X + Math.cos(an) * d0, Y + Math.sin(an) * d0, X + Math.cos(an) * (d0 + S * 0.05), Y + Math.sin(an) * (d0 + S * 0.05), S * 0.012, '#ffd23f');
+      }
+    const pop = back(seg(q, at + 0.08, at + 0.2));
+    if (pop > 0.05)
+      for (let i = 0; i < 6; i++) {
+        const an = i * 1.05 - 1.6, d = S * 0.24 * pop;
+        star(x, X + Math.cos(an) * d, Y + Math.sin(an) * d, S * 0.03 * Math.min(1, pop), i % 2 ? '#ffd23f' : '#ffffff');
+      }
+  };
+  /** 在單位座標（已 scale(S,S)）裡寫字：先縮回再放大，避免小字號被瀏覽器夾到最小字級 */
+  const utxt = (x: CanvasRenderingContext2D, s: string, X: number, Y: number, px: number, c: string, w = 900) => {
+    x.save();
+    x.translate(X, Y);
+    x.scale(0.01, 0.01);
+    x.fillStyle = c;
+    x.font = `${w} ${px * 100}px system-ui,"Noto Sans TC",sans-serif`;
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.fillText(s, 0, 0);
+    x.restore();
+  };
+  const ell = (x: CanvasRenderingContext2D, X: number, Y: number, rx: number, ry: number, c: string) => {
+    x.beginPath();
+    x.ellipse(X, Y, Math.max(0, rx), Math.max(0, ry), 0, 0, TAU);
+    x.fillStyle = c;
+    x.fill();
+  };
+  const hi = (x: CanvasRenderingContext2D, X: number, Y: number, h: number, w = 0.03) => {
+    x.fillStyle = 'rgba(255,255,255,.35)';
+    x.fillRect(X, Y, w, h);
+  };
+  const arcLine = (x: CanvasRenderingContext2D, X: number, Y: number, r: number, a0: number, a1: number, w: number, c: string) => {
+    x.beginPath();
+    x.arc(X, Y, Math.max(0, r), a0, a1);
+    x.lineWidth = w;
+    x.strokeStyle = c;
+    x.lineCap = 'round';
+    x.stroke();
+  };
+  type Unit = (x: CanvasRenderingContext2D, q: number, after: number, c: string, c2: string) => number[] | void;
+  /** 單位座標舞台：原點在物件底部中央、往上為負、1 = S；body 回傳慶祝星星的位置（單位座標） */
+  const stage = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number, d1: string, d2: string, body: Unit, o: { at?: number; drop?: boolean; sway?: number } = {}) => {
+    const S = Math.min(W, H) * num(P.size, 0.62), cx = num(P.x, 0.5) * W, cy = num(P.y, 0.42) * H, base = cy + S * 0.4;
+    const q = t / loop, after = Math.max(0, t - loop * 0.18) * num(P.speed, 1);
+    const { off, sq } = o.drop === false ? { off: 0, sq: 0 } : dropIn(q, H);
+    x.save();
+    x.translate(cx, base + off);
+    x.rotate(Math.sin(after * 1.8) * (o.sway ?? 0.02) * Math.min(1, after));
+    x.scale(S * (1 + sq), S * (1 - sq));
+    const pt = body(x, q, after, String(P.color ?? d1), String(P.color2 ?? d2)) || [0, -0.8];
+    x.restore();
+    cheer(x, cx + pt[0] * S, base + off + pt[1] * S, S, q, o.at ?? 0.55);
+    return { cx, cy, r: S * 0.62 };
+  };
+  const O = '#ff5a36', YL = '#ffd23f', BL = '#2f6db5', LB = '#5bc0eb', GR = '#9bc53d', PK = '#f6a5c0', RD = '#d64541', WD = '#e8c48a', WH = '#ffffff', SV = '#c9d1d9';
+
+  /* ───────── 有趣道具 ───────── */
+  const fun = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
+    const mode = String(P.mode ?? 'microwave');
+    if (mode === 'claw')
+      // 抓娃娃機：爪子下降 → 夾住扭蛋 → 拉上來
+      return stage(x, W, H, P, t, loop, O, LB, (x, q, after, c) => {
+        fillRR(x, -0.3, -0.8, 0.6, 0.12, 0.04, c);
+        x.fillStyle = 'rgba(255,255,255,.4)';
+        x.fillRect(-0.3, -0.7, 0.6, 0.42);
+        const down = inout(seg(q, 0.22, 0.32)), grip = seg(q, 0.32, 0.36), up = inout(seg(q, 0.37, 0.5));
+        const cy0 = -0.56 + down * 0.12 - up * 0.12;
+        const balls: [number, number, string][] = [[-0.17, -0.33, YL], [-0.05, -0.34, PK], [0.08, -0.33, LB], [0.19, -0.34, GR], [-0.12, -0.42, BL]];
+        for (const [a, b, col] of balls) {
+          const j = after > 0 ? Math.sin(after * 3 + a * 20) * 0.004 : 0;
+          circle(x, a, b + j, 0.055, col);
+          x.fillStyle = 'rgba(255,255,255,.75)';
+          x.fillRect(a - 0.055, b + j - 0.006, 0.11, 0.012);
+        }
+        // 被夾的那顆
+        const gy = grip > 0 ? cy0 + 0.135 : -0.41;
+        circle(x, 0.05, gy, 0.055, '#ffffff');
+        x.fillStyle = shade(c, -0.1);
+        x.fillRect(0.05 - 0.055, gy - 0.006, 0.11, 0.012);
+        line(x, 0.05, -0.68, 0.05, cy0, 0.012, INK, 'butt');
+        fillRR(x, 0.01, cy0 - 0.01, 0.08, 0.03, 0.01, INK);
+        const k = 0.03 - grip * 0.02;
+        line(x, 0.03, cy0 + 0.02, 0.03 - k, cy0 + 0.07, 0.014, INK);
+        line(x, 0.07, cy0 + 0.02, 0.07 + k, cy0 + 0.07, 0.014, INK);
+        x.lineWidth = 0.02;
+        x.strokeStyle = shade(c, -0.3);
+        x.strokeRect(-0.3, -0.7, 0.6, 0.42);
+        fillRR(x, -0.3, -0.28, 0.6, 0.28, 0.04, c);
+        fillRR(x, -0.08, -0.13, 0.16, 0.1, 0.02, INK);
+        const jx = Math.sin(seg(q, 0.18, 0.3) * TAU * 2) * 0.012;
+        fillRR(x, 0.13 + jx, -0.24, 0.03, 0.07, 0.01, INK);
+        circle(x, 0.145 + jx, -0.25, 0.03, RD);
+        hi(x, -0.26, -0.24, 0.18, 0.025);
+        return [0.05, gy];
+      }, { at: 0.5 });
+    if (mode === 'plane')
+      // 紙飛機：從左邊滑翔進來，往上翻一下，之後上下飄
+      return stage(x, W, H, P, t, loop, WH, '#e9eef3', (x, q, after, c, c2) => {
+        const inX = -(1 - ease(seg(q, 0, 0.26))) * 1.4;
+        const loopA = inout(seg(q, 0.3, 0.48));
+        const bob = Math.sin(after * 2.2) * 0.025;
+        x.translate(inX, -0.42 - Math.sin(loopA * Math.PI) * 0.18 + bob);
+        const rot = -0.2 - Math.sin(loopA * Math.PI) * 0.35;
+        const fade = Math.max(0.15, 1 - seg(q, 0.3, 0.6));
+        for (let i = 0; i < 3; i++) fillRR(x, -0.62 + i * 0.06, 0.08 + i * 0.05, 0.16 - i * 0.03, 0.02, 0.01, `rgba(29,36,51,${0.25 * fade + 0.05})`);
+        x.rotate(rot);
+        poly(x, [[-0.38, 0.02], [0.4, -0.12], [-0.12, 0.1]], c);
+        poly(x, [[-0.12, 0.1], [0.4, -0.12], [-0.06, 0.2]], shade(c2, -0.12));
+        poly(x, [[-0.38, 0.02], [0.4, -0.12], [-0.22, -0.08]], shade(c2, 0.2));
+        return [0.4 + inX, -0.6];
+      }, { drop: false, at: 0.46, sway: 0.01 });
+    if (mode === 'popcorn')
+      // 爆米花：一顆顆從桶口跳出來堆高
+      return stage(x, W, H, P, t, loop, RD, YL, (x, q, after, c, c2) => {
+        const pts = [[-0.18, -0.6], [-0.06, -0.66], [0.07, -0.64], [0.18, -0.58], [-0.1, -0.56], [0.04, -0.55], [0.13, -0.72], [-0.02, -0.76]];
+        pts.forEach(([a, b], i) => {
+          const s0 = 0.22 + i * 0.035, p = seg(q, s0, s0 + 0.1);
+          if (p <= 0) return;
+          const hop = Math.sin(p * Math.PI) * 0.22, k = back(p);
+          const X = a * ease(p), Y = -0.56 + (b + 0.56) * ease(p) - hop;
+          circle(x, X, Y, 0.07 * k, '#fff3c4');
+          circle(x, X + 0.02 * k, Y - 0.02 * k, 0.03 * k, c2);
+        });
+        poly(x, [[-0.26, -0.56], [0.26, -0.56], [0.2, 0], [-0.2, 0]], WH);
+        for (let i = 0; i < 4; i++) {
+          const u = i / 4;
+          poly(x, [[-0.26 + u * 0.52, -0.56], [-0.26 + (u + 0.125) * 0.52, -0.56], [-0.2 + (u + 0.125) * 0.4, 0], [-0.2 + u * 0.4, 0]], c);
+        }
+        const pp = back(seg(q, 0.16, 0.26));
+        x.save();
+        x.translate(0, -0.29);
+        x.scale(pp, pp);
+        fillRR(x, -0.16, -0.07, 0.32, 0.14, 0.03, c2);
+        utxt(x, 'POP', 0, 0.002, 0.09, c);
+        x.restore();
+        return [0, -0.8];
+      }, { at: 0.56 });
+    if (mode === 'magnet')
+      // 磁鐵：左右擺，磁力弧線一圈圈發出，迴紋針被吸過來
+      return stage(x, W, H, P, t, loop, RD, '#e9eef3', (x, q, after, c, c2) => {
+        const pull = ease(seg(q, 0.3, 0.46));
+        const clips = [[0.42, -0.08, 0.6], [0.5, -0.3, -0.4], [0.3, 0.02, 1.2]];
+        clips.forEach(([X, Y, r], i) => {
+          const p = ease(seg(q, 0.3 + i * 0.04, 0.44 + i * 0.04));
+          const tx = 0.2 + i * 0.03, ty = -0.2 + i * 0.05;
+          x.save();
+          x.translate(X + (tx - X) * p, Y + (ty - Y) * p);
+          x.rotate(r * (1 - p) + 1.6 * p);
+          fillRR(x, -0.05, -0.016, 0.1, 0.032, 0.016, '#9aa3ad');
+          x.restore();
+        });
+        const sw = q < 0.3 ? Math.sin(seg(q, 0.18, 0.3) * TAU) * 0.15 : Math.sin(after * 2) * 0.04;
+        x.save();
+        x.translate(-0.05, -0.42);
+        x.rotate(0.5 + sw);
+        x.beginPath();
+        x.arc(0, 0, 0.24, Math.PI, TAU);
+        x.arc(0, 0, 0.1, TAU, Math.PI, true);
+        x.closePath();
+        x.fillStyle = c;
+        x.fill();
+        x.fillStyle = c;
+        x.fillRect(-0.24, -0.001, 0.14, 0.22);
+        x.fillRect(0.1, -0.001, 0.14, 0.22);
+        x.fillStyle = c2;
+        x.fillRect(-0.24, 0.22, 0.14, 0.09);
+        x.fillRect(0.1, 0.22, 0.14, 0.09);
+        hi(x, -0.2, -0.05, 0.25, 0.025);
+        x.restore();
+        if (pull > 0)
+          for (let i = 0; i < 3; i++) {
+            const ph = (after * 0.8 + i / 3) % 1;
+            x.globalAlpha = 1 - ph;
+            arcLine(x, 0.17, -0.18, 0.06 + ph * 0.18, -2.2, -0.6, 0.014, YL);
+            x.globalAlpha = 1;
+          }
+        return [0.25, -0.3];
+      }, { at: 0.5 });
+    if (mode === 'bulb')
+      // 電燈泡：閃兩下亮起，光芒伸縮
+      return stage(x, W, H, P, t, loop, YL, O, (x, q, after, c, c2) => {
+        const fl = seg(q, 0.24, 0.36);
+        const on = q >= 0.36 || (fl > 0 && Math.sin(fl * TAU * 2.5) > 0.2);
+        const col = on ? c : '#e9eef3';
+        circle(x, 0, -0.56, 0.24, col);
+        poly(x, [[-0.13, -0.4], [0.13, -0.4], [0.09, -0.24], [-0.09, -0.24]], col);
+        fillRR(x, -0.1, -0.24, 0.2, 0.05, 0.02, '#9aa3ad');
+        fillRR(x, -0.09, -0.18, 0.18, 0.05, 0.02, shade('#9aa3ad', -0.2));
+        fillRR(x, -0.05, -0.13, 0.1, 0.04, 0.02, INK);
+        circle(x, -0.09, -0.64, 0.05, on ? shade(c, 0.55) : WH);
+        if (!on) {
+          line(x, -0.06, -0.5, 0, -0.56, 0.012, '#9aa3ad');
+          line(x, 0, -0.56, 0.06, -0.5, 0.012, '#9aa3ad');
+        }
+        const ray = back(seg(q, 0.36, 0.48)) * (1 + Math.sin(after * 4) * 0.12 * seg(q, 0.48, 0.6));
+        if (ray > 0.02)
+          for (let i = 0; i < 7; i++) {
+            const a = -Math.PI + (i / 6) * Math.PI, r0 = 0.32, r1 = 0.32 + 0.08 * ray;
+            line(x, Math.cos(a) * r0, -0.56 + Math.sin(a) * r0, Math.cos(a) * r1, -0.56 + Math.sin(a) * r1, 0.018, c2);
+          }
+        return [0, -0.56];
+      }, { at: 0.42 });
+    // 微波爐：轉盤轉、倒數，「叮」一聲窗戶亮起
+    return stage(x, W, H, P, t, loop, '#e9eef3', O, (x, q, after, c, c2) => {
+      fillRR(x, -0.4, -0.5, 0.8, 0.5, 0.05, c);
+      const run = seg(q, 0.2, 0.5), done = q >= 0.5;
+      const ding = seg(q, 0.5, 0.56);
+      fillRR(x, -0.34, -0.44, 0.5, 0.38, 0.03, done && ding < 1 && Math.sin(ding * TAU * 2) > 0 ? shade(INK, 0.35) : INK);
+      ell(x, -0.09, -0.12, 0.17, 0.035, shade(INK, 0.25));
+      const sp = run > 0 && !done ? Math.sin(run * TAU * 2.5) : 0;
+      const w = 0.16 * (0.55 + 0.45 * Math.abs(Math.cos(run * TAU * 2.5)));
+      fillRR(x, -0.09 + sp * 0.06 - w / 2, -0.25, w, 0.12, 0.02, c2);
+      fillRR(x, 0.2, -0.44, 0.15, 0.1, 0.02, INK);
+      const secs = done ? 0 : Math.ceil((1 - run) * 5);
+      utxt(x, done ? '叮!' : `0:0${secs}`, 0.275, -0.39, 0.055, GR, 700);
+      for (let i = 0; i < 3; i++) circle(x, 0.275, -0.25 + i * 0.08, 0.025, shade(c, -0.25));
+      hi(x, -0.3, -0.4, 0.28, 0.025);
+      x.fillStyle = INK;
+      x.fillRect(-0.34, 0, 0.06, 0.025);
+      x.fillRect(0.28, 0, 0.06, 0.025);
+      return [0, -0.6];
+    }, { at: 0.5 });
+  };
+
+  /* ───────── 手搖飲：汽水罐 ───────── */
+  const soda = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) =>
+    stage(x, W, H, P, t, loop, LB, BL, (x, q, after, c, c2) => {
+      const shake = seg(q, 0.22, 0.38);
+      x.rotate(shake > 0 && shake < 1 ? Math.sin(shake * TAU * 3) * 0.14 : 0);
+      const open = q >= 0.4;
+      // 氣泡：打開後一路往上冒、到頂破掉
+      if (open)
+        for (let i = 0; i < 9; i++) {
+          const ph = ((t0(after, i)) % 1), burst = seg(q, 0.4, 0.46);
+          const X = Math.sin(i * 2.3 + ph * 4) * 0.07, Y = -0.66 - ph * (0.3 + burst * 0.2) - (i % 3) * 0.04;
+          circle(x, X, Y, (0.02 + (i % 3) * 0.012) * (1 - ph * 0.5), WH);
+        }
+      fillRR(x, -0.15, -0.6, 0.3, 0.6, 0.04, c);
+      fillRR(x, -0.13, -0.64, 0.26, 0.05, 0.02, SV);
+      fillRR(x, -0.13, -0.02, 0.26, 0.03, 0.01, SV);
+      // 拉環
+      x.save();
+      x.translate(0.02, -0.64);
+      x.rotate(open ? -back(seg(q, 0.4, 0.46)) * 0.9 : 0);
+      fillRR(x, -0.05, -0.02, 0.08, 0.025, 0.012, shade(SV, -0.25));
+      x.restore();
+      x.fillStyle = WH;
+      x.fillRect(-0.15, -0.42, 0.3, 0.16);
+      utxt(x, 'SODA', 0, -0.34, 0.08, c2);
+      hi(x, -0.11, -0.56, 0.48, 0.025);
+      return [0, -0.8];
+    }, { at: 0.42 });
+  const t0 = (after: number, i: number) => after * 0.7 + i * 0.37;
+
+  /* ───────── 台灣生活 ───────── */
+  const taiwan = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
+    const mode = String(P.mode ?? 'hongbao');
+    if (mode === 'ringtoss')
+      // 夜市套圈圈：圈圈從右下拋過來，套進中間那瓶
+      return stage(x, W, H, P, t, loop, YL, LB, (x, q, after, c, c2) => {
+        fillRR(x, -0.42, -0.06, 0.84, 0.06, 0.01, shade(WD, -0.2));
+        const cols = [GR, c2, O];
+        [-0.26, 0, 0.26].forEach((X, i) => {
+          const p = bounce(seg(q, 0.04 + i * 0.05, 0.2 + i * 0.05));
+          const y = -(1 - p) * 1.2;
+          fillRR(x, X - 0.06, -0.3 + y, 0.12, 0.24, 0.04, cols[i]);
+          fillRR(x, X - 0.025, -0.38 + y, 0.05, 0.09, 0.01, cols[i]);
+          hi(x, X - 0.04, -0.27 + y, 0.15, 0.015);
+        });
+        const f = seg(q, 0.26, 0.42);
+        if (f > 0) {
+          const land = f >= 1;
+          const X = land ? 0 : 0.6 * (1 - f);
+          const yy = land ? -0.52 + bounce(seg(q, 0.42, 0.5)) * 0.18 : 0.1 - Math.sin(f * Math.PI) * 0.75 - f * 0.62;
+          x.beginPath();
+          x.ellipse(X, yy, 0.11, land ? 0.035 : 0.035 + Math.abs(Math.sin(f * 7)) * 0.06, 0, 0, TAU);
+          x.lineWidth = 0.025;
+          x.strokeStyle = c;
+          x.stroke();
+        }
+        return [0, -0.5];
+      }, { at: 0.5 });
+    if (mode === 'card')
+      // 電子票證感應：卡片靠過去，螢幕變綠「嗶」，感應弧線
+      return stage(x, W, H, P, t, loop, LB, GR, (x, q, after, c, c2) => {
+        const tap = q >= 0.38;
+        fillRR(x, -0.18, -0.6, 0.36, 0.6, 0.05, INK);
+        fillRR(x, -0.12, -0.52, 0.24, 0.12, 0.02, tap ? c2 : shade(INK, 0.25));
+        if (tap) utxt(x, '嗶', 0, -0.46, 0.07, INK);
+        ell(x, 0, -0.22, 0.1, 0.1, shade(INK, 0.3));
+        const inn = ease(seg(q, 0.22, 0.36)), bump = tap ? Math.sin(seg(q, 0.36, 0.42) * Math.PI) * 0.02 : 0;
+        x.save();
+        x.translate(0.06 + (1 - inn) * 0.7 - bump, -0.3 - (1 - inn) * 0.2);
+        x.rotate(-0.25 - (1 - inn) * 0.3);
+        fillRR(x, -0.17, -0.11, 0.34, 0.22, 0.03, c);
+        x.fillStyle = BL;
+        x.fillRect(-0.17, -0.06, 0.34, 0.04);
+        circle(x, 0.1, 0.05, 0.03, YL);
+        x.restore();
+        if (tap)
+          for (let i = 0; i < 2; i++) {
+            const g = back(seg(q, 0.38 + i * 0.04, 0.48 + i * 0.04));
+            if (g > 0) arcLine(x, 0.24, -0.42, (0.06 + i * 0.05) * g, -1.2, 0.2, 0.014, YL);
+          }
+        return [0, -0.5];
+      }, { at: 0.45 });
+    if (mode === 'scratch')
+      // 刮刮樂：硬幣來回刮，銀漆一條條刮掉露出 7
+      return stage(x, W, H, P, t, loop, O, YL, (x, q, after, c, c2) => {
+        fillRR(x, -0.26, -0.66, 0.52, 0.66, 0.03, c);
+        fillRR(x, -0.26, -0.66, 0.52, 0.12, 0.03, c2);
+        utxt(x, '刮刮樂', 0, -0.6, 0.065, RD);
+        fillRR(x, -0.2, -0.48, 0.4, 0.36, 0.02, WH);
+        utxt(x, '7', 0, -0.3, 0.2, RD);
+        const s = seg(q, 0.22, 0.5), rows = 5;
+        for (let r = 0; r < rows; r++) {
+          const done = seg(s, r / rows, (r + 1) / rows);
+          const w = 0.4 * (1 - done);
+          if (w > 0.001) {
+            x.fillStyle = SV;
+            x.fillRect(-0.2 + (r % 2 ? 0 : 0.4 - w), -0.48 + r * 0.072, w, 0.072);
+          }
+        }
+        if (s > 0 && s < 1) {
+          const r = Math.min(rows - 1, Math.floor(s * rows)), u = s * rows - r, X = r % 2 ? 0.2 - u * 0.4 : -0.2 + u * 0.4;
+          x.save();
+          x.translate(X, -0.44 + r * 0.072);
+          x.rotate(-0.5);
+          ell(x, 0, 0, 0.08, 0.08, YL);
+          ell(x, 0, 0, 0.055, 0.055, shade(YL, -0.15));
+          x.restore();
+        } else if (s >= 1) {
+          x.save();
+          x.translate(0.2, -0.08 - Math.sin(after * 2) * 0.01);
+          x.rotate(-0.5);
+          ell(x, 0, 0, 0.08, 0.08, YL);
+          ell(x, 0, 0, 0.055, 0.055, shade(YL, -0.15));
+          x.restore();
+        }
+        return [0, -0.3];
+      }, { at: 0.52 });
+    // 紅包：福字蹦出、封口翻開、抽出卡片
+    return stage(x, W, H, P, t, loop, RD, YL, (x, q, after, c, c2) => {
+      const open = inout(seg(q, 0.3, 0.42)), card = back(seg(q, 0.42, 0.56));
+      fillRR(x, -0.18, -0.68 - card * 0.16, 0.36, 0.42, 0.02, WH);
+      fillRR(x, -0.12, -0.63 - card * 0.16, 0.24, 0.035, 0.017, c);
+      fillRR(x, -0.23, -0.7, 0.46, 0.7, 0.03, c);
+      const fh = 0.2 * (1 - 2 * open);
+      poly(x, [[-0.23, -0.7], [0.23, -0.7], [0, -0.7 - fh]], open > 0.5 ? shade(c, 0.2) : shade(c, -0.18));
+      hi(x, -0.17, -0.43, 0.36, 0.025);
+      const pop = back(seg(q, 0.16, 0.28));
+      x.save();
+      x.translate(0, -0.3);
+      x.scale(pop, pop);
+      x.rotate(Math.PI / 4);
+      fillRR(x, -0.1, -0.1, 0.2, 0.2, 0.02, c2);
+      x.restore();
+      if (pop > 0.05) {
+        x.save();
+        x.translate(0, -0.3);
+        x.scale(pop, pop);
+        utxt(x, '福', 0, 0.005, 0.15, c);
+        x.restore();
+      }
+      return [0, -0.95];
+    }, { at: 0.55 });
+  };
+
+  /* ───────── 看屋物件 ───────── */
+  const estate = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
+    const mode = String(P.mode ?? 'calc');
+    if (mode === 'meter')
+      // 電表：轉盤轉、度數往上跳、閃電圖示蹦出
+      return stage(x, W, H, P, t, loop, SV, YL, (x, q, after, c, c2) => {
+        fillRR(x, -0.26, -0.78, 0.52, 0.72, 0.05, c);
+        circle(x, 0, -0.5, 0.2, WH);
+        fillRR(x, -0.14, -0.62, 0.28, 0.08, 0.01, INK);
+        const v = 1200 + Math.round(ease(seg(q, 0.2, 0.48)) * 84);
+        utxt(x, String(v).padStart(5, '0'), 0, -0.58, 0.055, WH, 700);
+        fillRR(x, -0.14, -0.45, 0.28, 0.04, 0.02, shade(c, -0.2));
+        const spin = q < 0.2 ? 0 : (q < 0.48 ? seg(q, 0.2, 0.48) * 6 : 6 + after * 0.3);
+        x.fillStyle = RD;
+        x.fillRect(-0.14 + ((spin % 1) * 0.22), -0.45, 0.06, 0.04);
+        fillRR(x, -0.18, -0.2, 0.36, 0.06, 0.02, INK);
+        x.fillStyle = INK;
+        x.fillRect(-0.06, -0.06, 0.12, 0.06);
+        hi(x, -0.22, -0.72, 0.5, 0.025);
+        const z = back(seg(q, 0.44, 0.54));
+        if (z > 0.02) {
+          x.save();
+          x.translate(0.34, -0.66);
+          x.scale(z, z);
+          circle(x, 0, 0, 0.06, c2);
+          poly(x, [[-0.01, -0.06], [0.03, -0.06], [-0.01, 0], [0.02, 0], [-0.03, 0.08], [-0.01, 0.01], [-0.03, 0.01]], INK);
+          x.restore();
+        }
+        return [0.34, -0.66];
+      }, { at: 0.5 });
+    if (mode === 'quake')
+      // 地震書櫃：左右大幅搖晃、一本書掉下來，之後慢慢停
+      return stage(x, W, H, P, t, loop, '#a0673d', O, (x, q, after, c, c2) => {
+        const sh = seg(q, 0.22, 0.5), amp = sh > 0 && sh < 1 ? Math.sin(sh * TAU * 5) * 0.1 * (1 - sh * 0.6) : 0;
+        const tilt = 0.06 * ease(seg(q, 0.45, 0.55));
+        x.save();
+        x.rotate(amp + tilt);
+        fillRR(x, -0.26, -0.8, 0.52, 0.8, 0.02, c);
+        const cs = [RD, BL, YL, GR, O, LB];
+        for (let r = 0; r < 3; r++) {
+          x.fillStyle = shade(c, -0.3);
+          x.fillRect(-0.22, -0.76 + r * 0.25, 0.44, 0.21);
+          for (let i = 0; i < 5; i++) {
+            if (r === 0 && i === 4 && q > 0.34) continue;
+            const j = amp * (i % 2 ? 0.1 : -0.1);
+            fillRR(x, -0.2 + i * 0.075 + j, -0.72 + r * 0.25 + (i % 2) * 0.03, 0.06, 0.17 - (i % 2) * 0.03, 0.005, cs[(i + r) % 6]);
+          }
+        }
+        hi(x, -0.24, -0.76, 0.7, 0.02);
+        x.restore();
+        const fall = seg(q, 0.34, 0.48);
+        if (fall > 0) {
+          const X = 0.1 + fall * 0.26, Y = -0.64 + bounce(fall) * 0.52;
+          x.save();
+          x.translate(X, Y);
+          x.rotate(fall * 0.9 + (fall >= 1 ? 0.67 : 0));
+          fillRR(x, -0.03, -0.09, 0.06, 0.18, 0.005, c2);
+          x.restore();
+        }
+        if (sh > 0 && sh < 1)
+          for (const s of [-1, 1]) for (let i = 0; i < 2; i++) line(x, s * (0.34 + i * 0.05), -0.7, s * (0.34 + i * 0.05), -0.55, 0.014, INK);
+        return [0, -0.9];
+      }, { at: 0.55, sway: 0 });
+    if (mode === 'boxes')
+      // 搬家紙箱：三箱依序掉下疊好，最上面封箱膠帶拉過去
+      return stage(x, W, H, P, t, loop, '#c98d55', RD, (x, q, after, c, c2) => {
+        const bx = (X: number, Yy: number, w: number, h: number, at: number, tape = 1) => {
+          const p = bounce(seg(q, at, at + 0.16));
+          if (seg(q, at, at + 0.16) <= 0) return;
+          const y = Yy - (1 - p) * 1.4;
+          fillRR(x, X - w / 2, y - h, w, h, 0.015, c);
+          x.fillStyle = shade(c, 0.15);
+          x.fillRect(X - w / 2, y - h, w, h * 0.16);
+          x.fillStyle = WD;
+          x.fillRect(X - 0.03, y - h, 0.06, h * 0.5 * tape);
+        };
+        bx(-0.16, 0, 0.36, 0.3, 0.02);
+        bx(0.2, 0, 0.32, 0.26, 0.12);
+        bx(0, -0.3, 0.34, 0.28, 0.24, ease(seg(q, 0.42, 0.52)));
+        if (q > 0.02) utxt(x, '易碎', -0.16, -0.1 - (1 - bounce(seg(q, 0.02, 0.18))) * 1.4, 0.06, c2);
+        return [0, -0.7];
+      }, { drop: false, at: 0.52 });
+    if (mode === 'board')
+      // 社區公告欄：公告一張張釘上去，圖釘彈一下
+      return stage(x, W, H, P, t, loop, '#a0673d', '#d9a86c', (x, q, after, c, c2) => {
+        fillRR(x, -0.36, -0.82, 0.72, 0.6, 0.03, c);
+        x.fillStyle = c2;
+        x.fillRect(-0.32, -0.78, 0.64, 0.52);
+        x.fillStyle = c;
+        x.fillRect(-0.3, -0.22, 0.04, 0.22);
+        x.fillRect(0.26, -0.22, 0.04, 0.22);
+        const notes: [number, number, number, string][] = [[-0.18, -0.62, -0.08, WH], [0.14, -0.66, 0.06, YL], [-0.02, -0.42, 0.04, PK]];
+        notes.forEach(([X, Yy, r, col], i) => {
+          const p = back(seg(q, 0.22 + i * 0.08, 0.32 + i * 0.08));
+          if (p <= 0.01) return;
+          const flap = Math.sin(after * 2.5 + i) * 0.015;
+          x.save();
+          x.translate(X, Yy);
+          x.rotate(r + flap);
+          x.scale(p, p);
+          fillRR(x, -0.11, -0.1, 0.22, 0.2, 0.01, col);
+          x.fillStyle = SV;
+          x.fillRect(-0.07, -0.05, 0.14, 0.02);
+          x.fillRect(-0.07, 0, 0.1, 0.02);
+          circle(x, 0, -0.08, 0.018 * (1 + Math.sin(seg(q, 0.3 + i * 0.08, 0.36 + i * 0.08) * Math.PI) * 0.6), RD);
+          x.restore();
+        });
+        utxt(x, '公告', 0, -0.88, 0.07, INK);
+        return [0, -0.55];
+      }, { at: 0.56 });
+    if (mode === 'aircon')
+      // 冷氣機：出風口打開，冷風一波波往下吹
+      return stage(x, W, H, P, t, loop, WH, LB, (x, q, after, c, c2) => {
+        const open = ease(seg(q, 0.22, 0.32));
+        fillRR(x, -0.38, -0.66, 0.76, 0.3, 0.08, c);
+        fillRR(x, -0.32, -0.44, 0.64, 0.02 + open * 0.03, 0.015, SV);
+        circle(x, 0.26, -0.58, 0.018, q > 0.22 ? GR : SV);
+        fillRR(x, -0.3, -0.62, 0.3, 0.025, 0.012, shade(c, -0.06));
+        if (open > 0.5)
+          for (let i = 0; i < 3; i++) {
+            const ph = (after * 0.9 + i * 0.13) % 1, k = seg(q, 0.3, 0.42);
+            const X = -0.2 + i * 0.2, y0 = -0.34 + ph * 0.1;
+            x.globalAlpha = Math.min(k, 1 - ph * 0.7);
+            x.beginPath();
+            x.moveTo(X, y0);
+            x.quadraticCurveTo(X - 0.04, y0 + 0.1, X, y0 + 0.2);
+            x.lineWidth = 0.02;
+            x.strokeStyle = c2;
+            x.lineCap = 'round';
+            x.stroke();
+            x.globalAlpha = 1;
+          }
+        const sp = back(seg(q, 0.36, 0.46));
+        if (sp > 0.02) {
+          star(x, -0.3, -0.18, 0.03 * sp, c2);
+          star(x, 0.3, -0.12, 0.025 * sp, c2);
+        }
+        return [0, -0.66];
+      }, { at: 0.48 });
+    // 房貸計算機：按鍵一顆顆按下，螢幕數字往上滾
+    return stage(x, W, H, P, t, loop, INK, O, (x, q, after, c, c2) => {
+      fillRR(x, -0.24, -0.8, 0.48, 0.8, 0.05, c);
+      fillRR(x, -0.19, -0.74, 0.38, 0.16, 0.02, '#c9e3a7');
+      const v = Math.round(ease(seg(q, 0.22, 0.5)) * 25800);
+      utxt(x, v.toLocaleString('en-US'), 0.02, -0.66, 0.075, INK, 800);
+      const presses = [[1, 0], [2, 2], [3, 1], [0, 3], [2, 1], [3, 3]];
+      for (let r = 0; r < 4; r++)
+        for (let k = 0; k < 4; k++) {
+          const idx = presses.findIndex(([a, b]) => a === r && b === k);
+          const pr = idx >= 0 ? seg(q, 0.22 + idx * 0.045, 0.25 + idx * 0.045) : 0;
+          const down = pr > 0 && pr < 1 ? 0.012 : 0;
+          const col = k === 3 ? c2 : r === 0 ? '#9aa3ad' : WH;
+          fillRR(x, -0.19 + k * 0.1, -0.52 + r * 0.12 + down, 0.08, 0.1, 0.02, down ? shade(col, -0.2) : col);
+        }
+      return [0, -0.8];
+    }, { at: 0.55 });
+  };
+
+  const MODS: Record<string, typeof site> = { site, keys, furniture, house, contract, skyline, weather, signal, plant, clock, party, coins, gacha, drink, fun, taiwan, estate };
   const has = (m: string) => Object.prototype.hasOwnProperty.call(MODS, m);
   const draw = (m: string, ctx: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
     ctx.save();
     // 「蓋起來」類的動作：速度越快越早完成、之後停住；持續循環的畫面（天氣、號誌、時鐘、四季）各自用 speed
-    const BUILD = ['site', 'furniture', 'house.build', 'contract.sign', 'skyline.grow', 'plant.grow', 'coins.stack', 'gacha', 'drink', 'keys.door'];
+    const BUILD = ['site', 'furniture', 'house.build', 'contract.sign', 'skyline.grow', 'plant.grow', 'coins.stack', 'gacha', 'drink', 'fun', 'taiwan', 'estate', 'keys.door'];
     const tt = BUILD.includes(m) || BUILD.includes(`${m}.${String(P.mode)}`) ? Math.min(loop, t * num(P.speed, 1)) : t;
     const o = MODS[m](ctx, W, H, P, tt, loop);
     ctx.restore();

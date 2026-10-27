@@ -1,32 +1,21 @@
-# HANDOFF：圖解批次 B6，特效 374–375（feat/effects-374-375）
+# HANDOFF：物件擴充 v2，特效 392–409（feat/objects-v2）
 
 ## 狀態
-- 已於 2026-10-27 squash merge（eacaa1d，PR #8）並部署；正式站 374–375 正常渲染、無 console 錯誤。**六批全部上線。**程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
-- B5（368–373＋spotlight-bar 修正）已於 2026-10-27 merge（545b802，PR #7）並上線驗證。
+- PR 待審，**未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- 分支從最新 origin/main（6849039，已撤掉 O1/O2）切出，帶上珍珠奶茶三個 commit。舊的 wip 草稿（烤吐司機、售屋吊牌）沒有帶過來。
 
 ## 內容
-- `src/effects/final-explain.ts`：updown-board（caption，374）、clause-mark（news，375），純 CSS。
-- `src/data.ts`、`src/uses.ts`：註冊（updown-board 歸 caption、clause-mark 歸 info）。
-- 條文框選的預設文件是自擬的「不動產買賣契約書（示意）」，畫面標「示意文件」；不是真實新聞或真實契約。
+- `src/render/prop.ts`：共用 `dropIn`／`cheer`／`stage`（單位座標舞台：原點在物件底部中央、1 = S）；新模組 `fun`、`taiwan`、`estate`，`drink` 加 `soda` 模式。
+- `src/propkit.ts`：三個新模組的 PROP_INFO／DEFAULTS／BG／PARAMS（工作室可切畫面、改主色輔色、大小、速度）。
+- `src/effects/object.ts`：392–409 註冊（新特效 added 2026-10-27）；`src/data.ts`、`src/types.ts`：三個新子分類。
 
 ## 怎麼測
-1. `npm ci && npm run build && npm run preview`，搜尋「漲跌」「條文」。
-2. 漲跌牌：每行「名稱 +24%」或「名稱 −8%」。條文框選：第 1 行標題，要框的行加「>」，「!」開頭寫註記。
-3. 截圖重產：`npx tsx out/effects-374-375/gen.ts && python3 out/effects-374-375/shoot.py`（out/ 不進 git）。
+1. `npm ci && npm run build && npm run preview`，物件分類下看「手搖飲／有趣道具／台灣生活／看屋物件」。
+2. 截圖：`/workspace/zikaji/objects-style/gen2.mts`＋`shoot2.mjs`（0.8s／2.7s／5.6s，9:16 與 16:9），輸出在 out/objects-v2/（不進 git）。
+3. `npm run check:visual`：393 招，有問題 0、畫面有變 0。
 
 ## 已知限制
-- 漲跌牌顏色固定為漲紅 #e63946／跌綠 #2a9d8f（台灣慣例），不跟配色走；最多 4 張；牌面是深色固定底。
-- 條文框選最多 10 行；目標行停點用固定行高估算，條文太長換三行以上時框和停點會偏一點；文件固定米白底。
-- 條文框選的註記固定在框的右上方；目標在第 1 行時會被標題擋到一點。
-
-## 圖解動畫 48 選：六批總結（2026-10-27）
-| 批次 | 分類 | 新增 | 合併到既有 | PR | 狀態 |
-|---|---|---|---|---|---|
-| B1 | estate | 6 | — | 已 merge | 已上線 |
-| B2 | card＋hook | 5 | 2（02、26） | 已 merge | 已上線 |
-| B3 | chier＋kinetic＋impact | 7 | — | 已 merge | 已上線 |
-| B4 | cstat＋cpie＋cbar＋cline | 4（364–367） | 3（23、35、38：圖表選項 @quad／@badge／@board） | #6（69b8e9a） | 已上線 |
-| B5 | diagram＋pmark＋pmulti＋punit | 6（368–373） | — | #7（545b802） | 已上線 |
-| B6 | caption＋news | 2（374–375） | — | #8（eacaa1d） | 已上線 |
-- 合計：48 選 → **新增 30、合併 5、跳過 13**（跳過的都是跟既有特效重疊）。
-- 新增特效全由 Grok Bot 自寫，未用 Codex／Claude Code／agy；照片／格局／文件類底圖都是自繪示意圖，無外部版權素材。
+- 16:9 下物件系統原本就不顯示下方文字、較高的物件（抓娃娃機、書櫃、紅包抽卡、珍奶吸管）上緣會被裁到一點，跟既有扭蛋機相同，未在這次處理。
+- 換畫面（mode）時主色輔色沿用目前值，跟既有模組一樣；建議從各特效預設進入。
+- 房貸計算機、電表的數字只做示意；電子票證感應不放任何真實品牌。
+- 骰子：3D 靜態稿在 zikaji/objects-style/statics/dice-3d-sheet.png，比照魔術方塊的透視投影＋依 z 排序；KC 確認後再做動畫與「1–6 顆」工作室選項。
