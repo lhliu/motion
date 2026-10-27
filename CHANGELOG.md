@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-27（feat/effects-346-351，PR 待審）
+## 2026-10-27（main c9ceffc，已上線；PR #3）
 ### 新增
 - 六個圖解型房產特效（Threads @ai_yunon_ai 48 招，批次 B1，分類 estate）：
   - 346 買房路線圖 `route-drive`：小車沿 S 形路線開，經過站點插旗點亮；直式改縱向路線。

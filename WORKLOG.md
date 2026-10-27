@@ -27,3 +27,6 @@
 - 新增 estate-explain.ts 六個特效，build 通過；Playwright 截圖 72 張於 out/effects-346-351/（不進 git）。
 - 修正：車子不動（offset-path 移到 .car）、總價標籤溢出（改成圖例）、開門鏡像（backface 隱藏、開到 -112°）、直式字級放大。
 - 已開 PR，未 merge、未部署。
+
+## 2026-10-27 20:56（UTC+8）B1 上線
+- PR #3 squash merge → c9ceffc；Cloudflare Pages success；正式站 ?fx= 6 個特效皆正常、無 console error，截圖 out/prod-346-351/。

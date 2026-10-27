@@ -1,7 +1,7 @@
 # HANDOFF：新特效 346–351（feat/effects-346-351）
 
 ## 狀態
-- PR 已開，待 KC 審核；**尚未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- 已於 2026-10-27 squash merge（c9ceffc，PR #3），Cloudflare Pages 部署成功，正式站 6 個特效 Playwright 驗證無 console error。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
 
 ## 內容
 - `src/effects/estate-explain.ts`：route-drive、party-links、yes-no-sign、price-split、good-bad-light、door-pick（no 346–351，cat estate，tone ink）。
