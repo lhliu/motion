@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-27（feat/effects-357-363，PR 待審）
+### 新增
+- 圖解批次 B3（chier＋kinetic＋impact），七個新特效：
+  - 357 流程輸送帶 `conveyor`（chier）：輸送帶把步驟箱一格格送到定位；9:16 改直向。
+  - 358 循環轉盤 `cycle-wheel`（chier）：分格轉盤轉兩圈停下，指針指著「>」標記的步驟。
+  - 359 V 形箭頭流程 `chevron-steps`（chier）：箭頭塊依序拼上，目前步驟升高變主色；9:16 改向下箭頭。
+  - 360 金字塔疊磚 `brick-pyramid`（chier）：磚層由下往上落下堆疊，最上層發光。
+  - 361 心智圖氣泡 `mind-bubbles`（chier）：中心主題長出氣泡節點，大小依分數、掛分數牌。
+  - 362 骨牌因果 `domino-cause`（kinetic）：原因骨牌連鎖倒下，最後彈出結果。
+  - 363 NG/OK 警示 `ng-ok-sign`（impact）：警示牌落下搖晃，NG 蓋紅 ✕、OK 蓋綠 ○。
+
 ## 2026-10-27（main b172102，已上線；PR #4）
 ### 新增
 - 圖解批次 B2（card＋hook），五個新特效：

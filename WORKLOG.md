@@ -38,3 +38,8 @@
 
 ## 2026-10-27 21:10（UTC+8）B2 上線
 - PR #4 squash merge → b172102；Cloudflare Pages success；正式站 5 個新特效＋versus／progress-bar 新舊輸入皆正常、無 console error，截圖 out/prod-352-356/。
+
+## 2026-10-27 21:16（UTC+8）圖解批次 B3（357–363）
+- 新增 flow-explain.ts 七個特效；build 通過；Playwright 截圖 84 張於 out/effects-357-363/。
+- 修正：轉盤文字定位、箭頭文字溢出、心智圖上方節點被裁／直式連線不見（inline style 順序）、骨牌標籤重疊、inline style 改用 .fx-<id> 選擇器。
+- 已開 PR，未 merge。
