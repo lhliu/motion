@@ -17,6 +17,7 @@ import { statExplain } from './effects/stat-explain';
 import { visualExplain } from './effects/visual-explain';
 import { finalExplain } from './effects/final-explain';
 import { funObjects } from './effects/fun-objects';
+import { twObjects } from './effects/tw-objects';
 import { funObjects2 } from './effects/fun-objects-2';
 import { cardExplain } from './effects/card-explain';
 import { estateExplain } from './effects/estate-explain';
@@ -138,7 +139,7 @@ export const ALL_EFFECTS: Fx[] = [
   ...visualExplain,
   ...finalExplain,
   ...funObjects,
-  ...funObjects2,
+  ...funObjects2, ...twObjects,
   ...retro,
   ...map,
   ...liquid,

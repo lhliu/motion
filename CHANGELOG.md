@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-27（feat/objects-o3，PR 待審）
+### 新增
+- 物件擴充批次 O3：台灣民情 392–401，純 CSS，house style：
+  - 392 紅包抽卡 `obj-tw-redenv`
+  - 393 統一發票對獎 `obj-tw-invoice`
+  - 394 便利商店自動門 `obj-tw-cvs`
+  - 395 手搖飲封膜 `obj-tw-boba`
+  - 396 機車待轉格 `obj-tw-scooter`
+  - 397 垃圾車來了 `obj-tw-garbage`
+  - 398 廟宇屋頂剪黏 `obj-tw-temple`
+  - 399 擲筊 `obj-tw-jiaobei`
+  - 400 燒金紙 `obj-tw-joss`
+  - 401 鹹酥雞炸鍋 `obj-tw-fried`
+
 ## 2026-10-27（main 92f634e，已上線；PR #10）
 ### 新增
 - 物件擴充批次 O2：有趣道具 7 個＋房屋看屋 1 個，純 CSS，house style：
