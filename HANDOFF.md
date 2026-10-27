@@ -1,7 +1,7 @@
 # HANDOFF：圖解批次 B3，特效 357–363（feat/effects-357-363）
 
 ## 狀態
-- PR 已開，待 KC 審核；**尚未 merge、未部署**。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
+- 已於 2026-10-27 squash merge（9e57541，PR #5），Cloudflare Pages 部署成功；正式站 7 個 ?fx= 頁面皆正常渲染、無 console 錯誤。程式碼由 Grok Bot 自行撰寫（未用 Codex／Claude Code／agy）。
 - B2（352–356＋變體）已於 2026-10-27 merge（b172102，PR #4）並上線驗證。
 
 ## 內容

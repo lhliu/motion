@@ -43,3 +43,6 @@
 - 新增 flow-explain.ts 七個特效；build 通過；Playwright 截圖 84 張於 out/effects-357-363/。
 - 修正：轉盤文字定位、箭頭文字溢出、心智圖上方節點被裁／直式連線不見（inline style 順序）、骨牌標籤重疊、inline style 改用 .fx-<id> 選擇器。
 - 已開 PR，未 merge。
+
+## 2026-10-27 21:50（UTC+8）
+- PR #5 squash merge 為 9e57541，Cloudflare Pages success；正式站驗證 357–363 全部渲染、無 console 錯誤（截圖 out/prod-357-363/）。

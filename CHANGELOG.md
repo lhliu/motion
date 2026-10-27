@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-27（feat/effects-357-363，PR 待審）
+## 2026-10-27（main 9e57541，已上線；PR #5）
 ### 新增
 - 圖解批次 B3（chier＋kinetic＋impact），七個新特效：
   - 357 流程輸送帶 `conveyor`（chier）：輸送帶把步驟箱一格格送到定位；9:16 改直向。
