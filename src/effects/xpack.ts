@@ -288,5 +288,12 @@ export const XPACKS: XPack[] = [
     ['wr-slide', '山坡土石', 'Landslide', '山坡上的石塊滾下，旁邊跳出警示牌', '綠色山坡上石塊依序滾落滑向山腳房子，黃色三角驚嘆號警示牌回彈出現。'],
     ['wr-heat', '高溫西曬', 'Heat Wave', '太陽脈動，溫度計一路升到 38°C', '黃色太陽帶光芒脈動旋轉，溫度計紅柱從 25 升到 38°C，地面熱浪扭動。'],
   ] },
+  { pack: 30, name: '復古懷舊', cat: 'retro', tags: ['復古', '懷舊', '老房'], motionEn: 'Retro nostalgia looks for old-home stories: VHS tape overlay, CRT TV switch-on, scrolling film strip with grain, 8-bit pixel house and spinning cassette tape.', rows: [
+    ['rr-vhs', 'VHS 錄影帶', 'VHS Tape', '紅藍錯位大字配 REC、日期與掃描線', '藍底上紅藍錯位的大字淡入並偶爾抖動，左上 REC 紅點閃爍，下方日期時碼跳動，掃描線與亮帶滑過。'],
+    ['rr-crt', '映像管電視', 'CRT TV', '木框老電視開機，畫面由一條線展開', '木框老電視裡，綠色畫面從中間一條細線展開成全螢幕，出現標題與副標，帶掃描線與暗角。'],
+    ['rr-film', '老底片', 'Film Strip', '底片孔洞捲動，泛黃畫面帶雜點閃爍', '深棕底片帶著孔洞持續捲動，中間泛黃畫面輕微閃爍並有雜點刮痕，標題與年代淡入。'],
+    ['rr-pixel', '像素遊戲', 'Pixel Game', '8-bit 像素房子一格格拼出，打字出現 START', '像素方塊一格格拼出紅屋頂房子，下方像素感文字逐字打出，接著閃爍 PRESS A，左上三顆紅心。'],
+    ['rr-cassette', '錄音卡帶', 'Cassette Tape', '卡帶回彈出現，兩邊捲軸轉動', '深藍卡帶回彈出現，標籤寫看屋 mixtape，兩個白色捲軸持續旋轉，下方紅色膠囊寫 A／B 面。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
