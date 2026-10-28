@@ -126,5 +126,13 @@ export const XPACKS: XPack[] = [
     ['rt-detour', '塞車改道', 'Traffic Detour', '綠色路線中段變紅閃爍，藍色虛線改道路線畫出', '綠色路線畫出後，中段變成閃爍紅色並彈出「塞車 +15 分」，接著藍色虛線替代路線畫出並標出省下的時間。'],
     ['rt-commute', '住家到公司', 'Commute Walker', '小人沿虛線從住家走到公司，上方通勤時間卡', '淡色道路上，小人沿橘色點狀虛線從住家走到公司，抵達後上方白色膠囊卡彈出單程通勤分鐘數。'],
   ] },
+  { pack: 12, name: '數據地圖', cat: 'mdata', tags: ['數據地圖', '行政區', '房價'], motionEn: 'Data maps on a Taipei 12-district tile map (no boundary data): choropleth fill, heat blobs, migration arrows, land-value bubbles, year scrubber and a focused district card. Values illustrative.', rows: [
+    ['md-choro', '行政區著色', 'District Choropleth', '12 區方塊彈出後依單價由淺到深著色', '台北 12 區方塊地圖逐塊回彈出現，接著依單價由低到高逐區塗上淺黃到深橘的顏色並顯示數字，最後出現色階圖例。'],
+    ['md-heat', '房價熱力', 'Price Heat', '深色方塊地圖上紅橙黃熱點暈開並微微呼吸', '深色方塊地圖上，每區依房價暈開大小不同的紅、橙、黃光暈，疊加後形成熱區並持續微微呼吸，區名最後淡入。'],
+    ['md-flow', '人口流入箭頭', 'Migration Arrows', '弧線箭頭從各區飛向熱門遷入區', '遷入熱區方塊用橘色標出，粗細不同的黃色弧線箭頭從各區依序飛向熱區，最後彈出一句結論。'],
+    ['md-bubble', '地價泡泡', 'Land Value Bubbles', '每區泡泡依地價大小彈出', '深色方塊地圖上，每區中央依地價大小彈出藍色或橘色泡泡，大泡泡內寫區名與數值，最後標出最貴的區。'],
+    ['md-time', '時間軸播放', 'Year Scrubber', '年份滑桿往右走，各區顏色與數字跟著變', '下方年份滑桿從 2016 播到 2026，上方大字年份跟著跳，各區方塊顏色與單價數字隨年份逐步加深、變大。'],
+    ['md-pick', '聚焦單一區', 'District Focus', '其他區變淡，目標區放大脈衝並拉出資訊卡', '其餘方塊淡出，目標區變橘色放大並持續發出脈衝圈，引線拉出白色資訊卡，單價、年增、成交筆數 count-up。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
