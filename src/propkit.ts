@@ -32,7 +32,7 @@ export const DCARD_CARDS: [string, string][] = [
   ['process', '流程'], ['timeline', '時間軸'], ['pyramid', '金字塔'], ['quadrant', '象限'], ['bars', '橫條比較'], ['venn', 'Venn 三圈'], ['compare', '對比表'],
   ['donut', '環圖'], ['checklist', '清單打勾'], ['bignum', '數字大字卡'], ['metro', '路線圖'], ['cycle', '循環圖'], ['funnel', '漏斗'], ['dumbbell', '啞鈴圖'],
 ];
-export const DCARD_STYLES: [string, string][] = [['classic', '米白經典'], ['navy', '夜藍財經'], ['sky', '天空清爽'], ['hongbao', '紅包喜氣']];
+export const DCARD_STYLES: [string, string][] = [['chart', '圖表一致'], ['classic', '米白經典'], ['navy', '夜藍財經'], ['sky', '天空清爽'], ['hongbao', '紅包喜氣']];
 
 const XY = { x: 0.5, y: 0.45, size: 0.95, speed: 1 };
 export const PROP_DEFAULTS: Record<PropModule, Record<string, number | string>> = {
@@ -53,7 +53,7 @@ export const PROP_DEFAULTS: Record<PropModule, Record<string, number | string>> 
   fun: { mode: 'microwave', dice: 2, color: '#e9eef3', color2: '#ff5a36', ...XY, y: 0.42 },
   taiwan: { mode: 'hongbao', color: '#d64541', color2: '#ffd23f', ...XY, y: 0.42 },
   estate: { mode: 'calc', color: '#1d2433', color2: '#ff5a36', ...XY, y: 0.42 },
-  dcard: { mode: 'process', style: 'classic', title: '', sub: '', items: '', values: '', speed: 1 },
+  dcard: { mode: 'process', style: 'chart', title: '', sub: '', items: '', values: '', speed: 1 },
 };
 
 export const PROP_BG: Record<PropModule, string> = {
