@@ -226,5 +226,15 @@ export const XPACKS: XPack[] = [
     ['tw-redenv', '紅包', 'Red Envelope', '紅包彈出，封口打開，鈔票往上抽出', '印著金色「福」字的紅包回彈出現，封口打開，裡面的鈔票往上抽出並顯示金額，周圍金星閃爍。'],
     ['tw-temple', '拜拜', 'Incense Altar', '神明桌上三炷香裊裊生煙，紅燭微光', '紅木神明桌上的金色香爐插著三炷香，白煙持續往上飄散，兩側紅燭發出微光。'],
   ] },
+  { pack: 22, name: '中年 vlog', cat: 'xvlog', tags: ['vlog', '生活', '手帳'], motionEn: 'Warm, journal-style vlog overlays for midlife creators: top-down coffee with steam and date, camcorder REC frame with timecode, handwritten to-do list ticking off, developing polaroid, step-count ring with a walker, scrolling film strip, location tag reveal and a weather/date card.', rows: [
+    ['vl-coffee', '咖啡日記', 'Morning Coffee', '俯視咖啡杯彈出，熱氣裊裊，日期字淡入', '俯視角度的白色咖啡杯回彈出現，杯面拉花，上方三縷白色熱氣持續飄動，下方淡入時間句與日期。'],
+    ['vl-rec', '錄影框 REC', 'REC Frame', '四角取景框、紅點閃爍、時間碼跑動', '畫面四角白色取景框線，左上紅點閃爍與 REC 字樣，右上時間碼持續跑動，右下電量、左下標題。'],
+    ['vl-todo', '今日待辦', 'To-do List', '橫線便條紙彈出，待辦逐項打勾劃掉', '貼著膠帶的橫線便條紙微斜回彈出現，四項待辦依序淡入，接著一項項打上紅勾並被劃線。'],
+    ['vl-polaroid', '拍立得顯影', 'Polaroid', '拍立得旋轉落下，照片由黑慢慢顯影', '白框拍立得從斜角轉正落下，相片區從黑色慢慢顯影成房子、樹與藍天，下緣手寫標題淡入。'],
+    ['vl-steps', '散步步數', 'Step Counter', '綠色步數環跑動，小人在下方走路', '綠色圓環依步數往前跑、中間步數 count-up，下方小人沿地線來回走路，最後淡入一句說明。'],
+    ['vl-film', '底片捲動', 'Film Strip', '彩色底片條持續捲動，下方慢生活字卡', '黑色底片條帶著齒孔持續捲動（直式上下、橫式左右），格子是柔和色塊，下方奶油色膠囊寫一句話。'],
+    ['vl-loc', '地點標籤', 'Location Tag', '圖釘彈出，地點與天氣字由左往右揭露', '左下角橘色圖釘回彈出現，旁邊地點名稱與天氣小字由左往右揭露，下方黃色底線拉出。'],
+    ['vl-weather', '天氣日期卡', 'Weather Card', '奶油色卡彈出，太陽慢轉、雲飄，溫度與日期', '奶油色圓角卡回彈出現，左側太陽慢慢旋轉、白雲輕飄，右側大字溫度與天氣，下方日期。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
