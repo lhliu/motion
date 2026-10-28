@@ -274,5 +274,11 @@ export const XPACKS: XPack[] = [
     ['cr-stat', '數據卡', 'Stat Card', '藍色卡大數字 count-up，下方歷年長條長出', '藍色卡片上方標題，中間黃色超大數字 count-up，下方五根歷年長條依序長高，最後一根黃色。'],
     ['cr-save', '收藏提醒卡', 'Save CTA', '書籤圖示彈出並填滿，提示先存起來，愛心飄', '奶油色卡片中間空心書籤回彈出現，接著填滿成黑色並彈一下，下方「先存起來」淡入，旁邊小愛心往上飄。'],
   ] },
+  { pack: 27, name: '立體地球', cat: 'xglobe', tags: ['地球', '3D', '國際'], motionEn: 'Canvas-drawn 3D globe (orthographic projection, rough dot-matrix landmasses for illustration only): spinning globe, zoom-in to a Taiwan pin, flight arcs from Taipei and city data spikes.', rows: [
+    ['gb-spin', '旋轉地球', 'Spinning Globe', '藍色地球回彈出現，經緯線與綠色點陣陸地持續自轉', '帶光暈的藍色漸層地球回彈出現，經緯線與綠色點陣陸地持續由西向東自轉，標題淡入。'],
+    ['gb-zoom', '拉近到台灣', 'Zoom to Taiwan', '地球轉到亞洲後一路放大，台灣插上紅色圖釘', '地球轉向東亞並一路放大到台灣附近，紅色圖釘回彈插下，下方白色膠囊寫「台灣」。'],
+    ['gb-arc', '航線弧線', 'Flight Arcs', '從台北拉出三條弧線飛到東京、新加坡、舊金山', '地球上台北紅點脈動，三條彩色弧線依序從台北往東京、新加坡、舊金山方向拱起延伸，線頭白點跟著走。'],
+    ['gb-spike', '城市數據柱', 'City Spikes', '地球慢轉，亞洲城市長出高低不同的數據柱', '地球慢慢轉動，台北、東京、香港等城市位置長出長短不同的黃色數據柱（台北為紅色），柱頂寫城市名。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
