@@ -5,7 +5,7 @@
 
 ## 內容
 - `src/render/dcard.ts`：自包含渲染器（序列化進 OBJ_GLOBALS 成 `MA_DCARD`），14 張卡 + 道具 + 4 風格。
-- `src/render/prop.ts` 新增 `dcard` MOD；`src/propkit.ts` 參數（mode/style/title/sub/items/values/speed）；`src/effects/object.ts` 註冊 411–424（`obj-dcard-<key>`）；`src/data.ts` 子分類 dcard。
+- `src/render/prop.ts` 新增 `dcard` MOD；`src/propkit.ts` 參數（mode/style/title/sub/items/values/speed）；`src/effects/object.ts` 註冊 411–424（`obj-dcard-<key>`）；`src/data.ts` 子分類 dcard（2026-10-28 改 `sec: 'chart'`，顯示在圖表工作區；id 仍為 `obj-dcard-*`，繪製仍走物件引擎，所屬工作區只由 CATEGORIES 的 sec 決定）。
 - 版面：W/H ≤ 0.75 用直式（1080×1920 基準等比縮放），否則橫式：左側標題、右側圖等比縮放。
 - 時間：建構約 0–3.4 秒，之後 idle（k）。
 
