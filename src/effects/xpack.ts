@@ -134,5 +134,13 @@ export const XPACKS: XPack[] = [
     ['md-time', '時間軸播放', 'Year Scrubber', '年份滑桿往右走，各區顏色與數字跟著變', '下方年份滑桿從 2016 播到 2026，上方大字年份跟著跳，各區方塊顏色與單價數字隨年份逐步加深、變大。'],
     ['md-pick', '聚焦單一區', 'District Focus', '其他區變淡，目標區放大脈衝並拉出資訊卡', '其餘方塊淡出，目標區變橘色放大並持續發出脈衝圈，引線拉出白色資訊卡，單價、年增、成交筆數 count-up。'],
   ] },
+  { pack: 13, name: '地圖元件', cat: 'mkit', tags: ['地圖', '元件', '圖釘'], motionEn: 'Map components over an illustrated street base: bouncing pin drops, scale bar, wobbling north arrow, legend card, landmark icons and a distance ruler.', rows: [
+    ['mk-pin', '圖釘掉落', 'Pin Drop', '三根圖釘從上方掉下彈跳落地，落點漣漪', '三根不同色圖釘依序從畫面上方掉落、彈跳著地，地面影子由小變大，落點擴散漣漪，標籤淡入。'],
+    ['mk-scale', '比例尺', 'Scale Bar', '黑白相間比例尺一段段長出，刻度數字出現', '白底卡片上的黑白比例尺一段一段往右長出，刻度數字跟著出現，最後下方彈出步行時間膠囊。'],
+    ['mk-north', '指北針', 'North Arrow', '指北針彈出，指針晃動後穩定指北', '右上角白色指北針回彈出現，紅色北針先左右晃動、慢慢穩定朝上，上方標 N。'],
+    ['mk-legend', '圖例', 'Legend Card', '白色圖例卡展開，圖示與名稱逐項彈出', '白色圖例卡由上往下展開，捷運站、學校、公園、本案的圓形圖示依序回彈出現並淡入名稱。'],
+    ['mk-icons', '地標圖示冒出來', 'Landmark Icons', '地圖上捷運、學校、公園、醫院、市場標籤依序冒出並輕跳', '彩色圓角地標標籤（帶小尖角）依序在地圖上回彈冒出，下方名稱膠囊淡入，之後輪流輕輕跳動。'],
+    ['mk-ruler', '距離標尺', 'Distance Ruler', '黃色量尺從家拉到捷運站，距離 count-up', '家與捷運站兩個圓標彈出，黃色刻度量尺沿兩點連線拉出，中間距離數字 count-up，最後彈出步行時間。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
