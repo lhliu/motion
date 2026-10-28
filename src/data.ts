@@ -110,7 +110,7 @@ export const CATEGORIES: Category[] = [
   { id: 'cpie', sec: 'chart', code: 'PIE', zh: '圓形比例', tagline: '圓餅、環圈、儀表、進度環、象形圖' },
   { id: 'chier', sec: 'chart', code: 'TREE', zh: '階層流程', tagline: '樹狀、旭日、漏斗' },
   { id: 'cstat', sec: 'chart', code: 'STAT', zh: '統計散佈', tagline: '盒鬚、散佈、泡泡、雷達' },
-  { id: 'dcard', sec: 'chart', code: 'INFO', zh: '圖解字卡', tagline: '流程、時間軸、金字塔、環圖等 14 種圖解，四種風格' },
+  { id: 'dcard', sec: 'chart', code: 'INFO', zh: '圖解字卡', tagline: '流程、時間軸、金字塔、環圖等 14 種圖解，預設跟圖表同風格' },
   { id: 'punit', sec: 'plan', code: 'UNIT', zh: '戶型導覽', tagline: '逐間高亮、看屋動線、單房聚焦、比較、立體' },
   { id: 'pfloor', sec: 'plan', code: 'FLOOR', zh: '整層與公設', tagline: '戶別定位、公設導覽' },
   { id: 'diagram', sec: 'explain', code: 'DIAGRAM', zh: '工法剖面', tagline: '建材、管線、結構，一張剖面講清楚' },

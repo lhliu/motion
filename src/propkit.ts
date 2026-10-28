@@ -23,7 +23,7 @@ export const PROP_INFO: Record<PropModule, { zh: string; en: string; desc: strin
   fun: { zh: '有趣道具', en: 'Fun Gadgets', desc: '微波爐、抓娃娃機、紙飛機、爆米花、磁鐵、電燈泡、骰子等生活小道具' },
   taiwan: { zh: '台灣生活', en: 'Taiwan Life', desc: '紅包、夜市套圈圈、電子票證感應、刮刮樂等台灣日常' },
   estate: { zh: '看屋物件', en: 'Home Viewing', desc: '房貸計算機、電表、地震書櫃、搬家紙箱、社區公告欄、冷氣機' },
-  dcard: { zh: '圖解字卡', en: 'Diagram Cards', desc: '流程、時間軸、金字塔、象限、長條、Venn、對比表、環圖、清單、大字卡、路線、循環、漏斗、啞鈴 14 種圖解，播一次建構動畫；四種風格' },
+  dcard: { zh: '圖解字卡', en: 'Diagram Cards', desc: '流程、時間軸、金字塔、象限、長條、Venn、對比表、環圖、清單、大字卡、路線、循環、漏斗、啞鈴 14 種圖解，播一次建構動畫；預設跟圖表字卡同風格（網站色調、平塗、標題靠左），另有四種立體風格' },
 };
 export const PROP_MODULES = Object.keys(PROP_INFO) as PropModule[];
 

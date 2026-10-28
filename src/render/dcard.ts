@@ -69,7 +69,8 @@ export const dcardRenderer = () => {
     hongbao: { bg: '#c93a37', acc: ['#ffd23f', '#7a1f1f', '#fff3e2', '#f6a5c0', '#ffb36b', '#2f8f5b', '#8c1c1c', '#f2b705'], band: '#ffd23f' },
   };
   const CLASSIC = ['#ff5a36', '#2f6db5', '#ffd23f', '#f6a5c0', '#5bc0eb', '#3aa04a', '#d64541', '#f2b705'];
-  // 圖表一致（chart）：跟「圖表」分類同一套——網站色調的底色、字色、主色與輔色，平塗無厚度、無高光，標題靠左
+  // 圖表一致（chart）：跟「圖表」分類同一套——網站色調的底色、字色、主色與輔色，平塗無厚度、無高光，標題靠左；
+  // 純裝飾（金幣堆、閃光、雲、底部房子、列車、背景大樓）不畫，有圖解意義的圖示（流程站點、表頭、中心標記、大頭針）保留
   let FLAT = false;
   /** 厚度底層的暗色；平面風格不畫 */
   const dep = (c: string, k: number) => (FLAT ? 'rgba(0,0,0,0)' : shade(c, k));
@@ -143,9 +144,9 @@ export const dcardRenderer = () => {
       fade(x, seg(t, at + 0.2, 0.3), () => { TF(x, it(i, n0), X0, Y + 168, 58, TB, 420); TF(x, va(i, s0), X0, Y + 222, 34, TS, 420, 'center', 700); });
     });
     const hy = drop(t, 2.6, 0.7, 500);
-    if (t > 2.6) house(x, 520, 1740 + hy, 200, CREAM, RED);
+    if (!FLAT) { if (t > 2.6) house(x, 520, 1740 + hy, 200, CREAM, RED); }
     const s = back(seg(t, 3.1, 0.4));
-    star(x, 640, 1500, 40 * s * twinkle(k, 0), YEL); star(x, 1000, 1480, 30 * s * twinkle(k, 2), WHITE); star(x, 960, 1590, 22 * s * twinkle(k, 4), YEL);
+    if (!FLAT) { star(x, 640, 1500, 40 * s * twinkle(k, 0), YEL); star(x, 1000, 1480, 30 * s * twinkle(k, 2), WHITE); star(x, 960, 1590, 22 * s * twinkle(k, 4), YEL); }
   } };
 
   // 2 預售屋時間軸：軸線生長，大樓逐期長高，付款標籤彈出，起重機吊鉤輕擺
@@ -153,7 +154,7 @@ export const dcardRenderer = () => {
     const L = 140, R = 940, ly = 1420;
     const ev: [string, string, string, number][] = [['2026', '簽約', '10%', 0.06], ['2027', '開工', '5%', 0.3], ['2028', '結構', '5%', 0.62], ['2029', '完工', '80% 貸款', 1]];
     const dx = Math.sin(k * 0.4) * 30;
-    fade(x, seg(t, 0.3, 0.5), () => { cloud(x, 220 + dx, 520, 90, WHITE); cloud(x, 820 - dx, 470, 70, 'rgba(255,255,255,.8)'); });
+    if (!FLAT) { fade(x, seg(t, 0.3, 0.5), () => { cloud(x, 220 + dx, 520, 90, WHITE); cloud(x, 820 - dx, 470, 70, 'rgba(255,255,255,.8)'); }); }
     const ax = ease(seg(t, 0.4, 1.0)), aw = (R - L + 80) * ax;
     fillRR(x, L - 40, ly + 14, aw, 30, 15, shade(INK, 0.2)); fillRR(x, L - 40, ly, aw, 30, 15, INK);
     // 起重機（在大樓後面先立起）
@@ -168,7 +169,7 @@ export const dcardRenderer = () => {
       if (p < 1 && g >= 1) for (let q = 0; q <= 3; q++) { x.fillStyle = YEL; x.fillRect(X0 - bw / 2 + (bw - 10) * q / 3, ly - bh - 60, 10, 60); }
       tower(x, X0 - bw / 2, ly, bw, bh, p < 1 ? '#d9d2c3' : CREAM);
       if (p < 1 && p > 0.1 && g >= 1) { x.fillStyle = YEL; x.fillRect(X0 - bw / 2 - 6, ly - bh - 64, bw + 12, 18); }
-      if (i === 3) { const s = back(seg(t, at + 0.7, 0.4)); star(x, X0 + 40, ly - bh - 70, 34 * s * twinkle(k, 1), YEL); star(x, X0 - 60, ly - bh - 30, 22 * s * twinkle(k, 3), RED); }
+      if (!FLAT) { if (i === 3) { const s = back(seg(t, at + 0.7, 0.4)); star(x, X0 + 40, ly - bh - 70, 34 * s * twinkle(k, 1), YEL); star(x, X0 - 60, ly - bh - 30, 22 * s * twinkle(k, 3), RED); } }
       pop(x, X0, ly + 15, back(seg(t, at - 0.2, 0.35)), () => { circle(x, X0, ly + 15, 34, dep(RED, -0.25)); circle(x, X0, ly + 12, 30, RED); });
       fade(x, seg(t, at, 0.3), () => { T(x, yr, X0, ly + 90, 46, TB); TF(x, it(i, n0), X0, ly + 150, 52, TB, 230); });
       const pay = va(i, pay0), c = i === 3 ? RED : WHITE, w = tw(x, pay, 36);
@@ -181,7 +182,7 @@ export const dcardRenderer = () => {
     const lv: [string, string, string][] = [['品牌溢價', '8 萬', PINK], ['公設 / 管理', '10 萬', SKY], ['建材營造', '17 萬', YEL], ['土地成本', '25 萬', RED]];
     const top = 520, bot = 1620, cx = W0 / 2, hw = 430, n = lv.length, gap = 18, lh = (bot - top - gap * (n - 1)) / n;
     const cs = ease(seg(t, 0.5, 2.2));
-    coinStack(x, 150, 1580, 60, Math.round(6 * cs)); coinStack(x, 930, 1580, 60, Math.round(4 * cs));
+    if (!FLAT) { coinStack(x, 150, 1580, 60, Math.round(6 * cs)); coinStack(x, 930, 1580, 60, Math.round(4 * cs)); }
     for (let i = n - 1; i >= 0; i--) {
       const [nm0, v0, c] = lv[i], at = 0.45 + (n - 1 - i) * 0.4, dy = drop(t, at, 0.6, 260);
       if (t < at) continue;
@@ -196,7 +197,7 @@ export const dcardRenderer = () => {
       else { T(x, v, cx, yy + 60, 46, tc); T(x, nm, cx + 70, top - 10, 36, TB, 'left', 700); line(x, cx + 10, top + 30, cx + 60, top - 10, 5, TB); }
       x.restore();
     }
-    if (t > 2.3) house(x, 930, 1440 + drop(t, 2.3, 0.6, 400) + Math.sin(k * 2) * 0, 120);
+    if (!FLAT) { if (t > 2.3) house(x, 930, 1440 + drop(t, 2.3, 0.6, 400) + Math.sin(k * 2) * 0, 120); }
   } };
 
   // 4 象限：十字軸描線 → 四格淡入 → 大頭針逐一落下 → 最佳區塊閃星
@@ -204,7 +205,7 @@ export const dcardRenderer = () => {
     const L = 120, R = 960, Tp = 480, B = 1560, mx = (L + R) / 2, my = (Tp + B) / 2;
     const q: [number, number, string, string][] = [[L, Tp, '貴又近', ''], [mx, Tp, '貴又遠', ''], [L, my, '便宜又近', GRN], [mx, my, '便宜但遠', '']];
     q.forEach(([X0, Y, n, best], i) => fade(x, seg(t, 0.9 + i * 0.15, 0.4), () => { const c = best || (i ? SURF : shade(SURF, 0.08)); fillRR(x, X0 + 8, Y + 8, (R - L) / 2 - 16, (B - Tp) / 2 - 16, 24, c); T(x, n, X0 + (R - L) / 4, Y + (B - Tp) / 2 - 62, 42, best ? on(best) : alpha(on(SURF), 0.6), 'center', 900); }));
-    const s = back(seg(t, 2.9, 0.4)); star(x, L + 380, my + 60, 30 * s * twinkle(k, 0), YEL);
+    if (!FLAT) { const s = back(seg(t, 2.9, 0.4)); star(x, L + 380, my + 60, 30 * s * twinkle(k, 0), YEL); }
     const ax = ease(seg(t, 0.4, 0.6)), axW = on(BG);
     fillRR(x, mx - 7, my - (B - Tp + 40) / 2 * ax, 14, (B - Tp + 40) * ax, 7, axW); fillRR(x, mx - (R - L + 40) / 2 * ax, my - 7, (R - L + 40) * ax, 14, 7, axW);
     fade(x, seg(t, 0.9, 0.3), () => { poly(x, [[mx - 26, Tp - 20], [mx, Tp - 60], [mx + 26, Tp - 20]], axW); poly(x, [[R + 20, my - 26], [R + 60, my], [R + 20, my + 26]], axW);
@@ -229,11 +230,11 @@ export const dcardRenderer = () => {
       block(x, L, y, w, bh, 24, c, 14);
       x.fillStyle = shade(c, -0.15); for (let q = 1; q < v * g; q++) x.fillRect(L + (R - L) * q / max - 3, y + 20, 6, bh - 40);
       if (w > 200) T(x, `${(v * g).toFixed(1)} 萬`, L + w - 24, y + bh / 2 + 4, 54, on(c), 'right');
-      if (g > 0) { x.save(); x.translate(L + w + 54, y + bh / 2); x.rotate(g * TAU * 1.5 + Math.sin(k * 2 + i) * 0.1 * Math.min(1, k)); coin(x, 0, 0, 34); x.restore(); }
+      if (!FLAT) { if (g > 0) { x.save(); x.translate(L + w + 54, y + bh / 2); x.rotate(g * TAU * 1.5 + Math.sin(k * 2 + i) * 0.1 * Math.min(1, k)); coin(x, 0, 0, 34); x.restore(); } }
     });
     const g = ease(seg(t, 1.4, 1.6));
-    if (t > 0.4) house(x, 220, 1640 + drop(t, 0.4, 0.6, 300), 170);
-    coinStack(x, 470, 1640, 70, Math.round(5 * g)); coinStack(x, 640, 1640, 70, Math.round(7 * g)); coinStack(x, 810, 1640, 70, Math.round(9 * g));
+    if (!FLAT) { if (t > 0.4) house(x, 220, 1640 + drop(t, 0.4, 0.6, 300), 170); }
+    if (!FLAT) { coinStack(x, 470, 1640, 70, Math.round(5 * g)); coinStack(x, 640, 1640, 70, Math.round(7 * g)); coinStack(x, 810, 1640, 70, Math.round(9 * g)); }
   } };
 
   // 6 Venn：三圈放大滑入重疊 → 中心白區閃現 → 房子＋星星
@@ -246,7 +247,7 @@ export const dcardRenderer = () => {
     if (wc > 0) { x.save(); x.globalAlpha = wc; cs.forEach((q) => { x.beginPath(); x.arc(q.X, q.Y, Math.max(1, q.R), 0, TAU); x.clip(); }); x.fillStyle = WHITE; x.fillRect(0, 0, W0, 1920); x.restore(); }
     cs.forEach((q, i) => fade(x, seg(t, 0.7 + i * 0.3, 0.3), () => { const dx = (base[i][0]) * 0.9, dy = (base[i][1] - 40) * 0.9; T(x, it(i, q.n), cx + dx * 1.6, cy + dy * 1.6 + (i ? 60 : -10), 52, on(q.c)); }));
     pop(x, cx, cy + 90, back(seg(t, 1.9, 0.45)), () => { house(x, cx, cy + 90, 110, CREAM, RED); T(x, it(3, '夢幻物件'), cx, cy + 140, 34, INK, 'center', 900); });
-    star(x, cx + 80, cy - 40, 24 * back(seg(t, 2.2, 0.4)) * twinkle(k, 0), YEL);
+    if (!FLAT) { star(x, cx + 80, cy - 40, 24 * back(seg(t, 2.2, 0.4)) * twinkle(k, 0), YEL); }
     fade(x, seg(t, 2.1, 0.4), () => { T(x, it(4, '蛋黃老公寓'), cx - 250, cy - 20, 32, INK, 'center', 700); T(x, it(5, '新市鎮'), cx + 250, cy - 20, 32, INK, 'center', 700); T(x, it(6, '明星學區遠郊'), cx, cy + 360, 32, INK, 'center', 700); });
   } };
 
@@ -323,9 +324,9 @@ export const dcardRenderer = () => {
     pop(x, W0 / 2, 985, back(seg(t, 1.7, 0.4)), () => { fillRR(x, W0 / 2 - 110, 930, 220, 110, 30, YEL); T(x, it(1, '萬'), W0 / 2, 987, 80, on(YEL)); });
     const facts: [string, string][] = [[it(2, '＝ 年薪 100 萬'), it(3, '不吃不喝 23.8 年')], [it(4, '＝ 每坪 65 萬'), it(5, '約 36 坪')]];
     facts.forEach(([a, b], i) => { const p = ease(seg(t, 2.0 + i * 0.2, 0.5)); if (p <= 0) return; const y = 1140 + i * 170; x.save(); x.translate((1 - p) * 1100, 0); const sf = DARK ? shade(BG, 0.12) : SURF; fillRR(x, 130, y + 10, 820, 140, 30, shade(sf, -0.35)); fillRR(x, 130, y, 820, 140, 30, sf); TF(x, a, 180, y + 70, 50, WHITE, 430, 'left'); TF(x, b, 910, y + 70, 36, YEL, 300, 'right', 700); x.restore(); });
-    const g = ease(seg(t, 1.0, 1.6)); coinStack(x, 220, 1720, 64, Math.round(5 * g)); coinStack(x, 370, 1720, 64, Math.round(7 * g)); coinStack(x, 520, 1720, 64, Math.round(9 * g));
-    if (t > 2.3) house(x, 820, 1690 + drop(t, 2.3, 0.6, 500), 260, CREAM, RED);
-    star(x, 960, 1450, 34 * back(seg(t, 2.9, 0.4)) * twinkle(k, 0), YEL);
+    if (!FLAT) { const g = ease(seg(t, 1.0, 1.6)); coinStack(x, 220, 1720, 64, Math.round(5 * g)); coinStack(x, 370, 1720, 64, Math.round(7 * g)); coinStack(x, 520, 1720, 64, Math.round(9 * g)); }
+    if (!FLAT) { if (t > 2.3) house(x, 820, 1690 + drop(t, 2.3, 0.6, 500), 260, CREAM, RED); }
+    if (!FLAT) { star(x, 960, 1450, 34 * back(seg(t, 2.9, 0.4)) * twinkle(k, 0), YEL); }
   } };
 
   // 11 路線圖：各線描線 → 站點亮起 → 列車開進，分鐘標籤彈出
@@ -345,7 +346,7 @@ export const dcardRenderer = () => {
       pop(x, R - 335, y + 69, back(seg(t, at + 1.0, 0.35)), () => { fillRR(x, R - 420, y + 34, 170, 70, 35, c); T(x, cnt(`${va(i, m0)} 分`, seg(t, at + 0.9, 0.5)), R - 335, y + 69, 42, on(c)); });
     });
     const tp = ease(seg(t, 2.2, 1.2)), bob = Math.sin(k * 6) * 3 * Math.min(1, k);
-    if (t > 2.2) { train(x, -200 + 620 * tp, 1640 + bob, 120, BLUE); train(x, -200 + 900 * tp, 1640 - bob, 120, shade(BLUE, 0.1)); }
+    if (!FLAT) { if (t > 2.2) { train(x, -200 + 620 * tp, 1640 + bob, 120, BLUE); train(x, -200 + 900 * tp, 1640 - bob, 120, shade(BLUE, 0.1)); } }
   } };
 
   // 12 循環圖：四段弧依序掃出＋箭頭，完成後高光點繞行
@@ -373,8 +374,8 @@ export const dcardRenderer = () => {
   C.funnel = { bg: '#bfe3f7', title: '買得起多少的房？', sub: '從年收入一路推', top: 480, bot: 1760, draw: (x, { t, k, it, va }) => {
     const lv: [string, string, string][] = [['家庭年收入', '150 萬', BLUE], ['× 房價所得比 10', '1,500 萬', SKY], ['− 頭期款不足', '1,200 萬', YEL], ['− 裝潢 / 稅費', '1,080 萬', RED]];
     const top = 500, lh = 230, cx = W0 / 2;
-    for (let i = 0; i < 6; i++) { const at = 0.4 + i * 0.25; if (t > at) coin(x, 200 + (i % 2) * 60, 560 + i * 120 + drop(t, at, 0.6, 400), 34); }
-    for (let i = 0; i < 4; i++) { const at = 0.55 + i * 0.3; if (t > at) coin(x, 880 - (i % 2) * 50, 600 + i * 150 + drop(t, at, 0.6, 400), 30); }
+    if (!FLAT) { for (let i = 0; i < 6; i++) { const at = 0.4 + i * 0.25; if (t > at) coin(x, 200 + (i % 2) * 60, 560 + i * 120 + drop(t, at, 0.6, 400), 34); } }
+    if (!FLAT) { for (let i = 0; i < 4; i++) { const at = 0.55 + i * 0.3; if (t > at) coin(x, 880 - (i % 2) * 50, 600 + i * 150 + drop(t, at, 0.6, 400), 30); } }
     lv.forEach(([n, v, c], i) => {
       const at = 0.4 + i * 0.45; if (t < at) return;
       const y = top + i * (lh + 20) + drop(t, at, 0.6, 90), w0 = 440 - i * 80, w1 = 440 - (i + 1) * 80 + 20;
@@ -386,8 +387,8 @@ export const dcardRenderer = () => {
       x.restore();
     });
     const ey = top + 4 * (lh + 20) + 40;
-    if (t > 2.3) house(x, cx, ey + 200 + drop(t, 2.3, 0.7, 500), 200, CREAM, RED);
-    star(x, cx + 170, ey + 40, 30 * back(seg(t, 2.9, 0.4)) * twinkle(k, 0), YEL);
+    if (!FLAT) { if (t > 2.3) house(x, cx, ey + 200 + drop(t, 2.3, 0.7, 500), 200, CREAM, RED); }
+    if (!FLAT) { star(x, cx + 170, ey + 40, 30 * back(seg(t, 2.9, 0.4)) * twinkle(k, 0), YEL); }
   } };
 
   // 14 啞鈴：起點出現 → 連桿伸長 → 終點放大，+% 標籤彈出
@@ -405,7 +406,7 @@ export const dcardRenderer = () => {
       pop(x, sc(b) + 60, y, back(seg(t, at + 0.9, 0.35)), () => T(x, `+${Math.round((b / a - 1) * 100)}%`, sc(b) + 60, y, 34, YEL === '#fff3e2' ? '#fff3e2' : (DARK ? YEL : shade(YEL, -0.55)), 'left', 900));
     });
     const g = ease(seg(t, 0.4, 1.0)), tc = DARK ? shade(BG, 0.12) : SURF;
-    tower(x, 40, 1760, 90, 110 * g, tc); tower(x, 780, 1760, 110, 150 * g, tc); tower(x, 910, 1760, 80, 120 * g, tc);
+    if (!FLAT) { tower(x, 40, 1760, 90, 110 * g, tc); tower(x, 780, 1760, 110, 150 * g, tc); tower(x, 910, 1760, 80, 120 * g, tc); }
     const ly = top + d0.length * step + 10;
     fade(x, seg(t, 2.4, 0.4), () => { circle(x, 200, ly, 24, SKY); T(x, it(6, '2016'), 240, ly, 34, TB, 'left', 700); circle(x, 440, ly, 30, RED); T(x, it(7, '2026（萬/坪）'), 486, ly, 34, TB, 'left', 700); });
   } };
