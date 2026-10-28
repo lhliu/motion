@@ -1865,7 +1865,9 @@ export const propRenderer = () => {
     }, { at: 0.55 });
   };
 
-  const MODS: Record<string, typeof site> = { site, keys, furniture, house, contract, skyline, weather, signal, plant, clock, party, coins, gacha, drink, fun, taiwan, estate };
+  // 圖解字卡：繪製在 dcard.ts（另外序列化成 MA_DCARD）
+  const dcard = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => (globalThis as unknown as { MA_DCARD: { draw: (...a: unknown[]) => { cx: number; cy: number; r: number } } }).MA_DCARD.draw(x, W, H, P, t, loop);
+  const MODS: Record<string, typeof site> = { dcard, site, keys, furniture, house, contract, skyline, weather, signal, plant, clock, party, coins, gacha, drink, fun, taiwan, estate };
   const has = (m: string) => Object.prototype.hasOwnProperty.call(MODS, m);
   const draw = (m: string, ctx: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
     ctx.save();
