@@ -244,5 +244,15 @@ export const XPACKS: XPack[] = [
     ['pt-sparkle', '星光拖尾', 'Sparkle Trail', '一顆亮星沿 8 字軌跡飛，後面拖星光尾巴', '一顆白色亮星沿著 8 字形軌跡持續飛行，後方拖出由大到小的黃白星光尾巴，中間標題淡入。'],
     ['pt-keys', '交屋鑰匙', 'Key Handover', '金色鑰匙回彈出現搖晃，彩帶從鑰匙後方噴出', '金色鑰匙掛在吊環上回彈出現並左右輕晃，背後放射黃色短線並噴出彩帶，下方彈出「交屋啦」膠囊。'],
   ] },
+  { pack: 24, name: '手繪註記', cat: 'xsketch', tags: ['手繪', '圈重點', '註記'], motionEn: 'Hand-drawn annotations with doubled, slightly wobbly strokes over an example listing card: circle, curved arrow with note, double underline, doodle star, bracket with tag, cross-out with correction, sticky note with arrow and a sketchy box. Figures illustrative.', rows: [
+    ['sk-circle', '手繪圈起來', 'Circle It', '紅筆繞一圈多一點，把總價圈起來', '示意物件卡上，紅色手繪筆觸繞著總價畫一圈多一點的橢圓，筆觸帶雙線抖動感。'],
+    ['sk-arrow', '手繪箭頭', 'Scribble Arrow', '彎曲箭頭從旁邊指向重點，旁邊寫字', '紅色彎曲手繪線從右下方拉向重點文字，畫到底冒出箭頭，起點處手寫字淡入。'],
+    ['sk-under', '雙底線', 'Double Underline', '波浪底線畫兩次，強調那一行', '在一行文字下方先畫一條微波浪紅線，接著再畫第二條稍微錯開的底線。'],
+    ['sk-star', '手繪星星', 'Doodle Star', '金色一筆畫星星，再補三條閃亮短線', '文字旁用金色一筆畫出五角星，接著補三條往外的閃亮短線。'],
+    ['sk-bracket', '手繪括號', 'Bracket', '右側藍色大括號框住兩行，彈出標籤', '卡片右側藍色手繪大括號由上往下畫出框住兩行資訊，括號尖端旁淡入藍色標籤。'],
+    ['sk-cross', '打叉更正', 'Cross Out', '紅筆打叉劃掉，下面寫正確資訊', '紅色兩筆依序劃成大叉把一行資訊劃掉，下方手寫紅字更正。'],
+    ['sk-note', '便利貼加箭頭', 'Sticky Note', '黃色便利貼斜貼淡入，下方畫一條指示線', '照片上淡入一張斜貼的黃色便利貼寫著短評，下方黑色手繪線往下指。'],
+    ['sk-box', '手繪框', 'Sketchy Box', '綠筆描一個歪歪的框，框內淡淡上黃底', '綠色手繪筆觸沿重點文字描一個略歪的方框，畫完後框內淡淡鋪上黃色底色。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
