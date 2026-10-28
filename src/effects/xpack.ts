@@ -30,5 +30,17 @@ export const XPACKS: XPack[] = [
     ['ch-split', '章節左右分割', 'Split Chapter', '主色半邊推進來放大編號，另一邊章節名滑入', '主色色塊從左（直式從上）推進佔畫面約四成，大編號與 CHAPTER 在裡面；另一側章節名稱與副標滑入，斜切角跟著色塊。'],
     ['ch-recap', '上集回顧', 'Previously On', '米白卡片轉正落下，上集重點逐條出現', '米白相片卡從斜角轉正、回彈落下，膠帶貼在上緣；卡內插圖（大樓、房子）、「上集回顧」標籤、標題與三個重點逐條淡入。'],
   ] },
+  { pack: 3, name: '實價登錄與價格 UI', cat: 'xprice', tags: ['實價登錄', '房價', '數據'], motionEn: 'Price and transaction-record UI in the site palette: rows slide in, digits roll and count up, bars split and flip; all numbers are illustrative.', rows: [
+    ['pr-list', '實價登錄列表', 'Transaction List', '成交紀錄一筆筆滑入，數字跳動，最高價亮起', '表頭淡入後五筆成交紀錄依序由右滑入，總價與單價 count-up，最後最高那筆亮底並彈出「最高」標籤。地址只到路段、門牌打星號。'],
+    ['pr-unit', '單價滾輪', 'Rolling Unit Price', '單價每一位數字像滾輪一樣滾到定位', '每一位數字在深色格子裡依序往上滾好幾圈後停在定位，「萬/坪」淡入，下方彈出比去年漲幅膠囊。'],
+    ['pr-split', '總價拆解', 'Price Breakdown', '總價長條拆成土地、建物、車位三塊', '總價 count-up，長條由左依序長出土地、建物、車位三段並標百分比，下方標註與金額逐項淡入。'],
+    ['pr-flip', '價格翻牌', 'Split-flap Price', '機場翻牌一位一位從開價翻到成交價', '深色翻牌每一位上半片往下翻，從開價依序翻成成交價，「萬」淡入，最後彈出差額膠囊。'],
+    ['pr-change', '漲跌幅箭頭', 'Change Arrow', '紅色上箭頭彈出，漲幅 count-up，走勢線畫出', '圓形色塊中的箭頭回彈出現並上下輕晃，漲幅百分比 count-up，旁邊小走勢線一路畫到終點。台灣習慣：漲紅跌綠。'],
+    ['pr-bargain', '議價空間條', 'Bargain Range', '最低成交、合理出價、開價三個標記落在區間條上', '區間條長出，綠色行情區由最低成交延伸到開價，三個標記（開價、最低成交、合理出價）依序彈出並標金額，最後顯示議價空間百分比。'],
+    ['pr-askdeal', '開價 vs 成交', 'Asking vs Sold', '兩根柱子長高，括號標出差距百分比', '開價與成交兩根圓角柱依序由底長高並 count-up，黃色括號從開價頂端畫到成交頂端，最後彈出差距百分比。'],
+    ['pr-tag', '價格吊牌', 'Hanging Price Tag', '主色吊牌掉下來晃動，寫著特價與總價', '吊牌從上方掉下回彈、掛在木桿上像鐘擺晃動慢慢停下，牌上有房子圖示與總價，周圍放射短線與星星。'],
+    ['pr-formula', '總價算式', 'Price Formula', '坪數 × 單價 = 總價，三個色塊依序彈出', '坪數、乘號、單價、等號、總價依序回彈出現（直式上下、橫式左右排），總價 count-up 後冒出放射短線。'],
+    ['pr-rank', '單價排行', 'Unit Price Ranking', '五區單價橫條排行，前三名彈出獎牌', '五個行政區名稱淡入、橫條依序長出並 count-up，第一名用主色，前三名左側彈出金銀銅獎牌。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
