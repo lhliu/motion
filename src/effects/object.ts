@@ -1,5 +1,6 @@
 import type { Fx } from '../types';
 import { esc } from '../util';
+import { XPACKS } from './xpack';
 import { objSceneFromWords, objSceneForEffect, OBJECT_COSMOS_GROUPS, type OModule } from '../objkit';
 
 const CSS = `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
@@ -201,4 +202,12 @@ for (const [key, info] of Object.entries(OBJECT_COSMOS_GROUPS)) {
   fx.desc = info.desc;
   fx.hint = '按「編輯物件」開啟本招獨立編輯器，切換樣式與調整大小、速度、配色、文字及透明背景。';
   fx.motion += ' ' + info.desc;
+}
+
+/* 擴充包（2026-10-28，render/xp/）：編號 425 起依包順序；分到各自最適合的子分類 */
+{
+  let no = 425;
+  for (const pk of XPACKS) for (const [mode, zh, en, desc, motion] of pk.rows) {
+    objects.push({ ...prop('xpack', mode, no++, { layout: 'none' }, { zh, en, desc, tags: pk.tags, sample: [], motion: `${motion}全部硬邊平面色塊，不用陰影或模糊；文字可在物件工作室改，數字皆為示意。`, motionEn: pk.motionEn }), cat: pk.cat as Fx['cat'], added: '2026-10-28', ...(pk.ratio ? { preferredRatio: pk.ratio } : {}) });
+  }
 }

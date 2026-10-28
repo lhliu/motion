@@ -3,7 +3,7 @@
 // propRenderer 內部必須自給自足，匯出 HTML 時以 toString() 內嵌。
 import type { PField } from './photokit';
 
-export type PropModule = 'site' | 'keys' | 'furniture' | 'house' | 'contract' | 'skyline' | 'weather' | 'signal' | 'plant' | 'clock' | 'party' | 'coins' | 'gacha' | 'drink' | 'fun' | 'taiwan' | 'estate' | 'dcard';
+export type PropModule = 'site' | 'keys' | 'furniture' | 'house' | 'contract' | 'skyline' | 'weather' | 'signal' | 'plant' | 'clock' | 'party' | 'coins' | 'gacha' | 'drink' | 'fun' | 'taiwan' | 'estate' | 'dcard' | 'xpack';
 
 export const PROP_INFO: Record<PropModule, { zh: string; en: string; desc: string }> = {
   site: { zh: '建案工地', en: 'Construction Site', desc: '樓層一層層蓋高，起重機吊鋼樑或鷹架防塵網慢慢降下，地面有施工圍籬' },
@@ -23,6 +23,7 @@ export const PROP_INFO: Record<PropModule, { zh: string; en: string; desc: strin
   fun: { zh: '有趣道具', en: 'Fun Gadgets', desc: '微波爐、抓娃娃機、紙飛機、爆米花、磁鐵、電燈泡、骰子等生活小道具' },
   taiwan: { zh: '台灣生活', en: 'Taiwan Life', desc: '紅包、夜市套圈圈、電子票證感應、刮刮樂等台灣日常' },
   estate: { zh: '看屋物件', en: 'Home Viewing', desc: '房貸計算機、電表、地震書櫃、搬家紙箱、社區公告欄、冷氣機' },
+  xpack: { zh: '擴充包', en: 'Expansion Packs', desc: '2026-10 擴充：轉場、章節卡、實價登錄、捷運站牌、房貸、名條、看屋動線、前後對比、片尾、新聞、路線、數據地圖、驗屋、工法、工地、情緒貼圖、圖示等；每招自帶文字，可改標題與項目' },
   dcard: { zh: '圖解字卡', en: 'Diagram Cards', desc: '流程、時間軸、金字塔、象限、長條、Venn、對比表、環圖、清單、大字卡、路線、循環、漏斗、啞鈴 14 種圖解，播一次建構動畫；預設跟圖表字卡同風格（網站色調、平塗、標題靠左），另有四種立體風格' },
 };
 export const PROP_MODULES = Object.keys(PROP_INFO) as PropModule[];
@@ -53,6 +54,7 @@ export const PROP_DEFAULTS: Record<PropModule, Record<string, number | string>> 
   fun: { mode: 'microwave', dice: 2, color: '#e9eef3', color2: '#ff5a36', ...XY, y: 0.42 },
   taiwan: { mode: 'hongbao', color: '#d64541', color2: '#ffd23f', ...XY, y: 0.42 },
   estate: { mode: 'calc', color: '#1d2433', color2: '#ff5a36', ...XY, y: 0.42 },
+  xpack: { mode: 'tr-diag', title: '', sub: '', items: '', values: '', speed: 1 },
   dcard: { mode: 'process', style: 'chart', title: '', sub: '', items: '', values: '', speed: 1 },
 };
 
@@ -75,6 +77,7 @@ export const PROP_BG: Record<PropModule, string> = {
   taiwan: '#fff3e2',
   estate: '#fff3e2',
   dcard: '#f3efe6',
+  xpack: '#16181d',
 };
 
 const common = (zh = '主色', zh2 = '輔色'): PField[] => [
@@ -100,6 +103,15 @@ export const PROP_PARAMS: Record<PropModule, PField[]> = {
   fun: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['microwave', '微波爐'], ['claw', '抓娃娃機'], ['plane', '紙飛機'], ['popcorn', '爆米花'], ['magnet', '磁鐵'], ['bulb', '電燈泡'], ['dice', '骰子']] }, { k: 'dice', label: '骰子數', type: 'range', min: 1, max: 6, step: 1 }, ...common('本體', '強調色')],
   taiwan: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['hongbao', '紅包'], ['ringtoss', '夜市套圈圈'], ['card', '電子票證感應'], ['scratch', '刮刮樂']] }, ...common('本體', '強調色')],
   estate: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['calc', '房貸計算機'], ['meter', '電表'], ['quake', '地震書櫃'], ['boxes', '搬家紙箱'], ['board', '社區公告欄'], ['aircon', '冷氣機']] }, ...common('本體', '強調色')],
+  xpack: [
+    { k: 'title', label: '標題（空白＝預設）', type: 'text' },
+    { k: 'sub', label: '副標（空白＝預設）', type: 'text' },
+    { k: 'items', label: '文字項目（逗號分隔，依序替換）', type: 'text' },
+    { k: 'values', label: '數字（逗號分隔，依序替換；示意）', type: 'text' },
+    { k: 'color', label: '主色（空白＝網站主色）', type: 'color' },
+    { k: 'color2', label: '輔色（空白＝網站輔色）', type: 'color' },
+    { k: 'speed', label: '動畫速度', type: 'range', min: 0.3, max: 2.5, step: 0.05 },
+  ],
   dcard: [
     { k: 'mode', label: '圖解類型', type: 'seg', opts: DCARD_CARDS },
     { k: 'style', label: '風格', type: 'seg', opts: DCARD_STYLES },

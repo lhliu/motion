@@ -21,3 +21,11 @@
 ## 看屋物件分類修正（fix/dcard-to-chart）
 - 物件「看屋物件」的 CatId 改為 `oestate`（`src/types.ts`、`src/data.ts`）；404–409 在 `src/effects/object.ts` 以 `cat: 'oestate'` 覆寫，繪製模組仍為 `estate`、id 仍為 `obj-estate-*`。`src/main.ts` 物件工作室按鈕把 `oestate` 對應回 `estate` 模組。
 - 元件「房產資訊」維持 `estate`（15 招）。
+
+## 擴充包（feat/ma-expansion）
+- 253 招 425–677，程式在 src/render/xp/pNN.ts、清單 src/effects/xpack.ts。截圖 /workspace/zikaji/expansion/sheets/（INDEX.md）。
+- build 通過、check:visual 0 問題。PR 待審，未 merge、未部署。
+- 待 KC 決定：d58a466、588f723、a3f60a7 新增的「圖解字卡・圖表一致」風格（另一個 session 做的）；目前預設已改回 v1 米白經典。
+- 第 29 包（Lottie 匯入）跳過：需要 lottie-web 等重型依賴與檔案上傳流程，留待另案。
+- 已知限制：P15、P22 疊字與 P18 直式進度條標籤偏小；P17 樓板橫式偏扁；P21 紅包封口較粗略；P27 陸塊、P28 台灣輪廓與潛勢分區皆為示意，非官方圖資；nw-law 重點詞換行時螢光筆會失準；P31 屋主圖示頭頂略貼圓邊。
+- 一律為 Canvas 自繪動畫，數字皆為示意。

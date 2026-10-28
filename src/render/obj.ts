@@ -4,6 +4,7 @@ import { registerEngine } from '../engines';
 import { FONTS_GLOBALS } from '../fonts';
 import { propRenderer } from './prop';
 import { dcardRenderer } from './dcard';
+import { XPACK_GLOBALS } from './xp';
 import type { OScene } from '../objkit';
 
 /** 繪製引擎工廠 */
@@ -3075,5 +3076,5 @@ export const objRenderer = () => {
 export const { drawObj } = objRenderer();
 (globalThis as unknown as { MA_OBJ: unknown }).MA_OBJ = { drawObj };
 
-export const OBJ_GLOBALS = `${FONTS_GLOBALS}window.MA_DCARD=${fnSource(dcardRenderer)}();window.MA_PROP=${fnSource(propRenderer)}();window.MA_OBJ=${fnSource(objRenderer)}();`;
+export const OBJ_GLOBALS = `${FONTS_GLOBALS}window.MA_DCARD=${fnSource(dcardRenderer)}();${XPACK_GLOBALS}window.MA_PROP=${fnSource(propRenderer)}();window.MA_OBJ=${fnSource(objRenderer)}();`;
 registerEngine('obj', OBJ_GLOBALS);
