@@ -162,5 +162,15 @@ export const XPACKS: XPack[] = [
     ['ts-mile', '大事時間軸', 'Milestones', '時間軸拉出，年份節點依序彈出並寫事件', '灰色時間軸拉出（直式為垂直、橫式為水平），彩色節點依序回彈出現，旁邊寫年份與房市大事。'],
     ['ts-zoom', '放大最近一段', 'Zoom Callout', '走勢畫完後虛線框框住最後一段，彈出放大卡', '折線先畫完，黃色虛線框框住最後一段，接著彈出白色卡片寫近一年漲幅與紅色向上箭頭。'],
   ] },
+  { pack: 16, name: '驗屋工具', cat: 'xinspect', tags: ['驗屋', '工具', '檢查'], motionEn: 'Home-inspection tools in flat colour blocks: spirit level, thermal camera finding leaks, crack gauge, rebar scanner, water-pressure gauge, outlet tester, laser distance meter and an inspection checklist. Figures illustrative.', rows: [
+    ['hi-level', '水平儀', 'Spirit Level', '黃色水平儀在地板上晃動後停住，氣泡偏一邊', '木地板上放著黃色水平儀，先左右晃動、慢慢停下，綠色水管裡的氣泡停在偏一側，最後彈出傾斜角度膠囊。'],
+    ['hi-thermal', '熱像儀找滲水', 'Thermal Leak', '圓形熱像鏡頭掃過牆面，照到藍色冷區時跳出警示', '黑框圓形熱像鏡頭由左往右掃過米色牆面，鏡頭內呈現橘紅熱像，掃到藍綠色低溫區時上方彈出「可能滲水」標籤。'],
+    ['hi-crack', '裂縫寬度尺', 'Crack Gauge', '牆面裂縫畫出，裂縫尺滑入對位並圈出寬度', '米色牆面上裂縫由上往下畫出，白色裂縫寬度尺從右側滑入對準裂縫，紅圈圈出對應寬度，下方彈出提醒。'],
+    ['hi-rebar', '鋼筋掃描', 'Rebar Scanner', '黃色掃描器滑過牆面，經過處顯出紅色鋼筋', '黃色掃描器由左往右滑過牆面，經過的地方逐漸顯出紅色鋼筋位置，碰到鋼筋時螢幕顯示「偵測」，最後彈出間距。'],
+    ['hi-pressure', '水壓測試錶', 'Pressure Gauge', '壓力錶指針升到位後慢慢下滑，跳出漏水警示', '圓形壓力錶指針從 0 升到綠區，停留後慢慢往下掉，錶面數字跟著變化，最後彈出「管線可能漏水」紅色膠囊。'],
+    ['hi-outlet', '插座測試器', 'Outlet Tester', '測試器插上插座，三顆燈依序亮起，一顆紅燈', '黃色插座測試器從上方插進白色插座，三顆指示燈依序亮起（兩綠一紅），下方彈出「接地異常」。'],
+    ['hi-laser', '雷射測距', 'Laser Meter', '紅色測距儀射出雷射到對牆，數字跳到距離', '左牆邊的紅色雷射測距儀射出紅色光束延伸到右牆，光點閃爍，螢幕數字跟著跳，下方標出總距離。'],
+    ['hi-list', '驗屋清單', 'Checklist', '夾板清單彈出，項目依序打勾或打叉', '米色夾板清單回彈出現，五個檢查項目淡入，接著依序打上綠色勾或紅色叉。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
