@@ -1,3 +1,5 @@
+import { createCatalog, type CatalogDoc } from './catalog';
+import BAKED from './catalog.baked.json';
 import { illustratedCosmos } from './effects/cosmos';
 import { illustratedNature } from './effects/nature';
 import { illustratedVehicles } from './effects/transport';
@@ -36,7 +38,7 @@ import { ui } from './effects/ui';
 import { newsFx } from './effects/news';
 import { minimapFx } from './effects/minimap';
 import { parcelMapFx } from './effects/parcelmap';
-import { canonTags, USE_OF, USES } from './uses';
+import { canonTags, PICKS, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
   { id: 'text', code: 'TEXT', zh: '文字', en: 'Text Motion', desc: '字卡、標題、字幕條、轉場文字' },
@@ -209,6 +211,12 @@ ALL_EFFECTS.sort((a, b) => secIdx(a) - secIdx(b) || (secIdx(a) === 0 ? useIdx(a)
 
 /** Public catalog: hidden originals still live in ALL_EFFECTS for saved references. */
 export const EFFECTS = ALL_EFFECTS.filter(f=>!f.hidden);
+
+/** 後台覆寫（D1）。CATALOG.apply(doc) 會就地更新 ALL_EFFECTS／EFFECTS／PICKS；失敗回到程式預設。編號（NUM）不受影響。 */
+const catalogOpts = (): Parameters<typeof createCatalog>[0] => ({ all: ALL_EFFECTS, effects: EFFECTS, categories: CATEGORIES, picks: PICKS, secRank: (cat) => ['text', 'cut', 'ui', 'photo', 'map', 'object', 'illus', 'chart', 'plan', 'explain'].indexOf(CATEGORIES.find((c) => c.id === cat)?.sec ?? 'text') });
+// 固化的覆寫（scripts/bake-catalog.mjs 由後台匯出寫入）先併進程式預設，執行期覆寫再疊上去
+createCatalog(catalogOpts()).apply(BAKED as CatalogDoc);
+export const CATALOG = createCatalog({ all: ALL_EFFECTS, effects: EFFECTS, categories: CATEGORIES, picks: PICKS, secRank: (cat) => ['text', 'cut', 'ui', 'photo', 'map', 'object', 'illus', 'chart', 'plan', 'explain'].indexOf(CATEGORIES.find((c) => c.id === cat)?.sec ?? 'text') });
 
 export const secOf = (f: Fx): SecId => CATEGORIES.find((c) => c.id === f.cat)!.sec;
 

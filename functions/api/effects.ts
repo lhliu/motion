@@ -2,7 +2,7 @@ import { CATEGORIES, EFFECTS, NUM, PALETTES } from '../../src/data';
 import { loopSeconds } from '../../src/engine';
 import { json, preflight } from '../_lib/env';
 
-// 特效目錄（公開、唯讀）
+// 特效目錄（公開、唯讀）；已套用後台覆寫（functions/_middleware.ts）
 export const onRequestGet = async () =>
   json(
     {
@@ -25,6 +25,7 @@ export const onRequestGet = async () =>
         needs_js: !!f.run,
         motion_zh: f.motion,
         motion_en: f.motionEn,
+        ...(f.redirectTo ? { redirect_to: f.redirectTo, variant: f.variant ?? null } : {}),
       })),
     },
     200,

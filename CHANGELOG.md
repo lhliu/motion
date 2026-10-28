@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-28（feat/admin-backend，PR 待審，未 merge、未部署）
+### 新增
+- 後台 /admin.html（Cloudflare Access 保護，只限 KC）：特效清單（搜尋、大類／子分類／狀態／標籤篩選、縮圖滑過輪播）、公開開關、精選、收藏、備註；批次操作（勾選、Shift 連選、全選目前篩選）；匯出清單（複製 Markdown、下載 .md／.json，表頭有台北時間、數量、篩選）；分類與排序（拖曳）；合併；轉址／退場；Combo 健檢；操作紀錄與復原；固化到程式碼。
+- D1 覆寫（migrations/0001_admin.sql：fx_overrides、fx_audit、fx_thumbs），即時套用到網站、/api/effects、MCP；失敗時回程式預設。
+- /api/catalog、/api/thumb/:id、/api/admin/*；scripts/thumbs-upload.mjs、scripts/bake-catalog.mjs、src/catalog.baked.json；npm test（tests/catalog.test.ts）。
+### 變更
+- PR #17 移除的 21 招改為「隱藏＋轉址」保留：P21 整包 hidden、P22 vl-coffee／vl-steps hidden、P20 em-* 9 招轉址到 585（帶變體）。編號不變（拿掉 RESERVED 空號清單），總數 640 → 661（公開仍 605）。
+- /api/effects 多 redirect_to、variant；MCP get_effect 會跟著轉址。
+- vite 多頁（index.html＋admin.html）。
+
 ## 2026-10-28（remove/taiwan-life-595-604，PR 待審，未 merge）
 ### 移除
 - 擴充包 P21「台灣生活」整包 10 招：595 騎樓機車、596 珍珠奶茶（擴充包版；原有物件 392 珍珠奶茶保留）、597 超商開門、598 垃圾車來了、599 老公寓鐵窗、600 頂樓加蓋、601 夜市、602 颱風天、603 紅包、604 拜拜。刪 src/render/xp/p21.ts。子分類 taiwan 保留（400–403 仍在）。

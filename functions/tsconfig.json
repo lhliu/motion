@@ -1,5 +1,6 @@
 {
   "extends": "../tsconfig.json",
-  "compilerOptions": { "types": [], "lib": ["ES2022", "DOM", "DOM.Iterable"] },
+  "compilerOptions": {
+    "resolveJsonModule": true, "types": [], "lib": ["ES2022", "DOM", "DOM.Iterable"] },
   "include": ["./**/*.ts"]
 }

@@ -4,7 +4,7 @@ import { normalizeCosmos, cosmicFxId, COSMOS, type CosmicScene } from '../../src
 import { normalizeNature, natureFxId, NATURE, type NScene } from '../../src/nature';
 import { normalizeTransport, transportFxId, TRANSPORT, type TScene } from '../../src/transport';
 import { normalizeIllustration, illustrationFxId, ILLUSTRATION, type IScene } from '../../src/illustration';
-import { ALL_TAGS, CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from '../../src/data';
+import { ALL_TAGS, CATALOG, CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from '../../src/data';
 import { comboOutline, comboPrompt, comboHtml, encodeCombo, findEffect, normalizeCombo, totalSeconds, TRANSITIONS, TRANSITION_INFO, type Combo } from '../../src/combo';
 import { loopSeconds, toneVars } from '../../src/engine';
 import { buildPrompt, type PromptMode, type Ratio } from '../../src/prompts';
@@ -306,7 +306,9 @@ const TOOLS_FULL: ToolDef[] = [
           effects: list.map((fx, i) => (fx ? { ...summary(fx), motion_zh: fx.motion } : { id: String((a.ids as unknown[])[i]), error: '找不到，請用 search_effects 查詢' })),
         };
       }
-      const fx = findEffect(String(a.id ?? ''));
+      const hit = findEffect(String(a.id ?? ''));
+      // 已合併／下架的招式轉到主招（後台覆寫或程式預設的 redirectTo）
+      const fx = hit ? CATALOG.resolve(hit.id)?.fx ?? hit : undefined;
       if (!fx) throw new Error(`找不到特效「${String(a.id)}」，請用 search_effects 查詢`);
       const base = PALETTES.find((p) => p.id === a.palette) ?? PALETTES[0];
       const pal = typeof a.accent === 'string' && /^#[0-9a-f]{6}$/i.test(a.accent) ? { ...base, accent: a.accent } : base;
