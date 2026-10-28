@@ -264,5 +264,15 @@ export const XPACKS: XPack[] = [
     ['vr-point', '重點閃牌', 'POINT Badge', '紅色重點牌斜斜彈出閃爍，下方黃字說明', '白邊紅色「ポイント」牌微斜回彈出現並紅色深淺閃爍，下方黃色粗描邊說明字淡入。'],
     ['vr-pop', '逐字彈跳', 'Letter Pop', '韓式綜藝字一字一字彈出，彩色並上下浮動', '字幕逐字回彈出現，每個字輪流換成紅、橘、藍、綠，並持續上下輕輕浮動。'],
   ] },
+  { pack: 26, name: 'Threads／IG 輪播卡', cat: 'xcarousel', tags: ['輪播', 'IG', 'Threads'], motionEn: 'Threads / Instagram carousel cards in a 4:5 frame: auto-swiping carousel with page dots, big-number cover, numbered tip card, typed quote card, ticking checklist, rent-vs-buy split card, stat card with mini bars and a bookmark "save this" call to action. Figures illustrative.', rows: [
+    ['cr-swipe', '輪播滑動', 'Carousel Swipe', '四張色卡自動往左滑，頁碼點跟著換', '四張不同顏色的 4:5 卡片依序自動往左滑換頁，每張右上角頁碼，下方圓點指示目前頁數，滑動前有手指提示。'],
+    ['cr-cover', '封面卡', 'Cover Card', '大數字封面卡回彈，標題淡入，右下「往左滑」', '橘色封面卡回彈出現，左上帳號，超大數字與標題、副標依序淡入，右下「往左滑」膠囊輕輕左右晃。'],
+    ['cr-tip', '重點編號卡', 'Tip Card', '藍色編號圓彈出，標題與三個重點依序淡入', '奶油色卡片上藍色編號圓回彈出現，旁邊標題淡入，下方三個方點重點依序出現，底部頁碼點。'],
+    ['cr-quote', '金句卡', 'Quote Card', '黑底卡大引號，金句逐字打出，署名淡入', '黑色卡片左上大大的橘色引號，金句一個字一個字打出並自動換行，最後右下署名淡入。'],
+    ['cr-check', '清單卡', 'Checklist Card', '淺綠卡上五個方框依序打勾', '淺綠色卡片上標題下方五個項目，左側白色方框依序變綠並打上白勾。'],
+    ['cr-split', '上下對比卡', 'Split Card', '粉藍上下兩半，租與買的數字先後出現，中間 VS', '卡片上半粉紅、下半淺藍，「租」與「買」標籤和月付金額先後淡入，右側中間黃色 VS 回彈。'],
+    ['cr-stat', '數據卡', 'Stat Card', '藍色卡大數字 count-up，下方歷年長條長出', '藍色卡片上方標題，中間黃色超大數字 count-up，下方五根歷年長條依序長高，最後一根黃色。'],
+    ['cr-save', '收藏提醒卡', 'Save CTA', '書籤圖示彈出並填滿，提示先存起來，愛心飄', '奶油色卡片中間空心書籤回彈出現，接著填滿成黑色並彈一下，下方「先存起來」淡入，旁邊小愛心往上飄。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
