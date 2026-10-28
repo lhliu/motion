@@ -34,3 +34,4 @@
 - P21 整包刪除（xpack.ts 列、p21.ts、packs.ts）；P22 刪 vl-coffee、vl-steps。
 - XPack 新增 `merge` 欄位：整包只註冊第一招（保留其 id 與編號），工作室顯示 `mode` 選單（propkit `XP_EMOTES`；object-studio 只在 mode 以 em- 開頭時顯示）。目前只用在 P20 情緒貼圖。
 - 被刪的舊 id（obj-xpack-tw-*、em-cry 等 9 招、vl-coffee、vl-steps）若存在舊 Combo/預設會找不到。
+- 編號改為保留空號：object.ts `RESERVED`（586–604、605、609），其餘招式維持原編號；之後再刪招請把號碼加進這個清單。
