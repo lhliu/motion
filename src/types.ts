@@ -92,6 +92,10 @@ export interface Fx {
   catalogNo?: number;
   /** Hide from the public catalog while keeping saved links and Combo playback available. */
   hidden?: boolean;
+  /** 已合併／下架：轉址到這一招（舊 Combo 仍可播放本招；目錄、連結、MCP 會指向轉址目標） */
+  redirectTo?: string;
+  /** 轉址目標裡對應的變體（物件工作室的 mode） */
+  variant?: string;
   cat: CatId;
   /** 中文名稱 */
   zh: string;

@@ -3,7 +3,8 @@ import { isNatureFx, natureMode, natureFromWords } from './nature';
 import { isTransportFx, transportMode, transportFromWords } from './transport';
 import { isIllustrationFx, illustrationMode, illustrationFromWords } from './illustration';
 import './styles.css';
-import { CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from './data';
+import { CATALOG, CATEGORIES, EFFECTS, NUM, PALETTES, SECTIONS, secOf } from './data';
+import { fetchCatalog } from './catalog';
 import { mount, setSpeed, toneVars, type Mounted } from './engine';
 import { buildPrompt, exportHtml, PROMPT_MODES, type PromptMode, type Ratio } from './prompts';
 import type { Fx, Palette, SecId, Tone } from './types';
@@ -22,6 +23,9 @@ import { comboHtmlReady, findEffect } from './combo';
 import { engineReady, ensureEngines, loadEngine } from './engines';
 import { sceneFromWords } from './effects/map';
 import { decodeJson, unpackJson, type Preset, type PresetData } from './presets';
+
+/* ───────── 後台覆寫（D1）：先套用再渲染；逾時或失敗就用程式預設 ───────── */
+CATALOG.apply(await fetchCatalog());
 
 /* ───────── 小工具 ───────── */
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -995,7 +999,9 @@ const syncSegs = () => {
 };
 
 const openDetail = (id: string, push = true) => {
-  const fx = findEffect(id);
+  const hit = findEffect(id);
+  // 已合併／下架的招式：目錄與連結轉到主招（舊 Combo 仍播放原招）
+  const fx = hit ? CATALOG.resolve(hit.id)?.fx ?? hit : undefined;
   if (!fx) return;
   d.fx = fx;
   if (fx.preferredRatio) d.ratio = fx.preferredRatio;

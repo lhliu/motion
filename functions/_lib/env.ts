@@ -24,6 +24,11 @@ export interface Env {
   /** 沒有綁定時改用 Browser Run REST API：帳號 ID 與 API Token（權限 Browser Run - Edit，加密變數） */
   CF_ACCOUNT_ID?: string;
   CF_BROWSER_TOKEN?: string;
+  /** 後台：Cloudflare Access 團隊網域、應用 AUD、允許的 email（逗號分隔）；ADMIN_DEV=1 只供本機測試 */
+  ACCESS_TEAM_DOMAIN?: string;
+  ACCESS_AUD?: string;
+  ADMIN_EMAIL?: string;
+  ADMIN_DEV?: string;
 }
 
 export interface Ctx {
