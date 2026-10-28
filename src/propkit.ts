@@ -55,7 +55,7 @@ export const PROP_DEFAULTS: Record<PropModule, Record<string, number | string>> 
   taiwan: { mode: 'hongbao', color: '#d64541', color2: '#ffd23f', ...XY, y: 0.42 },
   estate: { mode: 'calc', color: '#1d2433', color2: '#ff5a36', ...XY, y: 0.42 },
   xpack: { mode: 'tr-diag', title: '', sub: '', items: '', values: '', speed: 1 },
-  dcard: { mode: 'process', style: 'classic', title: '', sub: '', items: '', values: '', speed: 1 },
+  dcard: { mode: 'process', style: 'chart', title: '', sub: '', items: '', values: '', speed: 1 },
 };
 
 export const PROP_BG: Record<PropModule, string> = {
