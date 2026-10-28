@@ -67,3 +67,6 @@
 
 ## 2026-10-27 23:31（UTC+8）
 - 物件擴充 v2：feat/objects-v2 從 origin/main 切出並帶上珍奶；新增 393–409 共 17 個物件動畫（drink 汽水罐、fun 6、taiwan 4、estate 6），三個新子分類。build 通過、check:visual 0 問題；截圖 out/objects-v2/。PR 待審，未 merge。
+
+## 2026-10-28 11:30（UTC+8）
+- 擴充包完成：P01–P28、P30、P31 共 253 招（425–677），P29 Lottie 跳過。每包一個 commit；build 通過、check:visual 661 招 0 問題；圖解字卡預設改回 v1。PR 待審，未 merge。
