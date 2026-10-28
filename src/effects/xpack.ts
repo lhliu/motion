@@ -54,5 +54,15 @@ export const XPACKS: XPack[] = [
     ['mt-exit', '出口指示牌', 'Exit Sign', '黃色出口牌彈出，箭頭推動，周邊地標逐條列出', '黃色出口指示牌回彈出現（出口編號、EXIT），箭頭左右推動；下方三個周邊地標編號方塊與名稱依序滑入。'],
     ['mt-cabin', '車廂路線看板', 'In-car Route Display', '車廂內跑馬燈播下一站，目前站點閃爍', '車廂看板上方橘字跑馬燈播下一站，下方路線圖已過站變灰、目前站紅點閃爍、箭頭指向下一站，最後彈出開門方向。'],
   ] },
+  { pack: 5, name: '房貸與數字講解', cat: 'xloan', tags: ['房貸', '利率', '數字'], motionEn: 'Mortgage explainers: monthly payment counter, rate slider, grace-period cliff, principal/interest stack, burden gauge, income split, youth-loan checklist and total interest coins. All figures illustrative.', rows: [
+    ['ln-monthly', '月付金計數器', 'Monthly Payment', '圓環跑滿一圈，月付金 count-up', '圓環進度與 12 顆月份點逐一點亮，中間月付金依貸款、利率、年限即時算出並 count-up，最後彈出總繳金額。'],
+    ['ln-rate', '利率滑桿', 'Rate Slider', '滑桿從低利率滑到高利率，月付金跟著跳', '利率滑桿把手從左滑到右，上方膠囊顯示即時利率；下方月付金跟著變大，紅色差額膠囊顯示每月多繳，最後顯示 30 年總差額。'],
+    ['ln-grace', '寬限期前後比較', 'Grace Period Cliff', '前幾年只繳利息的矮柱，之後月付暴增', '每兩年一根直條依序長出：寬限期內是淺藍矮柱，之後變橘色高柱，標出「只繳利息」與「暴增到」，再畫無寬限期的參考線。'],
+    ['ln-stack', '本金利息堆疊', 'Principal vs Interest', '每年月付拆成本金與利息，利息逐年變少', '十根等高直條依序長出，每根分成下方利息、上方本金，利息比例隨年數遞減，看得出前期大多在繳利息。'],
+    ['ln-gauge', '負擔比儀表', 'Burden Gauge', '半圓儀表指針回彈指到負擔比', '綠黃紅三段半圓儀表，指針帶回彈轉到負擔比，下方百分比 count-up，最後彈出「輕鬆／吃緊／偏高」評語膠囊。'],
+    ['ln-income', '收入切成幾塊', 'Income Split', '甜甜圈依序切出房貸、生活、儲蓄', '甜甜圈圖一塊一塊扇形長出並微微外推，中間寫百分比；旁邊圖例列出每塊的金額。'],
+    ['ln-youth', '新青安條件卡', 'Youth Loan Checklist', '白色條件卡彈出，條件逐條打勾', '米色背景上藍頂白卡回彈出現，五條條件依序淡入並由綠圈打勾畫出，最後一條註明以政府公告為準。'],
+    ['ln-total', '總利息金幣堆', 'Total Interest Coins', '本金與利息兩疊金幣長高比較', '左右兩疊金幣一枚枚往上疊，上方金額 count-up，最後彈出「利息約本金的幾 %」膠囊。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
