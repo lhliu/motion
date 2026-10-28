@@ -13,4 +13,5 @@ import { xp11 } from './p11';
 import { xp12 } from './p12';
 import { xp13 } from './p13';
 import { xp14 } from './p14';
-export const XP_PACKS: ((K: XK) => Record<string, XFx>)[] = [xp01, xp02, xp03, xp04, xp05, xp06, xp07, xp08, xp09, xp10, xp11, xp12, xp13, xp14];
+import { xp15 } from './p15';
+export const XP_PACKS: ((K: XK) => Record<string, XFx>)[] = [xp01, xp02, xp03, xp04, xp05, xp06, xp07, xp08, xp09, xp10, xp11, xp12, xp13, xp14, xp15];

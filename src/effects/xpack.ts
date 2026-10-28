@@ -154,5 +154,13 @@ export const XPACKS: XPack[] = [
     ['st-fraction', '每 N 戶 1 戶', 'One in N', '一排小房子彈出，其中一戶變空並晃動', '小房子一間間回彈排成格子，其中一間變成透明空屋並輕輕晃動、寫「空」，旁邊大字百分比 count-up。'],
     ['st-spark', '大數字加走勢', 'Number + Sparkline', '數字卡上大數字 count-up，下方面積走勢線畫出', '左側橘條的數字卡回彈出現，大數字與單位 count-up，下方帶淡色面積的走勢線由左畫到右，終點黃點與漲幅膠囊彈出。'],
   ] },
+  { pack: 15, name: '折線與時間序列', cat: 'cline', tags: ['折線', '走勢', '時間軸'], motionEn: 'Line and time-series charts: line draw with travelling price tag, salary vs price comparison, gradient area chart, rate step line, milestone timeline and a zoom-in callout. Figures illustrative.', rows: [
+    ['ts-draw', '走勢線畫出', 'Line Draw', '格線拉出後折線由左畫到右，標價跟著走', '座標格線往右拉出、刻度淡入，橘色折線由左畫到右，線頭白點上的價格標籤跟著數值變化。'],
+    ['ts-compare', '兩線比較', 'Two Lines', '房價與薪水兩條線同時畫出，最後標出差距', '房價橘線與薪水藍線同時由左畫到右，線頭各帶名稱標籤，畫完後右側黃色直線把兩線差距拉出來並寫「差距拉大」。'],
+    ['ts-area', '面積走勢', 'Area Chart', '漸層面積跟著折線一起長出', '折線由左往右畫，線下方的橘色漸層面積跟著一起填滿，線頭白點跟著走。'],
+    ['ts-step', '利率階梯', 'Step Line', '紅色階梯線一階一階往上爬，利率標籤跳動', '紅色階梯線水平、垂直交替一格一格往上爬，線頭標籤顯示當下利率並跟著跳動。'],
+    ['ts-mile', '大事時間軸', 'Milestones', '時間軸拉出，年份節點依序彈出並寫事件', '灰色時間軸拉出（直式為垂直、橫式為水平），彩色節點依序回彈出現，旁邊寫年份與房市大事。'],
+    ['ts-zoom', '放大最近一段', 'Zoom Callout', '走勢畫完後虛線框框住最後一段，彈出放大卡', '折線先畫完，黃色虛線框框住最後一段，接著彈出白色卡片寫近一年漲幅與紅色向上箭頭。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
