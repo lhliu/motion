@@ -214,5 +214,17 @@ export const XPACKS: XPack[] = [
     ['em-boom', '爆炸對話框', 'Comic Boom', '紅色鋸齒爆炸框彈出，中間黃字，周圍閃星', '白邊紅色鋸齒爆炸對話框回彈出現並微微脈動，中間黃色大字「什麼?!」，周圍黃色星星閃爍。'],
     ['em-cloud', '頭頂烏雲', 'Rain Cloud', '灰臉頭上一朵烏雲下雨，偶爾打雷', '灰色沮喪圓臉頭頂飄著一朵灰色烏雲，雨絲持續落下，偶爾閃出黃色閃電。'],
   ] },
+  { pack: 21, name: '台灣生活', cat: 'taiwan', tags: ['台灣', '生活', '在地'], motionEn: 'Taiwan everyday-life scenes in flat colour blocks: scooter under the arcade, bubble tea filling up, convenience-store sliding door chime, the musical garbage truck, iron window bars, rooftop add-on, night-market lanterns, typhoon umbrella, red envelope and a home altar with incense.', rows: [
+    ['tw-scooter', '騎樓機車', 'Arcade Scooter', '機車騎進騎樓，柱子往後退、排氣冒煙', '藍色機車載著紅色安全帽的騎士騎進畫面，騎樓柱子持續往後退，車身微震、後方冒出灰煙。'],
+    ['tw-boba', '珍珠奶茶', 'Bubble Tea', '杯子彈出，奶茶由下往上倒滿，珍珠浮動', '透明杯回彈出現，奶茶顏色從杯底往上漲滿，杯底黑色珍珠輕輕浮動，粉紅吸管斜插。'],
+    ['tw-cvs', '超商開門', 'Store Door', '超商自動門左右滑開，音符飄出', '綠紅橘條紋招牌的超商，玻璃自動門往左右滑開再關上，門口飄出彩色音符。'],
+    ['tw-garbage', '垃圾車來了', 'Garbage Truck', '黃色垃圾車開進來，音符飄，鄰居提袋跑出', '黃色垃圾車從右側開進畫面，車頂持續飄出音符，左邊三位鄰居提著垃圾袋小跑步。'],
+    ['tw-ironwin', '老公寓鐵窗', 'Iron Bars', '公寓窗戶一扇扇由上往下罩上鐵窗', '米色老公寓牆面的六扇窗戶，依序由上往下罩上灰色鐵窗格柵。'],
+    ['tw-rooftop', '頂樓加蓋', 'Rooftop Add-on', '四樓公寓頂上彈出鐵皮屋，旁邊跳出違建標籤', '四層米色公寓頂上回彈冒出灰色鐵皮屋與藍色屋簷，旁邊彈出紅色「違建！」標籤。'],
+    ['tw-night', '夜市', 'Night Market', '紅燈籠一顆顆彈出發亮，攤位招牌升起', '上方紅燈籠一顆顆回彈出現並微微發光，下方雞排、蚵仔煎、珍奶三個攤位由下往上升起。'],
+    ['tw-typhoon', '颱風天', 'Typhoon', '斜雨狂下，人撐紅傘被風吹得左右晃', '烏雲下斜斜的雨絲狂落，藍衣人撐著紅傘被風吹得左右搖晃，下方彈出提醒膠囊。'],
+    ['tw-redenv', '紅包', 'Red Envelope', '紅包彈出，封口打開，鈔票往上抽出', '印著金色「福」字的紅包回彈出現，封口打開，裡面的鈔票往上抽出並顯示金額，周圍金星閃爍。'],
+    ['tw-temple', '拜拜', 'Incense Altar', '神明桌上三炷香裊裊生煙，紅燭微光', '紅木神明桌上的金色香爐插著三炷香，白煙持續往上飄散，兩側紅燭發出微光。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
