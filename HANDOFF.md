@@ -29,3 +29,9 @@
 - 第 29 包（Lottie 匯入）跳過：需要 lottie-web 等重型依賴與檔案上傳流程，留待另案。
 - 已知限制：P15、P22 疊字與 P18 直式進度條標籤偏小；P17 樓板橫式偏扁；P21 紅包封口較粗略；P27 陸塊、P28 台灣輪廓與潛勢分區皆為示意，非官方圖資；nw-law 重點詞換行時螢光筆會失準；P31 屋主圖示頭頂略貼圓邊。
 - 一律為 Canvas 自繪動畫，數字皆為示意。
+
+## 擴充包刪減（remove/taiwan-life-595-604）
+- P21 整包刪除（xpack.ts 列、p21.ts、packs.ts）；P22 刪 vl-coffee、vl-steps。
+- XPack 新增 `merge` 欄位：整包只註冊第一招（保留其 id 與編號），工作室顯示 `mode` 選單（propkit `XP_EMOTES`；object-studio 只在 mode 以 em- 開頭時顯示）。目前只用在 P20 情緒貼圖。
+- 被刪的舊 id（obj-xpack-tw-*、em-cry 等 9 招、vl-coffee、vl-steps）若存在舊 Combo/預設會找不到。
+- 編號改為保留空號：object.ts `RESERVED`（586–604、605、609），其餘招式維持原編號；之後再刪招請把號碼加進這個清單。

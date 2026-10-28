@@ -207,7 +207,12 @@ for (const [key, info] of Object.entries(OBJECT_COSMOS_GROUPS)) {
 /* 擴充包（2026-10-28，render/xp/）：編號 425 起依包順序；分到各自最適合的子分類 */
 {
   let no = 425;
-  for (const pk of XPACKS) for (const [mode, zh, en, desc, motion] of pk.rows) {
+  // 已移除／合併掉的編號保留空號，其餘招式維持原編號（PR #17）：586–594 併入 585、595–604 台灣生活、605 咖啡日記、609 散步步數
+  const RESERVED = new Set([...Array.from({ length: 19 }, (_, i) => 586 + i), 605, 609]);
+  for (const pk of XPACKS) for (const [mode, zh0, en0, desc0, motion0] of pk.merge ? pk.rows.slice(0, 1) : pk.rows) {
+    // merge：整包合成一招，第一招的 mode 當預設，編輯器裡切換其他招
+    while (RESERVED.has(no)) no++;
+    const { zh, en, desc, motion } = pk.merge ?? { zh: zh0, en: en0, desc: desc0, motion: motion0 };
     objects.push({ ...prop('xpack', mode, no++, { layout: 'none' }, { zh, en, desc, tags: pk.tags, sample: [], motion: `${motion}全部硬邊平面色塊，不用陰影或模糊；文字可在物件工作室改，數字皆為示意。`, motionEn: pk.motionEn }), cat: pk.cat as Fx['cat'], added: '2026-10-28', ...(pk.ratio ? { preferredRatio: pk.ratio } : {}) });
   }
 }

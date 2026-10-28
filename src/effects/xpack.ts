@@ -1,7 +1,7 @@
 // 擴充包（2026-10-28）的招式清單：每一包放進最適合的子分類，編號從 425 起依序排。
 // 繪製在 src/render/xp/，全部走物件引擎（id obj-xpack-<mode>），畫面自帶文字（layout none）。
 export type XRow = [mode: string, zh: string, en: string, desc: string, motion: string];
-export type XPack = { pack: number; name: string; cat: string; tags: string[]; ratio?: '9:16' | '16:9'; motionEn: string; rows: XRow[] };
+export type XPack = { pack: number; name: string; cat: string; tags: string[]; ratio?: '9:16' | '16:9'; motionEn: string; rows: XRow[]; merge?: { zh: string; en: string; desc: string; motion: string } };
 const EX = '數字皆為示意。';
 export const XPACKS: XPack[] = [
   { pack: 1, name: '轉場擴充包', cat: 'twipe', tags: ['轉場', '段落'], ratio: '16:9', motionEn: 'A full-frame flat-colour transition from an orange A segment to a dark chapter B segment between 0.8 s and 2.2 s; hard edges, no blur.', rows: [
@@ -202,7 +202,7 @@ export const XPACKS: XPack[] = [
     ['kt-swap', '輪替字', 'Word Swap', '色塊裡的詞上下滾動替換：買→租→等', '「現在該」後面的強調色方塊裡，詞語由下往上滾動替換，買、租、等輪流出現，旁邊一個問號。'],
     ['kt-spin', '旋轉彈出標題', 'Spin Headline', '大字旋轉一圈彈出，副標斜斜擺正', '主標大字一邊旋轉一圈一邊回彈放大到位，副標從略微傾斜擺正並淡入。'],
   ] },
-  { pack: 20, name: '情緒貼圖', cat: 'xemote', tags: ['貼圖', '表情', '反應'], motionEn: 'Flat sticker-style emotion reactions with white outline and a tilted caption tag: shock, crying, angry steam, heart eyes, sweat drop, question marks, thumbs up, money flying away, comic boom and a rain cloud overhead.', rows: [
+  { pack: 20, name: '情緒貼圖', cat: 'xemote', tags: ['貼圖', '表情', '反應'], merge: { zh: '情緒貼圖', en: 'Emotion Stickers', desc: '十種表情貼圖合成一招：嚇到、哭哭、生氣、愛心眼、冷汗、問號、按讚、錢飛走、爆炸框、烏雲，在編輯器切換', motion: '白邊平塗表情貼圖，可在物件工作室「表情」選單切換十種：嚇到、哭哭、生氣冒煙、愛心眼、冒冷汗、滿頭問號、按讚、錢飛走、爆炸對話框、頭頂烏雲；字條文字可改。' }, motionEn: 'Flat sticker-style emotion reactions with white outline and a tilted caption tag: shock, crying, angry steam, heart eyes, sweat drop, question marks, thumbs up, money flying away, comic boom and a rain cloud overhead.', rows: [
     ['em-shock', '嚇到', 'Shock', '黃色臉回彈出現並抖動，眼睛瞪大嘴巴張開', '白邊黃色圓臉回彈出現並快速抖動，眼睛瞪大成白圓、嘴巴張成 O 形，左上方三條紅色驚嚇線，下方斜斜的黑色字條。'],
     ['em-cry', '哭哭', 'Crying', '藍色臉閉眼，淚珠不斷從兩側流下', '淺藍圓臉閉著眼、嘴角往下，藍色淚珠持續從兩眼往下流，下方黑色字條寫心聲。'],
     ['em-angry', '生氣冒煙', 'Angry', '紅色臉皺眉，頭頂兩團煙往上冒', '紅色圓臉眉毛倒豎、嘴角下垂，頭頂左右兩團白煙不斷往上冒並淡掉。'],
@@ -214,24 +214,10 @@ export const XPACKS: XPack[] = [
     ['em-boom', '爆炸對話框', 'Comic Boom', '紅色鋸齒爆炸框彈出，中間黃字，周圍閃星', '白邊紅色鋸齒爆炸對話框回彈出現並微微脈動，中間黃色大字「什麼?!」，周圍黃色星星閃爍。'],
     ['em-cloud', '頭頂烏雲', 'Rain Cloud', '灰臉頭上一朵烏雲下雨，偶爾打雷', '灰色沮喪圓臉頭頂飄著一朵灰色烏雲，雨絲持續落下，偶爾閃出黃色閃電。'],
   ] },
-  { pack: 21, name: '台灣生活', cat: 'taiwan', tags: ['台灣', '生活', '在地'], motionEn: 'Taiwan everyday-life scenes in flat colour blocks: scooter under the arcade, bubble tea filling up, convenience-store sliding door chime, the musical garbage truck, iron window bars, rooftop add-on, night-market lanterns, typhoon umbrella, red envelope and a home altar with incense.', rows: [
-    ['tw-scooter', '騎樓機車', 'Arcade Scooter', '機車騎進騎樓，柱子往後退、排氣冒煙', '藍色機車載著紅色安全帽的騎士騎進畫面，騎樓柱子持續往後退，車身微震、後方冒出灰煙。'],
-    ['tw-boba', '珍珠奶茶', 'Bubble Tea', '杯子彈出，奶茶由下往上倒滿，珍珠浮動', '透明杯回彈出現，奶茶顏色從杯底往上漲滿，杯底黑色珍珠輕輕浮動，粉紅吸管斜插。'],
-    ['tw-cvs', '超商開門', 'Store Door', '超商自動門左右滑開，音符飄出', '綠紅橘條紋招牌的超商，玻璃自動門往左右滑開再關上，門口飄出彩色音符。'],
-    ['tw-garbage', '垃圾車來了', 'Garbage Truck', '黃色垃圾車開進來，音符飄，鄰居提袋跑出', '黃色垃圾車從右側開進畫面，車頂持續飄出音符，左邊三位鄰居提著垃圾袋小跑步。'],
-    ['tw-ironwin', '老公寓鐵窗', 'Iron Bars', '公寓窗戶一扇扇由上往下罩上鐵窗', '米色老公寓牆面的六扇窗戶，依序由上往下罩上灰色鐵窗格柵。'],
-    ['tw-rooftop', '頂樓加蓋', 'Rooftop Add-on', '四樓公寓頂上彈出鐵皮屋，旁邊跳出違建標籤', '四層米色公寓頂上回彈冒出灰色鐵皮屋與藍色屋簷，旁邊彈出紅色「違建！」標籤。'],
-    ['tw-night', '夜市', 'Night Market', '紅燈籠一顆顆彈出發亮，攤位招牌升起', '上方紅燈籠一顆顆回彈出現並微微發光，下方雞排、蚵仔煎、珍奶三個攤位由下往上升起。'],
-    ['tw-typhoon', '颱風天', 'Typhoon', '斜雨狂下，人撐紅傘被風吹得左右晃', '烏雲下斜斜的雨絲狂落，藍衣人撐著紅傘被風吹得左右搖晃，下方彈出提醒膠囊。'],
-    ['tw-redenv', '紅包', 'Red Envelope', '紅包彈出，封口打開，鈔票往上抽出', '印著金色「福」字的紅包回彈出現，封口打開，裡面的鈔票往上抽出並顯示金額，周圍金星閃爍。'],
-    ['tw-temple', '拜拜', 'Incense Altar', '神明桌上三炷香裊裊生煙，紅燭微光', '紅木神明桌上的金色香爐插著三炷香，白煙持續往上飄散，兩側紅燭發出微光。'],
-  ] },
   { pack: 22, name: '中年 vlog', cat: 'xvlog', tags: ['vlog', '生活', '手帳'], motionEn: 'Warm, journal-style vlog overlays for midlife creators: top-down coffee with steam and date, camcorder REC frame with timecode, handwritten to-do list ticking off, developing polaroid, step-count ring with a walker, scrolling film strip, location tag reveal and a weather/date card.', rows: [
-    ['vl-coffee', '咖啡日記', 'Morning Coffee', '俯視咖啡杯彈出，熱氣裊裊，日期字淡入', '俯視角度的白色咖啡杯回彈出現，杯面拉花，上方三縷白色熱氣持續飄動，下方淡入時間句與日期。'],
     ['vl-rec', '錄影框 REC', 'REC Frame', '四角取景框、紅點閃爍、時間碼跑動', '畫面四角白色取景框線，左上紅點閃爍與 REC 字樣，右上時間碼持續跑動，右下電量、左下標題。'],
     ['vl-todo', '今日待辦', 'To-do List', '橫線便條紙彈出，待辦逐項打勾劃掉', '貼著膠帶的橫線便條紙微斜回彈出現，四項待辦依序淡入，接著一項項打上紅勾並被劃線。'],
     ['vl-polaroid', '拍立得顯影', 'Polaroid', '拍立得旋轉落下，照片由黑慢慢顯影', '白框拍立得從斜角轉正落下，相片區從黑色慢慢顯影成房子、樹與藍天，下緣手寫標題淡入。'],
-    ['vl-steps', '散步步數', 'Step Counter', '綠色步數環跑動，小人在下方走路', '綠色圓環依步數往前跑、中間步數 count-up，下方小人沿地線來回走路，最後淡入一句說明。'],
     ['vl-film', '底片捲動', 'Film Strip', '彩色底片條持續捲動，下方慢生活字卡', '黑色底片條帶著齒孔持續捲動（直式上下、橫式左右），格子是柔和色塊，下方奶油色膠囊寫一句話。'],
     ['vl-loc', '地點標籤', 'Location Tag', '圖釘彈出，地點與天氣字由左往右揭露', '左下角橘色圖釘回彈出現，旁邊地點名稱與天氣小字由左往右揭露，下方黃色底線拉出。'],
     ['vl-weather', '天氣日期卡', 'Weather Card', '奶油色卡彈出，太陽慢轉、雲飄，溫度與日期', '奶油色圓角卡回彈出現，左側太陽慢慢旋轉、白雲輕飄，右側大字溫度與天氣，下方日期。'],
