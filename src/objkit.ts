@@ -214,7 +214,8 @@ export const normalizeObjScene = (raw: Partial<OScene>, fallback: OModule = 'met
       if (Number.isFinite(n)) params[f.k] = Math.max(f.min, Math.min(f.max, n));
     } else if (f.type === 'seg') {
       if (f.opts.some(([o]) => o === String(v))) params[f.k] = /^\d+$/.test(String(v)) ? Number(v) : String(v);
-    } else if (/^#[0-9a-f]{6}$/i.test(String(v))) params[f.k] = String(v);
+    } else if (f.type === 'text') params[f.k] = String(v).slice(0, 160);
+    else if (/^#[0-9a-f]{6}$/i.test(String(v))) params[f.k] = String(v);
   }
   if (module === 'meteor' && raw.params?.material && raw.params.color === undefined) [params.color, params.color2] = METEOR_COLORS[String(params.material)] ?? METEOR_COLORS.rock;
   if (module === 'cosmos' && params.mode === 'galaxy' && raw.params?.size === undefined) params.size = 0.62;
