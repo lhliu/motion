@@ -86,5 +86,15 @@ export const XPACKS: XPack[] = [
     ['fp-compass', '朝向羅盤', 'Orientation Compass', '羅盤指針晃動後停在朝向，窗戶標出', '白色羅盤指針先左右晃動、慢慢穩定指向朝向方位，下方彈出「坐北朝南」膠囊，平面圖落地窗亮起並有箭頭。'],
     ['fp-walk', '看屋動線', 'Walkthrough Path', '小人沿虛線從玄關走過客廳到主臥', '主要房間亮起，小人沿橘色虛線從玄關走過客廳、廚房到主臥，沿途三個編號點依序彈出。'],
   ] },
+  { pack: 8, name: '前後對比', cat: 'xbefore', tags: ['前後對比', '修繕', '重劃'], motionEn: 'Before/after comparisons with flat illustrated scenes: drag slider, rezoning reveal, repair side-by-side, 5-year price bars, card flip, split wipe, ghost crossfade and a magnifier lens.', rows: [
+    ['ba-slider', '滑桿前後對比', 'Before/After Slider', '白色滑桿左右拖動，露出翻修前後的室內', '同一個室內場景，白色分隔滑桿帶圓形把手來回拖動，左邊是壁癌裂縫的舊屋、右邊是白牆木地板的新裝潢，兩角標「之前」「之後」。'],
+    ['ba-replot', '重劃前後地圖', 'Rezoning Reveal', '農地小路的地圖，圓形擴散揭露棋盤路網', '綠色農地與小路、溪流的俯視地圖，從中心圓形擴散揭露重劃後的棋盤道路、大樓與公園，角標年份跟著切換。'],
+    ['ba-repair', '屋況修繕前後', 'Repair Side by Side', '舊屋與修好的屋子兩格依序浮上，花費徽章彈出', '兩格畫面依序淡入浮上（直式上下、橫式左右），左格舊屋況、右格修繕後，最後黃色圓形徽章彈出修繕花費。'],
+    ['ba-price', '價格 5 年前後', '5-Year Price', '兩根直條先後長出，漲幅膠囊彈出', '灰色與橘色兩根直條先後長高、數字 count-up，上方虛線弧連起兩者，最後彈出紅色「+50%」漲幅膠囊。'],
+    ['ba-flip', '翻牌對比', 'Flip Reveal', '整張畫面像卡片翻面，從之前翻到之後', '圓角畫面卡片沿垂直軸翻轉，翻到一半換成修繕後的場景，翻完後下方彈出一句說明。'],
+    ['ba-split', '左右分割擦除', 'Split Wipe', '左右兩半同時擦入，中間白線與 VS 彈出', '左半「十年前」農地、右半「現在」新市鎮同時從兩側擦入，中間白色分隔線由中心長出，VS 圓章彈出。'],
+    ['ba-ghost', '疊影淡入', 'Ghost Crossfade', '同一角度舊照片慢慢淡成新照片，下方時間條', '同一個室內角度，修繕後畫面慢慢淡入疊在舊屋上，下方年份進度條跟著走滿。'],
+    ['ba-lens', '放大鏡看差異', 'Magnifier Lens', '放大鏡在舊地圖上移動，鏡內顯示現在的樣子', '重劃前的地圖上，一支放大鏡沿曲線移動，鏡片內放大顯示同位置現在的路網與大樓。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
