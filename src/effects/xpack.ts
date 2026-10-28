@@ -236,5 +236,13 @@ export const XPACKS: XPack[] = [
     ['vl-loc', '地點標籤', 'Location Tag', '圖釘彈出，地點與天氣字由左往右揭露', '左下角橘色圖釘回彈出現，旁邊地點名稱與天氣小字由左往右揭露，下方黃色底線拉出。'],
     ['vl-weather', '天氣日期卡', 'Weather Card', '奶油色卡彈出，太陽慢轉、雲飄，溫度與日期', '奶油色圓角卡回彈出現，左側太陽慢慢旋轉、白雲輕飄，右側大字溫度與天氣，下方日期。'],
   ] },
+  { pack: 23, name: '粒子與慶祝', cat: 'party', tags: ['慶祝', '彩帶', '粒子'], motionEn: 'Particles and celebration: twin confetti cannons, fireworks, rising balloons, coin shower, a sparkle comet trail and a key-handover celebration. Particles settle on the floor instead of disappearing so the last frame stays full.', rows: [
+    ['pt-confetti', '彩帶噴發', 'Confetti Cannons', '兩側彩帶炮噴出彩紙，落在地上，中間大字回彈', '畫面左右下方同時噴出彩色紙片與圓點，紙片旋轉飄落並停在地面，中間大字「恭喜成交」回彈出現。'],
+    ['pt-firework', '煙火', 'Fireworks', '深藍夜空連續升起五發煙火綻放', '深藍夜空中，光點從下方升起後在不同位置綻放成放射狀煙火並慢慢下墜淡出，最後淡入祝賀字。'],
+    ['pt-balloon', '氣球升空', 'Balloons', '彩色氣球從下方飄上來停在上半部搖擺', '十二顆彩色氣球帶著細繩從畫面下方飄上來，停在上半部各自輕輕搖擺，下方彈出里程碑膠囊。'],
+    ['pt-coins', '金幣雨', 'Coin Shower', '金幣翻轉落下，在地面堆起，中間大字', '金幣從畫面上方翻轉著一枚枚落下，掉到底部堆疊起來，中間金色大字與副標淡入。'],
+    ['pt-sparkle', '星光拖尾', 'Sparkle Trail', '一顆亮星沿 8 字軌跡飛，後面拖星光尾巴', '一顆白色亮星沿著 8 字形軌跡持續飛行，後方拖出由大到小的黃白星光尾巴，中間標題淡入。'],
+    ['pt-keys', '交屋鑰匙', 'Key Handover', '金色鑰匙回彈出現搖晃，彩帶從鑰匙後方噴出', '金色鑰匙掛在吊環上回彈出現並左右輕晃，背後放射黃色短線並噴出彩帶，下方彈出「交屋啦」膠囊。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
