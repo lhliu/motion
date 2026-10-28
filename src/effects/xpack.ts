@@ -64,5 +64,17 @@ export const XPACKS: XPack[] = [
     ['ln-youth', '新青安條件卡', 'Youth Loan Checklist', '白色條件卡彈出，條件逐條打勾', '米色背景上藍頂白卡回彈出現，五條條件依序淡入並由綠圈打勾畫出，最後一條註明以政府公告為準。'],
     ['ln-total', '總利息金幣堆', 'Total Interest Coins', '本金與利息兩疊金幣長高比較', '左右兩疊金幣一枚枚往上疊，上方金額 count-up，最後彈出「利息約本金的幾 %」膠囊。'],
   ] },
+  { pack: 6, name: '字幕下方條與人名條', cat: 'xlower', tags: ['名條', '下三分之一', '字幕'], motionEn: 'Lower thirds: interviewee name strap, location, date and weather, source badge, warning stripe, bilingual subtitle, keyword highlight, social handle, chapter tag and breaking-news ticker. Sits in the lower third and holds.', rows: [
+    ['lt-name', '受訪者名條', 'Name Strap', '色條長出、姓名條與職稱條依序擦入', '左側橘色直條往下長出，深色姓名條往右擦入，橘色職稱條稍後跟上；整組停住可直接疊在影片上。'],
+    ['lt-place', '地點條', 'Location Strap', '圖釘圓彈出，白色膠囊地點條往右展開', '橘色圓形圖釘回彈出現，白色膠囊地點條從圖釘往右擦開，下方小字地標淡入。'],
+    ['lt-date', '日期天氣條', 'Date & Weather', '深色條擦入，太陽光芒慢轉、氣溫顯示', '深色長條往右擦入顯示日期，右側太陽光芒持續慢轉並標氣溫，下方天氣膠囊淡入。'],
+    ['lt-source', '資料來源角標', 'Source Badge', '右下角小卡滑入：資料來源與整理時間', '右下角半透明小卡從右滑入淡入，黃色側條、兩行小字標出資料來源與整理說明，不搶畫面。'],
+    ['lt-warn', '警示條', 'Warning Stripe', '黃黑斜紋警示條擦入，驚嘆號脈動', '黃色橫條從左擦入，上下黑黃斜紋往相反方向流動，左側三角驚嘆號持續脈動，中間寫警示文字。'],
+    ['lt-bilingual', '雙語字幕條', 'Bilingual Subtitle', '中文字幕與英文字幕兩層依序浮上', '中文字幕深色底從下方淡入浮上，英文字幕橘色底稍後跟上，置中排列。'],
+    ['lt-key', '重點詞跳色', 'Keyword Highlight', '字幕中的關鍵詞黃底刷出並放大彈一下', '一行字幕淡入後，中間關鍵詞的黃色底塊從左刷出，字變深色並放大彈一下再回原位。'],
+    ['lt-handle', '社群帳號條', 'Social Handle', '頭像圓彈出，帳號膠囊展開，追蹤鈕彈出', '頭像圓回彈，白色膠囊往右展開寫帳號與一句話，最後紅色「追蹤」按鈕彈出。'],
+    ['lt-chapter', '角落章節標', 'Corner Chapter Tag', '左上角章節編號與標題滑入，下方進度條走完', '左上角橘色編號塊滑入，深色標題條往右擦開，下方細進度條隨片長慢慢走滿。'],
+    ['lt-breaking', '快訊跑馬燈', 'Breaking Ticker', '紅色快訊標籤與跑馬燈條擦入，文字橫向捲動', '深色長條擦入，左側紅色「快訊」標籤閃星，右側新聞文字持續橫向捲動，下方橘色時間條。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
