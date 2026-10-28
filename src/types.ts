@@ -56,7 +56,7 @@ export type CatId =
   | 'fun'
   | 'taiwan'
   | 'dcard'
-  | 'estate'
+  | 'oestate'
   | 'mcompare'
   | 'mplan'
   | 'mdata'
