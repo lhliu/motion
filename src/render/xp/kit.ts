@@ -82,6 +82,14 @@ export const xkit = () => {
   /** 右下角「示意」小字 */
   const demo = (x: X, W: number, H: number, c = 'rgba(255,255,255,.55)', s = '數字為示意') => T(x, s, W - 40, H - 40, 26, c, 'right', 700);
   // ── 網站色調（同圖表引擎：讀 CSS 變數） ──
+  /** 平塗示意街區地圖：街廓色塊、主要道路、河流與公園（seed 決定配置） */
+  const mapBase = (x: X, X0: number, Y0: number, w: number, h: number, seed = 1, dark = false) => {
+    const r = rng(seed), g = 150; x.save(); x.beginPath(); x.rect(X0, Y0, w, h); x.clip(); box(x, X0, Y0, w, h, 0, dark ? '#1f2530' : '#eee7da');
+    for (let i = 0; i * g < w + g; i++) for (let k = 0; k * g < h + g; k++) { const v = r(); box(x, X0 + i * g + 14, Y0 + k * g + 14, g - 28, g - 28, 12, dark ? (v < 0.15 ? '#24402e' : '#2a3140') : (v < 0.15 ? '#c9e4b8' : v < 0.5 ? '#f7f2e8' : '#e3dccd')); }
+    x.strokeStyle = dark ? '#33506b' : '#9fd3f0'; x.lineWidth = 46; x.lineCap = 'round'; x.beginPath(); x.moveTo(X0 - 40, Y0 + h * 0.82); x.bezierCurveTo(X0 + w * 0.3, Y0 + h * 0.7, X0 + w * 0.6, Y0 + h * 0.98, X0 + w + 40, Y0 + h * 0.86); x.stroke();
+    x.fillStyle = dark ? '#3a4458' : '#ffd23f'; x.fillRect(X0, Y0 + g * 2 - 10, w, 20); x.fillRect(X0 + g * 3 - 10, Y0, 20, h);
+    x.restore();
+  };
   const site = (cv: unknown) => {
     const d = { fg: '#f4f1ea', bg: '#16181d', ac: '#ff6b35', ac2: '#ffd23f', font: '"MA Num","Chiron Hei HK","Noto Sans TC","PingFang TC",sans-serif' };
     try {
@@ -92,7 +100,7 @@ export const xkit = () => {
       return { fg: hx(v('--fg'), d.fg), bg: hx(v('--bg'), d.bg), ac: hx(v('--ac'), d.ac), ac2: hx(v('--ac2'), d.ac2), font: v('--sans') || d.font };
     } catch { return d; }
   };
-  return { TAU, clamp, lerp, ease, inout, back, bounce, seg, num, rng, shade, alpha, lum, on, INK, WHITE, CREAM, PAL, rr, box, slab, poly, circle, ring, line, star, setFont, font, tw, T, pop, rot, fade, clip, cnt, partial, stroke, curve, arrowHead, arrow, burst, house, tower, coin, pin, person, check, cross, key, train, car, tree, cloud, heart, phone, site, pill, demo };
+  return { TAU, clamp, lerp, ease, inout, back, bounce, seg, num, rng, shade, alpha, lum, on, INK, WHITE, CREAM, PAL, rr, box, slab, poly, circle, ring, line, star, setFont, font, tw, T, pop, rot, fade, clip, cnt, partial, stroke, curve, arrowHead, arrow, burst, house, tower, coin, pin, person, check, cross, key, train, car, tree, cloud, heart, phone, site, pill, demo, mapBase };
 };
 export type XK = ReturnType<typeof xkit>;
 /** 每一招拿到的繪製環境：設計單位（短邊＝1080），W/H 為畫面寬高 */

@@ -116,5 +116,15 @@ export const XPACKS: XPack[] = [
     ['nw-paper', '報紙推近頭條', 'Newspaper Push-in', '報紙轉正並慢慢推近頭條，底部紅條擦入', '深色桌面上的報紙從斜放轉正並慢慢推近，頭條大字、配圖與內文線條清楚，最後底部紅色引導條擦入。'],
     ['nw-timeline', '新聞事件時間軸', 'Event Timeline', '時間軸逐段長出，事件節點依序彈出', '橘色時間軸由起點長出，四個事件節點依序回彈點亮並淡入日期與事件，最後一個是本集主題、用黃色強調。'],
   ] },
+  { pack: 11, name: '地圖路線與導航', cat: 'xroute', tags: ['路線', '導航', '地圖'], motionEn: 'Route and navigation on a flat illustrated street map: line draw, car following the route, isochrone rings, walk/bike/drive comparison, fly-through push-in, distance markers with ETA, traffic detour and a commute walker. The base map is illustrative, not real map data.', rows: [
+    ['rt-draw', '路線描邊', 'Route Draw', '白邊橘色路線沿街道畫出，起終點彈出', '平塗街區地圖上，帶白邊的橘色路線沿街道轉角一路畫出，筆頭白點跟著走，家與目的地圖釘彈出，最後顯示全程距離。'],
+    ['rt-car', '車子沿路線走', 'Car Follows Route', '藍色小車沿路線轉彎前進，頭上分鐘數 count-up', '淡色路線上，藍色小車沿路線轉彎前進並跟著轉向，走過的路段變成實色，車頭上方分鐘數跟著增加。'],
+    ['rt-iso', '等時圈擴散', 'Isochrone Rings', '從家往外擴散步行、騎車、開車三圈範圍', '以家為中心，綠、黃、橘三圈不規則虛線範圍依序往外擴散，各自標出「步行／騎車／開車 10 分」，中心持續發出脈衝。'],
+    ['rt-three', '三種交通比較', 'Walk Bike Drive', '三條平行路線同時出發，看誰先到', '步行、騎車、開車三條略錯開的路線同時畫出，各自依分鐘數速度前進，右下計時面板顯示每種方式的分鐘數。'],
+    ['rt-fly', '飛行鏡頭推進', 'Fly-through', '鏡頭跟著路線推近、移動到目的地', '鏡頭一邊放大一邊跟著路線筆頭移動，街區與大樓被推近，畫面周圍有速度線，像空拍飛過去。'],
+    ['rt-eta', '距離標記與到達時間', 'Distance & ETA', '路線畫出後沿途距離點彈出，最後彈出抵達時間卡', '藍色路線畫出，沿途 1/4、1/2、3/4 處距離標記依序彈出，最後深色卡片彈出預計抵達時間與總公里數。'],
+    ['rt-detour', '塞車改道', 'Traffic Detour', '綠色路線中段變紅閃爍，藍色虛線改道路線畫出', '綠色路線畫出後，中段變成閃爍紅色並彈出「塞車 +15 分」，接著藍色虛線替代路線畫出並標出省下的時間。'],
+    ['rt-commute', '住家到公司', 'Commute Walker', '小人沿虛線從住家走到公司，上方通勤時間卡', '淡色道路上，小人沿橘色點狀虛線從住家走到公司，抵達後上方白色膠囊卡彈出單程通勤分鐘數。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
