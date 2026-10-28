@@ -96,5 +96,15 @@ export const XPACKS: XPack[] = [
     ['ba-ghost', '疊影淡入', 'Ghost Crossfade', '同一角度舊照片慢慢淡成新照片，下方時間條', '同一個室內角度，修繕後畫面慢慢淡入疊在舊屋上，下方年份進度條跟著走滿。'],
     ['ba-lens', '放大鏡看差異', 'Magnifier Lens', '放大鏡在舊地圖上移動，鏡內顯示現在的樣子', '重劃前的地圖上，一支放大鏡沿曲線移動，鏡片內放大顯示同位置現在的路網與大樓。'],
   ] },
+  { pack: 9, name: '片尾與 CTA', cat: 'xend', tags: ['片尾', 'CTA', '訂閱'], motionEn: 'End screens and calls to action: subscribe-and-bell click, two recommended video cards, comment question card, membership/community funnel, QR card, next-episode teaser, thanks with credits and like/share/save buttons. Generic button shapes, no platform logos.', rows: [
+    ['ed-bell', '訂閱鈴鐺點擊', 'Subscribe & Bell', '游標點訂閱鈕變「已訂閱」，再點小鈴鐺搖晃', '紅色訂閱鈕與鈴鐺鈕彈出，游標從右下滑進點一下訂閱（按下回彈並變成已訂閱），接著點鈴鐺，鈴鐺變黃並左右搖晃、星芒爆開。'],
+    ['ed-cards', '片尾推薦雙卡', 'Next Video Cards', '兩張影片縮圖卡依序彈出並輕輕浮動', '標題下兩張彩色縮圖卡（播放鍵、小房子）依序回彈出現並輕微呼吸浮動，下方淡入片名；直式上下、橫式左右排列。'],
+    ['ed-ask', '留言提問卡', 'Comment Question', '對話框白卡彈出，選項逐條滑入，打字中三點', '白色對話框卡片回彈出現，寫出提問與 A/B 兩個選項逐條滑入，下方出現跳動的「打字中」三點。'],
+    ['ed-join', '會員社群導流', 'Membership Funnel', '會員、社群、電子報三張色卡依序彈出', '三張有厚度的彩色卡片依序回彈（星星、兩個人、信封圖示），各寫一句好處，最後提示「連結在說明欄」。'],
+    ['ed-qr', 'QR 卡', 'QR Card', '白卡彈出，QR 方格由左上往右下長出，掃描線掃過', '白色卡片回彈，示意 QR 碼方格斜向逐步長出、三個定位框帶橘色心，掃描線上下掃過；旁邊寫領取說明，並註明是示意 QR。'],
+    ['ed-next', '下集預告', 'Next Episode', '橘色標題條擦入，預告畫面由上往下展開', '橘色「下集預告」條從左擦入，下方縮圖畫面由上往下展開並帶細掃描紋，接著淡入下集標題與播出時間膠囊。'],
+    ['ed-thanks', '謝謝收看', 'Thanks & Credits', '大字逐字彈起，工作人員名單淡入，星光散開', '「謝謝收看」逐字回彈跳起、黃白交錯，下方企劃、資料、剪輯名單依序淡入，周圍小星星向外飄散。'],
+    ['ed-like', '按讚分享收藏', 'Like Share Save', '三顆圓鈕依序被按下變色、星芒爆開', '三顆灰色圓鈕（愛心、分享箭頭、書籤）彈出，依序被按下回彈變成紅、藍、黃色並爆出星芒，右上打勾。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
