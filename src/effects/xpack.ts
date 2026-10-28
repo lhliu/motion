@@ -190,5 +190,17 @@ export const XPACKS: XPack[] = [
     ['cn-net', '拆防護網', 'Net Reveal', '綠色防護網由下往上收起，露出大樓外觀', '整面綠色防護網覆蓋大樓，接著網子從下往上收起，露出灰色外牆與藍色窗戶，最後彈出標題膠囊。'],
     ['cn-progress', '工程進度條', 'Build Progress', '黃黑警示條紋進度條推進，節點依序打勾', '黃黑斜紋進度條從左往右推進到目前百分比，經過的工程節點依序變黑並打黃勾，上方百分比跟著走。'],
   ] },
+  { pack: 19, name: '動態字', cat: 'kinetic', tags: ['動態字', '標題', '字卡'], motionEn: 'Kinetic typography in the site palette: word slam with shake, bouncing squash letters, wave text, alternating slide-in lines, zoom-through words, typewriter with cursor, split reveal, highlighter marker, rotating word swap and a spin-in headline.', rows: [
+    ['kt-slam', '重擊字', 'Word Slam', '三個詞依序從大縮小砸下，最後一詞變色', '三個詞一個接一個從三倍大快速縮回定位、像砸在畫面上，帶陰影與小回彈，最後一詞用強調色。'],
+    ['kt-squash', '彈跳壓扁字', 'Squash Bounce', '每個字從上方掉下彈跳，落地時壓扁', '標題逐字從畫面上方掉下彈跳，碰到地線時被壓扁再彈回，字色交錯。'],
+    ['kt-wave', '波浪字', 'Wave Text', '逐字淡入後整排上下波浪起伏', '標題逐字由下往上淡入，接著整排字依序上下起伏成波浪，下方小字淡入。'],
+    ['kt-stack', '左右交錯堆疊', 'Stack Slide', '四行字左右交錯滑入，最後一行帶色塊', '四行字分別從左、右交錯滑入堆疊，最後一行墊上強調色色塊。'],
+    ['kt-zoom', '穿越放大', 'Zoom Through', '一個個詞從遠處放大穿過鏡頭，最後一個停下', '數個詞依序從小放大到穿出畫面並淡掉，最後一個詞回彈停在中央並換強調色。'],
+    ['kt-type', '打字機', 'Typewriter', '標題一字一字打出，游標閃爍', '標題一個字一個字打出來，後方的強調色游標閃爍，打完後下方淡入補充。'],
+    ['kt-split', '上下切開', 'Split Reveal', '中線拉開，上下兩半字往中線合起', '中央強調色細線往兩側拉開，標題上下兩半分別從上方、下方滑向中線合成完整字，最後副標淡入。'],
+    ['kt-marker', '螢光筆劃重點', 'Highlighter', '三行字淡入，中間一行被螢光筆刷過，第一行被劃掉', '三行字依序淡入，螢光黃色塊由左刷過中間那行，最後第一行被強調色線劃掉。'],
+    ['kt-swap', '輪替字', 'Word Swap', '色塊裡的詞上下滾動替換：買→租→等', '「現在該」後面的強調色方塊裡，詞語由下往上滾動替換，買、租、等輪流出現，旁邊一個問號。'],
+    ['kt-spin', '旋轉彈出標題', 'Spin Headline', '大字旋轉一圈彈出，副標斜斜擺正', '主標大字一邊旋轉一圈一邊回彈放大到位，副標從略微傾斜擺正並淡入。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
