@@ -280,5 +280,13 @@ export const XPACKS: XPack[] = [
     ['gb-arc', '航線弧線', 'Flight Arcs', '從台北拉出三條弧線飛到東京、新加坡、舊金山', '地球上台北紅點脈動，三條彩色弧線依序從台北往東京、新加坡、舊金山方向拱起延伸，線頭白點跟著走。'],
     ['gb-spike', '城市數據柱', 'City Spikes', '地球慢轉，亞洲城市長出高低不同的數據柱', '地球慢慢轉動，台北、東京、香港等城市位置長出長短不同的黃色數據柱（台北為紅色），柱頂寫城市名。'],
   ] },
+  { pack: 28, name: '氣候災害', cat: 'mrisk', tags: ['災害', '風險', '買房'], motionEn: 'Flat illustrated climate and disaster risk cards for property buyers: flood, soil liquefaction, earthquake, typhoon track, landslide and heat.', rows: [
+    ['wr-flood', '淹水潛勢', 'Flood Risk', '房子排排站，水位上升並標出淹水深度', '平塗房子依序彈出，藍色水面帶波浪上漲，右側量尺數到 50cm，底部黃色膠囊提醒查淹水紀錄。'],
+    ['wr-liq', '土壤液化', 'Liquefaction Map', '台灣輪廓上冒出紅黃綠潛勢圓點與圖例', '米色台灣輪廓回彈出現，紅黃綠潛勢圓點逐一冒出，圖例依序淡入（示意分區）。'],
+    ['wr-quake', '地震震度', 'Earthquake', '大樓左右搖晃，地面擴散黃色震波', '藍色大樓回彈立起後左右搖晃，地面一圈圈黃色震波擴散，上方紅色膠囊寫震度。'],
+    ['wr-typhoon', '颱風路徑', 'Typhoon Track', '白色颱風旋轉著沿路徑掠過台灣', '綠色台灣輪廓上，白色螺旋颱風一邊旋轉一邊沿著點狀路徑從東南掠過往西北。'],
+    ['wr-slide', '山坡土石', 'Landslide', '山坡上的石塊滾下，旁邊跳出警示牌', '綠色山坡上石塊依序滾落滑向山腳房子，黃色三角驚嘆號警示牌回彈出現。'],
+    ['wr-heat', '高溫西曬', 'Heat Wave', '太陽脈動，溫度計一路升到 38°C', '黃色太陽帶光芒脈動旋轉，溫度計紅柱從 25 升到 38°C，地面熱浪扭動。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;

@@ -26,4 +26,5 @@ import { xp24 } from './p24';
 import { xp25 } from './p25';
 import { xp26 } from './p26';
 import { xp27 } from './p27';
-export const XP_PACKS: ((K: XK) => Record<string, XFx>)[] = [xp01, xp02, xp03, xp04, xp05, xp06, xp07, xp08, xp09, xp10, xp11, xp12, xp13, xp14, xp15, xp16, xp17, xp18, xp19, xp20, xp21, xp22, xp23, xp24, xp25, xp26, xp27];
+import { xp28 } from './p28';
+export const XP_PACKS: ((K: XK) => Record<string, XFx>)[] = [xp01, xp02, xp03, xp04, xp05, xp06, xp07, xp08, xp09, xp10, xp11, xp12, xp13, xp14, xp15, xp16, xp17, xp18, xp19, xp20, xp21, xp22, xp23, xp24, xp25, xp26, xp27, xp28];
