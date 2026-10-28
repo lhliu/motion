@@ -42,5 +42,17 @@ export const XPACKS: XPack[] = [
     ['pr-formula', '總價算式', 'Price Formula', '坪數 × 單價 = 總價，三個色塊依序彈出', '坪數、乘號、單價、等號、總價依序回彈出現（直式上下、橫式左右排），總價 count-up 後冒出放射短線。'],
     ['pr-rank', '單價排行', 'Unit Price Ranking', '五區單價橫條排行，前三名彈出獎牌', '五個行政區名稱淡入、橫條依序長出並 count-up，第一名用主色，前三名左側彈出金銀銅獎牌。'],
   ] },
+  { pack: 4, name: '捷運站牌與通勤', cat: 'transit', tags: ['捷運', '通勤', '交通'], motionEn: 'Metro signage and commute motion: bilingual station signs, platform doors, arrival boards, lighting route bars, transfer signs, footprints and a commute race. Line colours only, no operator logos; names and times are illustrative.', rows: [
+    ['mt-sign', '雙語站名牌', 'Station Name Sign', '白底站名牌由上滑下，站號徽章彈出，前後站標示', '白色站名牌帶路線色條從上方滑下，站號徽章回彈出現，中文大字站名與英文站名淡入，下方左右箭頭標示前後站。'],
+    ['mt-door', '月台車門', 'Platform Doors', '門燈閃紅後轉綠，車門往兩側打開', '月台與黃色警示線前停著車廂，門燈先閃紅「列車進站」，接著亮綠、兩扇車門往兩側滑開露出車廂內乘客，下方提示膠囊淡入。'],
+    ['mt-arrive', '到站倒數看板', 'Arrival Board', '看板分鐘數倒數，列車開進月台', '深色看板顯示目的地與本班、下一班分鐘數，數字一分一分倒數到「進站中」並閃爍；下方月台三節列車從右側滑進停好。'],
+    ['mt-line', '路線逐站點亮', 'Line Progress', '路線色條沿站點逐站點亮，列車圖示跟著走', '路線底條長出、站點依序彈出；彩色進度條帶著列車圖示逐站前進，經過的站點放大點亮、站名變亮。直式垂直、橫式水平。'],
+    ['mt-transfer', '轉乘指示', 'Transfer Sign', '兩條路線交會，轉乘站環形符號彈出，指示牌跟上', '藍線與紅線依序畫出並在中心交會，轉乘站雙圈符號回彈並脈動，站名淡入；下方白色轉乘指示牌彈出，箭頭來回輕推。'],
+    ['mt-walk', '步行 N 分鐘足跡', 'Walking Footprints', '街區地圖上腳印從捷運站一路走到家', '米色街區地圖上，左右交替的腳印沿虛線路線從捷運站走到房子，房子最後彈出；分鐘數膠囊跟著 count-up。'],
+    ['mt-new', '新路線動畫', 'New Line Plan', '規劃中虛線路線畫出，站點彈出，再變成實線', '既有路線淡色橫過，規劃中的黃色虛線沿折線畫出、站點與站號依序彈出，接著實線從頭再畫一次，轉乘站標籤彈出。'],
+    ['mt-race', '通勤時間比賽', 'Commute Race', '捷運、公車、開車三條跑道比誰先到', '三條跑道上列車、公車、汽車同時出發並上下顛動，依各自分鐘數到達終點格旗，到達時彈出分鐘數膠囊，最快的用黃色。'],
+    ['mt-exit', '出口指示牌', 'Exit Sign', '黃色出口牌彈出，箭頭推動，周邊地標逐條列出', '黃色出口指示牌回彈出現（出口編號、EXIT），箭頭左右推動；下方三個周邊地標編號方塊與名稱依序滑入。'],
+    ['mt-cabin', '車廂路線看板', 'In-car Route Display', '車廂內跑馬燈播下一站，目前站點閃爍', '車廂看板上方橘字跑馬燈播下一站，下方路線圖已過站變灰、目前站紅點閃爍、箭頭指向下一站，最後彈出開門方向。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;

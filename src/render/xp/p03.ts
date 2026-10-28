@@ -110,7 +110,7 @@ export const xp03 = (K: XK) => {
       pop(x, cx, cy, q, () => {
         circle(x, cx, cy, 190, alpha(col, 0.18)); circle(x, cx, cy, 140, col);
         const dy = up ? -1 : 1, bob = Math.sin(t * 3) * 8 * seg(t, 1, 1.2);
-        poly(x, [[cx, cy + dy * 80 + bob], [cx + 70, cy + bob], [cx + 26, cy + bob], [cx + 26, cy - dy * 80 + bob], [cx - 26, cy - dy * 80 + bob], [cx - 26, cy + bob], [cx - 70, cy + bob]].map(([a, b]) => [a, up ? 2 * cy - b : b]) as number[][], WHITE);
+        poly(x, [[cx, cy + dy * 80 + bob], [cx + 70, cy + bob], [cx + 26, cy + bob], [cx + 26, cy - dy * 80 + bob], [cx - 26, cy - dy * 80 + bob], [cx - 26, cy + bob], [cx - 70, cy + bob]], WHITE);
       });
       const nx = c.land ? 820 : w / 2, ny = c.land ? cy - 30 : cy + 330;
       fade(x, seg(t, 0.6, 1), () => T(x, cnt(v, seg(t, 0.6, 1.6)) + '%', nx, ny, c.land ? 260 : 220, col, c.land ? 'left' : 'center', 900));
