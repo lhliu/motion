@@ -142,5 +142,17 @@ export const XPACKS: XPack[] = [
     ['mk-icons', '地標圖示冒出來', 'Landmark Icons', '地圖上捷運、學校、公園、醫院、市場標籤依序冒出並輕跳', '彩色圓角地標標籤（帶小尖角）依序在地圖上回彈冒出，下方名稱膠囊淡入，之後輪流輕輕跳動。'],
     ['mk-ruler', '距離標尺', 'Distance Ruler', '黃色量尺從家拉到捷運站，距離 count-up', '家與捷運站兩個圓標彈出，黃色刻度量尺沿兩點連線拉出，中間距離數字 count-up，最後彈出步行時間。'],
   ] },
+  { pack: 14, name: '數字統計字卡', cat: 'xstat', tags: ['數據', '大數字', '資訊圖'], motionEn: 'Data callouts in the infographic style: big count-up number, percentage ring, spinning rank badge, year-over-year arrow, ping/sqm flip, heat thermometer, 10-person icon array, VS numbers, fraction of houses and a number-with-sparkline card. Figures illustrative.', rows: [
+    ['st-big', '大數字計數', 'Big Number', '超大數字 count-up 並彈一下，底線拉出', '上方小標淡入，超大數字回彈出現並從 0 count-up 到目標值，到位時再彈一下，下方橘色底線往兩側拉開、說明淡入。'],
+    ['st-ring', '百分比環', 'Percent Ring', '粗圓環依百分比跑到位，端點黃點跟著走', '粗圓環從頂端順時針跑到百分比位置，端點黃色圓點跟著走，中間百分比 count-up，下方說明淡入。'],
+    ['st-rank', '排名徽章', 'Rank Badge', '金色鋸齒徽章旋轉彈出，紅色緞帶與星光', '金色鋸齒徽章一邊旋轉一邊回彈出現，中間寫 NO.1，下方兩條紅色緞帶，周圍小星星向外散開。'],
+    ['st-yoy', '比去年 +12%', 'Year over Year', '紅色上升箭頭圓彈出，漲幅 count-up，迷你走勢畫出', '紅色圓形上升箭頭回彈出現，旁邊漲幅百分比 count-up，下方迷你走勢線畫出；數值為負時自動變綠色下降。'],
+    ['st-unit', '坪與 m² 換算', 'Ping ↔ m²', '橘色坪數卡上下翻面變成藍色平方公尺卡', '橘色大字「30 坪」色卡沿水平軸翻轉，翻到背面變成藍色「99.2 m²」，下方標出換算公式。'],
+    ['st-thermo', '溫度計', 'Thermometer', '溫度計水銀柱上升，顏色由綠變紅', '溫度計水銀柱從底部上升並微微抖動，顏色隨高度由綠、黃變紅，旁邊度數 count-up，最後彈出「過熱」標籤。'],
+    ['st-icons', '十人圖示陣列', 'Icon Array', '10 個小人彈出，其中幾個依序亮起', '10 個淡色小人依序回彈排好，接著其中幾位依序亮成橘色，上方一句「每 10 位有 3 位」，下方說明淡入。'],
+    ['st-vs', '數字 VS 對決', 'Number VS', '兩張色卡數字對決，中間 VS 圓章彈出', '藍、橘兩張大色卡先後彈出並 count-up 兩區單價，中間黃色 VS 圓章回彈，最後彈出「差了 1.8 倍」膠囊。'],
+    ['st-fraction', '每 N 戶 1 戶', 'One in N', '一排小房子彈出，其中一戶變空並晃動', '小房子一間間回彈排成格子，其中一間變成透明空屋並輕輕晃動、寫「空」，旁邊大字百分比 count-up。'],
+    ['st-spark', '大數字加走勢', 'Number + Sparkline', '數字卡上大數字 count-up，下方面積走勢線畫出', '左側橘條的數字卡回彈出現，大數字與單位 count-up，下方帶淡色面積的走勢線由左畫到右，終點黃點與漲幅膠囊彈出。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
