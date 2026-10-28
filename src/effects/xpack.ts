@@ -202,5 +202,17 @@ export const XPACKS: XPack[] = [
     ['kt-swap', '輪替字', 'Word Swap', '色塊裡的詞上下滾動替換：買→租→等', '「現在該」後面的強調色方塊裡，詞語由下往上滾動替換，買、租、等輪流出現，旁邊一個問號。'],
     ['kt-spin', '旋轉彈出標題', 'Spin Headline', '大字旋轉一圈彈出，副標斜斜擺正', '主標大字一邊旋轉一圈一邊回彈放大到位，副標從略微傾斜擺正並淡入。'],
   ] },
+  { pack: 20, name: '情緒貼圖', cat: 'xemote', tags: ['貼圖', '表情', '反應'], motionEn: 'Flat sticker-style emotion reactions with white outline and a tilted caption tag: shock, crying, angry steam, heart eyes, sweat drop, question marks, thumbs up, money flying away, comic boom and a rain cloud overhead.', rows: [
+    ['em-shock', '嚇到', 'Shock', '黃色臉回彈出現並抖動，眼睛瞪大嘴巴張開', '白邊黃色圓臉回彈出現並快速抖動，眼睛瞪大成白圓、嘴巴張成 O 形，左上方三條紅色驚嚇線，下方斜斜的黑色字條。'],
+    ['em-cry', '哭哭', 'Crying', '藍色臉閉眼，淚珠不斷從兩側流下', '淺藍圓臉閉著眼、嘴角往下，藍色淚珠持續從兩眼往下流，下方黑色字條寫心聲。'],
+    ['em-angry', '生氣冒煙', 'Angry', '紅色臉皺眉，頭頂兩團煙往上冒', '紅色圓臉眉毛倒豎、嘴角下垂，頭頂左右兩團白煙不斷往上冒並淡掉。'],
+    ['em-love', '愛心眼', 'Heart Eyes', '眼睛變成跳動愛心，小愛心往上飄', '黃色圓臉的眼睛是兩顆跳動的紅色愛心、嘴巴微笑，粉紅小愛心持續往上飄。'],
+    ['em-sweat', '冒冷汗', 'Sweat Drop', '瞇眼一字嘴，額頭一滴冷汗慢慢滑下', '黃色圓臉瞇著眼、嘴巴一字，右上角一滴藍色冷汗不斷慢慢往下滑。'],
+    ['em-what', '滿頭問號', 'Question Marks', '臉左右歪頭，三個彩色問號依序彈出', '黃色圓臉左右歪頭、嘴巴歪一邊，頭頂右上方紅、藍、綠三個問號依序彈出。'],
+    ['em-like', '按讚', 'Thumbs Up', '藍色圓章裡白色讚手勢一跳一跳，周圍放射黃線', '白邊藍色圓章裡的白色讚手勢有節奏地放大縮小，出現時周圍放射黃色短線。'],
+    ['em-money', '錢飛走', 'Money Flies', '長翅膀的綠色鈔票一張張飛走', '綠色鈔票長出白色翅膀拍動，一張張從下往上飛走並淡出，下方留一枚金幣。'],
+    ['em-boom', '爆炸對話框', 'Comic Boom', '紅色鋸齒爆炸框彈出，中間黃字，周圍閃星', '白邊紅色鋸齒爆炸對話框回彈出現並微微脈動，中間黃色大字「什麼?!」，周圍黃色星星閃爍。'],
+    ['em-cloud', '頭頂烏雲', 'Rain Cloud', '灰臉頭上一朵烏雲下雨，偶爾打雷', '灰色沮喪圓臉頭頂飄著一朵灰色烏雲，雨絲持續落下，偶爾閃出黃色閃電。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
