@@ -17,3 +17,7 @@
 - 橫式圖解區縮放約 0.7，小字較小。
 - 「values」只覆寫有數字的卡（長條、甜甜圈、金字塔、大數字、漏斗、啞鈴等）；items 依各卡順序對應。
 - 「角落編號」解讀為流程步驟的編號徽章，已移除。
+
+## 看屋物件分類修正（fix/dcard-to-chart）
+- 物件「看屋物件」的 CatId 改為 `oestate`（`src/types.ts`、`src/data.ts`）；404–409 在 `src/effects/object.ts` 以 `cat: 'oestate'` 覆寫，繪製模組仍為 `estate`、id 仍為 `obj-estate-*`。`src/main.ts` 物件工作室按鈕把 `oestate` 對應回 `estate` 模組。
+- 元件「房產資訊」維持 `estate`（15 招）。

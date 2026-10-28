@@ -1352,7 +1352,7 @@ $('#heroStudio').addEventListener('click', () => {
   if (state.sec === 'text' || state.sec === 'cut' || state.sec === 'ui') return showKits(true);
   if (state.sec === 'plan') return planStudio.open();
   if(state.sec==='illus'){if(state.cat==='vehicle')return transportStudio.open();if(state.cat==='ocean')return illustrationStudio.open();return natureStudio.openMode(state.cat==='aerial'?'city':'meteor');}
-  if (state.sec === 'object') return state.cat === 'liquid' ? studio.open() : objStudio.open((OBJ_MODULES as string[]).includes(state.cat) ? (state.cat as OModule) : undefined);
+  if (state.sec === 'object') return state.cat === 'liquid' ? studio.open() : objStudio.open(state.cat === 'oestate' ? 'estate' : (OBJ_MODULES as string[]).includes(state.cat) ? (state.cat as OModule) : undefined);
   return state.sec === 'photo' ? photoStudio.open() : mapStudio.open();
 });
 // 站頂工作區列的高度會隨螢幕換行，篩選列跟著貼齊

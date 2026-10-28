@@ -101,7 +101,7 @@ export const CATEGORIES: Category[] = [
   { id: 'drink', sec: 'object', code: 'DRINK', zh: '手搖飲', tagline: '珍珠奶茶、汽水罐' },
   { id: 'fun', sec: 'object', code: 'FUN', zh: '有趣道具', tagline: '微波爐、抓娃娃機、紙飛機、電燈泡、骰子' },
   { id: 'taiwan', sec: 'object', code: 'TAIWAN', zh: '台灣生活', tagline: '紅包、套圈圈、刮刮樂' },
-  { id: 'estate', sec: 'object', code: 'ESTATE', zh: '看屋物件', tagline: '房貸計算機、電表、搬家紙箱' },
+  { id: 'oestate', sec: 'object', code: 'ESTATE', zh: '看屋物件', tagline: '房貸計算機、電表、搬家紙箱' },
   { id: 'aerial', sec: 'illus', code: 'AERIAL', zh: '俯瞰', tagline: '八種精修地景，各有專屬動態與運鏡' },
   { id: 'vehicle', sec: 'illus', code: 'VEHICLE', zh: '天空物件', tagline: '飛機、熱氣球，各有專屬編輯' },
   { id: 'ocean', sec: 'illus', code: 'OCEAN', zh: '海洋世界', tagline: '七種精修海底場景與輪船，各有專屬編輯與透明輸出' },
