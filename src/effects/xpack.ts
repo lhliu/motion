@@ -182,5 +182,13 @@ export const XPACKS: XPack[] = [
     ['cs-window', '窗邊滲水路徑', 'Window Leak Path', '藍色水流箭頭從窗框縫滲入沿牆內流下', '灰色牆面上的窗戶旁，藍色箭頭從外側窗框縫鑽進、沿牆內往下流，依序標出 ① ② 與解法。'],
     ['cs-house', '透天厝剖面', 'Townhouse Cut-away', '透天厝一層層往上疊，屋頂蓋上並標出高度', '車庫、客廳、臥室三層色塊由下往上依序彈出疊高，紅色屋頂最後蓋上，右側拉出總高度標線。'],
   ] },
+  { pack: 18, name: '工地現場', cat: 'site', tags: ['工地', '施工', '預售屋'], motionEn: 'Construction-site scenes in flat colour blocks: tower crane lifting a beam, floors stacking up, excavator digging a basement, spinning concrete mixer truck, safety net dropping to reveal the facade and a hazard-striped progress bar. Figures illustrative.', rows: [
+    ['cn-crane', '塔吊吊裝', 'Tower Crane', '塔吊小車移動，吊起紅色鋼樑微微擺動', '藍天工地上黃色塔吊的小車沿吊臂往外移，鋼索把紅色鋼樑從地面吊起並微微擺動，下方寫「鋼樑吊裝中」。'],
+    ['cn-floors', '樓層往上蓋', 'Floors Rising', '大樓一層一層往上長，旁邊樓層數跟著跳', '工地上的大樓一層一層從下往上長出，每層帶窗戶色塊，右側樓層數字跟著往上跳。'],
+    ['cn-dig', '怪手開挖', 'Excavator', '黃色怪手手臂來回挖，旁邊基坑越挖越深', '黃色怪手的兩節手臂來回擺動挖土，右側棕色基坑慢慢變深，上方標「開挖地下室」。'],
+    ['cn-mixer', '預拌車進場', 'Mixer Truck', '紅色預拌車開進畫面，車斗條紋持續旋轉', '紅色車頭的預拌混凝土車從左側開進畫面停下，輪子轉動、車斗上的紅色條紋持續旋轉，下方彈出灌漿日膠囊。'],
+    ['cn-net', '拆防護網', 'Net Reveal', '綠色防護網由下往上收起，露出大樓外觀', '整面綠色防護網覆蓋大樓，接著網子從下往上收起，露出灰色外牆與藍色窗戶，最後彈出標題膠囊。'],
+    ['cn-progress', '工程進度條', 'Build Progress', '黃黑警示條紋進度條推進，節點依序打勾', '黃黑斜紋進度條從左往右推進到目前百分比，經過的工程節點依序變黑並打黃勾，上方百分比跟著走。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
