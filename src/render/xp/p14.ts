@@ -35,7 +35,7 @@ export const xp14 = (K: XK) => {
       cap(x, c, w, h, cy + (c.land ? 330 : 480), c.title('全台最會漲的行政區'), 1.2);
     }) },
     'st-yoy': { d: (x, c) => stage(c, (w, h) => {
-      const t = c.t, v = c.v(0, '+12.4'), up = !v.startsWith('-'), col = up ? RED : GRN, cy = h * 0.45;
+      const t = c.t, raw = c.v(0, '+12.4').trim().replace(/[−–]/g, '-'), up = (parseFloat(raw.replace(/[^\d.-]/g, '')) || 0) >= 0, v = (up ? '+' : '-') + raw.replace(/^[+-]\s*/, ''), col = up ? RED : GRN, cy = h * 0.45;
       T(x, c.title('比去年'), w / 2, cy - (c.land ? 230 : 280), 60, alpha(c.fg, 0.7));
       const q = ease(seg(t, 0.3, 1.6)), ay = cy - (c.land ? 60 : 40), ax = w / 2 - (c.land ? 420 : 300);
       pop(x, ax, ay, back(seg(t, 0.2, 0.6)), () => { circle(x, ax, ay, 110, col); K.rot(x, ax, ay, up ? 0 : Math.PI, () => { poly(x, [[ax, ay - 70], [ax + 60, ay], [ax + 22, ay], [ax + 22, ay + 64], [ax - 22, ay + 64], [ax - 22, ay], [ax - 60, ay]], WHITE); }); });

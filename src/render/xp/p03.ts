@@ -55,7 +55,7 @@ export const xp03 = (K: XK) => {
       });
       fade(x, seg(t, 1.6, 2), () => { T(x, '萬', X0 + 30, cy - 30, 90, c.ac2, 'left'); T(x, '/坪', X0 + 30, cy + 70, 60, alpha(c.fg, 0.6), 'left'); });
       const q = back(seg(t, 2.0, 2.4));
-      pop(x, cx, cy + fs * 0.95, q, () => { const pw = pill(x, '▲ 比去年 +6.8%', cx, cy + fs * 0.95, 46, alpha(GREEN, 0.25), '#7fdc8a'); void pw; });
+      pop(x, cx, cy + fs * 0.95, q, () => { const pw = pill(x, '▲ 比去年 +6.8%', cx, cy + fs * 0.95, 46, alpha(RED, 0.25), '#ff8a8d'); void pw; });
       K.demo(x, w + 20, h + 10);
     }) },
     'pr-split': { d: (x, c) => stage(c, (w, h) => {
@@ -103,8 +103,8 @@ export const xp03 = (K: XK) => {
       K.demo(x, w + 20, h + 10);
     }) },
     'pr-change': { d: (x, c) => stage(c, (w, h) => {
-      const t = c.t, v = c.v(0, '+8.2'), up = !v.startsWith('-'), col = up ? RED : GREEN;
-      head(x, c, t, c.title('新北房價年增率'), c.sub('2025 → 2026（示意；台灣漲為紅）'));
+      const t = c.t, raw = c.v(0, '+8.2').trim().replace(/[−–]/g, '-'), n = parseFloat(raw.replace(/[^\d.-]/g, '')) || 0, up = n >= 0, v = (up ? '+' : '-') + raw.replace(/^[+-]\s*/, ''), col = up ? RED : GREEN;
+      head(x, c, t, c.title(up ? '新北房價年增率' : '新北房價年減率'), c.sub(up ? '2025 → 2026（示意；台灣漲為紅）' : '2025 → 2026（示意；台灣跌為綠）'));
       const cx = c.land ? 520 : w / 2, cy = c.land ? h * 0.55 : h * 0.4;
       const q = back(seg(t, 0.3, 0.9));
       pop(x, cx, cy, q, () => {
@@ -115,7 +115,7 @@ export const xp03 = (K: XK) => {
       const nx = c.land ? 820 : w / 2, ny = c.land ? cy - 30 : cy + 330;
       fade(x, seg(t, 0.6, 1), () => T(x, cnt(v, seg(t, 0.6, 1.6)) + '%', nx, ny, c.land ? 260 : 220, col, c.land ? 'left' : 'center', 900));
       // 小走勢
-      const pts: [number, number][] = [0.1, 0.18, 0.15, 0.3, 0.42, 0.38, 0.55, 0.62, 0.8, 0.92].map((k, i) => [(c.land ? 820 : 120) + i * (c.land ? 85 : 84), (c.land ? cy + 260 : cy + 620) - k * 160]);
+      const pts: [number, number][] = [0.1, 0.18, 0.15, 0.3, 0.42, 0.38, 0.55, 0.62, 0.8, 0.92].map((k, i) => [(c.land ? 820 : 120) + i * (c.land ? 85 : 84), (c.land ? cy + 260 : cy + 620) - (up ? k : 1 - k) * 160]);
       const p = ease(seg(t, 1.2, 2.4));
       stroke(x, partial(pts, p), 12, col);
       const o = partial(pts, p), e = o[o.length - 1]; if (p > 0.02) circle(x, e[0], e[1], 16, WHITE);
