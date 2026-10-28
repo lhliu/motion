@@ -254,5 +254,15 @@ export const XPACKS: XPack[] = [
     ['sk-note', '便利貼加箭頭', 'Sticky Note', '黃色便利貼斜貼淡入，下方畫一條指示線', '照片上淡入一張斜貼的黃色便利貼寫著短評，下方黑色手繪線往下指。'],
     ['sk-box', '手繪框', 'Sketchy Box', '綠筆描一個歪歪的框，框內淡淡上黃底', '綠色手繪筆觸沿重點文字描一個略歪的方框，畫完後框內淡淡鋪上黃色底色。'],
   ] },
+  { pack: 25, name: '日韓綜藝字幕', cat: 'xvariety', tags: ['綜藝', '字幕', '日韓'], motionEn: 'Japanese/Korean variety-show captions with thick double outlines: gradient telop, shaking impact word with burst rays, small blue aside comments, rainbow headline, pink-tab subtitle bar, two lines flying in from opposite sides, flashing POINT badge and per-letter popping text.', rows: [
+    ['vr-telop', '綜藝字幕條', 'Variety Telop', '黃橘漸層粗描邊大字從下方回彈出現', '畫面下方黃到橘漸層大字帶紅色內邊與白色外邊，回彈彈出後再輕彈一下，日式綜藝字幕感。'],
+    ['vr-shake', '衝擊震動字', 'Impact Shake', '黃色放射線背景，紅色大字從大縮小砸下並劇烈抖動', '黃色放射尖刺背景中，紅色粗描邊大字從兩倍大縮回定位，接著劇烈抖動慢慢停下。'],
+    ['vr-aside', '小聲吐槽', 'Aside Comment', '右上角藍色白邊小字一行行冒出，後接三個點', '右上角藍色白邊小字一行一行從上方輕輕滑下淡入，接著出現三個依序亮起的小點。'],
+    ['vr-rainbow', '彩虹漸層字', 'Rainbow Title', '彩虹漸層粗描邊字斜斜彈出，漸層流動，星星環繞', '彩虹漸層填色的粗描邊大字微斜回彈出現，漸層持續左右流動，周圍星星繞圈閃爍。'],
+    ['vr-bar', '底部字幕條', 'Subtitle Bar', '深色圓角字幕條從左側滑入，粉色頭帶房子圖示', '畫面下方深色圓角字幕條從左側滑入，左端粉紅色圓頭放房子圖示，台詞白字淡入。'],
+    ['vr-fly', '對話飛入', 'Dialog Fly-in', '藍字從左飛入、紅字從右飛入，一問一答', '藍色描邊問句從左側飛入微向左傾，接著紅色描邊回答從右側飛入微向右傾，像綜藝對話。'],
+    ['vr-point', '重點閃牌', 'POINT Badge', '紅色重點牌斜斜彈出閃爍，下方黃字說明', '白邊紅色「ポイント」牌微斜回彈出現並紅色深淺閃爍，下方黃色粗描邊說明字淡入。'],
+    ['vr-pop', '逐字彈跳', 'Letter Pop', '韓式綜藝字一字一字彈出，彩色並上下浮動', '字幕逐字回彈出現，每個字輪流換成紅、橘、藍、綠，並持續上下輕輕浮動。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
