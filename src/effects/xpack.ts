@@ -106,5 +106,15 @@ export const XPACKS: XPack[] = [
     ['ed-thanks', '謝謝收看', 'Thanks & Credits', '大字逐字彈起，工作人員名單淡入，星光散開', '「謝謝收看」逐字回彈跳起、黃白交錯，下方企劃、資料、剪輯名單依序淡入，周圍小星星向外飄散。'],
     ['ed-like', '按讚分享收藏', 'Like Share Save', '三顆圓鈕依序被按下變色、星芒爆開', '三顆灰色圓鈕（愛心、分享箭頭、書籤）彈出，依序被按下回彈變成紅、藍、黃色並爆出星芒，右上打勾。'],
   ] },
+  { pack: 10, name: '新聞讀報', cat: 'news', tags: ['新聞', '政策', '讀報'], motionEn: 'News-reading kit: headline carousel, two-row breaking ticker, multi-outlet headline collage, policy notice with stamp, highlighted legal clause, press-conference quote, newspaper push-in and an event timeline. Outlets are placeholders (A 報, B 台); text is illustrative.', rows: [
+    ['nw-carousel', '新聞標題輪播', 'Headline Carousel', '一則一則頭條卡片橫向滑換，下方頁點跟著走', '深色頭條卡片左側紅條，每 1.3 秒橫向滑到下一則，標題自動換行，底部媒體代稱與時間，下方頁點跟著移動。'],
+    ['nw-ticker', '跑馬燈快訊', 'Breaking Ticker', '紅色快訊條與深色資訊條兩排跑馬燈', '紅色快訊條擦入，紅點閃爍、快訊文字橫向捲動；下方深色資訊條以較慢速度捲動天氣與指數。'],
+    ['nw-collage', '多家媒體標題拼貼', 'Headline Collage', '各家報紙剪報卡片歪斜著一張張蓋上去', '米白剪報卡片帶不同色媒體條，一張張從大縮小蓋到畫面上並微微歪斜，拼出「各家怎麼說」。'],
+    ['nw-policy', '政策公告卡', 'Policy Notice', '公告紙張彈出、條文逐條出現，紅色印章蓋下', '米白公告紙卡片回彈出現，標題與三條重點依序淡入，最後紅色「已上路」圓章從大縮小蓋下、略為傾斜。'],
+    ['nw-law', '法條條文高亮', 'Clause Highlight', '條文段落淡入，關鍵句黃色螢光筆刷過', '法條條號與條文自動換行淡入，關鍵句被黃色螢光底從左刷過，下方紅線拉出並寫出罰則。'],
+    ['nw-quote', '記者會引言卡', 'Press Quote', '發言人與麥克風彈出、閃光燈閃，引言白卡滑入', '發言人插畫與三支麥克風彈出，周圍閃光燈此起彼落，旁邊白色引言卡帶大引號滑入，署名在右下。'],
+    ['nw-paper', '報紙推近頭條', 'Newspaper Push-in', '報紙轉正並慢慢推近頭條，底部紅條擦入', '深色桌面上的報紙從斜放轉正並慢慢推近，頭條大字、配圖與內文線條清楚，最後底部紅色引導條擦入。'],
+    ['nw-timeline', '新聞事件時間軸', 'Event Timeline', '時間軸逐段長出，事件節點依序彈出', '橘色時間軸由起點長出，四個事件節點依序回彈點亮並淡入日期與事件，最後一個是本集主題、用黃色強調。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
