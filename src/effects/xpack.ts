@@ -172,5 +172,15 @@ export const XPACKS: XPack[] = [
     ['hi-laser', '雷射測距', 'Laser Meter', '紅色測距儀射出雷射到對牆，數字跳到距離', '左牆邊的紅色雷射測距儀射出紅色光束延伸到右牆，光點閃爍，螢幕數字跟著跳，下方標出總距離。'],
     ['hi-list', '驗屋清單', 'Checklist', '夾板清單彈出，項目依序打勾或打叉', '米色夾板清單回彈出現，五個檢查項目淡入，接著依序打上綠色勾或紅色叉。'],
   ] },
+  { pack: 17, name: '建築剖面圖解', cat: 'diagram', tags: ['剖面', '圖解', '建築'], motionEn: 'Colourful construction cross-section diagram cards: wall layers, floor slab with sound damping, bathroom waterproofing height, foundation piles to bedrock, tile delamination, utility shaft, window leak path and a townhouse cut-away. Figures illustrative.', rows: [
+    ['cs-wall', '外牆剖面', 'Wall Layers', '藍色標題卡彈出，牆體各層由外到內逐層長出並拉線標註', '奶油色圖卡彈出，外牆磁磚、黏著水泥、RC 牆、粉光、油漆由外到內一層層長出，每層拉出引線寫名稱。'],
+    ['cs-slab', '樓板隔音剖面', 'Slab & Sound', '樓板各層由上往下堆疊，撞擊音波被擋下', '木地板、隔音墊、砂漿、RC 樓板、天花板由上到下滑入堆疊，上方紅色音波一圈圈擴散，最後彈出降噪數字。'],
+    ['cs-proof', '浴室防水高度', 'Waterproof Height', '藍色防水層沿牆往上長，淋浴區比其他牆高', '浴室剖面中藍色防水層從地面沿兩側牆往上長，淋浴區長到 180cm、另一側停在 30cm，水滴持續落下。'],
+    ['cs-pile', '基礎樁', 'Foundation Piles', '大樓下方四根基礎樁穿過土層打到岩盤', '地層由表土到岩盤分層上色，大樓下方四根白色基礎樁往下延伸穿過各層直到岩盤，最後標出樁長。'],
+    ['cs-tile', '磁磚剝落原因', 'Tile Delamination', '一塊外牆磁磚翹起脫落，旁邊列出三個原因', '外牆剖面中一塊紅色磁磚慢慢翹起往外掉，紅色虛線指向右側，依序列出黏著不足、熱脹冷縮、空鼓三個原因。'],
+    ['cs-shaft', '管道間', 'Utility Shaft', '管道間裡四色管線由下往上長出並標名稱', '三層樓剖面中間的管道間裡，藍、棕、黃、紅四色管線依序由下往上長，右側彈出給水、汙水、電線、消防標籤。'],
+    ['cs-window', '窗邊滲水路徑', 'Window Leak Path', '藍色水流箭頭從窗框縫滲入沿牆內流下', '灰色牆面上的窗戶旁，藍色箭頭從外側窗框縫鑽進、沿牆內往下流，依序標出 ① ② 與解法。'],
+    ['cs-house', '透天厝剖面', 'Townhouse Cut-away', '透天厝一層層往上疊，屋頂蓋上並標出高度', '車庫、客廳、臥室三層色塊由下往上依序彈出疊高，紅色屋頂最後蓋上，右側拉出總高度標線。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
