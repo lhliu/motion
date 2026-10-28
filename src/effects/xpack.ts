@@ -76,5 +76,15 @@ export const XPACKS: XPack[] = [
     ['lt-chapter', '角落章節標', 'Corner Chapter Tag', '左上角章節編號與標題滑入，下方進度條走完', '左上角橘色編號塊滑入，深色標題條往右擦開，下方細進度條隨片長慢慢走滿。'],
     ['lt-breaking', '快訊跑馬燈', 'Breaking Ticker', '紅色快訊標籤與跑馬燈條擦入，文字橫向捲動', '深色長條擦入，左側紅色「快訊」標籤閃星，右側新聞文字持續橫向捲動，下方橘色時間條。'],
   ] },
+  { pack: 7, name: '看屋動線與格局', cat: 'xguide', tags: ['格局', '平面圖', '看屋'], motionEn: 'Floor-plan explainers in the colourful v1 card style: rooms light up with dimensions, sunlight sweep, cross-ventilation arrows, sqm-to-ping blocks, furniture fit test, shared-area ratio, orientation compass and a walkthrough path. Layouts and sizes are illustrative.', rows: [
+    ['fp-rooms', '格局逐間點亮', 'Rooms Light Up', '平面圖每間房由下往上填色，尺寸標註拉出', '米色底平面圖，七個房間依序由下往上填入不同平塗色，最後拉出橘色尺寸標註線，旁邊列出室內坪數與房數。'],
+    ['fp-sun', '採光動畫', 'Sunlight Sweep', '太陽從東走到西，光束掃進南窗', '太陽圖示沿弧線由東到西移動、光芒慢轉，黃色漸層光束從南面窗戶斜照進屋內，旁邊時刻膠囊 8:00→17:00。'],
+    ['fp-wind', '通風箭頭', 'Cross Ventilation', '兩條藍色氣流箭頭從一側窗戶穿過屋子', '平面圖左右兩側窗戶，兩條藍色箭頭氣流持續從左流到右穿過各房間，標「進風」「出風」。'],
+    ['fp-ping', '坪數換算', 'Sqm to Ping', '一格一坪的方塊依序彈出，m² 換成坪', '橘色小方塊一格一坪依序回彈排滿，旁邊 m² 數字往下箭頭換算成坪數，兩者一起 count-up。'],
+    ['fp-furn', '家具擺得下嗎', 'Furniture Fit', '沙發、茶几滑進客廳打勾，書櫃擋門打叉', '客廳亮起其他房變淡，沙發從左滑進並打綠勾，茶几滑入，最後書櫃滑進門口被紅叉標出「會擋到門」。'],
+    ['fp-share', '公設比圓餅', 'Shared Area Ratio', '旁邊圓餅長出公設比例，平面圖被斜線切掉一塊', '平面圖旁的圓餅由上方順時針長出公設比例、中間 count-up，接著平面圖上一塊斜線區由左掃過示意被公設吃掉的面積。'],
+    ['fp-compass', '朝向羅盤', 'Orientation Compass', '羅盤指針晃動後停在朝向，窗戶標出', '白色羅盤指針先左右晃動、慢慢穩定指向朝向方位，下方彈出「坐北朝南」膠囊，平面圖落地窗亮起並有箭頭。'],
+    ['fp-walk', '看屋動線', 'Walkthrough Path', '小人沿虛線從玄關走過客廳到主臥', '主要房間亮起，小人沿橘色虛線從玄關走過客廳、廚房到主臥，沿途三個編號點依序彈出。'],
+  ] },
 ];
 export const XP_EXAMPLE = EX;
