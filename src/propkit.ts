@@ -1,3 +1,4 @@
+import { XPACKS } from './effects/xpack';
 // 生活物件：建案工地、交屋鑰匙、家具進場、等角小屋、合約文件、城市天際線、天氣、交通號誌、植物、時間、慶祝、錢幣、抽籤扭蛋。
 // 跟魔術方塊同一套物件系統（objkit 的場景、文字層與物件編輯器），繪製在這裡。全部硬邊、不用陰影或模糊。
 // propRenderer 內部必須自給自足，匯出 HTML 時以 toString() 內嵌。
@@ -33,6 +34,8 @@ export const DCARD_CARDS: [string, string][] = [
   ['process', '流程'], ['timeline', '時間軸'], ['pyramid', '金字塔'], ['quadrant', '象限'], ['bars', '橫條比較'], ['venn', 'Venn 三圈'], ['compare', '對比表'],
   ['donut', '環圖'], ['checklist', '清單打勾'], ['bignum', '數字大字卡'], ['metro', '路線圖'], ['cycle', '循環圖'], ['funnel', '漏斗'], ['dumbbell', '啞鈴圖'],
 ];
+// 情緒貼圖（合併招）可切換的 10 種表情
+export const XP_EMOTES: [string, string][] = XPACKS.find((p) => p.cat === 'xemote')!.rows.map((r) => [r[0], r[1]]);
 export const DCARD_STYLES: [string, string][] = [['chart', '圖表一致'], ['classic', '米白經典'], ['navy', '夜藍財經'], ['sky', '天空清爽'], ['hongbao', '紅包喜氣']];
 
 const XY = { x: 0.5, y: 0.45, size: 0.95, speed: 1 };
@@ -104,6 +107,7 @@ export const PROP_PARAMS: Record<PropModule, PField[]> = {
   taiwan: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['hongbao', '紅包'], ['ringtoss', '夜市套圈圈'], ['card', '電子票證感應'], ['scratch', '刮刮樂']] }, ...common('本體', '強調色')],
   estate: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['calc', '房貸計算機'], ['meter', '電表'], ['quake', '地震書櫃'], ['boxes', '搬家紙箱'], ['board', '社區公告欄'], ['aircon', '冷氣機']] }, ...common('本體', '強調色')],
   xpack: [
+    { k: 'mode', label: '表情', type: 'seg', opts: XP_EMOTES },
     { k: 'title', label: '標題（空白＝預設）', type: 'text' },
     { k: 'sub', label: '副標（空白＝預設）', type: 'text' },
     { k: 'items', label: '文字項目（逗號分隔，依序替換）', type: 'text' },

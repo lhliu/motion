@@ -138,6 +138,7 @@ export const initObjectStudio = (deps: ObjectStudioDeps) => {
   const paramsEl = $('#osParams');
   const renderParams = () => {
     const fields = objFields(sc).filter((f) => {
+      if (sc.module === 'xpack' && f.k === 'mode') return String(sc.params.mode).startsWith('em-');
       if (sc.module !== 'ocean') return true;
       const mode = String(sc.params.mode);
       if (f.k === 'scene') return mode !== 'deep';
