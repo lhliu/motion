@@ -125,12 +125,12 @@ export const fx1029: Fx[] = [
     desc: '詞散落畫面，鏡頭逐一推近對焦，關鍵字發光',
     tags: ['開場', '金句', 'hook', '運鏡'],
     tone: 'ink',
-    sample: ['離捷運 / 5 分鐘 / 總價 / 3 字頭', '@key=4;color=#ffcf4a;glow=1;hold=1.1;zoom=1.8;blur=6;seed=3'],
-    hint: '一句話用 / 或 · 分詞 / @設定：key（關鍵字第幾個詞，從 1 起）、color、glow（光暈強度）、hold（每詞停留秒數）、zoom（推近倍率上限）、blur（景深模糊）、seed（排版亂數）',
+    sample: ['離捷運 / 5 分鐘 / 總價 / 3 字頭', '@key=4;color=#ffcf4a;glow=1;hold=1.1;zoom=1.8;blur=6;seed=3;weight=850'],
+    hint: '一句話用 / 或 · 分詞 / @設定：key（關鍵字第幾個詞，從 1 起）、color、glow（光暈強度）、hold（每詞停留秒數）、zoom（推近倍率上限）、blur（景深模糊）、seed（排版亂數）、weight（字重 700–900，預設 850；關鍵字固定 900）',
     duration: 9,
     preferredRatio: '16:9',
-    motion: '一句話拆成幾個詞，大小、粗細、斜度各不同，不重疊地散落在深色畫面上；鏡頭先看全景，再依序平移推近對焦每個詞（其他詞景深模糊，對焦的詞完整留在畫面內），關鍵字換成主色並帶光暈發亮，最後拉遠看到整句。',
-    motionEn: 'A sentence is split into words of different sizes, weights and slants, scattered without overlap on a dark frame; the camera starts wide, then glides and pushes in to focus on each word in turn (others fall into depth-of-field blur, the focused word always fully in frame); the keyword turns accent colour with a glow, and finally the camera pulls back to reveal the whole line.',
+    motion: '一句話拆成幾個詞，大小、斜度各不同、全部粗體（關鍵字最粗），不重疊地散落在深色畫面上；鏡頭先看全景，再依序平移推近對焦每個詞（其他詞景深模糊，對焦的詞完整留在畫面內），關鍵字換成主色並帶光暈發亮，最後拉遠看到整句。',
+    motionEn: 'A sentence is split into words of different sizes and slants, all in heavy weights (keyword boldest) with a thin dark outline, scattered without overlap on a dark frame; the camera starts wide, then glides and pushes in to focus on each word in turn (others fall into depth-of-field blur, the focused word always fully in frame); the keyword turns accent colour with a glow, and finally the camera pulls back to reveal the whole line.',
     css: `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`,
     html: () => `<canvas></canvas>`,
     run: (root, w) => {
@@ -148,6 +148,7 @@ export const fx1029: Fx[] = [
       const key = Math.min(words.length, Math.max(1, Math.round(num('key', words.length)))) - 1;
       const kc = o.color || '#ffcf4a', glow = num('glow', 1), hold = Math.max(0.4, num('hold', 1.1));
       const zmax = Math.max(1.1, num('zoom', 1.8)), blurPx = Math.max(0, num('blur', 6));
+      const weight = Math.max(700, Math.min(900, num('weight', 850)));
       let seed = Math.round(num('seed', 3)) || 1;
       const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
       const font = getComputedStyle(root).getPropertyValue('--sans').trim() || '"Noto Sans TC","Noto Sans CJK TC",sans-serif';
@@ -161,7 +162,7 @@ export const fx1029: Fx[] = [
         const out: { x: number; y: number; w: number; h: number; fs: number; wt: number; rot: number }[] = [];
         for (let i = 0; i < words.length; i++) {
           const big = i === key || /\d/.test(words[i]);
-          const wt = big ? 900 : i % 2 ? 300 : 500;
+          const wt = i === key ? 900 : Math.max(700, Math.min(900, weight - (big ? 0 : (i % 2) * 100)));
           let fs = M * scale * (big ? 0.24 : 0.14 + rnd() * 0.05) * (W > H ? 1.25 : 1);
           ctx.font = `${wt} ${fs}px ${font}`;
           let tw = ctx.measureText(words[i]).width;
@@ -209,6 +210,8 @@ export const fx1029: Fx[] = [
             x.shadowBlur = 0;
             x.fillStyle = '#fff6d6';
           } else x.fillStyle = isK ? kc : '#e8ecf4';
+          // 細深色描邊＋柔影，淺底或亮光下也讀得清楚
+          if (!blur) { x.save(); x.shadowColor = '#000a'; x.shadowBlur = b.fs * 0.06; x.shadowOffsetY = b.fs * 0.03; x.lineJoin = 'round'; x.lineWidth = b.fs * 0.06; x.strokeStyle = '#0b0c10cc'; x.strokeText(words[i], cx, cy); x.restore(); }
           x.fillText(words[i], cx, cy);
           if (isK && !blur && glow > 0) { x.globalAlpha = 0.55; x.fillStyle = kc; x.fillText(words[i], cx, cy); }
         };
