@@ -5,7 +5,7 @@ import { registerEngine } from '../engines';
 
 export const chartRenderer = () => {
   type Row = { label: string; v: number[]; raw: string };
-  type Data = { title: string; sub: string; series: string[]; unit: string; max: number; colors: string[]; rows: Row[]; quad: string[]; badge: string; board: boolean };
+  type Data = { title: string; sub: string; series: string[]; unit: string; max: number; colors: string[]; rows: Row[]; quad: string[]; badge: string; board: boolean; lines: string[]; opt: Record<string, string> };
   const clamp = (p: number) => Math.max(0, Math.min(1, p));
   const ease = (p: number) => 1 - Math.pow(1 - clamp(p), 3);
   const back = (p: number) => {
@@ -32,7 +32,7 @@ export const chartRenderer = () => {
   };
 
   const parse = (w: string[]): Data => {
-    const d: Data = { title: '', sub: '', series: [], unit: '', max: NaN, colors: [], rows: [], quad: [], badge: '', board: false };
+    const d: Data = { title: '', sub: '', series: [], unit: '', max: NaN, colors: [], rows: [], quad: [], badge: '', board: false, lines: [], opt: {} };
     let gotTitle = false;
     for (const raw of w) {
       const s = String(raw || '').trim();
@@ -40,6 +40,7 @@ export const chartRenderer = () => {
       if (s.startsWith('@')) {
         const [k, ...v] = s.slice(1).split(/\s+/);
         const val = v.join(' ');
+        d.opt[k] = val.trim();
         if (k === 'series') d.series = val.split(/[,，、]/).map((x) => x.trim()).filter(Boolean);
         else if (k === 'unit') d.unit = val;
         else if (k === 'max') d.max = parseFloat(val);
@@ -53,6 +54,7 @@ export const chartRenderer = () => {
         d.sub = s.slice(1).trim();
         continue;
       }
+      if (gotTitle) d.lines.push(s);
       const m = s.match(/^(.*?)[\s:：]+([-+=]?[\d.,，/+\-\s]*\d[\d.]*%?|=)$/);
       if (m && m[1].trim()) {
         const vals = m[2].trim() === '=' ? [NaN] : m[2].replace(/，/g, ',').split(/[,/]/).map((x) => parseFloat(x.replace(/[+\s%]/g, '')));
@@ -962,6 +964,602 @@ export const chartRenderer = () => {
           }
         }
         L = G + n * 0.07 + 1.2 + 2.4;
+      }
+    }
+    // ===== #680–#683：同心圓靶、甘特圖、泳道流程、蜿蜒路徑（文字逐行，不需數值） =====
+    if (kind === 'target' || kind === 'gantt' || kind === 'swimlane' || kind === 'path') {
+      const u = S / 1080;
+      const tall = H > W * 1.2;
+      const ink = '#151515';
+      const card = mix(fg, bg, 0.88);
+      const lane0 = mix(fg, bg, 0.93);
+      const lane1 = mix(fg, bg, 0.95);
+      const X0 = W * 0.07;
+      const X1 = W * 0.93;
+      const Y0 = top + H * 0.03;
+      const Y1 = H * (tall ? 0.95 : 0.94);
+      const setF = (w: number, s: number) => (ctx.font = `${w} ${s}px ${F}`);
+      const tw = (s: string, w: number, size: number) => (setF(w, size), ctx.measureText(s).width);
+      const rrect = (x: number, y: number, w: number, h: number, r: number) => {
+        r = Math.max(0, Math.min(r, w / 2, h / 2));
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      };
+      /** 依寬度斷行：優先在空白、・、，後斷，中文可逐字斷；超過 maxL 行最後加… */
+      const wrap = (s: string, w: number, size: number, maxW: number, maxL = 2) => {
+        setF(w, size);
+        const out: string[] = [];
+        let cur = '';
+        const chars = Array.from(s);
+        for (let i = 0; i < chars.length; i++) {
+          const c = chars[i];
+          const nx = cur + c;
+          if (ctx.measureText(nx).width <= maxW || !cur) {
+            cur = nx;
+            continue;
+          }
+          const bi = Math.max(cur.lastIndexOf(' '), cur.lastIndexOf('・'), cur.lastIndexOf('，'), cur.lastIndexOf('、'));
+          if (bi > 0 && bi < cur.length - 1) {
+            out.push(cur.slice(0, bi + 1).trim());
+            cur = cur.slice(bi + 1) + c;
+          } else {
+            out.push(cur);
+            cur = c;
+          }
+        }
+        if (cur.trim()) out.push(cur.trim());
+        if (out.length > maxL) {
+          const keep = out.slice(0, maxL);
+          let last = keep[maxL - 1];
+          while (last.length > 1 && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+          keep[maxL - 1] = last + '…';
+          return keep;
+        }
+        return out;
+      };
+      /** 找能放進 maxW、最多 maxL 行的最大字級 */
+      const fit = (s: string, w: number, size: number, maxW: number, maxL = 2, minS = size * 0.6) => {
+        let z = size;
+        while (z > minS && wrap(s, w, z, maxW, 99).length > maxL) z *= 0.92;
+        return { size: z, lines: wrap(s, w, z, maxW, maxL) };
+      };
+      const pill = (s: string, x: number, y: number, c: string, size: number, k = 1) => {
+        if (k <= 0) return 0;
+        setF(800, size);
+        const w = ctx.measureText(s).width + size * 1.2;
+        const h = size * 1.6;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(k, k);
+        rrect(-w / 2, -h / 2, w, h, h / 2);
+        ctx.fillStyle = c;
+        ctx.fill();
+        txt(s, 0, size * 0.04, size, lum(c) > 150 ? ink : '#ffffff', 'center', 'middle', 800);
+        ctx.restore();
+        return w;
+      };
+      const split2 = (s: string) => {
+        const m = s.match(/^(.*?)\s*[｜|:：]\s*(.*)$/);
+        return m ? [m[1].trim(), m[2].trim()] : [s.trim(), ''];
+      };
+      const lines = d.lines.slice(0, 12);
+
+      if (kind === 'target') {
+        // 每行：5 分鐘 捷運站・超商（前面數字＋單位為圈名，後面為說明）
+        const items = lines
+          .map((s) => {
+            const m = s.match(/^([\d.]+\s*[^\s\d｜|:：]*)\s*[｜|:：]?\s*(.*)$/);
+            const a = m ? m[1].trim() : split2(s)[0];
+            const b = m ? m[2].trim() : split2(s)[1];
+            return { a, b, v: parseFloat(a) };
+          })
+          .slice(0, 5);
+        if (items.every((x) => Number.isFinite(x.v))) items.sort((p, q) => p.v - q.v);
+        const n2 = Math.max(1, items.length);
+        const center = d.opt.center || '';
+        let cx: number;
+        let cy: number;
+        let R: number;
+        if (tall) {
+          R = Math.min(W * 0.4, (Y1 - Y0) * 0.27);
+          cx = W / 2;
+          cy = Y0 + R * 1.1;
+        } else {
+          R = Math.min((Y1 - Y0) * 0.47, W * 0.25);
+          cx = W * 0.07 + R * 1.15 + W * 0.04;
+          cy = (Y0 + Y1) / 2;
+        }
+        const radius = (i: number) => (n2 === 1 ? R : R * (0.38 + (0.62 * i) / (n2 - 1)));
+        const T0 = 0.9;
+        const step = 0.5;
+        // 外擴漣漪
+        const done = T0 + n2 * step + 0.4;
+        if (t > done) {
+          const q = ((t - done) % 2) / 2;
+          ctx.globalAlpha = (1 - q) * 0.7;
+          ctx.setLineDash([14 * u, 14 * u]);
+          ctx.lineWidth = 3 * u;
+          ctx.strokeStyle = col(n2 - 1);
+          ctx.beginPath();
+          ctx.arc(cx, cy, R * (1 + 0.12 * q), 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
+        }
+        for (let i = n2 - 1; i >= 0; i--) {
+          const k = back((t - T0 - i * step) / 0.7);
+          if (k <= 0) continue;
+          const r = radius(i) * k;
+          ctx.globalAlpha = 0.2 + 0.1 * (n2 - 1 - i) / Math.max(1, n2 - 1) + (i === 0 ? 0.08 : 0);
+          blobC(cx, cy, r, col(i));
+          ctx.globalAlpha = 1;
+          ctx.lineWidth = 5 * u;
+          ctx.strokeStyle = col(i);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        const ps = 30 * u;
+        items.forEach((it, i) => {
+          const k = back((t - T0 - i * step - 0.35) / 0.45);
+          const r = radius(i);
+          const gap = i === 0 ? r : r - radius(i - 1);
+          const py = cy - r + Math.min(ps * 1.25, gap * 0.5);
+          pill(it.a, cx, py, col(i), Math.min(ps, gap * 0.55), k);
+        });
+        // 圖釘
+        const pk = back((t - 0.4) / 0.6);
+        if (pk > 0) {
+          const pr = Math.min(34 * u, radius(0) * 0.28);
+          const dy = (1 - clamp((t - 0.4) / 0.4)) * -R * 0.6;
+          ctx.globalAlpha = clamp((t - 0.4) / 0.2);
+          const py = cy - pr * 0.6 + dy;
+          ctx.fillStyle = fg;
+          ctx.beginPath();
+          ctx.arc(cx, py - pr * 0.4, pr, Math.PI * 0.8, Math.PI * 2.2);
+          ctx.lineTo(cx, py + pr * 1.3);
+          ctx.closePath();
+          ctx.fill();
+          blobC(cx, py - pr * 0.4, pr * 0.42, col(0));
+          if (center) txt(center, cx, py + pr * 2.3, Math.min(28 * u, radius(0) * 0.22), fg, 'center', 'middle', 800, radius(0) * 1.6);
+          ctx.globalAlpha = 1;
+        }
+        // 圖例
+        const lx = tall ? W * 0.12 : cx + R * 1.25 + W * 0.02;
+        const lw = (tall ? W * 0.88 : X1) - lx - 40 * u;
+        const blocks = items.map((it) => fit(it.b, 800, 36 * u, lw, 2));
+        const bh = blocks.map((b) => 52 * u + b.lines.length * b.size * 1.3 + 30 * u);
+        const tot = bh.reduce((a, b) => a + b, 0);
+        let yy = tall ? cy + R * 1.18 + 20 * u : cy - tot / 2;
+        if (tall) yy = Math.min(yy, Y1 - tot);
+        items.forEach((it, i) => {
+          const k = ease((t - T0 - i * step - 0.4) / 0.5);
+          if (k > 0) {
+            ctx.globalAlpha = k;
+            const ox = (1 - k) * 40 * u;
+            blobC(lx + 18 * u + ox, yy + 26 * u, 18 * u, col(i));
+            const m = it.a.match(/^([\d.]+)\s*(.*)$/);
+            const big = m ? m[1] : it.a;
+            txt(big, lx + 50 * u + ox, yy + 26 * u, 52 * u, fg, 'left', 'middle', 900);
+            if (m && m[2]) txt(m[2], lx + 62 * u + tw(big, 900, 52 * u) + ox, yy + 32 * u, 30 * u, mu2, 'left', 'middle', 800);
+            blocks[i].lines.forEach((ln, j) => txt(ln, lx + 50 * u + ox, yy + 52 * u + blocks[i].size * (0.75 + j * 1.3), blocks[i].size, fg, 'left', 'middle', 800));
+            ctx.globalAlpha = 1;
+          }
+          yy += bh[i];
+        });
+        L = done + 3;
+      } else if (kind === 'gantt') {
+        // 日期：2026、2026Q2、2026/3、2026.3、2026-03、2026年3月、115年3月（民國）
+        const DRE = '(\\d{2,4}\\s*(?:年\\s*)?(?:[Qq]\\s*[1-4]|H\\s*[12]|[上下]半年?|\\d{1,2}\\s*月|[./]\\s*\\d{1,2}|-\\d{1,2}(?!\\d))?)';
+        const toYear = (y: number) => (y < 1000 ? y + 1911 : y);
+        const date = (s: string, end: boolean): number => {
+          const z = s.replace(/\s/g, '');
+          let m = z.match(/^(\d{2,4})年?[Qq]([1-4])$/);
+          if (m) return toYear(+m[1]) + (+m[2] - (end ? 0 : 1)) / 4;
+          m = z.match(/^(\d{2,4})年?H([12])$/) || z.match(/^(\d{2,4})年?([上下])半年?$/);
+          if (m) {
+            const h = m[2] === '上' ? 1 : m[2] === '下' ? 2 : +m[2];
+            return toYear(+m[1]) + (h - (end ? 0 : 1)) / 2;
+          }
+          m = z.match(/^(\d{2,4})(?:年|[./-])(\d{1,2})月?$/);
+          if (m) {
+            const mo = Math.max(1, Math.min(12, +m[2]));
+            return toYear(+m[1]) + (mo - (end ? 0 : 1)) / 12;
+          }
+          m = z.match(/^(\d{2,4})年?$/);
+          if (m) return toYear(+m[1]) + (end ? 1 : 0);
+          return NaN;
+        };
+        const rowRe = new RegExp(`^(.+?)\\s+${DRE}(?:\\s*(?:-|–|—|~|～|到|至)\\s*${DRE})?(?:\\s+(.+))?$`);
+        type GR = { name: string; a: number; b: number; tag: string; ms: boolean };
+        const gr: GR[] = [];
+        for (const s of lines) {
+          const m = s.match(rowRe);
+          if (!m) continue;
+          const a = date(m[2], false);
+          const b = m[3] ? date(m[3], true) : NaN;
+          if (!Number.isFinite(a)) continue;
+          gr.push({ name: m[1].trim(), a, b: Number.isFinite(b) ? b : a, tag: (m[4] || '').trim(), ms: !Number.isFinite(b) });
+        }
+        const rowsG = gr.slice(0, 9);
+        const pays = (d.opt.pay || '').split(/[,，、]/).map((x) => date(x.trim(), false)).filter(Number.isFinite);
+        const today = d.opt.today ? date(d.opt.today, false) : NaN;
+        let lo = Math.min(...rowsG.map((r) => r.a), ...pays);
+        let hi = Math.max(...rowsG.map((r) => r.b), ...pays);
+        const ax = (d.opt.axis || '').match(new RegExp(`^${DRE}\\s*(?:-|–|—|~|～|到|至)\\s*${DRE}$`));
+        if (ax) {
+          lo = date(ax[1], false);
+          hi = date(ax[2], true);
+        } else {
+          lo = Math.floor(lo);
+          hi = Math.ceil(hi + 1e-6);
+        }
+        if (!Number.isFinite(lo) || !(hi > lo)) {
+          lo = 2026;
+          hi = 2027;
+        }
+        const span = hi - lo;
+        const cells: { a: number; b: number; s: string }[] = [];
+        if (span <= 2.01) for (let q = Math.floor(lo * 4); q < Math.ceil(hi * 4 - 1e-6); q++) cells.push({ a: q / 4, b: (q + 1) / 4, s: q % 4 === 0 || q === Math.floor(lo * 4) ? `${Math.floor(q / 4)} Q${(q % 4) + 1}` : `Q${(q % 4) + 1}` });
+        else for (let y = Math.floor(lo); y < Math.ceil(hi - 1e-6); y++) cells.push({ a: Math.max(lo, y), b: Math.min(hi, y + 1), s: String(y) });
+        const nR = rowsG.length + (pays.length ? 1 : 0);
+        const nameS = 40 * u;
+        const nameW = tall ? 0 : Math.min(W * 0.22, Math.max(...rowsG.map((r) => tw(r.name, 900, nameS)), pays.length ? tw('繳款點', 800, 30 * u) : 0) + 40 * u);
+        const gL = X0 + nameW;
+        const gR = X1;
+        const gT = Y0 + 70 * u;
+        const gB = Y1;
+        const rh = (gB - gT) / Math.max(1, nR);
+        const bh = Math.min(60 * u, rh * (tall ? 0.38 : 0.55));
+        const xOf = (v: number) => gL + ((v - lo) / span) * (gR - gL);
+        const ck = ease((t - 0.3) / 0.5);
+        ctx.globalAlpha = ck;
+        cells.forEach((c, i) => {
+          ctx.fillStyle = i % 2 ? lane1 : lane0;
+          ctx.fillRect(xOf(c.a), gT, xOf(c.b) - xOf(c.a), gB - gT);
+          txt(c.s, (xOf(c.a) + xOf(c.b)) / 2, gT - 34 * u, 30 * u, mu2, 'center', 'middle', 800, xOf(c.b) - xOf(c.a) - 8 * u);
+        });
+        ctx.globalAlpha = 1;
+        const T0 = 0.8;
+        const st = 0.35;
+        const sweepT = T0 + rowsG.length * st + 0.2;
+        const hasT = Number.isFinite(today);
+        const tk = hasT ? ease((t - sweepT) / 1) : 0;
+        const tNow = hasT ? lo + (today - lo) * tk : -Infinity;
+        rowsG.forEach((r, i) => {
+          const cyR = gT + rh * (i + 0.5) + (tall ? nameS * 0.55 : 0);
+          const nk = ease((t - T0 - i * st) / 0.4);
+          ctx.globalAlpha = nk;
+          if (tall) txt(r.name, gL, cyR - bh / 2 - nameS * 0.65, nameS * 0.9, fg, 'left', 'middle', 900, gR - gL);
+          else txt(r.name, gL - 40 * u, cyR, nameS, fg, 'right', 'middle', 900, nameW - 50 * u);
+          ctx.globalAlpha = 1;
+          const c = col(i);
+          const x0 = xOf(r.a);
+          if (r.ms) {
+            const k = back((t - T0 - i * st) / 0.5);
+            if (k > 0) {
+              ctx.save();
+              ctx.translate(x0, cyR);
+              ctx.rotate(Math.PI / 4);
+              ctx.scale(k, k);
+              ctx.fillStyle = c;
+              ctx.fillRect(-bh * 0.38, -bh * 0.38, bh * 0.76, bh * 0.76);
+              ctx.restore();
+              if (r.tag) txt(r.tag, x0 + bh * 0.8, cyR, 28 * u, fg, 'left', 'middle', 800);
+            }
+            return;
+          }
+          const k = ease((t - T0 - i * st) / 0.6);
+          if (k <= 0) return;
+          const fullW = Math.max(bh, xOf(r.b) - x0);
+          const w = fullW * k;
+          // 今天之後半透明
+          ctx.globalAlpha = hasT ? 0.35 : 1;
+          rrect(x0, cyR - bh / 2, w, bh, bh / 2);
+          ctx.fillStyle = c;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          if (hasT) {
+            const cut = Math.max(x0, Math.min(x0 + w, xOf(tNow)));
+            if (cut > x0) {
+              ctx.save();
+              ctx.beginPath();
+              ctx.rect(x0, cyR - bh, cut - x0, bh * 2);
+              ctx.clip();
+              rrect(x0, cyR - bh / 2, w, bh, bh / 2);
+              ctx.fillStyle = c;
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+          const doneR = hasT && r.b <= today + 1e-6 && tNow >= r.b - 1e-6;
+          const chkW = doneR ? 40 * u : 0;
+          const ts = 28 * u;
+          const tagW = r.tag ? tw(r.tag, 800, ts) : 0;
+          const inside = r.tag && tagW + 48 * u + chkW <= fullW;
+          ctx.globalAlpha = clamp((k - 0.6) / 0.4);
+          if (r.tag) {
+            if (inside) txt(r.tag, x0 + 24 * u, cyR + 2 * u, ts, lum(c) > 150 || !hasT || tNow > r.a ? ink : fg, 'left', 'middle', 800);
+            else txt(r.tag, x0 + fullW + 16 * u, cyR + 2 * u, ts, fg, 'left', 'middle', 800, gR - x0 - fullW - 16 * u);
+          }
+          ctx.globalAlpha = 1;
+          if (doneR && fullW > bh * 1.6) {
+            const kk = back((t - sweepT - 0.2 - ((r.b - lo) / Math.max(1e-6, today - lo)) * 1) / 0.35);
+            if (kk > 0) {
+              ctx.save();
+              ctx.translate(x0 + fullW - 26 * u, cyR + 2 * u);
+              ctx.scale(kk, kk);
+              txt('✓', 0, 0, 32 * u, ink, 'center', 'middle', 900);
+              ctx.restore();
+            }
+          }
+        });
+        if (pays.length) {
+          const cyP = gT + rh * (rowsG.length + 0.5) + (tall ? nameS * 0.3 : 0);
+          ctx.globalAlpha = ck;
+          if (tall) txt('繳款點', gL, cyP - 44 * u, 28 * u, mu2, 'left', 'middle', 800);
+          else txt('繳款點', gL - 40 * u, cyP, 30 * u, mu2, 'right', 'middle', 800);
+          ctx.globalAlpha = 1;
+          pays.forEach((p, i) => {
+            const k = back((t - sweepT - 0.6 - i * 0.18) / 0.4);
+            if (k <= 0) return;
+            ctx.save();
+            ctx.translate(xOf(p), cyP);
+            ctx.rotate(Math.PI / 4);
+            ctx.scale(k, k);
+            ctx.fillStyle = col(1);
+            ctx.fillRect(-14 * u, -14 * u, 28 * u, 28 * u);
+            ctx.restore();
+          });
+        }
+        if (hasT && tk > 0) {
+          const xn = xOf(tNow);
+          ctx.strokeStyle = col(0);
+          ctx.lineWidth = 5 * u;
+          ctx.beginPath();
+          ctx.moveTo(xn, gT - 6 * u);
+          ctx.lineTo(xn, gB + 6 * u);
+          ctx.stroke();
+          const lab = d.opt.todaylabel || '今天';
+          setF(800, 28 * u);
+          const pw2 = ctx.measureText(lab).width + 34 * u;
+          pill(lab, Math.max(gL + pw2 / 2, Math.min(gR - pw2 / 2, xn)), gT - 8 * u, col(0), 28 * u);
+        }
+        L = sweepT + 1 + 0.6 + pays.length * 0.18 + 2.4;
+      } else if (kind === 'swimlane') {
+        let lanes = (d.opt.lanes || '').split(/[,，、]/).map((x) => x.trim()).filter(Boolean);
+        const steps = lines.map(split2).filter((x) => x[1]).slice(0, 10);
+        steps.forEach(([l]) => {
+          if (!lanes.includes(l)) lanes.push(l);
+        });
+        lanes = lanes.slice(0, 6);
+        const nl = Math.max(1, lanes.length);
+        const ns = Math.max(1, steps.length);
+        const ek = ease((t - 0.3) / 0.6);
+        const pos: { x: number; y: number; w: number; h: number }[] = [];
+        if (!tall) {
+          const nameS = 46 * u;
+          const hw = Math.min(W * 0.18, Math.max(...lanes.map((l) => tw(l, 900, nameS))) + 50 * u);
+          const lx = X0 + hw;
+          const lh = (Y1 - Y0) / nl;
+          lanes.forEach((l, i) => {
+            const y = Y0 + i * lh;
+            ctx.globalAlpha = ek;
+            ctx.fillStyle = i % 2 ? lane1 : lane0;
+            ctx.fillRect(lx, y, (X1 - lx) * ek, lh - 12 * u);
+            ctx.fillStyle = col(i);
+            ctx.fillRect(lx, y, 10 * u, lh - 12 * u);
+            txt(l, lx - 36 * u, y + lh / 2 - 6 * u, nameS, fg, 'right', 'middle', 900, hw - 46 * u);
+            ctx.globalAlpha = 1;
+          });
+          const cw = (X1 - lx - 40 * u) / ns;
+          steps.forEach(([l], i) => {
+            const li = lanes.indexOf(l);
+            const w = Math.min(cw * 0.9, 300 * u);
+            const h = Math.min(lh * 0.62, 110 * u);
+            pos.push({ x: lx + 40 * u + cw * (i + 0.5), y: Y0 + li * lh + lh / 2 - 6 * u, w, h });
+          });
+        } else {
+          const nameS = 40 * u;
+          const hh = 90 * u;
+          const lw = (X1 - X0) / nl;
+          const ly = Y0 + hh;
+          lanes.forEach((l, i) => {
+            const x = X0 + i * lw;
+            ctx.globalAlpha = ek;
+            ctx.fillStyle = i % 2 ? lane1 : lane0;
+            ctx.fillRect(x, ly, lw - 10 * u, (Y1 - ly) * ek);
+            ctx.fillStyle = col(i);
+            ctx.fillRect(x, ly, lw - 10 * u, 10 * u);
+            txt(l, x + (lw - 10 * u) / 2, Y0 + hh / 2, nameS, fg, 'center', 'middle', 900, lw - 20 * u);
+            ctx.globalAlpha = 1;
+          });
+          const sh = (Y1 - ly - 30 * u) / ns;
+          steps.forEach(([l], i) => {
+            const li = lanes.indexOf(l);
+            pos.push({ x: X0 + li * lw + (lw - 10 * u) / 2, y: ly + 30 * u + sh * (i + 0.5), w: lw * 0.86, h: Math.min(sh * 0.78, 130 * u) });
+          });
+        }
+        const T0 = 1.0;
+        const st = 0.45;
+        // 虛線連線：逐段畫到下一張卡
+        ctx.strokeStyle = mix(fg, bg, 0.55);
+        ctx.lineWidth = 4 * u;
+        ctx.setLineDash([10 * u, 10 * u]);
+        ctx.lineDashOffset = -t * 30 * u;
+        for (let i = 1; i < pos.length; i++) {
+          const k = ease((t - T0 - i * st + 0.25) / 0.35);
+          if (k <= 0) continue;
+          const a = pos[i - 1];
+          const b = pos[i];
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        ctx.lineDashOffset = 0;
+        steps.forEach(([l, s], i) => {
+          const k = back((t - T0 - i * st) / 0.45);
+          if (k <= 0) return;
+          const p = pos[i];
+          const c = col(lanes.indexOf(l));
+          const last = i === steps.length - 1;
+          const f = fit(s, 800, 30 * u, p.w - 36 * u, 2, 20 * u);
+          const h = Math.max(p.h, f.lines.length * f.size * 1.25 + 30 * u);
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.scale(k, k);
+          rrect(-p.w / 2, -h / 2, p.w, h, 16 * u);
+          ctx.fillStyle = last ? col(0) : mix(fg, bg, 0.84);
+          ctx.fill();
+          ctx.lineWidth = 4 * u;
+          ctx.strokeStyle = c;
+          ctx.stroke();
+          f.lines.forEach((ln, j) => txt(ln, 0, (j - (f.lines.length - 1) / 2) * f.size * 1.25 + 2 * u, f.size, last ? ink : fg, 'center', 'middle', 800, p.w - 24 * u));
+          blobC(-p.w / 2 + 4 * u, -h / 2, 20 * u, c);
+          txt(String(i + 1), -p.w / 2 + 4 * u, -h / 2 + 1 * u, 24 * u, ink, 'center', 'middle', 900);
+          ctx.restore();
+        });
+        L = T0 + ns * st + 3;
+      } else {
+        // 蜿蜒路徑：每行 步驟｜說明
+        const steps = lines.map(split2).slice(0, 8);
+        const ns = Math.max(2, steps.length);
+        const shape = (d.opt.shape || 's').toLowerCase();
+        const pts: [number, number][] = [];
+        for (let i = 0; i < steps.length; i++) {
+          const q = steps.length === 1 ? 0.5 : i / (steps.length - 1);
+          const alt = i % 2 ? -1 : 1;
+          if (!tall) {
+            const x = W * 0.12 + q * W * 0.76;
+            const mid = (Y0 + Y1) / 2;
+            const amp = (Y1 - Y0) * 0.14;
+            let y = mid + alt * amp;
+            if (shape === 's') y = mid + (Y1 - Y0) * 0.13 * (1 - 2 * q) + alt * amp * 0.75;
+            if (shape === 'u') y = mid - (Y1 - Y0) * 0.18 + (Y1 - Y0) * 0.36 * Math.sin(q * Math.PI) * 1 - alt * amp * 0.3;
+            pts.push([x, y]);
+          } else {
+            const y = Y0 + 110 * u + q * (Y1 - Y0 - 220 * u);
+            pts.push([alt > 0 ? W * 0.24 : W * 0.76, y]);
+          }
+        }
+        // 取樣路徑
+        const samp: [number, number][] = [];
+        const seg: number[] = [0];
+        for (let i = 1; i < pts.length; i++) {
+          const [a, b] = pts[i - 1];
+          const [c, e] = pts[i];
+          for (let j = i === 1 ? 0 : 1; j <= 40; j++) {
+            const s = j / 40;
+            const mt = 1 - s;
+            const p1 = tall ? [a, (b + e) / 2] : [(a + c) / 2, b];
+            const p2 = tall ? [c, (b + e) / 2] : [(a + c) / 2, e];
+            samp.push([mt * mt * mt * a + 3 * mt * mt * s * p1[0] + 3 * mt * s * s * p2[0] + s * s * s * c, mt * mt * mt * b + 3 * mt * mt * s * p1[1] + 3 * mt * s * s * p2[1] + s * s * s * e]);
+          }
+          seg.push(samp.length - 1);
+        }
+        const roadK = ease((t - 0.4) / 1);
+        const roadW = 70 * u;
+        const strokeTo = (upto: number) => {
+          ctx.beginPath();
+          samp.slice(0, Math.max(1, upto)).forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+          ctx.stroke();
+        };
+        ctx.lineCap = 'round';
+        if (samp.length > 1) {
+          ctx.lineWidth = roadW;
+          ctx.strokeStyle = mix(fg, bg, 0.86);
+          strokeTo(Math.round(samp.length * roadK));
+          ctx.lineWidth = 6 * u;
+          ctx.setLineDash([26 * u, 22 * u]);
+          ctx.lineDashOffset = -t * 40 * u;
+          ctx.strokeStyle = mix(fg, bg, 0.6);
+          strokeTo(Math.round(samp.length * roadK));
+          ctx.setLineDash([]);
+          ctx.lineDashOffset = 0;
+        }
+        ctx.lineCap = 'butt';
+        const W0 = 1.5;
+        const st = 0.7;
+        const walk = clamp((t - W0) / (st * (steps.length - 1 || 1)));
+        const wi = walk * (samp.length - 1);
+        const reached = (i: number) => (steps.length === 1 ? t > W0 : wi >= seg[i] - 0.5);
+        const nr = Math.min(44 * u, (tall ? (Y1 - Y0) / ns : W * 0.76 / ns) * 0.22);
+        steps.forEach(([a, b], i) => {
+          const [x, y] = pts[i];
+          const on = reached(i);
+          const k = back((t - 0.6 - i * 0.12) / 0.4);
+          if (k <= 0) return;
+          const c = col(i);
+          ctx.save();
+          ctx.translate(x, y);
+          const pop = on ? 1 + 0.15 * Math.max(0, 1 - Math.abs(wi - seg[i]) / 20) : 1;
+          ctx.scale(k * pop, k * pop);
+          blobC(0, 0, nr, on ? c : mix(fg, bg, 0.7));
+          ctx.lineWidth = 8 * u;
+          ctx.strokeStyle = bg;
+          ctx.beginPath();
+          ctx.arc(0, 0, nr, 0, Math.PI * 2);
+          ctx.stroke();
+          txt(String(i + 1), 0, 3 * u, nr, ink, 'center', 'middle', 900);
+          ctx.restore();
+          // 說明牌
+          const ck = back((t - W0 - (steps.length > 1 ? (seg[i] / (samp.length - 1)) * st * (steps.length - 1) : 0) - 0.1) / 0.45);
+          if (ck <= 0) return;
+          const cw = tall ? W * 0.44 : Math.min(W * 0.76 / ns * 1.05, 340 * u);
+          const hs = 44 * u;
+          const ds = 28 * u;
+          const fa = fit(a, 900, hs, cw - 40 * u, 1, 28 * u);
+          const fb = b ? fit(b, 700, ds, cw - 40 * u, 2, 20 * u) : { size: ds, lines: [] as string[] };
+          const ch = 34 * u + fa.size * 1.1 + fb.lines.length * fb.size * 1.3 + 10 * u;
+          let bx: number;
+          let by: number;
+          if (tall) {
+            bx = x < W / 2 ? x + nr + 30 * u + cw / 2 : x - nr - 30 * u - cw / 2;
+            by = y;
+          } else {
+            const nb = [pts[i - 1], pts[i + 1]].filter(Boolean).map((p) => p[1]);
+            const avg = nb.length ? nb.reduce((p, q) => p + q, 0) / nb.length : y + 1;
+            const up = y < avg;
+            bx = Math.max(X0 + cw / 2, Math.min(X1 - cw / 2, x));
+            const place = (u2: boolean) => Math.max(Y0 + ch / 2, Math.min(Y1 - ch / 2, u2 ? y - nr - 30 * u - ch / 2 : y + nr + 30 * u + ch / 2));
+            const hit = (yy: number) => Math.abs(yy - y) < ch / 2 + nr + 10 * u;
+            by = place(up);
+            if (hit(by) && !hit(place(!up))) by = place(!up);
+          }
+          ctx.save();
+          ctx.translate(bx, by);
+          ctx.scale(ck, ck);
+          rrect(-cw / 2, -ch / 2, cw, ch, 20 * u);
+          ctx.fillStyle = mix(fg, bg, 0.87);
+          ctx.fill();
+          ctx.lineWidth = 4 * u;
+          ctx.strokeStyle = c;
+          ctx.stroke();
+          let ty = -ch / 2 + 17 * u + fa.size * 0.55;
+          txt(fa.lines[0] || a, 0, ty, fa.size, fg, 'center', 'middle', 900, cw - 30 * u);
+          ty += fa.size * 0.55 + fb.size * 0.85;
+          fb.lines.forEach((ln) => {
+            txt(ln, 0, ty, fb.size, mu2, 'center', 'middle', 700, cw - 30 * u);
+            ty += fb.size * 1.3;
+          });
+          ctx.restore();
+        });
+        // 行人
+        if (t > W0 - 0.2 && samp.length > 1) {
+          const p = samp[Math.min(samp.length - 1, Math.round(wi))];
+          ctx.globalAlpha = clamp((t - W0 + 0.2) / 0.2) * (1 - clamp((t - W0 - st * (steps.length - 1) - 0.3) / 0.4));
+          blobC(p[0], p[1], 22 * u, fg);
+          blobC(p[0], p[1], 9 * u, col(0));
+          ctx.globalAlpha = 1;
+        }
+        L = W0 + st * (steps.length - 1) + 0.6 + 2.6;
       }
     }
     function blobC(x: number, y: number, r: number, c: string) {

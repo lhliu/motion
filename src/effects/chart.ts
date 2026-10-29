@@ -33,7 +33,7 @@ const run: Fx['run'] = (root) => {
   return () => cancelAnimationFrame(raf);
 };
 
-const make = (kind: string, cat: CatId, sample: string[], o: Pick<Fx, 'no' | 'zh' | 'en' | 'desc' | 'tags' | 'motion' | 'motionEn'>): Fx => ({
+const make = (kind: string, cat: CatId, sample: string[], o: Pick<Fx, 'no' | 'zh' | 'en' | 'desc' | 'tags' | 'motion' | 'motionEn'> & Partial<Pick<Fx, 'added'>>): Fx => ({
   id: `chart-${kind}`,
   cat,
   tone: 'ink',
@@ -151,5 +151,25 @@ export const charts: Fx[] = [
     no: 223, zh: '雷達圖', en: 'Radar Chart', desc: '多項指標一圈比較，兩案疊在一起看', tags: ['比較', '評分', '數據'],
     motion: `多邊形格線與各軸名稱出現，各系列的半透明多邊形從中心往外撐開並回彈，頂點有實心圓點；第二個系列稍晚出現。${HARD}`,
     motionEn: `Polygon gridlines and axis labels appear; each series' translucent polygon expands from the center with a slight overshoot, vertices marked with dots, the second series a moment later. ${HARD_EN}`,
+  }),
+  make('target', 'cpie', ['生活圈有多方便', '~以社區大門為中心（示意）', '@center 社區', '5 分鐘 捷運站・超商', '10 分鐘 超市・診所', '15 分鐘 市場・國小・公園'], {
+    no: 680, added: '2026-10-29', zh: '同心圓靶', en: 'Concentric Rings', desc: '生活圈 5／10／15 分鐘一圈圈擴散，旁邊列出圈內有什麼', tags: ['生活圈', '距離', '房地產'],
+    motion: `中心圖釘落下彈跳，圓圈由內往外一圈圈擴散（半透明填色＋實線），圈頂標籤膠囊彈出；圖例逐條滑入，最後外圈虛線漣漪持續外擴。每行「5 分鐘 說明」，@center 中心名稱，最多 5 圈。直式時圖例放到圓下方。${HARD}`,
+    motionEn: `A pin drops into the center, then rings expand outward one by one (translucent fill and solid outline) with label pills popping on top; the legend slides in row by row and a dashed ripple keeps expanding from the outer ring. One line per ring like "5 min description", @center for the center label, up to 5 rings. In portrait the legend sits below. ${HARD_EN}`,
+  }),
+  make('gantt', 'cline', ['預售屋時程', '~2026–2029（示意）', '@axis 2026-2029', '@today 2029/4', '@pay 2026/1,2026/11,2027/7,2028/4', '簽約 2026/1-2026/5 10%', '開工 2026/3-2026/12', '工程期款 2026/7-2028/7 5%×4', '結構完成 2028/1-2028/11', '交屋 2029/4-2029/12 貸款 80%'], {
+    no: 681, added: '2026-10-29', zh: '甘特圖', en: 'Gantt Chart', desc: '預售屋開工、繳款到交屋，橫條依序長出，「今天」線掃過', tags: ['時程', '預售屋', '房地產'],
+    motion: `年份欄先出現，任務橫條依序由左長出；「今天」紅線由左掃到指定日期，已完成的橫條打勾，今天之後的部分半透明；繳款點菱形依序彈出。每行「名稱 開始-結束 標籤」，日期可寫 2026、2026Q2、2026H1、2026/3、2026.3、2026-03、2026年3月或民國 115年3月；只寫一個日期就是里程碑。@axis、@today、@pay 可選。${HARD}`,
+    motionEn: `Year columns appear, then task bars grow from the left one by one; a red "today" line sweeps to the given date, finished bars get a check and the part after today stays translucent; payment diamonds pop in. One line per task like "name start-end tag"; dates accept 2026, 2026Q2, 2026H1, 2026/3, 2026.3, 2026-03, 2026年3月 or ROC years; a single date makes a milestone. Optional @axis, @today, @pay. ${HARD_EN}`,
+  }),
+  make('swimlane', 'chier', ['交屋流程誰做什麼', '~買方・賣方・代書・銀行（示意）', '@lanes 買方,賣方,代書,銀行', '買方｜簽約付訂', '代書｜用印・備證', '賣方｜簽約・用印', '銀行｜審核・對保', '代書｜過戶登記', '銀行｜撥款', '賣方｜點交鑰匙'], {
+    no: 682, added: '2026-10-29', zh: '泳道流程', en: 'Swimlane Flow', desc: '買方、賣方、代書、銀行各一條泳道，步驟卡依序出現並連線', tags: ['流程', '分工', '房地產'],
+    motion: `泳道由左展開、角色名淡入，步驟卡依序在所屬泳道以回彈方式彈出並編號，虛線連線跟著畫到下一張，最後一步主色填滿。@lanes 角色清單，每行「角色｜步驟」，最多 6 道 10 步；字太長自動換行縮字。直式時泳道改成直欄、步驟往下走。${HARD}`,
+    motionEn: `Lanes unroll from the left with role names fading in; numbered step cards bounce into their lanes in order while a dashed connector draws to the next one, and the final step fills with the accent color. @lanes lists roles, one line per step like "role｜step", up to 6 lanes and 10 steps; long text wraps and shrinks. In portrait the lanes become columns and steps run downward. ${HARD_EN}`,
+  }),
+  make('path', 'chier', ['買房 6 步驟', '~從看屋到交屋', '看屋｜比 3 間以上', '議價｜出價・斡旋', '簽約｜付訂金', '貸款｜估價・對保', '過戶｜代書辦理', '交屋｜點交・拿鑰匙'], {
+    no: 683, added: '2026-10-29', zh: '蜿蜒路徑', en: 'Winding Path', desc: '一條蜿蜒道路串起步驟，小圓點走過去、節點依序點亮', tags: ['流程', '步驟', '房地產'],
+    motion: `粗道路沿 S 形畫出、中線虛線流動；小圓點沿路前進，經過的節點點亮放大，說明牌依節點高低上下交錯彈出（不超出畫面、不壓到道路）。每行「步驟｜說明」，3–8 步，@shape s|u|wave 換路形。直式時改成上下蛇行、說明牌放節點內側。${HARD}`,
+    motionEn: `A thick road draws along an S curve with a flowing dashed center line; a dot walks along it, lighting up and enlarging each node it passes while info cards pop in above or below depending on node height, kept inside the frame and off the road. One line per step like "step｜detail", 3–8 steps, @shape s|u|wave changes the road. In portrait it becomes a top-down zigzag with cards on the inner side. ${HARD_EN}`,
   }),
 ];

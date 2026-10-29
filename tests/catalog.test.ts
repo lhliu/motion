@@ -35,8 +35,8 @@ test('PR #17 的 21 招仍存在、隱藏、編號不變；9 個情緒貼圖轉�
   assert.equal(NUM.get('obj-xpack-em-shock'), 585);
   assert.equal(NUM.get('obj-xpack-vl-rec'), 606);
   assert.equal(NUM.get('obj-xpack-ic-no'), 677);
-  assert.equal(EFFECTS.length, 607); // +678 三層描邊疊字、+679 散字運鏡標題
-  assert.equal(ALL_EFFECTS.length, 663);
+  assert.equal(EFFECTS.length, 611); // +680 同心圓靶、+681 甘特圖、+682 泳道流程、+683 蜿蜒路徑
+  assert.equal(ALL_EFFECTS.length, 667);
 });
 
 test('隱藏、顯示、改分類、標籤、精選', () => {
