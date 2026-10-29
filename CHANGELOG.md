@@ -4,6 +4,7 @@
 ### 新增
 - #678 三層描邊疊字 Three Layer Text（kinetic，用途：開場）：上下空心描邊、中間實心，左右反向滑入＋中間砸入＋小字彈出，之後依 BPM 一起彈、重拍換色。設定 `@bpm;a;b;stroke;line;gap;bounce;intro`。描邊用「粗外框挖字身」畫法，避免可變字型的重疊輪廓露出交叉線。
 - #679 散字運鏡標題 Camera Glide Typography（kinetic，用途：開場）：詞用 / 或 · 分開，不重疊散落（碰撞檢查＋放不下自動縮小重排），鏡頭全景→逐詞推近→拉遠；對焦詞完整留在畫面內（推近倍率依詞外框計算、鏡頭不超出世界邊界）；關鍵字主色＋光暈。模糊版每個詞只預算一次，每幀只 drawImage。設定 `@key;color;glow;hold;zoom;blur;seed`。
+- 主站右上角加齒輪 icon 連結到 /admin.html（後台，Cloudflare Access 保護），title／aria-label「後台」，同分頁開啟，沿用 header `.ic` 樣式。
 - 兩招都依畫布比例排版，支援 16:9 與 9:16。新檔 src/effects/fx1029.ts。
 ### 變更
 - #679 依 KC 回饋加粗：所有詞改 700–900 粗體（預設 850，關鍵字固定 900，去掉 300／500 細字），清楚版加細深色描邊＋柔影；新增 `@weight=` 設定。

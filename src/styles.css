@@ -233,6 +233,9 @@ kbd {
 .ic:active {
   transform: scale(0.94);
 }
+a.ic {
+  text-decoration: none;
+}
 .fav-count {
   padding: 0 12px;
   font-size: 13px;
