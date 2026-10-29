@@ -38,6 +38,7 @@ import { ui } from './effects/ui';
 import { newsFx } from './effects/news';
 import { minimapFx } from './effects/minimap';
 import { parcelMapFx } from './effects/parcelmap';
+import { fx1029 } from './effects/fx1029';
 import { canonTags, PICKS, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
@@ -175,6 +176,7 @@ export const ALL_EFFECTS: Fx[] = [
   ...newsFx,
   minimapFx,
   parcelMapFx,
+  ...fx1029,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 從前台隱藏（代碼、編號保留，舊 Combo 與預設仍可用）

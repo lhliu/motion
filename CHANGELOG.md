@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-29（feat/fx-678-679，PR 待審，未 merge、未部署）
+### 新增
+- #678 三層描邊疊字 Three Layer Text（kinetic，用途：開場）：上下空心描邊、中間實心，左右反向滑入＋中間砸入＋小字彈出，之後依 BPM 一起彈、重拍換色。設定 `@bpm;a;b;stroke;line;gap;bounce;intro`。描邊用「粗外框挖字身」畫法，避免可變字型的重疊輪廓露出交叉線。
+- #679 散字運鏡標題 Camera Glide Typography（kinetic，用途：開場）：詞用 / 或 · 分開，不重疊散落（碰撞檢查＋放不下自動縮小重排），鏡頭全景→逐詞推近→拉遠；對焦詞完整留在畫面內（推近倍率依詞外框計算、鏡頭不超出世界邊界）；關鍵字主色＋光暈。模糊版每個詞只預算一次，每幀只 drawImage。設定 `@key;color;glow;hold;zoom;blur;seed`。
+- 兩招都依畫布比例排版，支援 16:9 與 9:16。新檔 src/effects/fx1029.ts。
+### 變更
+- tests/catalog.test.ts：總數 661 → 663、公開 605 → 607。
+
 ## 2026-10-28（feat/admin-backend，PR 待審，未 merge、未部署）
 ### 新增
 - 後台 /admin.html（Cloudflare Access 保護，只限 KC）：特效清單（搜尋、大類／子分類／狀態／標籤篩選、縮圖滑過輪播）、公開開關、精選、收藏、備註；批次操作（勾選、Shift 連選、全選目前篩選）；匯出清單（複製 Markdown、下載 .md／.json，表頭有台北時間、數量、篩選）；分類與排序（拖曳）；合併；轉址／退場；Combo 健檢；操作紀錄與復原；固化到程式碼。
