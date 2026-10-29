@@ -23,7 +23,7 @@ export const USES: Use[] = [
 
 const g = (use: UseId, ids: string) => ids.split(/\s+/).filter(Boolean).map((id) => [id, use] as const);
 export const USE_OF: Record<string, UseId> = Object.fromEntries([
-  ...g('open', 'punch-zoom slam mask-rise box-wipe curtain split-reveal line-unfold iris spin-in text-tunnel ring-tunnel text-orbit text-cylinder extrude star-crawl lens-flare particle-form spotlight shine-sweep crisp-drop glass-blob-title drop-splash countdown circle-badge crt-power'),
+  ...g('open', 'three-layer-text camera-glide-title punch-zoom slam mask-rise box-wipe curtain split-reveal line-unfold iris spin-in text-tunnel ring-tunnel text-orbit text-cylinder extrude star-crawl lens-flare particle-form spotlight shine-sweep crisp-drop glass-blob-title drop-splash countdown circle-badge crt-power'),
   ...g('caption', 'updown-board shorts-caption location-pin lower-third callout highlighter subscribe-cta news-ticker chat-bubbles karaoke danmaku hashtag-pop typewriter handwrite marquee-stack credits-roll'),
   ...g('info', 'clause-mark gear-formula iso-explode zoom-detail lens-annotate before-after-drag plan-callouts sticky-matrix relation-web area-grid spotlight-bar conveyor cycle-wheel chevron-steps brick-pyramid mind-bubbles flip-solve comic-4 step-prints pack-box route-drive party-links yes-no-sign price-split good-bad-light door-pick receipt-print price-strike road-sign big-number versus checklist title-checklist timeline chapter-card qa-card progress-bar ranking quote-card odometer headline-swap split-flap led-board newspaper-spin'),
   ...g('trans', 'zoom-through flip-cards split-halves blinds scramble diagonal-bands domino flip-chars text-cube split-invert shatter noise-dissolve gooey-merge bubble-pop squeeze'),
