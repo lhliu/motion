@@ -1,3 +1,24 @@
+# HANDOFF：#684 筆尖光跡手寫字＋#685 掛軸展開直書標題（feat/fx-684-685）
+
+## 狀態
+- PR 待審，**未 merge、未部署**。程式碼由 Grok Bot 內建 AI 自行撰寫（未用 Codex／Claude Code／Antigravity）。分支從 main 3dba726 切出。
+
+## 內容
+- #684 `pen-light-trail`：src/effects/fx1101.ts（data.ts 註冊）。筆順資料 public/strokes/<碼位hex>.json＋index.txt（1,756 字），沒有的字抓 jsDelivr `hanzi-writer-data@2.0.1`，都抓不到就用字型寫法。快取在 `globalThis.MA_STROKES`＋localStorage（`ma-stroke:<字>`）；Fx 的 `globals` 是 getter，匯出時內嵌快取裡的字。
+- #685 `obj-taiwan-scroll`：src/render/prop.ts `scroll()`（taiwan 模組 mode=scroll），src/propkit.ts 參數，src/effects/object.ts 註冊（覆寫 html 把每行轉成 params.texts）。
+- 授權：public/licenses/ARPHICPL.txt、public/strokes/README.txt、index.html 頁尾出處。
+
+## 驗證
+- build 通過、npm test 6/6、check:visual 669 招 0 問題。
+- 實機截圖：/workspace/zikaji/fx-684-685/real/（16:9、9:16，三質感、單幅／四幅）。
+
+## 限制
+- 字形為楷書、筆順依大陸規範；站上沒收的字第一次播放要等 jsDelivr，離線且未快取的字會退回字型寫法。
+- 匯出 HTML 只內嵌「已在本頁載入過」的字；若在字還沒抓完時就匯出，匯出檔會在播放時再去 motion.leichthub.com／jsDelivr 抓。
+- 掛軸的掛軸文字欄位在物件工作室台灣生活的其他畫面也會出現（PField 沒有條件顯示）。
+
+---
+
 # HANDOFF：圖解字卡 411–424（feat/diagram-cards）
 
 ## 狀態

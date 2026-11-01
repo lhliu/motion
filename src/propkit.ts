@@ -22,7 +22,7 @@ export const PROP_INFO: Record<PropModule, { zh: string; en: string; desc: strin
   gacha: { zh: '抽籤扭蛋', en: 'Gacha & Lots', desc: '扭蛋機轉動掉出扭蛋打開，或籤筒搖一搖跳出一支籤' },
   drink: { zh: '手搖飲', en: 'Bubble Tea', desc: '透明杯珍珠奶茶落下，珍珠沉底、吸管戳破封膜；或汽水罐搖一搖拉開冒泡' },
   fun: { zh: '有趣道具', en: 'Fun Gadgets', desc: '微波爐、抓娃娃機、紙飛機、爆米花、磁鐵、電燈泡、骰子等生活小道具' },
-  taiwan: { zh: '台灣生活', en: 'Taiwan Life', desc: '紅包、夜市套圈圈、電子票證感應、刮刮樂等台灣日常' },
+  taiwan: { zh: '台灣生活', en: 'Taiwan Life', desc: '紅包、夜市套圈圈、電子票證感應、刮刮樂、掛軸展開直書標題等台灣日常' },
   estate: { zh: '看屋物件', en: 'Home Viewing', desc: '房貸計算機、電表、地震書櫃、搬家紙箱、社區公告欄、冷氣機' },
   xpack: { zh: '擴充包', en: 'Expansion Packs', desc: '2026-10 擴充：轉場、章節卡、實價登錄、捷運站牌、房貸、名條、看屋動線、前後對比、片尾、新聞、路線、數據地圖、驗屋、工法、工地、情緒貼圖、圖示等；每招自帶文字，可改標題與項目' },
   dcard: { zh: '圖解字卡', en: 'Diagram Cards', desc: '流程、時間軸、金字塔、象限、長條、Venn、對比表、環圖、清單、大字卡、路線、循環、漏斗、啞鈴 14 種圖解，播一次建構動畫；預設跟圖表字卡同風格（網站色調、平塗、標題靠左），另有四種立體風格' },
@@ -104,7 +104,7 @@ export const PROP_PARAMS: Record<PropModule, PField[]> = {
   coins: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['stack', '硬幣疊高'], ['piggy', '存錢筒']] }, { k: 'count', label: '疊幾排', type: 'range', min: 2, max: 6, step: 1 }, ...common('硬幣', '存錢筒')],
   drink: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['boba', '珍珠奶茶'], ['soda', '汽水罐']] }, ...common('奶茶／罐身', '吸管／字樣')],
   fun: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['microwave', '微波爐'], ['claw', '抓娃娃機'], ['plane', '紙飛機'], ['popcorn', '爆米花'], ['magnet', '磁鐵'], ['bulb', '電燈泡'], ['dice', '骰子']] }, { k: 'dice', label: '骰子數', type: 'range', min: 1, max: 6, step: 1 }, ...common('本體', '強調色')],
-  taiwan: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['hongbao', '紅包'], ['ringtoss', '夜市套圈圈'], ['card', '電子票證感應'], ['scratch', '刮刮樂']] }, ...common('本體', '強調色')],
+  taiwan: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['hongbao', '紅包'], ['ringtoss', '夜市套圈圈'], ['card', '電子票證感應'], ['scratch', '刮刮樂'], ['scroll', '掛軸展開']] }, ...common('本體', '強調色'), { k: 'texts', label: '掛軸文字（掛軸用，| 分隔每幅）', type: 'text' }, { k: 'seal', label: '落款章（掛軸用）', type: 'text' }, { k: 'count', label: '幅數（掛軸用）', type: 'range', min: 1, max: 4, step: 1 }, { k: 'paper', label: '畫心（掛軸用）', type: 'color' }],
   estate: [{ k: 'mode', label: '畫面', type: 'seg', opts: [['calc', '房貸計算機'], ['meter', '電表'], ['quake', '地震書櫃'], ['boxes', '搬家紙箱'], ['board', '社區公告欄'], ['aircon', '冷氣機']] }, ...common('本體', '強調色')],
   xpack: [
     { k: 'mode', label: '表情', type: 'seg', opts: XP_EMOTES },

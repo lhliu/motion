@@ -1,5 +1,11 @@
 # WORKLOG
 
+## 2026-11-01（UTC+8）feat/fx-684-685
+- 從 main（3dba726）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/pen-trail/PLAN.md 與 /workspace/zikaji/scroll-title/PLAN.md 實作 #684、#685。
+- #684：移植 proto 的 clip＋中線粗線畫法；時間改成整句每字約 0.8 秒依筆畫長度分配（第一版每筆 0.5 秒太慢，5 字要 20 秒，已修）。筆順資料切成每字一檔放 public/strokes/（站上用到的字），其餘走 jsDelivr。
+- #685：prop.ts `scroll` 自包含畫法，用 taiwan 模組的 mode；object.ts 覆寫 html，把每行文字放進 params.texts、關掉物件下方文字層。
+- 驗證：`npm run build` 通過、`npm test` 6/6、`npm run check:visual` 669 招有問題 0。實際網站（vite preview＋Playwright，`?fx=` 詳細頁、切 16:9／9:16）截圖於 /workspace/zikaji/fx-684-685/real/（腳本 shoot_real.py）。
+
 ## 2026-10-26（UTC+8）feat/effects-341-345
 - 從 main（afb1509）開分支；程式碼全部由 Motion Coder 內建模型撰寫（未使用 Codex、Claude Code、agy）。
 - 依 `/workspace/zikaji/new-effects-2026-10-26/PLAN.md` 三階段：共用準備（可變 Noto Sans TC、`--vf`、`data-vw`、數字小工具）→ `src/effects/estate-extra.ts` 五招（341–345）→ 驗證。
