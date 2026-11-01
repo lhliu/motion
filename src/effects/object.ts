@@ -216,3 +216,41 @@ for (const [key, info] of Object.entries(OBJECT_COSMOS_GROUPS)) {
     objects.push({ ...prop('xpack', mode, no++, { layout: 'none' }, { zh, en, desc, tags: pk.tags, sample: [], motion: `${motion}全部硬邊平面色塊，不用陰影或模糊；文字可在物件工作室改，數字皆為示意。`, motionEn: pk.motionEn }), cat: pk.cat as Fx['cat'], added: '2026-10-28', ...(pk.ratio ? { preferredRatio: pk.ratio } : {}), ...(hidden ? { hidden: true } : {}), ...(merged ? { redirectTo: `obj-xpack-${pk.rows[0][0]}`, variant: mode } : {}) });
   });
 }
+
+/* #685 掛軸展開直書標題（2026-11-01）：台灣生活模組的 scroll 畫面。字寫在掛軸上（不用物件下方的文字層）；
+   每一行是一幅掛軸，最後一個 @ 開頭的詞是設定，例如 @color=#5b3f8c;seal=持家;count=1。 */
+{
+  const preset = { color: '#5b3f8c', color2: '#d64541', count: 1, texts: '新莊副都心', seal: '持家', paper: '#fbf3df', bg: '#f3ead8', font: 'serif', speed: 1, layout: 'none' };
+  const base = prop('taiwan', 'scroll', 685, preset, {
+    zh: '掛軸展開直書標題', en: 'Hanging Scroll Title',
+    desc: '掛軸從繩上掉下、往下捲開，直書大字逐字浮現，最後蓋上紅色落款章',
+    tags: ['台灣', '標題', '直書', '書法', '片頭'],
+    sample: ['新莊副都心', '@color=#5b3f8c;color2=#d64541;seal=持家;paper=#fbf3df;bg=#f3ead8;font=serif;speed=1'],
+    motion: `米色牆面上一條微微下垂的黑色掛繩；一幅掛軸（咖啡色上軸桿、紫色裱框、米白畫心）從繩上掉下回彈，下軸像捲筒一樣往下滾開、越捲越細，畫心露出後直書宋體大字由上往下一個個彈出；最後紅色方形落款章從放大狀態蓋在畫心右下角，掛軸輕輕擺一下停住。多行文字就是多幅掛軸依序掛上，直式 3–4 幅排成 2×2。${FLAT}`,
+    motionEn: `A slightly sagging black cord runs across a beige wall; a hanging scroll (brown top rod, purple mounting, cream paper) drops onto it with a bounce, its bottom roller unrolls downward getting thinner as it goes, and once the paper shows, large vertical serif characters pop in one by one from top to bottom; finally a red square seal stamps down from enlarged into the lower right of the paper and the scroll sways gently to rest. Multiple lines become several scrolls hung in sequence, arranged 2×2 in portrait when there are 3–4. ${FLAT_EN}`,
+  });
+  objects.push({
+    ...base,
+    added: '2026-11-01',
+    preferredRatio: '16:9',
+    // 讓網站與匯出都載入思源宋體（familiesFor 看 CSS 裡有沒有 Noto Serif）
+    css: `${CSS}.S{--scroll-font:"Noto Serif TC"}`,
+    hint: '一行一幅掛軸（最多 4 幅，直書，建議每幅 2–8 字；英數會轉 90° 直排）/ @設定：color（第一幅裱框色，其餘自動配色）、color2（印章色）、seal（落款 1–4 字，空白＝不蓋章）、count（幅數）、paper（畫心色）、bg（背景色）、font（serif 宋體｜sans 黑體）、speed、size。也可在物件工作室調整。',
+    html: (w) => {
+      const o: Record<string, string> = {};
+      const lines = w.filter((s) => {
+        if (!s.startsWith('@')) return true;
+        s.slice(1).split(';').forEach((kv) => { const [k, v] = kv.split('='); if (k && v !== undefined) o[k.trim()] = v.trim(); });
+        return false;
+      });
+      const json = lines.find((s) => s.trim().startsWith('{'));
+      const texts = lines.filter((s) => s.trim() && !s.trim().startsWith('{') && !s.startsWith('~')).slice(0, 4);
+      const extra: Record<string, number | string> = { ...preset, ...o, mode: 'scroll' };
+      if (texts.length) extra.texts = texts.join('|');
+      if (!o.count) extra.count = Math.max(1, texts.length);
+      const scene = json ? objSceneFromWords([json], 'taiwan', extra) : objSceneFromWords([], 'taiwan', extra);
+      scene.text.lines = [];
+      return `<canvas data-scene="${esc(JSON.stringify(scene))}"></canvas>`;
+    },
+  });
+}

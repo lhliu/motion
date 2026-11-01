@@ -1594,8 +1594,135 @@ export const propRenderer = () => {
   const t0 = (after: number, i: number) => after * 0.7 + i * 0.37;
 
   /* ───────── 台灣生活 ───────── */
+  /* ───────── 掛軸展開直書標題（#685） ───────── */
+  const scrollFontAsked: Record<string, 1> = {};
+  const scroll = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
+    const texts = String(P.texts ?? '新莊副都心').split('|').map((s) => s.trim()).filter(Boolean).slice(0, 4);
+    if (!texts.length) texts.push('新莊副都心');
+    const n = Math.max(1, Math.min(4, Math.round(num(P.count, texts.length)), texts.length));
+    const COLS = [String(P.color ?? '#5b3f8c'), '#b8323a', '#3f8f5a', '#8a5a2b'];
+    const RED = String(P.color2 ?? '#d64541'), PAPER = String(P.paper ?? '#fbf3df'), WOOD = '#6b4423';
+    const seal = String(P.seal ?? '持家').trim().slice(0, 4);
+    const FONT = String(P.font ?? 'serif') === 'sans' ? '"Noto Sans TC","Noto Sans CJK TC","PingFang TC",sans-serif' : '"Noto Serif TC","Noto Serif CJK TC","PMingLiU","Songti TC",serif';
+    // 畫布不會自己觸發字型下載：第一次用到時請瀏覽器載入（沒網路就退回系統明體）
+    if (typeof document !== 'undefined' && document.fonts && !scrollFontAsked[FONT]) {
+      scrollFontAsked[FONT] = 1;
+      document.fonts.load(`900 40px ${FONT}`, texts.join('') + seal).catch(() => undefined);
+    }
+    const q0 = t / loop, size = num(P.size, 1);
+    // 版面：直式 3–4 幅排成 2×2，其餘一排
+    const portrait = W < H;
+    const grid = portrait && n >= 3;
+    const rows = grid ? 2 : 1, perRow = grid ? 2 : n;
+    const S = Math.min(W, H);
+    const cellW = (W * 0.84) / perRow, cellH = (H * (grid ? 0.86 : 0.9)) / rows;
+    const sw = Math.min(cellW * (n > 1 ? 0.72 : 1), S * (n > 1 ? (grid ? 0.3 : 0.26) : portrait ? 0.42 : 0.3)) * size;
+    const sealSize = (pw: number) => pw * 0.3;
+    for (let row = 0; row < rows; row++) {
+      const top0 = H * (grid ? 0.06 : portrait ? 0.2 : 0.1) + row * cellH;
+      const sag = S * 0.04;
+      const ropeAt = (X: number) => { const u = X / W; return (1 - u) * (1 - u) * top0 + 2 * (1 - u) * u * (top0 + sag) + u * u * top0; };
+      // 掛繩
+      x.beginPath(); x.moveTo(0, top0); x.quadraticCurveTo(W / 2, top0 + sag, W, top0);
+      x.lineWidth = S * 0.006; x.strokeStyle = INK; x.lineCap = 'round'; x.stroke();
+      const fullH = Math.min(cellH * (grid ? 0.8 : portrait ? 0.6 : 0.74), sw * 3.3);
+      const inRow = grid ? Math.min(2, n - row * 2) : n;
+      for (let j = 0; j < inRow; j++) {
+        const i = row * perRow + j;
+        const tx = texts[i % texts.length], col = COLS[i % COLS.length];
+        const cx = W / 2 + (j - (inRow - 1) / 2) * cellW;
+        const q = q0 - i * 0.08;
+        const drop = back(seg(q, 0, 0.12));
+        if (drop <= 0) continue;
+        const sway = q > 0.8 ? Math.sin(q * 14 + i) * Math.exp(-6 * (q - 0.8)) * 0.02 : 0;
+        x.save();
+        x.translate(cx, ropeAt(cx));
+        x.rotate(sway);
+        const top = S * 0.07 * drop - S * 0.06 + S * 0.06;
+        const un = ease(seg(q, 0.1, 0.45));
+        const h = sw * 0.15 + (fullH - sw * 0.15) * un;
+        // 吊繩與掛鉤
+        x.beginPath(); x.moveTo(-sw * 0.4, top); x.lineTo(0, 0); x.lineTo(sw * 0.4, top);
+        x.lineWidth = S * 0.004; x.strokeStyle = INK; x.lineJoin = 'round'; x.stroke();
+        fillRR(x, -S * 0.012, -S * 0.012, S * 0.024, S * 0.03, S * 0.006, shade(col, -0.4));
+        // 裱框（亮左邊、暗右邊）
+        fillRR(x, -sw / 2, top, sw, h, 0, col);
+        fillRR(x, -sw / 2, top, sw * 0.06, h, 0, shade(col, 0.18));
+        fillRR(x, sw / 2 - sw * 0.06, top, sw * 0.06, h, 0, shade(col, -0.2));
+        // 畫心
+        const px = -sw * 0.36, pw = sw * 0.72, py = top + sw * 0.22, ph = Math.max(0, top + h - sw * 0.22 - py);
+        if (ph > 0) {
+          fillRR(x, px - sw * 0.025, py - sw * 0.025, pw + sw * 0.05, ph + sw * 0.05, 0, shade(col, -0.3));
+          fillRR(x, px, py, pw, ph, 0, PAPER);
+          fillRR(x, px + pw * 0.84, py, pw * 0.16, ph, 0, shade(PAPER, -0.05));
+          const chars = [...tx].slice(0, 8);
+          const latin = /^[\x20-\x7e]+$/.test(tx);
+          const ss = sealSize(pw);
+          const avail = fullH - sw * 0.44 - (seal ? ss * 1.15 : 0);
+          const tq = seg(q, 0.18, 0.62);
+          x.save();
+          x.beginPath(); x.rect(px, py, pw, ph); x.clip();
+          x.fillStyle = INK; x.textAlign = 'center'; x.textBaseline = 'middle';
+          if (latin) {
+            // 英數字：整行轉 90° 直排，從上往下展開
+            const fs = Math.min(pw * 0.5, avail / Math.max(3, tx.length * 0.62));
+            x.font = `900 ${fs}px ${FONT}`;
+            x.save(); x.translate(0, py + avail / 2); x.rotate(Math.PI / 2);
+            const a = back(tq); x.scale(a, a); x.globalAlpha = Math.min(1, tq * 2);
+            x.fillText(tx, 0, 0, avail * 0.92); x.restore();
+          } else {
+            const fs = Math.min(pw * 0.62, (avail / Math.max(chars.length, 2)) * 0.9);
+            x.font = `900 ${fs}px ${FONT}`;
+            const ty0 = py + (avail - chars.length * fs * 1.08) / 2 + fs * 0.54;
+            chars.forEach((c, k) => {
+              const a = seg(tq * chars.length, k, k + 0.6);
+              if (a <= 0) return;
+              x.save(); x.translate(0, ty0 + k * fs * 1.08);
+              const s = back(a); x.scale(s, s); x.globalAlpha = Math.min(1, a * 2);
+              x.fillText(c, 0, 0); x.restore();
+            });
+          }
+          x.restore();
+          // 印章：放大蓋下
+          const sq = seg(q, 0.74, 0.84);
+          if (seal && sq > 0) {
+            const sx = px + pw - ss * 0.8, sy = py + ph - ss * 0.8;
+            x.save(); x.translate(sx, sy); x.rotate(-0.05);
+            const k = sq < 1 ? 1 + 1.2 * (1 - back(sq)) : 1;
+            x.scale(k, k); x.globalAlpha = Math.min(1, sq * 3);
+            fillRR(x, -ss / 2, -ss / 2, ss, ss, ss * 0.08, RED);
+            x.lineWidth = ss * 0.06; x.strokeStyle = PAPER; x.strokeRect(-ss * 0.38, -ss * 0.38, ss * 0.76, ss * 0.76);
+            x.fillStyle = PAPER; x.textAlign = 'center'; x.textBaseline = 'middle';
+            const sc = [...seal];
+            if (/^[\x20-\x7e]+$/.test(seal)) { x.font = `900 ${ss * (seal.length > 2 ? 0.26 : 0.36)}px ${FONT}`; x.fillText(seal, 0, ss * 0.02, ss * 0.7); }
+            else {
+              x.font = `900 ${ss * (sc.length > 1 ? 0.3 : 0.5)}px ${FONT}`;
+              if (sc.length === 1) x.fillText(sc[0], 0, ss * 0.02);
+              else if (sc.length === 2) { x.fillText(sc[0], 0, -ss * 0.15); x.fillText(sc[1], 0, ss * 0.17); }
+              else { x.fillText(sc[0], ss * 0.13, -ss * 0.14); x.fillText(sc[1], ss * 0.13, ss * 0.17); x.fillText(sc[2], -ss * 0.15, -ss * 0.14); if (sc[3]) x.fillText(sc[3], -ss * 0.15, ss * 0.17); }
+            }
+            x.restore();
+          }
+        }
+        // 上軸桿
+        const rodW = sw * 1.16;
+        fillRR(x, -rodW / 2, top - sw * 0.06, rodW, sw * 0.1, sw * 0.03, WOOD);
+        fillRR(x, -rodW / 2 + sw * 0.03, top - sw * 0.05, rodW - sw * 0.06, sw * 0.025, sw * 0.012, shade(WOOD, 0.25));
+        // 下軸（捲著時比較粗）
+        const rollH = sw * (0.1 + 0.26 * (1 - un)), ry = top + h - rollH * 0.5;
+        fillRR(x, -sw * 0.53, ry - rollH / 2, sw * 1.06, rollH, rollH * 0.3, shade(col, -0.15));
+        fillRR(x, -sw * 0.53, ry - rollH / 2, sw * 1.06, rollH * 0.28, rollH * 0.14, shade(col, 0.2));
+        fillRR(x, -sw * 0.53, ry + rollH * 0.15, sw * 1.06, rollH * 0.12, 0, shade(col, -0.35));
+        fillRR(x, -sw * 0.62, ry - sw * 0.045, sw * 0.1, sw * 0.09, sw * 0.03, WOOD);
+        fillRR(x, sw * 0.52, ry - sw * 0.045, sw * 0.1, sw * 0.09, sw * 0.03, WOOD);
+        x.restore();
+      }
+    }
+    return { cx: W / 2, cy: H * 0.5, r: S * 0.45 };
+  };
   const taiwan = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
     const mode = String(P.mode ?? 'hongbao');
+    if (mode === 'scroll') return scroll(x, W, H, P, t, loop);
     if (mode === 'ringtoss')
       // 夜市套圈圈：圈圈從右下拋過來，套進中間那瓶
       return stage(x, W, H, P, t, loop, YL, LB, (x, q, after, c, c2) => {

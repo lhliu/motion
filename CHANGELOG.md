@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-01（feat/fx-684-685，PR 待審，未 merge、未部署）
+### 新增
+- #684 筆尖光跡手寫字 Pen Light-Trail Writing（kinetic，`pen-light-trail`，新檔 src/effects/fx1101.ts）：發光筆尖照真實筆順沿筆畫中線寫字，白熱光跡冷卻成主色；三質感 neon／ember／frost；`@tex;speed;glow;trail;tip;particles;bg;core;body;glowc`。英數與缺字退回字型由左往右寫出（筆尖跟著走）。16:9 一行、9:16 超過 3 字拆兩行。
+  - 筆順資料（hanzi-writer-data 2.0.1／Make Me a Hanzi，Arphic Public License）不打包：public/strokes/ 只放站上用到的 1,756 字（約 5.3 MB，每字一檔，只留 strokes／medians），其他字執行時向 jsDelivr 取；記憶體＋localStorage 快取；匯出 HTML 透過 `globals` 內嵌已載入的字。
+  - 已寫完的筆畫與光暈只在完成數變動時重算（快取圖層），寫到一半的那筆只在字格大小的小畫布上算 blur。冰霜筆尖加粗星芒＋帶藍光的白點。
+  - 授權：public/licenses/ARPHICPL.txt、public/strokes/README.txt，頁尾加出處與授權連結；`/strokes/*` 加 CORS 標頭給匯出檔用。
+- #685 掛軸展開直書標題 Hanging Scroll Title（object 台灣生活，`obj-taiwan-scroll`）：prop 引擎新 `scroll` 畫面（硬邊平塗、shade 明暗），掛軸掉到繩上→下軸捲開→直書宋體逐字彈出→紅色落款章蓋下→輕擺。每行一幅（最多 4），直式 3–4 幅排 2×2；英數 90° 直排；`@color;color2;seal;count;paper;bg;font;speed;size`。CSS 帶 Noto Serif 讓網站／匯出載入思源宋體，canvas 主動 `document.fonts.load`，載不到退回系統明體。物件工作室台灣生活加「掛軸展開」與掛軸文字、落款、幅數、畫心色欄位。
+### 變更
+- tests/catalog.test.ts：總數 667 → 669、公開 611 → 613。
+
 ## 2026-10-29（feat/charts-680-683，PR 待審，未 merge、未部署）
 ### 新增
 - #680 同心圓靶 Concentric Rings（cpie）：生活圈一圈圈擴散、圈頂膠囊、圖例、外圈漣漪。每行「5 分鐘 說明」，`@center`。
