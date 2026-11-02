@@ -1,5 +1,11 @@
 # WORKLOG
 
+## 2026-11-02（UTC+8）feat/fx686-beat-poster
+- 從 main（a9d5f4a）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/beat-poster/PLAN.md 實作 #686。
+- 依日期命名慣例新增 src/effects/fx1102.ts（fx1101＝11/01）；data.ts 註冊；tests/catalog.test.ts 總數 669→670、公開 613→614。
+- 第一次 check:visual 抓到匯出 HTML「PAL is not defined」：匯出只序列化 run，模組層常數帶不過去 → 調色盤與 lum 移進 run 內，重跑 0 問題。
+- 驗證：`npm run build` 通過、`npm test` 6/6、`npm run check:visual` 670 招有問題 0。實機截圖（vite preview＋Playwright，停掉 rAF 後用 maDraw(t) 指定時間）於 /workspace/zikaji/beat-poster/real/（腳本 shoot_real.py）。
+
 ## 2026-11-01（UTC+8）feat/fx-684-685
 - 從 main（3dba726）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/pen-trail/PLAN.md 與 /workspace/zikaji/scroll-title/PLAN.md 實作 #684、#685。
 - #684：移植 proto 的 clip＋中線粗線畫法；時間改成整句每字約 0.8 秒依筆畫長度分配（第一版每筆 0.5 秒太慢，5 字要 20 秒，已修）。筆順資料切成每字一檔放 public/strokes/（站上用到的字），其餘走 jsDelivr。
