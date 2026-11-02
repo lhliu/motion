@@ -1,3 +1,22 @@
+# HANDOFF：#686 節拍海報字卡 Beat-Synced Poster Type（feat/fx686-beat-poster）
+
+## 狀態
+- PR 待審，**未 merge、未部署**。程式碼由 Grok Bot 內建 AI 自行撰寫（未用 Codex／Claude Code／Antigravity）。分支從 main a9d5f4a 切出。
+
+## 內容
+- `beat-poster`（#686，kinetic）：src/effects/fx1102.ts，data.ts 註冊。每行一拍「大字|數字|小字」，`@bpm;offset;div;beats;pal;c1–c4;bg;hit;gentle`。
+- 時間純函數：beat = floor((t−offset)/(60/bpm·div))；循環長度 offset＋拍數×每拍＋2 拍停留；支援 MA_ONCE、prefers-reduced-motion（停在最後一拍）。
+- 調色盤／helper 必須放在 run 內（匯出 HTML 只序列化 run）。
+
+## 驗證
+- build 通過、npm test 6/6、check:visual 670 招 0 問題。實機截圖 /workspace/zikaji/beat-poster/real/。
+
+## 限制
+- 不做音訊分析；變速歌曲會漂移。kc 調色盤（藍 #1F3A5F／橘 #F28C28）是暫定色，待 KC 給品牌色。
+- 每拍建議 ≤4 字，長字會自動縮小。拍數上限 32。
+
+---
+
 # HANDOFF：#684 筆尖光跡手寫字＋#685 掛軸展開直書標題（feat/fx-684-685）
 
 ## 狀態

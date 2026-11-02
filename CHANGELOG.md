@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-02（feat/fx686-beat-poster，PR 待審，未 merge、未部署）
+### 新增
+- #686 節拍海報字卡 Beat-Synced Poster Type（kinetic，`beat-poster`，新檔 src/effects/fx1102.ts）：瑞士海報風四色大色塊，依 BPM 每拍硬切大字、底色、數字塊、方塊進度條與圖形列，拍點微放大回彈；BEAT MAP 標頭＋BPM＋時間碼。每行「大字|數字|小字」；`@bpm;offset;div;beats;pal(swiss|mono|night|kc);c1–c4;bg(solid|none);hit;gentle`。16:9 左字右數字、9:16 上數字下字；每幀只由時間計算，可任意 seek、60fps／PNG 序列一致；bg=none 透明。
+### 變更
+- tests/catalog.test.ts：總數 669 → 670、公開 613 → 614。
+
+
 ## 2026-11-01（feat/fx-684-685，PR 待審，未 merge、未部署）
 ### 新增
 - #684 筆尖光跡手寫字 Pen Light-Trail Writing（kinetic，`pen-light-trail`，新檔 src/effects/fx1101.ts）：發光筆尖照真實筆順沿筆畫中線寫字，白熱光跡冷卻成主色；三質感 neon／ember／frost；`@tex;speed;glow;trail;tip;particles;bg;core;body;glowc`。英數與缺字退回字型由左往右寫出（筆尖跟著走）。16:9 一行、9:16 超過 3 字拆兩行。
