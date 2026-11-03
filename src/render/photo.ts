@@ -1410,6 +1410,123 @@ export const photoRenderer = () => {
       handles.center = [cx, cy];
     }
 
+    /* ───────── #688 照片收進字裡：大照片漂浮 → 收攏嵌進句子 → 大標題上下半截拼合 ───────── */
+    if (sc.module === 'wordcollapse') {
+      const lines = String(sc.caption?.text ?? '').split('\n').map((x) => x.trim()).filter(Boolean);
+      const sentence = lines[0] || String(P.sentence ?? '這間 [3 房] 1,288 萬');
+      const title = lines[1] ?? String(P.title ?? '');
+      const subT = lines[2] ?? String(P.sub ?? '');
+      const mm = /^(.*?)\[(.*?)\](.*)$/.exec(sentence);
+      const A = (mm ? mm[1] : sentence).trim(), B = mm ? mm[2].trim() : '', Cc = mm ? mm[3].trim() : '';
+      const ink = String(P.ink ?? '#111111'), accent = String(P.accent ?? '#E3271D');
+      const n = ci(g('count', 5), 3, 6), ns = Math.min(n, ci(g('embed', 3), 2, 4));
+      const frameOn = num(P.frame, 1) > 0;
+      // 佔位：平塗房間插圖（客廳／廚房／陽台／臥室／景觀／書房）
+      const KIND = ['客廳', '廚房', '陽台', '臥室', '景觀', '書房'];
+      const room = (i: number): Img => {
+        const key = `room|${i}`;
+        let c = holders.get(key);
+        if (!c) {
+          c = document.createElement('canvas');
+          c.width = 800; c.height = 600;
+          const x = c.getContext('2d')!;
+          const w = 800, h = 600, k = KIND[i % 6];
+          const PC = [['#F3E3C3', '#C9A27A', '#4A7C59'], ['#DDEBF2', '#8FB3C9', '#E3271D'], ['#BFE3F5', '#F1EBDD', '#3E8E41'], ['#EAD9F0', '#B48CC8', '#F2C200'], ['#9ED4F5', '#2F6E8F', '#F1EBDD'], ['#F6E7D0', '#B98B5E', '#1E5BD8']][i % 6];
+          x.fillStyle = PC[0]; x.fillRect(0, 0, w, h);
+          x.fillStyle = PC[1]; x.fillRect(0, h * 0.68, w, h * 0.32);
+          x.fillStyle = '#ffffffb3'; x.fillRect(w * 0.55, h * 0.12, w * 0.32, h * 0.36);
+          x.strokeStyle = '#0002'; x.lineWidth = 12; x.strokeRect(w * 0.55, h * 0.12, w * 0.32, h * 0.36);
+          x.fillStyle = PC[2];
+          if (i % 6 === 0) { x.beginPath(); x.roundRect(w * 0.1, h * 0.48, w * 0.5, h * 0.26, 30); x.fill(); x.fillRect(w * 0.08, h * 0.42, w * 0.08, h * 0.32); x.fillRect(w * 0.54, h * 0.42, w * 0.08, h * 0.32); }
+          if (i % 6 === 1) { x.fillRect(w * 0.05, h * 0.5, w * 0.9, h * 0.08); x.fillStyle = '#fff'; x.fillRect(w * 0.05, h * 0.58, w * 0.9, h * 0.2); x.fillStyle = PC[2]; x.beginPath(); x.arc(w * 0.3, h * 0.46, w * 0.06, Math.PI, 0); x.fill(); }
+          if (i % 6 === 2) { x.strokeStyle = '#555'; x.lineWidth = 10; for (let j = 0; j < 10; j++) { x.beginPath(); x.moveTo(w * (0.05 + j * 0.1), h * 0.5); x.lineTo(w * (0.05 + j * 0.1), h * 0.75); x.stroke(); } x.fillRect(0, h * 0.48, w, h * 0.03); x.beginPath(); x.arc(w * 0.2, h * 0.4, w * 0.1, 0, 7); x.fill(); }
+          if (i % 6 === 3) { x.beginPath(); x.roundRect(w * 0.08, h * 0.5, w * 0.6, h * 0.22, 24); x.fill(); x.fillStyle = '#fff'; x.fillRect(w * 0.1, h * 0.46, w * 0.18, h * 0.08); }
+          if (i % 6 === 4) { x.fillStyle = PC[1]; for (let j = 0; j < 6; j++) x.fillRect(w * (0.05 + j * 0.15), h * (0.35 + (j % 3) * 0.08), w * 0.11, h * 0.4); x.fillStyle = PC[2]; x.fillRect(0, h * 0.75, w, h * 0.25); }
+          if (i % 6 === 5) { x.fillRect(w * 0.1, h * 0.2, w * 0.3, h * 0.48); x.fillStyle = '#fff'; for (let j = 0; j < 3; j++) x.fillRect(w * 0.12, h * (0.26 + j * 0.14), w * 0.26, h * 0.03); }
+          x.fillStyle = '#111'; x.font = `900 ${h * 0.13}px ${F}`; x.textBaseline = 'alphabetic'; x.fillText(k, w * 0.06, h * 0.2);
+          holders.set(key, c);
+        }
+        return c as Img;
+      };
+      const pic = (i: number) => imgs[i] ?? room(i);
+      const v = H > W * 1.05;
+      const fs = v ? W * 0.1 : H * 0.11;
+      const cy = H / 2;
+      // 時間軸（以 6 秒為基準，speed 倍率）：0–.35 漂浮、.35–.55 收攏、.55–.72 嵌入停留、.72–.82 照片縮掉、.8–.96 大標題拼合
+      const T = clamp((t * g('speed', 1)) / 6);
+      const pc = inout((T - 0.35) / 0.2), out = clamp((T - 0.72) / 0.1), ti = clamp((T - 0.8) / 0.16);
+      ctx.font = `900 ${fs}px ${F}`;
+      const wA = A ? ctx.measureText(A + ' ').width : 0, wB = B ? ctx.measureText(B).width : 0, wC = Cc ? ctx.measureText(' ' + Cc).width : 0;
+      // 嵌入版面：16:9 單行（照片高＝size×字級，必要時整句縮小）；9:16 三行，照片撐滿寬
+      let eh: number, ew: number, egap: number, fsE: number, ax: number, ay: number, cx: number, cyy: number, rx: number;
+      if (!v) {
+        eh = fs * g('size', 1.8); ew = (eh * 4) / 3; egap = fs * 0.15;
+        const emb = wA + ns * ew + (ns - 1) * egap + wC, k = Math.min(1, (W * 0.95) / emb);
+        eh *= k; ew *= k; egap *= k; fsE = fs * k;
+        ax = W / 2 - (emb * k) / 2; ay = cy; cx = W / 2 + (emb * k) / 2; cyy = cy; rx = ax + wA * k;
+      } else {
+        egap = fs * 0.15; ew = (W * 0.92 - (ns - 1) * egap) / ns; eh = (ew * 3) / 4; fsE = fs * 1.15;
+        ctx.font = `900 ${fsE}px ${F}`;
+        const a2 = ctx.measureText(A).width, c2 = ctx.measureText(Cc).width;
+        ax = W / 2 - a2 / 2; ay = cy - eh / 2 - fs * 0.95; cx = W / 2 + c2 / 2; cyy = cy + eh / 2 + fs * 0.95; rx = W * 0.04;
+      }
+      const x1 = W / 2 - (wA + wB + wC) / 2;
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = 1 - out;
+      ctx.fillStyle = ink;
+      ctx.font = `900 ${lerp(fs, fsE, pc)}px ${F}`;
+      ctx.textAlign = 'left';
+      if (A) ctx.fillText(A, lerp(x1, ax, pc), lerp(cy, ay, pc));
+      ctx.textAlign = 'right';
+      if (Cc) ctx.fillText(Cc, lerp(x1 + wA + wB + wC, cx, pc), lerp(cy, cyy, pc));
+      ctx.textAlign = 'left';
+      if (B) { ctx.globalAlpha = (1 - clamp(pc * 2)) * (1 - out); ctx.fillStyle = accent; ctx.font = `900 ${fs}px ${F}`; ctx.fillText(B, x1 + wA, cy); }
+      ctx.globalAlpha = 1;
+      // 漂浮位置：大照片圍著句子
+      const fh = v ? H * g('float', 0.36) * 0.56 : H * g('float', 0.36), fw = (fh * 4) / 3;
+      const FL = v ? [[0.3, 0.16], [0.7, 0.3], [0.3, 0.72], [0.72, 0.84], [0.74, 0.12], [0.26, 0.86]] : [[0.15, 0.24], [0.5, 0.19], [0.85, 0.25], [0.28, 0.8], [0.72, 0.8], [0.9, 0.72]];
+      const ord = [...Array(n).keys()].sort((a, b) => (b >= ns ? 1 : 0) - (a >= ns ? 1 : 0));
+      for (const i of ord) {
+        const sl = i < ns ? i : (i - ns) % ns, behind = i >= ns;
+        const bob = Math.sin(t * 1.3 + i * 1.7) * u * 13, rot = Math.sin(t * 0.9 + i) * 0.05;
+        const fx = FL[i][0] * W, fy = FL[i][1] * H + bob;
+        const ex = rx + sl * (ew + egap) + ew / 2 + (behind ? 16 * u : 0), ey = cy + (behind ? -16 * u : 0);
+        const x = lerp(fx, ex, pc), y = lerp(fy, ey, pc), w = lerp(fw, ew, pc) * (1 - out * 0.9), h = lerp(fh, eh, pc) * (1 - out * 0.9);
+        const a = clamp(T / 0.06 - i * 0.4) * (1 - out) * (behind ? 1 - clamp((T - 0.45) / 0.1) : 1);
+        if (a <= 0) continue;
+        const pop = back(clamp(T / 0.08 - i * 0.5));
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.translate(x, y); ctx.rotate(rot * (1 - pc)); ctx.scale(pop, pop);
+        if (frameOn) { const bd = 9 * u; ctx.fillStyle = '#ffffff'; ctx.fillRect(-w / 2 - bd, -h / 2 - bd, w + bd * 2, h + bd * 2); }
+        coverIn(pic(i), -w / 2, -h / 2, w, h);
+        ctx.restore();
+      }
+      // 大標題：上下半截左右錯開再拼合（接縫上下各多 1px 重疊）
+      if (ti > 0 && title) {
+        const ts0 = v ? W * 0.17 : H * 0.24;
+        ctx.font = `900 ${ts0}px ${F}`;
+        const ts = ts0 * Math.min(1, (W * 0.92) / Math.max(1, ctx.measureText(title).width));
+        ctx.font = `900 ${ts}px ${F}`;
+        ctx.textAlign = 'center';
+        const off = (1 - inout(ti)) * ts * 0.9;
+        for (const half of [0, 1]) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, half ? cy - 1 : 0, W, half ? H - cy + 1 : cy + 1);
+          ctx.clip();
+          ctx.globalAlpha = clamp(ti * 3);
+          ctx.fillStyle = ink;
+          ctx.fillText(title, W / 2 + (half ? off : -off), cy);
+          ctx.restore();
+        }
+        if (subT) { ctx.font = `700 ${fs * 0.38}px ${F}`; ctx.globalAlpha = clamp((ti - 0.6) / 0.3); ctx.fillStyle = accent; ctx.fillText(subT, W / 2, cy + ts * 0.75); }
+        ctx.globalAlpha = 1;
+        ctx.textAlign = 'left';
+      }
+      return handles;
+    }
+
     drawCaption(ctx, W, H, sc.caption, t, u);
     if (sc.caption?.text) handles.caption = [sc.caption.x * W, sc.caption.y * H];
     return handles;
