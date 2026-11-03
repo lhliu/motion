@@ -22,7 +22,8 @@ export type PModule =
   | 'tear'
   | 'collage'
   | 'morph'
-  | 'occlude';
+  | 'occlude'
+  | 'wordcollapse';
 
 /** 模組分組：單張運鏡、多張組合、標註轉場、裁切與遮罩（對應圖鑑分類） */
 export type PGroup = 'photo' | 'pmulti' | 'pmark' | 'pcut';
@@ -84,6 +85,7 @@ export const MODULE_INFO: Record<PModule, ModuleInfo> = {
   tear: { zh: '撕紙揭露', en: 'Paper Tear', desc: '不規則紙邊掃過畫面，撕開第一張照片、露出第二張', group: 'pcut', names: ['撕開前', '撕開後'] },
   collage: { zh: '剪報拼貼', en: 'Cutout Collage', desc: '透明底物件加上剪紙描邊，依序移動、旋轉並堆疊；請先準備去背 PNG／WebP', group: 'pcut', names: ['背景（可留空）', '剪報 1（去背 PNG／WebP）', '剪報 2（去背 PNG／WebP）', '剪報 3（去背 PNG／WebP）'], optional: [0, 2, 3] },
   morph: { zh: '形狀變換', en: 'Morphing Mask', desc: '圖片框從圓形拉成膠囊，再展開成全螢幕', group: 'pcut', names: ['照片', '底圖（可留空）'], optional: [1] },
+  wordcollapse: { zh: '照片收進字裡', en: 'Photo-to-Word Collapse', desc: '大照片圍著句子漂浮，收攏成一排嵌進句子，再變回大標題', group: 'pmulti', names: ['照片 1（嵌入）', '照片 2（嵌入）', '照片 3（嵌入）', '照片 4', '照片 5', '照片 6'] },
   occlude: { zh: '前景遮擋換景', en: 'Foreground Wipe', desc: '門片或斜切前景掃過鏡頭，在完全遮住畫面時換景，可加透明前景圖', group: 'pcut', names: ['第一個場景', '第二個場景', '前景（去背 PNG／WebP，可留空）'], optional: [2] },
 };
 export const slotsOf = (m: PModule) => MODULE_INFO[m].names.length;
@@ -109,6 +111,7 @@ export const MODULE_DEFAULTS: Record<PModule, Record<string, number | string>> =
   tear: { dir: 'right', delay: 0.7, dur: 1.8, rough: 35, paper: 22, color: '#f5f1e8', seed: 4 },
   collage: { count: 3, size: 0.6, angle: 12, border: 16, color: '#ffffff', delay: 0.2, dur: 0.7, stagger: 0.35, x1: 0.35, y1: 0.34, x2: 0.65, y2: 0.5, x3: 0.42, y3: 0.7 },
   morph: { cx: 0.5, cy: 0.5, radius: 0.18, delay: 0.5, dur: 2.2, border: 6, color: '#ffffff' },
+  wordcollapse: { sentence: '這間 [3 房] 1,288 萬', title: '林口 森之丘', sub: '3 房 · 1,288 萬 · 新北林口', count: 5, embed: 3, size: 1.8, float: 0.36, frame: 1, ink: '#111111', accent: '#E3271D', speed: 1 },
   occlude: { dir: 'right', shape: 'slant', color: '#ff5a36', delay: 0.8, dur: 1.8, width: 1.3, angle: 12 },
 };
 
@@ -343,6 +346,19 @@ export const PARAMS: Record<PModule, PField[]> = {
     { k: 'delay', label: '圓形停留（秒）', type: 'range', min: 0, max: 5, step: 0.1 },
     { k: 'dur', label: '形狀變換時間（秒）', type: 'range', min: 0.4, max: 5, step: 0.05 },
   ],
+  wordcollapse: [
+    { k: 'sentence', label: '句子（[ ] 標出被照片取代的詞）', type: 'text' },
+    { k: 'title', label: '最後的大標題', type: 'text' },
+    { k: 'sub', label: '大標題下方小字', type: 'text' },
+    { k: 'count', label: '漂浮照片張數', type: 'seg', opts: [['3', '3'], ['4', '4'], ['5', '5'], ['6', '6']] },
+    { k: 'embed', label: '嵌入句子的張數', type: 'seg', opts: [['2', '2'], ['3', '3'], ['4', '4']] },
+    { k: 'size', label: '嵌入照片高度（字級倍數）', type: 'range', min: 1.2, max: 2.6, step: 0.05 },
+    { k: 'float', label: '漂浮照片高度（畫面高比例）', type: 'range', min: 0.15, max: 0.5, step: 0.01 },
+    { k: 'frame', label: '照片白邊', type: 'seg', opts: [['1', '開'], ['0', '關']] },
+    { k: 'ink', label: '文字顏色', type: 'color' },
+    { k: 'accent', label: '重點字顏色', type: 'color' },
+    { k: 'speed', label: '速度倍率', type: 'range', min: 0.5, max: 2, step: 0.05 },
+  ],
   occlude: [
     { k: 'dir', label: '前景移動方向', type: 'seg', opts: [['right', '向右'], ['left', '向左'], ['down', '向下'], ['up', '向上']] },
     { k: 'shape', label: '遮擋底板', type: 'seg', opts: [['door', '門片'], ['slant', '斜切']] },
@@ -413,7 +429,7 @@ export const defaultPhotoScene = (module: PModule = 'kenburns'): PScene => ({
   ratio: '9:16',
   loop: 6,
   module,
-  bg: '#151515',
+  bg: module === 'wordcollapse' ? '#F1EBDD' : '#151515',
   images: [],
   params: { ...MODULE_DEFAULTS[module] },
   caption: { text: '', x: 0.5, y: 0.86, size: 1, style: 'pill', color: '#ffd23f', delay: 1 },

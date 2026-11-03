@@ -36,6 +36,8 @@ const run: Fx['run'] = (root) => {
     R.drawPhoto(ctx, W, H, sc, ((globalThis as unknown as { MA_ONCE?: boolean }).MA_ONCE ? Math.min((now - t0) / 1000, loop - 0.001) : (now - t0) / 1000 % loop), imgs, FS);
   };
   raf = requestAnimationFrame(f);
+  // 逐格輸出／截圖用：指定時間畫一格
+  (root as unknown as { maDraw?: (t: number) => void }).maDraw = (t: number) => { R.drawPhoto(ctx, W, H, sc, t, imgs, FS); };
   return () => cancelAnimationFrame(raf);
 };
 
@@ -215,5 +217,13 @@ export const photo: Fx[] = [
     tags: ['遮擋', '前景', '轉場', '開箱'], sample: [],
     motion: '第一張照片停留後，一片不透明門片或斜切前景從指定方向掃過；前景覆蓋全畫面時切換到第二張照片，再移出露出新場景。可將預先去背 PNG／WebP 疊在底板上；底板確保透明孔洞不會露出切換接縫。四方向、顏色、斜度與時間可調，無文字、模糊、陰影。',
     motionEn: 'Sweep an opaque door or slanted foreground panel across the first scene. Switch to scene two only while the panel fully covers the frame, then let it exit. An optional pre-cut PNG/WebP rides on the panel; the solid backing prevents transparent holes from exposing the cut. Four directions, adjustable color, angle and timing; no text, blur or shadows.',
+  }),
+  make('wordcollapse', {
+    no: 688, added: '2026-11-03',
+    desc: '大照片圍著一句話漂浮，收攏成一排嵌進句子，再變回大標題',
+    tags: ['看屋', '開場', '照片', '標題', '多張'],
+    sample: ['這間 [3 房] 1,288 萬', '林口 森之丘', '3 房 · 1,288 萬 · 新北林口'],
+    motion: '米白底上一句話在畫面中央（[ ] 標出的重點詞用紅色），四周 3–6 張帶白邊的大照片（16:9 約畫面高 36%）一張張彈出、輕輕上下飄並微微擺動；接著重點詞淡出，照片往中間飛、縮成一排 2–4 張嵌進重點詞的位置，照片高度約字級的 1.8 倍，其餘照片疊到後面淡掉；9:16 改成三行：前半句／照片撐滿寬／後半句。停留後照片縮掉，大標題上下半截左右錯開再拼合，下方紅色小字淡入。沒放照片時用平塗房間佔位圖（客廳、廚房、陽台、臥室、景觀、書房）。',
+    motionEn: 'A sentence sits centred on a cream background (the bracketed key word in red) while 3–6 large white-bordered photos (about 36% of the frame height in 16:9) pop in around it and gently bob and sway. The key word fades, the photos fly inwards and shrink into a row of 2–4 that takes the key word\'s place inside the sentence, each photo about 1.8× the type size, while extra photos tuck behind and fade; in 9:16 the sentence breaks into three lines with the photo row spanning the width. After a hold the photos shrink away and a big title assembles from upper and lower halves sliding in from opposite sides, with a small red subtitle below. Without uploads, flat illustrated room placeholders are used.',
   }),
 ];

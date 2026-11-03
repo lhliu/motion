@@ -1,3 +1,21 @@
+# HANDOFF：#687 花紋筆畫作字＋#688 照片收進字裡（feat/fx687-688）
+
+## 狀態
+- PR 待審，**未 merge、未部署**。程式碼由 Grok Bot 內建 AI 自行撰寫（未用 Codex／Claude Code／Antigravity）。分支從 main 0ac25c2 切出。
+
+## 內容
+- `pattern-stroke`（#687）：src/effects/fx1103.ts。要換的筆畫中線經 Catmull-Rom 平滑、弧長重取樣 120 點，花紋在 1024 字格座標畫。時間純函數、maDraw、MA_ONCE、reduced-motion。
+- `photo-wordcollapse`（#688）：src/photokit.ts（模組、6 個照片欄、參數 sentence／title／sub／count／embed／size／float／frame／ink／accent／speed，底色預設 #F1EBDD）、src/render/photo.ts（`wordcollapse` 區塊，不畫通用字幕）、src/effects/photo.ts（no 688）。標題拼合用上下 clip 各多 1px 避免接縫。
+
+## 驗證
+- build 通過、npm test 6/6、check:visual 672 招 0 問題。實機截圖 /workspace/zikaji/pattern-stroke/real/、/workspace/zikaji/photo-collapse/real/（腳本 /workspace/zikaji/shoot_687_688.py）。
+
+## 限制
+- #687 筆順依大陸規範、楷書字形；短筆畫（點）放花紋會很擠，建議 stroke=longest。只換一筆。
+- #688 卡片／詳細頁文字欄只吃三行文字，參數微調與上傳照片要在 Photo Studio；照片固定 4:3 裁切；句子很長時 16:9 會整句縮小。
+
+---
+
 # HANDOFF：#686 節拍海報字卡 Beat-Synced Poster Type（feat/fx686-beat-poster）
 
 ## 狀態

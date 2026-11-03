@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-03（feat/fx687-688，PR 待審，未 merge、未部署）
+### 新增
+- #687 花紋筆畫作字 Pattern-Stroke Kanji（kinetic，`pattern-stroke`，新檔 src/effects/fx1103.ts）：其他筆畫依筆順淡入，指定的一筆留淡影，改由花紋沿中線一顆顆長出（mrt 捷運線＋站點＋車頭／tile 屋瓦／scale 鱗片／brick 磚／dot 圓點）。`@stroke(last|longest|n);char;motif;count;speed;pal(yellow|mint|night|paper);c1;c2;sub;bg(solid|none)`。沿用 public/strokes＋jsDelivr＋快取，匯出由 `globals` 內嵌；缺字用字型、花紋改沿字下弧線。16:9 橫排、9:16 直疊。
+- #688 照片收進字裡 Photo-to-Word Collapse（photo 引擎新模組 `wordcollapse`，id `photo-wordcollapse`）：3–6 張大照片（16:9 約畫面高 36%）圍句子漂浮→重點詞 `[ ]` 淡出、照片收攏嵌進句子（照片高＝字級 1.8 倍，必要時整句縮到 95% 寬）→照片縮掉、大標題上下半截錯位拼合＋紅色小字。9:16 改三行（前半句／照片滿寬／後半句）。照片走 Photo Studio（上傳縮成 webp dataURL 存 scene.images，匯出 HTML 一併內嵌）；沒照片用平塗房間佔位圖。文字三行＝句子／大標題／小字。
+- photo 特效 run 加 `root.maDraw(t)`（逐格截圖用）。
+### 變更
+- tests/catalog.test.ts：總數 670 → 672、公開 614 → 616。
+
 ## 2026-11-02（feat/fx686-beat-poster，PR 待審，未 merge、未部署）
 ### 新增
 - #686 節拍海報字卡 Beat-Synced Poster Type（kinetic，`beat-poster`，新檔 src/effects/fx1102.ts）：瑞士海報風四色大色塊，依 BPM 每拍硬切大字、底色、數字塊、方塊進度條與圖形列，拍點微放大回彈；BEAT MAP 標頭＋BPM＋時間碼。每行「大字|數字|小字」；`@bpm;offset;div;beats;pal(swiss|mono|night|kc);c1–c4;bg(solid|none);hit;gentle`。16:9 左字右數字、9:16 上數字下字；每幀只由時間計算，可任意 seek、60fps／PNG 序列一致；bg=none 透明。

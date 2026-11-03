@@ -1,5 +1,11 @@
 # WORKLOG
 
+## 2026-11-03（UTC+8）feat/fx687-688
+- 從 main（0ac25c2）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/pattern-stroke/PLAN.md、/workspace/zikaji/photo-collapse/PLAN.md 實作 #687、#688；確認 687／688 編號未被使用。
+- #687：src/effects/fx1103.ts，筆順載入沿用 #684（常數、helper 全在 run 內）。實拍後 mrt 站點太密，自動數量改為每 170 單位一站。
+- #688：照片特效慣例是 photo 引擎模組（Photo Studio 上傳→scene.images dataURL→匯出內嵌），所以做成 photokit `wordcollapse` 模組＋render/photo.ts 畫法＋effects/photo.ts 註冊；照片大小依 KC「照片要更大」：漂浮 0.36H、嵌入 1.8×字級。
+- 驗證與實機截圖見 HANDOFF。
+
 ## 2026-11-02（UTC+8）feat/fx686-beat-poster
 - 從 main（a9d5f4a）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/beat-poster/PLAN.md 實作 #686。
 - 依日期命名慣例新增 src/effects/fx1102.ts（fx1101＝11/01）；data.ts 註冊；tests/catalog.test.ts 總數 669→670、公開 613→614。
