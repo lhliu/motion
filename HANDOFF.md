@@ -1,3 +1,22 @@
+# HANDOFF：#689 小物漂浮環繞立體片名＋#690 落地彈跳＋地板倒影（feat/fx689-690）
+
+## 狀態
+- PR 待審，**未 merge、未部署**。程式碼由 Grok Bot 內建 AI 自行撰寫（未用 Codex／Claude Code／Antigravity）。分支從 main 4760c45 切出。
+
+## 內容
+- `obj-estate-float`（#689）：繪製在 src/render/prop.ts（`floatProp` 6 個小物＋`floatTitle`，estate 的 `float` 畫面），註冊在 src/effects/fx1104.ts（用 object.ts 匯出的 `propFx`，覆寫 html：片名→params.texts、sky、bg、loop=8、關文字層）。PROP_PARAMS estate 加欄位。環繞小物避開片名＋副標框（推到最近的框外）並夾在畫面內。
+- `drop-reflection`（#690）：src/effects/fx1104.ts；倒影走共用 src/render/reflect.ts（`makeReflector()`，window.MA_REFLECT，離屏 canvas 重用）。匯出 `globals` 用 `fnSource(makeReflector)` 內嵌（第一次 check:visual 抓到 `__name is not defined`，改用 fnSource 修好）。常數全在 run 內。
+- object 特效 run 加 `root.maDraw(t)`。
+
+## 驗證
+- build 通過、npm test 6/6、check:visual 674 招 0 問題。匯出 HTML 兩招開檔無錯誤（/workspace/zikaji/export-check/）。實機截圖 /workspace/zikaji/floating-title/real/、/workspace/zikaji/drop-reflection/real/（腳本 /workspace/zikaji/shoot_689_690.py、export_689_690.py）。
+
+## 限制
+- #689 片名厚度是 2D 疊層假立體；studio 勾「透明背景」時若 sky 仍是 space 會畫星點（用 `bg=none` 或背景選純色）。40 個小物每格重畫，低階手機匯出可能掉格。速度用 BUILD 夾 loop，跑完會停在最後一格再循環。
+- #690 `ctx.filter` 在 Safari <18 無模糊；兩行以上只取前兩行。
+
+---
+
 # HANDOFF：#687 花紋筆畫作字＋#688 照片收進字裡（feat/fx687-688）
 
 ## 狀態

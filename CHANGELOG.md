@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-04（feat/fx689-690，PR 待審，未 merge、未部署）
+### 新增
+- #689 小物漂浮環繞立體片名 Floating Props Title（object 看屋物件，`obj-estate-float`，註冊在新檔 src/effects/fx1104.ts）：prop 引擎 estate 新 `float` 畫面（src/render/prop.ts，鑰匙／捲尺／安全帽／磚塊／水平儀／存錢筒 6 個小物，珍奶 v2 扁平色塊＋亮暗一階＋白色硬邊高光）。鏡頭飛過小物→立體片名回彈浮出（2D 疊層厚度）＋三層硬邊光帶→6 個小物環繞，**避開片名＋副標文字框**並留在畫面內；鏡頭停下後貼近鏡頭的飛行小物淡出。`@props;count;sub;bg(space|solid|none);glow;c1;c2;depth;speed;color;color2`，預設太空背景。9:16 超過 4 字拆兩行。物件工作室看屋物件加「小物漂浮片名」與片名、副標、小物、數量、厚度、背景、光帶、片名色欄位。
+- #690 落地彈跳＋地板倒影 Bounce Drop + Floor Reflection（kinetic，`drop-reflection`，src/effects/fx1104.ts）：下行（價格）先掉、上行 0.35 秒後掉，落地壓扁＋彈 0–3 次，接觸陰影；地板倒影跟著空中的字移動（KC 選擇）。`@floor(marble|dark|plain);refl;fade;blur;bounce;stagger;speed;c1;c2;bg(solid|none)`。字底依實際字形下緣貼齊地板，長字自動縮到 90% 寬。
+- 共用倒影 helper src/render/reflect.ts（`makeReflector()` → `window.MA_REFLECT`，layer／draw，離屏 canvas 重用、尺寸變了才重設）；匯出由 `globals` 以 toString 內嵌。舊效果未套用。
+- object 特效 run 加 `root.maDraw(t)`（逐格截圖用）。
+### 變更
+- src/effects/object.ts 匯出 `propFx`、`OBJ_CSS`、`FLAT`、`FLAT_EN` 給 fx1104 用。
+- tests/catalog.test.ts：總數 672 → 674、公開 616 → 618。
+
 ## 2026-11-03（feat/fx687-688，PR 待審，未 merge、未部署）
 ### 新增
 - #687 花紋筆畫作字 Pattern-Stroke Kanji（kinetic，`pattern-stroke`，新檔 src/effects/fx1103.ts）：其他筆畫依筆順淡入，指定的一筆留淡影，改由花紋沿中線一顆顆長出（mrt 捷運線＋站點＋車頭／tile 屋瓦／scale 鱗片／brick 磚／dot 圓點）。`@stroke(last|longest|n);char;motif;count;speed;pal(yellow|mint|night|paper);c1;c2;sub;bg(solid|none)`。沿用 public/strokes＋jsDelivr＋快取，匯出由 `globals` 內嵌；缺字用字型、花紋改沿字下弧線。16:9 橫排、9:16 直疊。

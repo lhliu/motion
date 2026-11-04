@@ -3,7 +3,7 @@ import { esc } from '../util';
 import { XPACKS } from './xpack';
 import { objSceneFromWords, objSceneForEffect, OBJECT_COSMOS_GROUPS, type OModule } from '../objkit';
 
-const CSS = `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
+export const OBJ_CSS = `.S canvas{position:absolute;inset:0;width:100%;height:100%;display:block}`;
 
 const run: Fx['run'] = (root) => {
   const R = (globalThis as unknown as { MA_OBJ: { drawObj: (...a: unknown[]) => unknown } }).MA_OBJ;
@@ -36,6 +36,8 @@ const run: Fx['run'] = (root) => {
     draw();
   };
   raf = requestAnimationFrame(f);
+  // 截圖／檢查用：指定秒數畫一格
+  (root as unknown as { maDraw?: (t: number) => void }).maDraw = (t: number) => R.drawObj(ctx, cv.width, cv.height, sc, Math.max(0, Math.min(t, loop - 0.001)), FS);
   return () => { cancelAnimationFrame(raf); ro.disconnect(); };
 };
 
@@ -51,7 +53,7 @@ const make = (
   ...((['ocean','vehicle','meteor','aerial'].includes(module)) ? { hidden: true } : {}),
   ...(module === 'ocean' ? { duration: 8 } : {}),
   hint: module === 'ocean' ? '預設無文字。可在物件工作室調整主角、動作、配色與透明背景；字幕可在文字面板開啟。' : '一行一句，~ 開頭為英文小字（最多 4 行）。形狀、材質、顏色請在物件工作室調整，或由 AI 透過 MCP 的 build_object_scene 產生',
-  css: CSS,
+  css: OBJ_CSS,
   html: (w) => {
     const id = `obj-${module}-${variant}`;
     const scene = Object.values(OBJECT_COSMOS_GROUPS).some(g => g.id === id) ? objSceneForEffect(w, id) : objSceneFromWords(w, module, preset);
@@ -114,13 +116,14 @@ export const objects: Fx[] = [
 ];
 
 /* ───────── 生活物件（propkit 繪製）：每個分類一個專屬編輯器 ───────── */
-const prop = (module: OModule, mode: string, no: number, extra: Record<string, number | string>, o: Pick<Fx, 'zh' | 'en' | 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn'>): Fx => ({
+export const propFx = (module: OModule, mode: string, no: number, extra: Record<string, number | string>, o: Pick<Fx, 'zh' | 'en' | 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn'>): Fx => ({
   ...make(module, mode, { mode, ...extra }, { no, ...o }),
   added: '2026-10-24',
   preferredRatio: '9:16',
 });
-const FLAT = '全部硬邊扁平向量，不用陰影、模糊或光暈；可勾透明背景疊進影片，文字在物件下方。';
-const FLAT_EN = 'All hard-edged flat vector shapes with no shadows, blur or glow; transparent background available for overlay, text sits below the object.';
+const prop = propFx;
+export const FLAT = '全部硬邊扁平向量，不用陰影、模糊或光暈；可勾透明背景疊進影片，文字在物件下方。';
+export const FLAT_EN = 'All hard-edged flat vector shapes with no shadows, blur or glow; transparent background available for overlay, text sits below the object.';
 objects.push(
   prop('site', 'crane', 283, {}, { zh: '起重機蓋大樓', en: 'Crane Build', desc: '大樓一層層長高，起重機吊鋼樑上下，地面有施工圍籬', tags: ['建案', '工程', '進度'], sample: ['工程進度', '~ 結構體施工中'], motion: `地面一排黃黑相間的施工圍籬；左側大樓從地面一層一層長高（每層有樓板線與四扇深色窗），最上層施工中只有柱子；右側黃色塔式起重機，吊臂上的台車沿臂移動，鋼索吊著深色鋼樑從地面升到頂樓再往內送，循環進行。${FLAT}`, motionEn: `A row of yellow-and-black hoarding along the ground; on the left a tower rises floor by floor (slab lines and four dark windows per floor, the top floor only columns while under construction); on the right a yellow tower crane whose trolley runs along the jib, its cable lifting a dark steel beam from the ground to the top floor and swinging it in, on repeat. ${FLAT_EN}` }),
   prop('site', 'rise', 284, { color2: '#2f9e6f' }, { zh: '防塵網完工', en: 'Scaffold Reveal', desc: '綠色防塵網包著樓層往上蓋，完工時網子往下收露出大樓', tags: ['建案', '工程', '完工'], sample: ['結構封頂', '~ 外觀即將亮相'], motion: `大樓一層層往上蓋，正在施工的樓層被綠色防塵網（橫向細紋與直向支柱）包住；蓋到頂後防塵網由上往下收起，露出完整外牆與窗戶；地面有施工圍籬。${FLAT}`, motionEn: `The tower rises floor by floor wrapped in green debris netting (fine horizontal bands and vertical poles); once topped out the netting retracts from the top down to reveal the finished facade and windows; hoarding runs along the ground. ${FLAT_EN}` }),
@@ -234,7 +237,7 @@ for (const [key, info] of Object.entries(OBJECT_COSMOS_GROUPS)) {
     added: '2026-11-01',
     preferredRatio: '16:9',
     // 讓網站與匯出都載入思源宋體（familiesFor 看 CSS 裡有沒有 Noto Serif）
-    css: `${CSS}.S{--scroll-font:"Noto Serif TC"}`,
+    css: `${OBJ_CSS}.S{--scroll-font:"Noto Serif TC"}`,
     hint: '一行一幅掛軸（最多 4 幅，直書，建議每幅 2–8 字；英數會轉 90° 直排）/ @設定：color（第一幅裱框色，其餘自動配色）、color2（印章色）、seal（落款 1–4 字，空白＝不蓋章）、count（幅數）、paper（畫心色）、bg（背景色）、font（serif 宋體｜sans 黑體）、speed、size。也可在物件工作室調整。',
     html: (w) => {
       const o: Record<string, string> = {};
