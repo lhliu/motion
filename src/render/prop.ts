@@ -1835,8 +1835,206 @@ export const propRenderer = () => {
   };
 
   /* ───────── 看屋物件 ───────── */
+  /* ───────── #689 小物漂浮環繞立體片名（estate.float）─────────
+     鏡頭往前飛過鑰匙、捲尺、安全帽、磚塊、水平儀、存錢筒；片名從深處回彈浮出（2D 疊層假厚度），
+     最後 6 個小物繞片名漂浮，環繞的小物會避開片名＋副標的文字框。t 以秒計（loop≈8）。 */
+  const FLOAT_KINDS = ['key', 'tape', 'hat', 'brick', 'level', 'piggy'];
+  const floatProp = (x: CanvasRenderingContext2D, k: string, s: number, c: string, c2: string) => {
+    if (k === 'key') {
+      const g = '#f2c14e';
+      circle(x, -s * 0.45, 0, s * 0.42, shade(g, -0.28));
+      circle(x, -s * 0.49, -s * 0.04, s * 0.4, g);
+      x.save(); x.globalCompositeOperation = 'destination-out'; circle(x, -s * 0.49, -s * 0.04, s * 0.14, '#000'); x.restore();
+      x.beginPath(); x.arc(-s * 0.49, -s * 0.04, s * 0.31, 3.6, 4.9); x.lineWidth = s * 0.06; x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineCap = 'round'; x.stroke();
+      fillRR(x, -s * 0.1, -s * 0.06, s * 1.05, s * 0.18, s * 0.04, shade(g, -0.28));
+      fillRR(x, -s * 0.1, -s * 0.1, s * 1.05, s * 0.17, s * 0.04, g);
+      poly(x, [[0.55, 0.06], [0.95, 0.06], [0.95, 0.3], [0.86, 0.3], [0.84, 0.2], [0.76, 0.2], [0.74, 0.32], [0.64, 0.32], [0.62, 0.18], [0.55, 0.18]].map(([a, b]) => [a * s, b * s]), shade(g, -0.18));
+      fillRR(x, -s * 0.05, -s * 0.08, s * 0.9, s * 0.035, s * 0.02, 'rgba(255,255,255,.6)');
+      fillRR(x, -s * 0.12, -s * 0.14, s * 0.08, s * 0.28, s * 0.03, shade(g, -0.4));
+    } else if (k === 'tape') {
+      const g = '#ffd23f';
+      fillRR(x, -s * 0.62, -s * 0.55, s * 1.2, s * 1.16, s * 0.28, shade(g, -0.3));
+      fillRR(x, -s * 0.68, -s * 0.6, s * 1.2, s * 1.12, s * 0.28, g);
+      circle(x, -s * 0.08, -s * 0.04, s * 0.34, shade(g, -0.22));
+      circle(x, -s * 0.1, -s * 0.07, s * 0.3, INK);
+      circle(x, -s * 0.1, -s * 0.07, s * 0.12, '#e9eef5');
+      circle(x, -s * 0.1, -s * 0.07, s * 0.05, shade('#e9eef5', -0.3));
+      fillRR(x, -s * 0.6, -s * 0.54, s * 0.5, s * 0.07, s * 0.035, 'rgba(255,255,255,.55)');
+      fillRR(x, -s * 0.6, -s * 0.42, s * 0.07, s * 0.25, s * 0.035, 'rgba(255,255,255,.4)');
+      fillRR(x, s * 0.48, s * 0.28, s * 0.75, s * 0.2, s * 0.03, shade(g, 0.15));
+      fillRR(x, s * 0.48, s * 0.42, s * 0.75, s * 0.06, s * 0.02, shade(g, -0.2));
+      for (let i = 0; i < 9; i++) line(x, s * (0.55 + i * 0.075), s * 0.3, s * (0.55 + i * 0.075), s * (0.3 + (i % 2 ? 0.06 : 0.11)), s * 0.022, INK);
+      fillRR(x, s * 1.2, s * 0.22, s * 0.07, s * 0.3, s * 0.02, '#9aa3b2');
+      fillRR(x, s * 0.3, -s * 0.62, s * 0.22, s * 0.14, s * 0.05, '#e2483d');
+    } else if (k === 'hat') {
+      x.beginPath(); x.ellipse(0, s * 0.32, s * 0.98, s * 0.22, 0, 0, TAU); x.fillStyle = shade(c, -0.3); x.fill();
+      x.beginPath(); x.ellipse(0, s * 0.26, s * 0.96, s * 0.2, 0, 0, TAU); x.fillStyle = shade(c, -0.08); x.fill();
+      x.beginPath(); x.moveTo(-s * 0.72, s * 0.28); x.bezierCurveTo(-s * 0.75, -s * 0.62, s * 0.75, -s * 0.62, s * 0.72, s * 0.28); x.closePath(); x.fillStyle = c; x.fill();
+      x.beginPath(); x.moveTo(s * 0.2, s * 0.28); x.bezierCurveTo(s * 0.45, -s * 0.15, s * 0.55, -s * 0.25, s * 0.5, -s * 0.32); x.bezierCurveTo(s * 0.72, -s * 0.1, s * 0.75, s * 0.1, s * 0.72, s * 0.28); x.closePath(); x.fillStyle = shade(c, -0.2); x.fill();
+      poly(x, [[-s * 0.1, -s * 0.43], [s * 0.1, -s * 0.43], [s * 0.13, s * 0.27], [-s * 0.13, s * 0.27]], shade(c, 0.2));
+      line(x, -s * 0.42, -s * 0.22, -s * 0.22, -s * 0.38, s * 0.07, 'rgba(255,255,255,.65)');
+      circle(x, -s * 0.5, -s * 0.06, s * 0.035, 'rgba(255,255,255,.5)');
+      fillRR(x, -s * 0.3, -s * 0.05, s * 0.18, s * 0.14, s * 0.03, c2);
+    } else if (k === 'brick') {
+      const g = '#c8553d', a = s * 0.95, b = s * 0.42, h = s * 0.42;
+      poly(x, [[-a, -h * 0.2], [0, -h * 0.2 - b], [a, -h * 0.2], [0, -h * 0.2 + b]], shade(g, 0.22));
+      poly(x, [[-a, -h * 0.2], [0, -h * 0.2 + b], [0, h + b * 0.5], [-a, h - b * 0.5]], g);
+      poly(x, [[a, -h * 0.2], [0, -h * 0.2 + b], [0, h + b * 0.5], [a, h - b * 0.5]], shade(g, -0.28));
+      const R = rng(7);
+      for (let i = 0; i < 14; i++) { const u = R(), v = R(); circle(x, -a * (0.15 + u * 0.75), -h * 0.2 + b * (1 - u) * 0.85 + v * h * 0.85 + s * 0.04, s * 0.022, shade(g, -0.25)); }
+      for (let i = 0; i < 10; i++) circle(x, -a * 0.6 + R() * a * 1.2, -h * 0.2 + (R() - 0.5) * b * 0.9, s * 0.02, shade(g, -0.05));
+      circle(x, -a * 0.2, -h * 0.2 - b * 0.05, s * 0.12, shade(g, -0.1));
+      circle(x, a * 0.25, -h * 0.2 + b * 0.05, s * 0.12, shade(g, -0.1));
+      line(x, -a * 0.75, -h * 0.2 + s * 0.03, -a * 0.3, -h * 0.2 + b * 0.5, s * 0.045, 'rgba(255,255,255,.45)');
+    } else if (k === 'level') {
+      fillRR(x, -s * 1.05, -s * 0.14, s * 2.1, s * 0.32, s * 0.06, shade(c2, -0.3));
+      fillRR(x, -s * 1.1, -s * 0.2, s * 2.1, s * 0.32, s * 0.06, c2);
+      fillRR(x, -s * 0.25, -s * 0.13, s * 0.4, s * 0.18, s * 0.08, '#e9eef5');
+      fillRR(x, -s * 0.21, -s * 0.1, s * 0.32, s * 0.12, s * 0.06, '#9be564');
+      circle(x, -s * 0.02, -s * 0.05, s * 0.04, '#e9fbd8');
+      line(x, -s * 0.12, -s * 0.12, -s * 0.12, s * 0.04, s * 0.015, INK);
+      line(x, s * 0.08, -s * 0.12, s * 0.08, s * 0.04, s * 0.015, INK);
+      fillRR(x, -s * 1.02, -s * 0.17, s * 0.6, s * 0.05, s * 0.025, 'rgba(255,255,255,.5)');
+      fillRR(x, s * 0.7, -s * 0.17, s * 0.25, s * 0.32, s * 0.05, INK);
+    } else {
+      const g = '#f6a5c0';
+      x.beginPath(); x.ellipse(s * 0.05, s * 0.08, s * 0.72, s * 0.55, 0, 0, TAU); x.fillStyle = shade(g, -0.25); x.fill();
+      x.beginPath(); x.ellipse(0, 0, s * 0.7, s * 0.54, 0, 0, TAU); x.fillStyle = g; x.fill();
+      fillRR(x, -s * 0.45, s * 0.4, s * 0.18, s * 0.25, s * 0.06, shade(g, -0.3));
+      fillRR(x, s * 0.25, s * 0.4, s * 0.18, s * 0.25, s * 0.06, shade(g, -0.3));
+      poly(x, [[-s * 0.35, -s * 0.42], [-s * 0.15, -s * 0.7], [-s * 0.05, -s * 0.4]], shade(g, -0.12));
+      fillRR(x, s * 0.6, -s * 0.12, s * 0.22, s * 0.26, s * 0.1, shade(g, -0.12));
+      circle(x, s * 0.68, -s * 0.03, s * 0.03, INK); circle(x, s * 0.74, s * 0.06, s * 0.03, INK);
+      circle(x, s * 0.35, -s * 0.18, s * 0.05, INK);
+      fillRR(x, -s * 0.2, -s * 0.5, s * 0.3, s * 0.06, s * 0.03, INK);
+      x.beginPath(); x.ellipse(-s * 0.3, -s * 0.22, s * 0.18, s * 0.08, -0.5, 0, TAU); x.fillStyle = 'rgba(255,255,255,.55)'; x.fill();
+      circle(x, -s * 0.6, -s * 0.05, s * 0.05, shade(g, -0.3));
+    }
+  };
+  const floatTitle = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
+    const title = String(P.texts ?? '持家男子KC').split('|')[0].trim() || '持家男子KC';
+    const sub = String(P.sub ?? '');
+    const hexOk = (v: unknown, d: string) => (/^#[0-9a-f]{6}$/i.test(String(v ?? '')) ? String(v) : d);
+    const c = hexOk(P.color, '#ffb703'), c2 = hexOk(P.color2, '#2f6fd6');
+    const face = hexOk(P.c1, '#f5f0e6'), side = hexOk(P.c2, '#24408a'), glow = hexOk(P.glow, '#8b5cf6');
+    const sky = String(P.sky ?? 'space');
+    const depthK = Math.max(0, Math.min(3, num(P.depth, 1)));
+    const count = Math.max(0, Math.min(80, Math.round(num(P.count, 40))));
+    const kinds = String(P.props ?? FLOAT_KINDS.join(',')).split(',').map((s) => s.trim()).filter((k) => FLOAT_KINDS.includes(k));
+    if (!kinds.length) kinds.push(...FLOAT_KINDS);
+    const S = Math.min(W, H), port = H > W, size = num(P.size, 1);
+    const FONT = '"Noto Sans TC","Noto Sans CJK TC","PingFang TC",sans-serif';
+    // 背景：太空（星點＋扁平行星）；solid／none 由場景底色決定
+    if (sky === 'space') {
+      const R = rng(3);
+      for (let i = 0; i < 140; i++) { const r = (R() * 1.8 + 0.4) * S / 720; circle(x, R() * W, R() * H, r, `rgba(255,255,255,${(0.25 + R() * 0.6).toFixed(2)})`); }
+      const px = W * 0.12, py = H * (port ? 0.12 : 0.2), pr = S * 0.09;
+      circle(x, px, py, pr, '#3b2f6b'); circle(x, px - pr * 0.25, py - pr * 0.25, pr * 0.7, '#4a3d85');
+      x.beginPath(); x.ellipse(px, py, pr * 1.6, pr * 0.32, -0.3, 0.15 * Math.PI, 0.85 * Math.PI); x.lineWidth = S * 0.008; x.strokeStyle = '#8b7fd6'; x.stroke();
+      circle(x, W * 0.86, H * (port ? 0.86 : 0.78), S * 0.035, '#e9905f'); circle(x, W * 0.86 - S * 0.01, H * (port ? 0.86 : 0.78) - S * 0.01, S * 0.022, '#f4b183');
+    }
+    const fade = t > loop - 0.35 ? clamp((loop - t) / 0.35) : 1;
+    x.globalAlpha = fade;
+    // 片名排版（9:16 超過 4 字拆兩行）
+    const chars = [...title];
+    const cut = chars.length <= 6 ? 2 : Math.ceil(chars.length / 2);
+    const lines = port && chars.length > 4 ? [chars.slice(0, cut).join(''), chars.slice(cut).join('')] : [title];
+    const longest = Math.max(...lines.map((l) => [...l].length));
+    const fs = (port ? Math.min((W * 0.84) / Math.max(2.6, longest * 0.98), S * 0.22) : Math.min((W * 0.78) / Math.max(2, longest * 0.98), S * 0.24)) * size;
+    const cxT = W / 2, cyT = H * 0.5;
+    const depth = fs * 0.16 * depthK;
+    const lh = fs * 1.05;
+    const subFs = fs * 0.26;
+    // 文字框（避開用）：片名寬 × 行數高＋副標
+    x.font = `900 ${fs}px ${FONT}`;
+    const tw = Math.max(...lines.map((l) => x.measureText(l).width));
+    const boxW = tw / 2 + depth * 0.55 + fs * 0.08;
+    const boxTop = cyT - (lines.length * lh) / 2 - fs * 0.05;
+    const boxBot = cyT + (lines.length * lh) / 2 + depth + (sub ? fs * 0.25 + subFs * 0.8 : 0);
+    // 飛行小物（固定亂數）
+    const R = rng(42);
+    const objs: { k: string; x: number; y: number; z: number; r0: number; vr: number; ph: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      const o = { k: kinds[i % kinds.length], x: (R() - 0.5) * 2.2, y: (R() - 0.5) * 1.5, z: 1 + i * (10.8 / Math.max(count, 1)) + R() * 0.3, r0: R() * 6, vr: (R() - 0.5) * 1.2, ph: R() * 6 };
+      if (Math.hypot(o.x, o.y) < 0.45) o.x += Math.sign(o.x || 1) * 0.5;
+      objs.push(o);
+    }
+    const cam = inout(seg(t, 0, 3.6)) * 10.2;
+    const f = S * 0.9;
+    type It = { k?: string; r0?: number; vr?: number; dz: number; ox?: number; oy?: number; orbit?: number; title?: 1 };
+    const list: It[] = [];
+    for (const o of objs) {
+      const dz = o.z - cam;
+      if (dz > -0.2) list.push({ k: o.k, r0: o.r0, vr: o.vr, dz: Math.max(dz, 0.15), ox: o.x * (port ? 0.7 : 1), oy: o.y * (port ? 1.4 : 1) + Math.sin(t * 0.8 + o.ph) * 0.05 });
+    }
+    const titleZ = Math.max(0.9, 11.6 - cam);
+    list.push({ title: 1, dz: titleZ });
+    const orb = ease(seg(t, 3.4, 4.8));
+    if (orb > 0) for (let i = 0; i < Math.min(6, kinds.length * 6); i++) {
+      const a = t * 0.35 + (i * Math.PI) / 3;
+      list.push({ k: kinds[i % kinds.length], r0: i, vr: 0.6, dz: titleZ + Math.sin(a) * 0.6, ox: Math.cos(a) * (port ? 0.55 : 1.05), oy: Math.sin(a) * 0.08 + (i % 2 ? -0.4 : 0.6) * (port ? 1.6 : 1), orbit: orb });
+    }
+    list.sort((a, b) => b.dz - a.dz);
+    const drawTitle = () => {
+      const a = seg(t, 2.6, 4.2);
+      if (a <= 0) return;
+      const sc = back(a);
+      x.save(); x.translate(cxT, cyT);
+      // 光帶：3 層半透明硬邊條
+      const bw = W * (0.2 + 0.9 * ease(seg(t, 3, 4.4)));
+      for (const [al, hh] of [[0.5, 0.06], [0.3, 0.12], [0.15, 0.2]]) { x.globalAlpha = fade * al * Math.min(1, a * 2); fillRR(x, -bw / 2, (-S * hh) / 2, bw, S * hh, (S * hh) / 2, glow); }
+      x.globalAlpha = fade * Math.min(1, a * 3);
+      x.scale(sc, sc); x.rotate(-0.04 * (1 - ease(seg(t, 3.6, 5))));
+      x.font = `900 ${fs}px ${FONT}`; x.textAlign = 'center'; x.textBaseline = 'middle';
+      const d0 = depth * ease(seg(t, 3.2, 4.4));
+      const step = Math.max(1, fs / 120);
+      lines.forEach((L, i) => {
+        const yy = (i - (lines.length - 1) / 2) * lh;
+        for (let d = d0; d > 0; d -= step) { x.fillStyle = d > d0 * 0.6 ? shade(side, -0.25) : side; x.fillText(L, d * 0.55, yy + d); }
+        x.fillStyle = face; x.fillText(L, 0, yy);
+        x.save(); x.beginPath(); x.rect(-W, yy - fs * 0.5, W * 2, fs * 0.36); x.clip(); x.fillStyle = shade(face, 0.6); x.fillText(L, 0, yy); x.restore();
+        x.save(); x.beginPath(); x.rect(-W, yy + fs * 0.18, W * 2, fs * 0.4); x.clip(); x.fillStyle = shade(face, -0.12); x.fillText(L, 0, yy); x.restore();
+      });
+      const sa = ease(seg(t, 4.2, 5));
+      if (sub && sa > 0) { x.globalAlpha = fade * sa; x.font = `700 ${subFs}px ${FONT}`; x.fillStyle = '#ffd23f'; x.fillText(sub, 0, (lines.length / 2) * lh + fs * 0.25 + d0); }
+      x.restore();
+      x.globalAlpha = fade;
+    };
+    for (const it of list) {
+      if (it.title) { drawTitle(); continue; }
+      const sc = f / it.dz;
+      let X = W / 2 + it.ox! * sc * 0.9, Y = H / 2 + it.oy! * sc * 0.9;
+      const s = S * 0.132 * (f / it.dz) / S * (it.orbit ?? 1) * size;
+      if (X < -s * 3 || X > W + s * 3 || Y < -s * 3 || Y > H + s * 3 || s > S * 0.7) continue;
+      // 避開文字框：環繞小物若壓到片名／副標，推到最近的框外
+      if (it.orbit) {
+        const m = s * 1.15;
+        const dx = X - cxT, inX = Math.abs(dx) < boxW + m, inY = Y > boxTop - m && Y < boxBot + m;
+        if (inX && inY) {
+          const pushX = boxW + m - Math.abs(dx), pushUp = Y - (boxTop - m), pushDn = boxBot + m - Y;
+          const best = Math.min(pushX, pushUp, pushDn);
+          if (best === pushX) X = cxT + Math.sign(dx || 1) * (boxW + m);
+          else if (best === pushUp) Y = boxTop - m;
+          else Y = boxBot + m;
+        }
+        // 環繞小物整個留在畫面內
+        X = Math.max(s * 1.1, Math.min(W - s * 1.1, X)); Y = Math.max(s * 0.9, Math.min(H - s * 0.9, Y));
+      }
+      const fog = clamp((it.dz - 1) / 9);
+      x.save(); x.translate(X, Y); x.rotate(it.r0! + it.vr! * t);
+      // 鏡頭停下後，貼在鏡頭前的飛行小物淡出，把畫面讓給環繞的 6 個
+      const clearNear = it.orbit || it.dz > 3 ? 1 : 1 - seg(t, 3.6, 4.6);
+      if (clearNear <= 0) { x.restore(); continue; }
+      x.globalAlpha = fade * clearNear * (it.orbit ? it.orbit : 1 - fog * 0.55);
+      floatProp(x, it.k!, s, c, c2);
+      x.restore();
+    }
+    x.globalAlpha = 1;
+    return { cx: cxT, cy: cyT, r: S * 0.45 };
+  };
   const estate = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
     const mode = String(P.mode ?? 'calc');
+    if (mode === 'float') return floatTitle(x, W, H, P, t, loop);
     if (mode === 'meter')
       // 電表：轉盤轉、度數往上跳、閃電圖示蹦出
       return stage(x, W, H, P, t, loop, SV, YL, (x, q, after, c, c2) => {

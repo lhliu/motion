@@ -1,5 +1,11 @@
 # WORKLOG
 
+## 2026-11-04（UTC+8）feat/fx689-690
+- 從 main（4760c45）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/floating-title/PLAN.md、/workspace/zikaji/drop-reflection/PLAN.md 實作 #689、#690；確認 689／690 未被使用。
+- #689：6 個小物照 KC 核准的 props-sheet 移進 prop.ts（estate.float，工廠內自給自足，只用工廠 helper）；註冊照 #685 模式覆寫 html（片名進 params.texts、關掉下方文字層、loop 8 秒）。實拍後修：環繞小物被畫框切掉 → 一律夾在畫面內；鏡頭停下後近景飛行小物（大安全帽）擋畫面 → 3.6–4.6 秒淡出。
+- #690：倒影做成共用 render/reflect.ts，run 只讀 globalThis.MA_REFLECT，其餘常數全在 run 內。實拍後修：「萬」下緣穿過地板線 → 改用 measureText 實際下緣貼地。
+- 驗證與實機截圖見 HANDOFF。
+
 ## 2026-11-03（UTC+8）feat/fx687-688
 - 從 main（0ac25c2）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/pattern-stroke/PLAN.md、/workspace/zikaji/photo-collapse/PLAN.md 實作 #687、#688；確認 687／688 編號未被使用。
 - #687：src/effects/fx1103.ts，筆順載入沿用 #684（常數、helper 全在 run 內）。實拍後 mrt 站點太密，自動數量改為每 170 單位一站。

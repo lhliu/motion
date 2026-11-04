@@ -42,6 +42,7 @@ import { fx1029 } from './effects/fx1029';
 import { fx1101 } from './effects/fx1101';
 import { fx1102 } from './effects/fx1102';
 import { fx1103 } from './effects/fx1103';
+import { fx1104 } from './effects/fx1104';
 import { canonTags, PICKS, USE_OF, USES } from './uses';
 
 export const SECTIONS: Section[] = [
@@ -183,6 +184,7 @@ export const ALL_EFFECTS: Fx[] = [
   ...fx1101,
   ...fx1102,
   ...fx1103,
+  ...fx1104,
 ].sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
 
 // 從前台隱藏（代碼、編號保留，舊 Combo 與預設仍可用）
