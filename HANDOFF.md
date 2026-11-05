@@ -1,3 +1,12 @@
+# HANDOFF：#691 拉鍊拉開轉場（feat/fx691-zipper）
+
+- `obj-estate-zipper`（#691）：繪製在 src/render/prop.ts（`zipper`、`zipCanvas` 離屏快取、`ZIP_IMG` 照片快取，estate 的 `zipper` 畫面），註冊在 src/effects/fx1105.ts（`propFx` + 覆寫 html：片名→params.texts、mode→zmode、bg=none→next=none、next=photo 讀 localStorage `ma-photoimg` 第一張→params.img、loop=3.2、關文字層）。
+- 時間軸：0–12% 拉鍊頭晃、12–78% 拉下、76–100% 布飛開（close：0–24% 布飛回、22–88% 拉上）。estate 在 BUILD 清單，跑完停最後一格。
+- 驗證：build、npm test 6/6、check:visual 675 招；匯出 HTML（card／none+close+h）開檔播放無錯誤：/workspace/zikaji/zipper/real/export-*.html。
+- 未做：物件工作室（PROP_PARAMS）沒有加 zipper 專用欄位，靠 @設定；照片以 data URL 內嵌，大照片會讓匯出 HTML 變大。
+
+---
+
 # HANDOFF：#689 小物漂浮環繞立體片名＋#690 落地彈跳＋地板倒影（feat/fx689-690）
 
 ## 狀態

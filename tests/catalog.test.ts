@@ -35,8 +35,8 @@ test('PR #17 的 21 招仍存在、隱藏、編號不變；9 個情緒貼圖轉�
   assert.equal(NUM.get('obj-xpack-em-shock'), 585);
   assert.equal(NUM.get('obj-xpack-vl-rec'), 606);
   assert.equal(NUM.get('obj-xpack-ic-no'), 677);
-  assert.equal(EFFECTS.length, 618); // +689 小物漂浮環繞立體片名、+690 落地彈跳＋地板倒影、+687 花紋筆畫作字、+688 照片收進字裡、+686 節拍海報字卡、+684 筆尖光跡手寫字、+685 掛軸展開直書標題、+680 同心圓靶、+681 甘特圖、+682 泳道流程、+683 蜿蜒路徑
-  assert.equal(ALL_EFFECTS.length, 674);
+  assert.equal(EFFECTS.length, 619); // +691 拉鍊拉開轉場、+689 小物漂浮環繞立體片名、+690 落地彈跳＋地板倒影、+687 花紋筆畫作字、+688 照片收進字裡、+686 節拍海報字卡、+684 筆尖光跡手寫字、+685 掛軸展開直書標題、+680 同心圓靶、+681 甘特圖、+682 泳道流程、+683 蜿蜒路徑
+  assert.equal(ALL_EFFECTS.length, 675);
 });
 
 test('隱藏、顯示、改分類、標籤、精選', () => {

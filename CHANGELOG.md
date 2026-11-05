@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-05（feat/fx691-zipper，PR 待審，未 merge、未部署）
+### 新增
+- #691 拉鍊拉開轉場 Zipper Reveal（object 看屋物件，`obj-estate-zipper`，新檔 src/effects/fx1105.ts）：prop 引擎 estate 新 `zipper` 畫面（src/render/prop.ts，珍奶 v2 扁平色塊）。布面（斜紋＋配色橫條＋虛線縫線）中間拉鍊，拉片印「KC」；拉過處裂成 V 字露出下一段，拉到底兩片布往左右飛走；`mode=close` 反向當結尾。
+- 參數 `@dir(v|h);mode(open|close);next(card|photo|none);fabric(kc 預設 #1F3A5F＋橘 #F28C28｜navy｜denim｜olive｜red｜cream｜lilac｜#hex);acc;tape;pull(silver|gold|black|#hex);teeth;angle(6–30);card;sub;size;speed;img;bg=none`。
+- `next=photo`：自動帶入圖片工作室目前第一張照片（localStorage `ma-photoimg`，寫進場景 params.img，匯出 HTML 一起內嵌）；沒照片時用扁平示意建案照；`img=網址` 可覆寫。
+- 字畫在開口裡的下一段畫面（`scene.text.lines=[]`）；布面與單顆齒離屏快取，只畫畫面內的齒。
+### 變更
+- tests/catalog.test.ts：總數 674 → 675、公開 618 → 619。
+
 ## 2026-11-04（feat/fx689-690，PR 待審，未 merge、未部署）
 ### 新增
 - #689 小物漂浮環繞立體片名 Floating Props Title（object 看屋物件，`obj-estate-float`，註冊在新檔 src/effects/fx1104.ts）：prop 引擎 estate 新 `float` 畫面（src/render/prop.ts，鑰匙／捲尺／安全帽／磚塊／水平儀／存錢筒 6 個小物，珍奶 v2 扁平色塊＋亮暗一階＋白色硬邊高光）。鏡頭飛過小物→立體片名回彈浮出（2D 疊層厚度）＋三層硬邊光帶→6 個小物環繞，**避開片名＋副標文字框**並留在畫面內；鏡頭停下後貼近鏡頭的飛行小物淡出。`@props;count;sub;bg(space|solid|none);glow;c1;c2;depth;speed;color;color2`，預設太空背景。9:16 超過 4 字拆兩行。物件工作室看屋物件加「小物漂浮片名」與片名、副標、小物、數量、厚度、背景、光帶、片名色欄位。
