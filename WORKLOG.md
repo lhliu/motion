@@ -1,5 +1,11 @@
 # WORKLOG
 
+## 2026-11-05（UTC+8）feat/fx691-zipper
+- 從 main（c2f53df）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/zipper/PLAN.md＋proto/index.html 實作 #691，KC 決定：拉片印 KC、預設頻道色布面、拉到底布飛走、照片版接圖片工作室。
+- prop.ts 新增 `zipper`（工廠內 helper：shade/fillRR/poly/circle/hex，常數全在函式內）；拉鍊開合用 params.zmode（params.mode 已被畫面名 zipper 佔用，html 把使用者的 mode= 轉成 zmode）。
+- 實拍後修：布飛開時拉鍊頭殘留在畫面底 → 飛開一開始就隱藏；橫拉時布面花紋跟著轉 90°（橫條變直條）→ 布面改用畫面座標快取再反轉畫入；照片版標題條把小字切到底邊 → 標題條上移、加高。
+- 實拍腳本 /workspace/zikaji/zipper/shoot_691.py，畫格在 /workspace/zikaji/zipper/real/。
+
 ## 2026-11-04（UTC+8）feat/fx689-690
 - 從 main（4760c45）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/floating-title/PLAN.md、/workspace/zikaji/drop-reflection/PLAN.md 實作 #689、#690；確認 689／690 未被使用。
 - #689：6 個小物照 KC 核准的 props-sheet 移進 prop.ts（estate.float，工廠內自給自足，只用工廠 helper）；註冊照 #685 模式覆寫 html（片名進 params.texts、關掉下方文字層、loop 8 秒）。實拍後修：環繞小物被畫框切掉 → 一律夾在畫面內；鏡頭停下後近景飛行小物（大安全帽）擋畫面 → 3.6–4.6 秒淡出。

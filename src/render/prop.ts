@@ -2032,9 +2032,260 @@ export const propRenderer = () => {
     x.globalAlpha = 1;
     return { cx: cxT, cy: cyT, r: S * 0.45 };
   };
+  // #691 拉鍊拉開轉場：布面＋拉鍊（齒、布帶、拉鍊頭印 KC），拉過的地方裂成 V 字露出下一段（card 字卡｜photo 照片｜none 透明），拉到底兩片布往左右飛走；mode=close 反向。
+  // 常數全在函式內（匯出時整個工廠 toString 內嵌）；布面與單顆齒用離屏快取，只畫畫面內看得到的齒。
+  const ZIP_CACHE: Record<string, HTMLCanvasElement> = {};
+  const ZIP_IMG: Record<string, HTMLImageElement> = {};
+  const zipCanvas = (key: string, w: number, h: number, paint: (c: CanvasRenderingContext2D) => void) => {
+    const hit = ZIP_CACHE[key];
+    if (hit) return hit;
+    const keys = Object.keys(ZIP_CACHE);
+    if (keys.length > 12) keys.forEach((k) => delete ZIP_CACHE[k]);
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.ceil(w));
+    cv.height = Math.max(1, Math.ceil(h));
+    paint(cv.getContext('2d')!);
+    return (ZIP_CACHE[key] = cv);
+  };
+  const zipper = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
+    const INK = '#1d2433';
+    const FONT = '"Noto Sans TC","Noto Sans CJK TC","PingFang TC",sans-serif';
+    const FABRIC: Record<string, string[]> = { kc: ['#1F3A5F', '#F28C28'], navy: ['#2f3e6b', '#e9a23b'], denim: ['#3e6a9e', '#f2c14e'], olive: ['#66743a', '#e8dcc0'], red: ['#c8483f', '#f5f0e6'], cream: ['#e7d8bb', '#c8483f'], lilac: ['#8e95d6', '#f6a5c0'] };
+    const PULL: Record<string, string> = { silver: '#c9d1dc', gold: '#f2c14e', black: '#3a4152' };
+    const isHex = (v: unknown) => /^#[0-9a-f]{6}$/i.test(String(v ?? '').trim());
+    const fk = String(P.fabric ?? 'kc').trim();
+    const fab = isHex(fk) ? String(fk) : (FABRIC[fk] || FABRIC.kc)[0];
+    const acc = isHex(P.acc) ? String(P.acc) : isHex(fk) ? '#F28C28' : (FABRIC[fk] || FABRIC.kc)[1];
+    const tape = isHex(P.tape) ? String(P.tape) : shade(fab, 0.18);
+    const pk = String(P.pull ?? 'silver').trim();
+    const pull = isHex(pk) ? pk : PULL[pk] || PULL.silver;
+    const teeth = isHex(P.teeth) ? String(P.teeth) : '#d9dee6';
+    const card = isHex(P.card) ? String(P.card) : '#f5f0e6';
+    const next = ['card', 'photo', 'none'].includes(String(P.next)) ? String(P.next) : 'card';
+    const close = String(P.zmode ?? 'open') === 'close';
+    const horiz = String(P.dir ?? 'v') === 'h';
+    const angle = Math.max(6, Math.min(30, num(P.angle, 14)));
+    const size = Math.max(0.4, Math.min(2.5, num(P.size, 1)));
+    const title = String(P.texts ?? '打開這間3房').split('|')[0].trim();
+    const sub = String(P.sub ?? '');
+    const q = clamp(t / Math.max(0.1, loop));
+    const S = Math.min(W, H);
+    x.clearRect(0, 0, W, H);
+
+    // ── 開口裡：下一段畫面（字卡／照片／透明），字畫在這裡，所以會從開口露出
+    const label = (cy: number, light: boolean) => {
+      if (!title) return;
+      x.textAlign = 'center';
+      x.textBaseline = 'middle';
+      const fs = S * (W > H ? 0.16 : 0.15);
+      x.font = `900 ${fs}px ${FONT}`;
+      x.fillStyle = light ? fab : '#ffffff';
+      const lines = W < H && title.length > 4 ? [title.slice(0, Math.ceil(title.length / 2)), title.slice(Math.ceil(title.length / 2))] : [title];
+      let fit = 1;
+      lines.forEach((l) => (fit = Math.min(fit, (W * 0.86) / Math.max(1, x.measureText(l).width))));
+      if (fit < 1) x.font = `900 ${fs * fit}px ${FONT}`;
+      const lh = fs * fit * 1.18;
+      const y0 = cy - ((lines.length - 1) * lh) / 2;
+      lines.forEach((l, i) => x.fillText(l, W / 2, y0 + i * lh));
+      if (sub) {
+        x.font = `800 ${S * 0.05}px ${FONT}`;
+        x.fillStyle = light ? shade(acc, -0.25) : acc;
+        x.fillText(sub, W / 2, y0 + (lines.length - 1) * lh + fs * fit * 0.62 + S * 0.06);
+      }
+    };
+    if (next === 'card') {
+      x.fillStyle = card;
+      x.fillRect(0, 0, W, H);
+      const [r, g, b] = hex(card);
+      const light = r * 0.299 + g * 0.587 + b * 0.114 > 150;
+      circle(x, W / 2, H / 2, S * 0.42, light ? 'rgba(0,0,0,.05)' : 'rgba(255,255,255,.1)');
+      fillRR(x, W / 2 - S * 0.09, H / 2 + S * 0.3, S * 0.18, S * 0.025, S * 0.0125, acc);
+      label(H * 0.47, light);
+    } else if (next === 'photo') {
+      const src = String(P.img ?? '');
+      let im = src ? ZIP_IMG[src] : undefined;
+      if (src && !im) {
+        im = ZIP_IMG[src] = new Image();
+        im.crossOrigin = 'anonymous';
+        im.src = src;
+      }
+      if (im && im.complete && im.naturalWidth) {
+        const k = Math.max(W / im.naturalWidth, H / im.naturalHeight);
+        const z = 1.04 + 0.04 * q;
+        const dw = im.naturalWidth * k * z, dh = im.naturalHeight * k * z;
+        x.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      } else {
+        // 沒有照片時的扁平示意建案照
+        x.fillStyle = '#8fd3f4';
+        x.fillRect(0, 0, W, H);
+        circle(x, W * 0.78, H * 0.2, S * 0.08, '#ffd23f');
+        x.fillStyle = '#7cc36f';
+        x.fillRect(0, H * 0.78, W, H * 0.22);
+        const bw = S * 0.5, bx = W / 2 - bw / 2, bt = H * 0.78 - S * 0.62;
+        fillRR(x, bx + S * 0.03, bt + S * 0.03, bw, S * 0.62, 0, shade('#f5f0e6', -0.25));
+        fillRR(x, bx, bt, bw, S * 0.62, 0, '#f5f0e6');
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) fillRR(x, bx + S * 0.06 + c * S * 0.15, bt + S * 0.06 + r * S * 0.13, S * 0.09, S * 0.08, S * 0.01, r === 3 && c === 1 ? '#c8483f' : '#5bc0eb');
+      }
+      if (title) {
+        const by = H * (W > H ? 0.72 : 0.74), bh = S * (W < H && title.length > 4 ? 0.34 : 0.22);
+        x.fillStyle = 'rgba(29,36,51,.72)';
+        x.fillRect(0, by - bh / 2, W, bh + (sub ? S * 0.1 : 0));
+        label(by, false);
+      }
+    }
+
+    // ── 進度：0–12% 拉鍊頭晃→12–78% 拉下→76–100% 布飛開；close 反向
+    const open = inout(seg(q, 0.12, 0.78));
+    const prog = close ? 1 - inout(seg(q, 0.22, 0.88)) : open;
+    const flyAmt = close ? 1 - ease(seg(q, 0, 0.24)) : ease(seg(q, 0.76, 1));
+    x.save();
+    let L = H, Wd = W;
+    if (horiz) {
+      x.translate(0, H);
+      x.rotate(-Math.PI / 2);
+      L = W;
+      Wd = H;
+    }
+    const s = S * 0.045 * size, cx = Wd / 2;
+    const ys = -s * 1.2 + prog * (L + s * 2.4);
+    const ang = Math.tan((angle * Math.PI) / 180);
+    const push = flyAmt * Wd * 0.75;
+    const gap = (y: number) => Math.max(0, ys - y) * ang + push;
+    const step = s * 0.5, N = Math.ceil(L / step) + 2;
+    // 布面快取（斜紋、配色橫條、虛線縫線、左上硬邊高光）
+    const paintCloth = (Wd: number, L: number) => (c: CanvasRenderingContext2D) => {
+      c.fillStyle = fab;
+      c.fillRect(0, 0, Wd, L);
+      c.strokeStyle = 'rgba(255,255,255,.06)';
+      c.lineWidth = s * 0.08;
+      for (let i = -L; i < Wd + L; i += s * 0.42) {
+        c.beginPath();
+        c.moveTo(i, 0);
+        c.lineTo(i + L * 0.6, L);
+        c.stroke();
+      }
+      const by = L * 0.36, bh = L * 0.12;
+      c.fillStyle = acc;
+      c.fillRect(0, by, Wd, bh);
+      c.fillStyle = shade(acc, -0.22);
+      c.fillRect(0, by + bh * 0.78, Wd, bh * 0.22);
+      c.setLineDash([s * 0.35, s * 0.25]);
+      c.lineWidth = s * 0.06;
+      c.strokeStyle = 'rgba(255,255,255,.45)';
+      [by - s * 0.3, by + bh + s * 0.3].forEach((y) => {
+        c.beginPath();
+        c.moveTo(0, y);
+        c.lineTo(Wd, y);
+        c.stroke();
+      });
+      c.setLineDash([]);
+      c.fillStyle = 'rgba(255,255,255,.08)';
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.lineTo(Wd * 0.42, 0);
+      c.lineTo(Wd * 0.1, L);
+      c.lineTo(0, L);
+      c.fill();
+    };
+    const ckey = `${fab}|${acc}|${Math.round(s * 10)}`;
+    const cloth = horiz ? undefined! : zipCanvas(`f|${Math.round(Wd)}|${Math.round(L)}|${ckey}`, Wd, L, paintCloth(Wd, L));
+    const clothH = horiz ? zipCanvas(`f|${Math.round(W)}|${Math.round(H)}|${ckey}`, W, H, paintCloth(W, H)) : undefined!;
+    // 單顆齒快取（左右各一張）
+    const tw = s * 0.62, th = s * 0.36, pad = s * 0.06;
+    const toothImg = (side: number) => zipCanvas(`t|${side}|${Math.round(s * 10)}|${teeth}`, tw + pad * 2, th + pad * 2, (c) => {
+      const ox = pad + (side > 0 ? s * 0.04 : 0);
+      fillRR(c, ox + side * s * 0.04 - (side > 0 ? s * 0.04 : 0), pad + s * 0.05, tw - s * 0.02, th - s * 0.02, th * 0.45, shade(teeth, -0.3));
+      fillRR(c, pad, pad, tw - s * 0.02, th - s * 0.02, th * 0.45, teeth);
+      fillRR(c, pad + (side < 0 ? tw * 0.15 : tw * 0.3), pad + th * 0.12, tw * 0.55, th * 0.22, th * 0.11, 'rgba(255,255,255,.55)');
+    });
+    const onScreen = (px: number) => px > -s * 2 && px < Wd + s * 2;
+    [-1, 1].forEach((side) => {
+      if (!onScreen(cx + side * (push + s))) return; // 已飛出畫面
+      x.save();
+      x.beginPath();
+      const ox = side < 0 ? -Wd * 2 : Wd * 3;
+      x.moveTo(ox, -s * 4);
+      for (let i = -4; i <= N + 4; i++) x.lineTo(cx + side * (gap(i * step) + s * 0.02), i * step);
+      x.lineTo(ox, L + s * 4);
+      x.closePath();
+      x.clip();
+      if (horiz) {
+        // 橫拉時布面花紋維持正向（橫條仍是水平）
+        x.rotate(Math.PI / 2);
+        x.translate(0, -H);
+        x.drawImage(clothH, 0, -side * push);
+      } else x.drawImage(cloth, side * push, 0);
+      x.restore();
+      // 布帶（淺一階）＋開口處的深色反摺：整條一次畫完
+      const edge = (k: number) => Array.from({ length: N + 5 }, (_, j) => [cx + side * (gap((j - 2) * step) + k), (j - 2) * step]);
+      const inner = edge(0), outer = edge(s * 0.9), fold = edge(s * 1.25);
+      poly(x, [...inner, ...outer.slice().reverse()], tape);
+      x.beginPath();
+      outer.forEach(([a, b], i) => (i ? x.lineTo(a, b) : x.moveTo(a, b)));
+      fold.slice().reverse().forEach(([a, b]) => x.lineTo(a, b));
+      x.closePath();
+      x.save();
+      x.clip();
+      x.fillStyle = shade(fab, -0.3);
+      x.fillRect(-Wd, Math.min(ys, L + s) - L * 3, Wd * 3, L * 3); // 反摺只出現在已打開的段
+      x.restore();
+      x.setLineDash([s * 0.3, s * 0.22]);
+      x.lineWidth = s * 0.07;
+      x.strokeStyle = 'rgba(255,255,255,.55)';
+      x.beginPath();
+      edge(s * 0.7).forEach(([a, b], i) => (i ? x.lineTo(a, b) : x.moveTo(a, b)));
+      x.stroke();
+      x.setLineDash([]);
+      // 齒：交錯咬合，只畫看得到的
+      const img = toothImg(side);
+      for (let i = -1; i <= N + 1; i++) {
+        const y = i * step + (side > 0 ? step / 2 : 0);
+        if (y < -s || y > L + s) continue;
+        const root = cx + side * gap(y) - side * s * 0.3;
+        const left = side < 0 ? root - tw : root;
+        if (!onScreen(left)) continue;
+        x.drawImage(img, left - pad, y - th / 2 - pad);
+      }
+    });
+    // 拉鍊頭（拉片印 KC）
+    if (ys > -s * 2 && ys < L + s * 2 && flyAmt < 0.08) {
+      const sw = Math.sin(q * TAU * 3) * 0.25 * (1 - seg(q, 0.7, 0.9));
+      const k = s * 2.3, col = pull, d = shade(col, -0.3);
+      x.save();
+      x.translate(cx, ys);
+      if (close) x.rotate(Math.PI);
+      poly(x, [[-k * 0.42, -k * 0.55], [k * 0.42, -k * 0.55], [k * 0.3, k * 0.5], [-k * 0.3, k * 0.5]], d);
+      poly(x, [[-k * 0.46, -k * 0.6], [k * 0.38, -k * 0.6], [k * 0.26, k * 0.44], [-k * 0.34, k * 0.44]], col);
+      poly(x, [[-k * 0.38, -k * 0.52], [-k * 0.22, -k * 0.52], [-k * 0.2, k * 0.36], [-k * 0.28, k * 0.36]], 'rgba(255,255,255,.55)');
+      fillRR(x, -k * 0.18, -k * 0.2, k * 0.3, k * 0.5, k * 0.08, d);
+      circle(x, -k * 0.03, k * 0.2, k * 0.13, shade(col, -0.45));
+      x.translate(-k * 0.03, k * 0.2);
+      x.rotate(sw);
+      fillRR(x, -k * 0.24, k * 0.02, k * 0.52, k * 1.28, k * 0.2, d);
+      fillRR(x, -k * 0.28, -k * 0.02, k * 0.52, k * 1.24, k * 0.2, col);
+      fillRR(x, -k * 0.12, k * 0.18, k * 0.2, k * 0.36, k * 0.1, shade(col, -0.45));
+      fillRR(x, -k * 0.22, k * 0.62, k * 0.06, k * 0.44, k * 0.03, 'rgba(255,255,255,.6)');
+      circle(x, 0, 0, k * 0.1, shade(col, 0.25));
+      // KC：永遠正著讀
+      x.save();
+      x.translate(-k * 0.02, k * 0.86);
+      x.rotate((horiz ? Math.PI / 2 : 0) + (close ? Math.PI : 0));
+      x.font = `900 ${k * 0.24}px ${FONT}`;
+      x.textAlign = 'center';
+      x.textBaseline = 'middle';
+      x.fillStyle = shade(col, -0.55);
+      x.fillText('KC', 0, 0);
+      x.restore();
+      x.restore();
+    }
+    x.restore();
+    void INK;
+    return { cx: W / 2, cy: H / 2, r: S * 0.45 };
+  };
   const estate = (x: CanvasRenderingContext2D, W: number, H: number, P: Record<string, unknown>, t: number, loop: number) => {
     const mode = String(P.mode ?? 'calc');
     if (mode === 'float') return floatTitle(x, W, H, P, t, loop);
+    if (mode === 'zipper') return zipper(x, W, H, P, t, loop);
     if (mode === 'meter')
       // 電表：轉盤轉、度數往上跳、閃電圖示蹦出
       return stage(x, W, H, P, t, loop, SV, YL, (x, q, after, c, c2) => {
