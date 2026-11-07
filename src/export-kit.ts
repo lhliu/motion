@@ -88,6 +88,29 @@ export const pngSequence = async (W: number, H: number, seconds: number, draw: (
   return zip(files);
 };
 
+/** 逐格可等待的 PNG 序列。draw 要等素材 seek／解碼完再畫，畫完才進下一格。 */
+export const pngSequenceAsync = async (
+  W: number,
+  H: number,
+  seconds: number,
+  draw: (ctx: CanvasRenderingContext2D, t: number, i: number) => void | Promise<void>,
+  onProgress: (i: number, n: number) => void,
+  fps = 30,
+): Promise<Blob> => {
+  const c = canvasOf(W, H);
+  const ctx = c.getContext('2d')!;
+  const n = Math.max(1, Math.round(seconds * fps));
+  const files: { name: string; data: Uint8Array }[] = [];
+  for (let i = 0; i < n; i++) {
+    await draw(ctx, i / fps, i);
+    const b = await new Promise<Blob>((r) => c.toBlob((x) => r(x!), 'image/png'));
+    files.push({ name: `frame_${String(i).padStart(4, '0')}.png`, data: new Uint8Array(await b.arrayBuffer()) });
+    if (i % 5 === 0) onProgress(i + 1, n);
+  }
+  onProgress(n, n);
+  return zip(files);
+};
+
 /** 即時錄製透明 WebM（Chrome 會保留 alpha） */
 export const recordWebm = (W: number, H: number, seconds: number, draw: (ctx: CanvasRenderingContext2D, t: number) => void, onProgress: (p: number) => void): Promise<Blob> | null => {
   const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m));

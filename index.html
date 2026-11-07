@@ -488,7 +488,7 @@
         </header>
         <div class="st-body">
           <div class="st-left">
-            <div class="st-stage ms-stage" id="psStage" data-ratio="9:16"><canvas id="psCanvas"></canvas></div>
+            <div class="st-stage ms-stage" id="psStage" data-ratio="9:16"><canvas id="psCanvas"></canvas><button type="button" class="ps-tap" id="psTap" hidden>點一下播放</button></div>
             <div class="d-controls">
               <div class="seg" id="psRatio" role="radiogroup" aria-label="比例"><button data-v="9:16">9:16 手機</button><button data-v="16:9">16:9</button><button data-v="1:1">1:1</button></div>
               <button class="btn-ghost" id="psPlay">▶ 播放</button>
@@ -501,6 +501,7 @@
               <button class="ma-btn" id="psPng"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" /></svg>PNG</button>
               <button class="btn-ghost" id="psSeq">PNG 序列（ZIP）</button>
               <button class="btn-ghost" id="psWebm">WebM 影片</button>
+              <button class="btn-ghost" id="psHtml" hidden>HTML（靜態預覽）</button>
               <button class="btn-ghost" id="psCombo">加入 Combo</button>
               <button class="btn-ghost" id="psJson">複製設定 JSON</button>
             </div>

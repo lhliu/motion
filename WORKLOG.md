@@ -1,5 +1,10 @@
 # WORKLOG
 
+## 2026-11-07（UTC+8）feat/fx692-textmatte
+- 從 main（69f9aeb）開分支 `cursor/fx692-textmatte-377c`。程式由內建開發撰寫，未使用 Codex、Claude Code、agy 或其他外部寫碼模型。
+- 依 v2 計畫做字內實拍，KC 中途改為「先不要包影片」。HTML 改成靜態預覽加說明；拿掉 base64 播放器與 50MB 確認。其餘：工作室上傳影片、字內預覽、逐格 PNG、即時 WebM、明確的照片靜態版。
+- 目錄 675→676、公開 619→620。計畫摘記在 `docs/plans/692-video-in-text.md`。
+
 ## 2026-11-05（UTC+8）feat/fx691-zipper
 - 從 main（c2f53df）開分支；程式碼全部由 Grok Bot 內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/zipper/PLAN.md＋proto/index.html 實作 #691，KC 決定：拉片印 KC、預設頻道色布面、拉到底布飛走、照片版接圖片工作室。
 - prop.ts 新增 `zipper`（工廠內 helper：shade/fillRR/poly/circle/hex，常數全在函式內）；拉鍊開合用 params.zmode（params.mode 已被畫面名 zipper 佔用，html 把使用者的 mode= 轉成 zmode）。

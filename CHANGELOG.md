@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-07（feat/fx692-textmatte，PR 待審，未 merge、未部署）
+### 新增
+- #692 字內實拍遮罩 Video-in-Text Matte（photo 引擎新模組 `textmatte`，id `photo-textmatte`）：圖片工作室可放入影片（mp4／webm／mov）或照片。影片在這個分頁用暫存網址預覽，重新整理要重選，不寫進場景。超大粗體字當窗，16:9 一行、9:16 自動兩行，字外實色或透明；可調填滿／完整、焦點、結尾推近、起始秒。
+- PNG 序列會等到影片 seek 完該格再畫，可透明。WebM 仍是即時錄製，可能掉格。照片是明確的靜態版，影片解不開會停止，不會偷偷改成示意圖。
+- HTML 只輸出一張靜態預覽，畫面上寫明沒有影片。不做 base64 內嵌影片，也不做大檔確認。
+### 變更
+- tests/catalog.test.ts：總數 675 → 676、公開 619 → 620。
+
 ## 2026-11-05（feat/fx691-zipper，PR 待審，未 merge、未部署）
 ### 新增
 - #691 拉鍊拉開轉場 Zipper Reveal（object 看屋物件，`obj-estate-zipper`，新檔 src/effects/fx1105.ts）：prop 引擎 estate 新 `zipper` 畫面（src/render/prop.ts，珍奶 v2 扁平色塊）。布面（斜紋＋配色橫條＋虛線縫線）中間拉鍊，拉片印「KC」；拉過處裂成 V 字露出下一段，拉到底兩片布往左右飛走；`mode=close` 反向當結尾。

@@ -1120,7 +1120,7 @@ $('#dDownload').addEventListener('click', async () => {
   a.download = `motion-${pad(NUM.get(d.fx.id)!)}-${d.fx.id}.html`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  toast('已下載 HTML，雙擊即可播放');
+  toast(d.fx.id === 'photo-textmatte' ? '已下載靜態預覽。這個 HTML 沒有影片' : '已下載 HTML，雙擊即可播放');
 });
 $('#dRel').addEventListener('click', (e) => {
   const b = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');

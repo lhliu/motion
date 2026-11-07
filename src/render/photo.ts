@@ -6,7 +6,7 @@ import type { PCaption, PScene } from '../photokit';
 
 /** 繪製引擎工廠；imgs 為已載入的圖片（缺圖時畫佔位） */
 export const photoRenderer = () => {
-  type Img = (HTMLImageElement | HTMLCanvasElement | ImageBitmap) & { width: number; height: number };
+  type Img = (HTMLImageElement | HTMLCanvasElement | ImageBitmap | HTMLVideoElement) & { width: number; height: number };
   const clamp = (p: number) => Math.max(0, Math.min(1, p));
   const ease = (p: number) => 1 - Math.pow(1 - clamp(p), 3);
   const inout = (p: number) => {
@@ -1408,6 +1408,180 @@ export const photoRenderer = () => {
         }
       } else zoomAt(B, lerp(circle ? 1.6 : 2.2, 1, ease((t - at) / 0.9)));
       handles.center = [cx, cy];
+    }
+
+    /* ───────── #692 字內實拍：影片或照片填進粗體字，字外實色或透明。拆行與 textmatte.ts titleLines 相同。 ───────── */
+    if (sc.module === 'textmatte') {
+      ctx.save();
+      const srcSize = (im: Img) => {
+        const v = im as Img & { videoWidth?: number; videoHeight?: number; naturalWidth?: number; naturalHeight?: number };
+        return [v.videoWidth || v.naturalWidth || im.width || 0, v.videoHeight || v.naturalHeight || im.height || 0] as const;
+      };
+      const rawText = String(P.text ?? '').trim() || '這間3房';
+      let lines: string[];
+      if (rawText.includes('\n')) lines = rawText.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 3);
+      else if (sc.ratio === '9:16' && [...rawText].length >= 2) {
+        const chars = [...rawText];
+        const mid = Math.ceil(chars.length / 2);
+        lines = [chars.slice(0, mid).join(''), chars.slice(mid).join('')];
+      } else lines = [rawText];
+      const face = String(P.font) === 'serif'
+        ? '"Noto Serif TC","PMingLiU","Songti TC","WenQuanYi Micro Hei",serif'
+        : '"Chiron Hei HK","Noto Sans TC","PingFang TC","Microsoft JhengHei","WenQuanYi Micro Hei","Droid Sans Fallback",sans-serif';
+      const trackEm = g('track', 0);
+      const measureLine = (line: string, fs: number) => {
+        ctx.font = `900 ${fs}px ${face}`;
+        const widths = [...line].map((ch) => ctx.measureText(ch).width);
+        const track = fs * trackEm;
+        const w = widths.reduce((a, b) => a + b, 0) + track * Math.max(0, widths.length - 1);
+        return { widths, w, track };
+      };
+      let fs = Math.min(W, H) * (sc.ratio === '9:16' ? 0.34 : 0.42) * g('size', 1);
+      const maxW = W * 0.9;
+      const maxH = H * (sc.ratio === '9:16' ? 0.62 : 0.72);
+      for (let n = 0; n < 10; n++) {
+        const gap0 = fs * 1.05;
+        const widest = Math.max(1, ...lines.map((ln) => measureLine(ln, fs).w));
+        const h = gap0 * lines.length;
+        if (widest <= maxW && h <= maxH) break;
+        fs *= Math.min(maxW / widest, maxH / h) * 0.98;
+      }
+      // 小數點字級配這組字型時，destination-in 的 fillText 會畫出全透明（Chrome）。字級取整。
+      fs = Math.max(12, Math.round(fs));
+      const layouts = lines.map((ln) => measureLine(ln, fs));
+      const gap = fs * 1.05;
+      const blockH = gap * lines.length;
+      const cy = H * 0.46;
+      const paint = (gctx: CanvasRenderingContext2D, mode: 'fill' | 'stroke') => {
+        gctx.font = `900 ${fs}px ${face}`;
+        gctx.textAlign = 'left';
+        gctx.textBaseline = 'middle';
+        lines.forEach((ln, li) => {
+          const lay = layouts[li];
+          let x = W / 2 - lay.w / 2;
+          const y = cy - blockH / 2 + gap * (li + 0.5);
+          [...ln].forEach((ch, i) => {
+            if (mode === 'stroke') gctx.strokeText(ch, x, y);
+            else gctx.fillText(ch, x, y);
+            x += lay.widths[i] + lay.track;
+          });
+        });
+      };
+      const room = (time: number): Img => {
+        const key = 'textmatte-room';
+        let c = holders.get(key);
+        if (!c) {
+          c = document.createElement('canvas');
+          c.width = 960;
+          c.height = 540;
+          holders.set(key, c);
+        }
+        const x = c.getContext('2d')!;
+        x.setTransform(1, 0, 0, 1, 0, 0);
+        x.globalCompositeOperation = 'source-over';
+        x.globalAlpha = 1;
+        x.fillStyle = '#d7c4a8';
+        x.fillRect(0, 0, 960, 540);
+        x.fillStyle = '#9ec3dd';
+        x.fillRect(280, 36, 400, 200);
+        x.fillStyle = '#f4f7fb';
+        x.fillRect(300, 52, 170, 160);
+        x.fillRect(490, 52, 170, 160);
+        x.fillStyle = '#c4a574';
+        x.fillRect(0, 360, 960, 180);
+        x.fillStyle = '#8d6a45';
+        x.fillRect(70, 300, 280, 110);
+        x.fillStyle = '#6e8f72';
+        x.fillRect(620, 280, 200, 140);
+        x.fillStyle = '#ffe7a0';
+        x.beginPath();
+        x.arc(80 + (time % 4) * 180, 120, 28, 0, Math.PI * 2);
+        x.fill();
+        return c as Img;
+      };
+      const slot = imgs[0];
+      const provided = !!slot;
+      const failed = !!(slot && 'dataset' in slot && (slot as HTMLVideoElement).dataset?.maFail === '1');
+      const [mw, mh] = slot ? srcSize(slot) : [0, 0];
+      const ready = !!slot && mw > 0 && mh > 0 && !failed;
+      const media = ready ? slot : !provided && !failed ? room(t) : undefined;
+      let plate = holders.get('textmatte-plate');
+      if (!plate) {
+        plate = document.createElement('canvas');
+        holders.set('textmatte-plate', plate);
+      }
+      if (plate.width !== W || plate.height !== H) {
+        plate.width = Math.max(1, W);
+        plate.height = Math.max(1, H);
+      }
+      const ox = plate.getContext('2d')!;
+      ox.setTransform(1, 0, 0, 1, 0, 0);
+      ox.globalAlpha = 1;
+      ox.globalCompositeOperation = 'source-over';
+      ox.clearRect(0, 0, plate.width, plate.height);
+      const z = lerp(1, Math.max(1, g('zoom', 1.06)), inout(clamp(t / L)));
+      const drawFit = (im: Img) => {
+        const [iw, ih] = srcSize(im);
+        if (iw < 1 || ih < 1) return;
+        const cx = clamp(g('x', 0.5));
+        const cy0 = clamp(g('y', 0.5));
+        if (String(P.fit) === 'contain') {
+          const k = Math.min(W / iw, H / ih) * z;
+          const dw = iw * k;
+          const dh = ih * k;
+          ox.drawImage(im, cx * W - dw / 2, cy0 * H - dh / 2, dw, dh);
+        } else {
+          const k = Math.max(W / iw, H / ih) * z;
+          const vw = W / k;
+          const vh = H / k;
+          const sx = Math.max(0, Math.min(iw - vw, cx * iw - vw / 2));
+          const sy = Math.max(0, Math.min(ih - vh, cy0 * ih - vh / 2));
+          ox.drawImage(im, sx, sy, vw, vh, 0, 0, W, H);
+        }
+      };
+      if (media) {
+        // 逐字 fillText 配 destination-in 會把前一個字擦掉。先畫成遮罩再套一次。
+        let mask = holders.get('textmatte-mask');
+        if (!mask) {
+          mask = document.createElement('canvas');
+          holders.set('textmatte-mask', mask);
+        }
+        if (mask.width !== plate.width || mask.height !== plate.height) {
+          mask.width = plate.width;
+          mask.height = plate.height;
+        }
+        const mx = mask.getContext('2d')!;
+        mx.setTransform(1, 0, 0, 1, 0, 0);
+        mx.globalAlpha = 1;
+        mx.globalCompositeOperation = 'source-over';
+        mx.clearRect(0, 0, mask.width, mask.height);
+        mx.fillStyle = '#ffffff';
+        paint(mx, 'fill');
+        drawFit(media);
+        ox.globalCompositeOperation = 'destination-in';
+        ox.drawImage(mask, 0, 0);
+        ox.globalCompositeOperation = 'source-over';
+      } else if (failed || provided) {
+        ox.fillStyle = String(P.ink || '#ffffff');
+        paint(ox, 'fill');
+      }
+      ctx.drawImage(plate, 0, 0);
+      if (num(P.outline, 0) > 0) {
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = Math.max(2, fs * 0.045);
+        ctx.strokeStyle = String(P.ink || '#ffffff');
+        paint(ctx, 'stroke');
+      }
+      const sub = String(P.sub ?? '').trim();
+      if (sub) {
+        ctx.fillStyle = String(P.ink || '#ffffff');
+        ctx.font = `700 ${Math.max(16 * u, fs * 0.18)}px ${face}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(sub, W / 2, cy + blockH / 2 + fs * 0.1);
+      }
+      ctx.restore();
+      return handles;
     }
 
     /* ───────── #688 照片收進字裡：大照片漂浮 → 收攏嵌進句子 → 大標題上下半截拼合 ───────── */

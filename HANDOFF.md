@@ -1,3 +1,26 @@
+# HANDOFF：#692 字內實拍遮罩（cursor/fx692-textmatte-377c）
+
+## 狀態
+- PR 待審，**未 merge、未部署**。程式由內建開發撰寫，未使用 Codex、Claude Code、agy 或其他外部寫碼模型。
+- KC 先核准 v2，隨後改為「先不要包影片」。HTML 因此只做靜態預覽。
+
+## 內容
+- `photo-textmatte`（#692）：`src/photokit.ts` 模組與參數、`src/render/photo.ts` 字形遮罩、`src/effects/photo.ts` 註冊、`src/photo-studio.ts` 影片槽。
+- 影片：`URL.createObjectURL`，不進 localStorage、不進 Combo、不進場景 JSON。
+- PNG 序列：`pngSequenceAsync` + `seekVideoFrame`（seeked，並盡量等 requestVideoFrameCallback）。
+- WebM：原本的 `recordWebm`，錄的時候影片自己播。
+- HTML：`buildStillPreviewHtml`，一張 PNG 加紅色說明。圖鑑的「下載 HTML／原始碼」走同一條，不會序列化播放器。
+- 範圍比 v2 少的部分：base64 影片、離線播放器、點一下播放（只留在工作室預覽）、50MB 確認、匯出檔裡的解碼錯誤頁。工作室預覽仍是靜音自動播放，被擋住就顯示「點一下播放」。
+
+## 限制
+- `.mp4`／`.mov` 不保證解得開（HEVC 常失敗）。解不開會停，並請改 H.264 mp4 或 VP9 webm。
+- 預覽與 WebM 不是逐格。逐格用 PNG 序列。透明輸出以 PNG 序列為準；WebM 透明仍看瀏覽器（Chrome VP9）。
+- 音訊不處理（一律靜音）。
+- 大檔記憶體、Safari／iPhone、剪映內建瀏覽器沒有當成品項驗過。
+- 指定字型載不到時會明講並改用系統字（文泉驛／Droid Sans Fallback 等），不會因此把影片換成靜圖。
+
+---
+
 # HANDOFF：#691 拉鍊拉開轉場（feat/fx691-zipper）
 
 - `obj-estate-zipper`（#691）：繪製在 src/render/prop.ts（`zipper`、`zipCanvas` 離屏快取、`ZIP_IMG` 照片快取，estate 的 `zipper` 畫面），註冊在 src/effects/fx1105.ts（`propFx` + 覆寫 html：片名→params.texts、mode→zmode、bg=none→next=none、next=photo 讀 localStorage `ma-photoimg` 第一張→params.img、loop=3.2、關文字層）。
