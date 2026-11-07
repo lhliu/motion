@@ -12,6 +12,12 @@
 - HTML：`buildStillPreviewHtml`，一張 PNG 加紅色說明。圖鑑的「下載 HTML／原始碼」走同一條，不會序列化播放器。
 - 範圍比 v2 少的部分：base64 影片、離線播放器、點一下播放（只留在工作室預覽）、50MB 確認、匯出檔裡的解碼錯誤頁。工作室預覽仍是靜音自動播放，被擋住就顯示「點一下播放」。
 
+## 匯出實測（Chrome 156，按工作室按鈕，不是只看預覽）
+- 測試片：前 1 秒紅條、之後藍條，條會往下移。腳本 `scripts/textmatte-export-check.mjs`。
+- WebM：設定長度 1.5 秒、16:9。容器 VP9、1920×1080、時長 1.509 秒（即時錄，不是剛好 1.500）。解出 0.15 秒畫格字內是紅條（紅 41258、藍 0），接近結尾是藍條（紅 0、藍 76658）。沒有主控台錯誤。
+- PNG 序列：透明背景、起始秒 1.2、長度 1.5 秒。ZIP 45 張（`frame_0000.png`–`frame_0044.png`），每張 1920×1080。第 0 格是藍條不是片頭紅條（起始秒有用）；第 10 格仍是藍條但像素簽名不同（條有移動）。左上與右上角 alpha 為 0，字內不透明。
+- 樣本：`/opt/cursor/artifacts/textmatte-export-sample.webm`（約 232 KB）、`/opt/cursor/artifacts/textmatte-export-sample.zip`（約 4.9 MB）。解出的畫格：`textmatte-webm-early.png`、`textmatte-webm-late.png`、`textmatte-pngseq-frame0.png`、`textmatte-pngseq-frame10.png`。
+
 ## 限制
 - `.mp4`／`.mov` 不保證解得開（HEVC 常失敗）。解不開會停，並請改 H.264 mp4 或 VP9 webm。
 - 預覽與 WebM 不是逐格。逐格用 PNG 序列。透明輸出以 PNG 序列為準；WebM 透明仍看瀏覽器（Chrome VP9）。
