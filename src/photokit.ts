@@ -23,7 +23,8 @@ export type PModule =
   | 'collage'
   | 'morph'
   | 'occlude'
-  | 'wordcollapse';
+  | 'wordcollapse'
+  | 'textmatte';
 
 /** 模組分組：單張運鏡、多張組合、標註轉場、裁切與遮罩（對應圖鑑分類） */
 export type PGroup = 'photo' | 'pmulti' | 'pmark' | 'pcut';
@@ -87,6 +88,7 @@ export const MODULE_INFO: Record<PModule, ModuleInfo> = {
   morph: { zh: '形狀變換', en: 'Morphing Mask', desc: '圖片框從圓形拉成膠囊，再展開成全螢幕', group: 'pcut', names: ['照片', '底圖（可留空）'], optional: [1] },
   wordcollapse: { zh: '照片收進字裡', en: 'Photo-to-Word Collapse', desc: '大照片圍著句子漂浮，收攏成一排嵌進句子，再變回大標題', group: 'pmulti', names: ['照片 1（嵌入）', '照片 2（嵌入）', '照片 3（嵌入）', '照片 4', '照片 5', '照片 6'] },
   occlude: { zh: '前景遮擋換景', en: 'Foreground Wipe', desc: '門片或斜切前景掃過鏡頭，在完全遮住畫面時換景，可加透明前景圖', group: 'pcut', names: ['第一個場景', '第二個場景', '前景（去背 PNG／WebP，可留空）'], optional: [2] },
+  textmatte: { zh: '字內實拍', en: 'Video-in-Text Matte', desc: '超大粗體字當窗，窗內播影片或放一張照片；字外實色或透明。HTML 只出靜態預覽，不含影片', group: 'pcut', names: ['實拍影片或照片'] },
 };
 export const slotsOf = (m: PModule) => MODULE_INFO[m].names.length;
 
@@ -113,6 +115,7 @@ export const MODULE_DEFAULTS: Record<PModule, Record<string, number | string>> =
   morph: { cx: 0.5, cy: 0.5, radius: 0.18, delay: 0.5, dur: 2.2, border: 6, color: '#ffffff' },
   wordcollapse: { sentence: '這間 [3 房] 1,288 萬', title: '林口 森之丘', sub: '3 房 · 1,288 萬 · 新北林口', count: 5, embed: 3, size: 1.8, float: 0.36, frame: 1, ink: '#111111', accent: '#E3271D', speed: 1 },
   occlude: { dir: 'right', shape: 'slant', color: '#ff5a36', delay: 0.8, dur: 1.8, width: 1.3, angle: 12 },
+  textmatte: { text: '這間3房', sub: '新店 · 客廳實拍', font: 'heavy', size: 1, track: 0, fit: 'cover', zoom: 1.06, x: 0.5, y: 0.5, in: 0, bg: 'solid', c1: '#12161E', ink: '#FFFFFF', outline: 0 },
 };
 
 /** 拖曳把手對應的參數（x, y） */
@@ -368,6 +371,22 @@ export const PARAMS: Record<PModule, PField[]> = {
     { k: 'delay', label: '開始時間（秒）', type: 'range', min: 0, max: 5, step: 0.1 },
     { k: 'dur', label: '掃過時間（秒）', type: 'range', min: 0.4, max: 5, step: 0.05 },
   ],
+  textmatte: [
+    { k: 'text', label: '大字', type: 'text' },
+    { k: 'sub', label: '副標', type: 'text' },
+    { k: 'font', label: '字體', type: 'seg', opts: [['heavy', '粗黑'], ['serif', '宋體']] },
+    { k: 'size', label: '字級', type: 'range', min: 0.6, max: 1.4, step: 0.01 },
+    { k: 'track', label: '字距', type: 'range', min: -0.08, max: 0.2, step: 0.005 },
+    { k: 'fit', label: '取景', type: 'seg', opts: [['cover', '填滿'], ['contain', '完整']] },
+    { k: 'zoom', label: '結尾推近', type: 'range', min: 1, max: 1.4, step: 0.01 },
+    pos('x', '焦點 X'),
+    pos('y', '焦點 Y'),
+    { k: 'in', label: '影片起始秒', type: 'range', min: 0, max: 60, step: 0.1 },
+    { k: 'bg', label: '字外', type: 'seg', opts: [['solid', '實色'], ['none', '透明']] },
+    { k: 'c1', label: '字外顏色', type: 'color' },
+    { k: 'ink', label: '副標顏色', type: 'color' },
+    { k: 'outline', label: '字緣', type: 'seg', opts: [['0', '無'], ['1', '描邊']] },
+  ],
 };
 
 export const PHOTO_MODULES = Object.keys(MODULE_INFO) as PModule[];
@@ -404,11 +423,19 @@ export const normalizePhotoScene = (raw: Partial<PScene>, fallback: PModule = 'k
         delay: Math.max(0, Math.min(20, Number(c.delay ?? 1))),
       }
     : base.caption;
-  const bg = typeof raw.bg === 'string' && /^(transparent|#[0-9a-f]{3,8}(,\s*#[0-9a-f]{3,8})?)$/i.test(raw.bg.trim()) ? raw.bg.trim() : base.bg;
+  let bg = typeof raw.bg === 'string' && /^(transparent|#[0-9a-f]{3,8}(,\s*#[0-9a-f]{3,8})?)$/i.test(raw.bg.trim()) ? raw.bg.trim() : base.bg;
+  if (module === 'textmatte') {
+    const explicit = typeof raw.bg === 'string' && raw.bg.trim() !== '';
+    const c1 = String(params.c1 ?? '');
+    if (!explicit && String(params.bg) === 'none') bg = 'transparent';
+    else if (!explicit && String(params.bg) === 'solid' && /^#[0-9a-fA-F]{6}$/.test(c1)) bg = c1;
+    params.bg = bg === 'transparent' ? 'none' : 'solid';
+    if (/^#[0-9a-fA-F]{6}$/i.test(bg)) params.c1 = bg.slice(0, 7);
+  }
   return { ratio, loop, module, bg, images, params, caption, ...(typeof raw.font === 'string' && /^[a-z]{2,12}$/.test(raw.font) ? { font: raw.font } : {}) };
 };
 
-/** words 裡以 { 開頭的字串視為場景 JSON；否則第一行當字幕 */
+/** words 裡以 { 開頭的字串視為場景 JSON；否則第一行當字幕。字內實拍用第一行當大字、第二行當副標，@ 行寫參數。 */
 export const photoSceneFromWords = (w: string[], module: PModule): PScene => {
   const j = w.find((x) => String(x).trim().startsWith('{'));
   if (j) {
@@ -419,6 +446,27 @@ export const photoSceneFromWords = (w: string[], module: PModule): PScene => {
     }
   }
   const sc = defaultPhotoScene(module);
+  if (module === 'textmatte') {
+    const o: Record<string, string> = {};
+    const lines: string[] = [];
+    for (const rawLine of w) {
+      const s = String(rawLine ?? '').trim();
+      if (!s || s.startsWith('{')) continue;
+      if (s.startsWith('@')) {
+        s.slice(1).split(';').forEach((kv) => {
+          const i = kv.indexOf('=');
+          if (i > 0) o[kv.slice(0, i).trim()] = kv.slice(i + 1).trim();
+        });
+      } else lines.push(s);
+    }
+    if (lines[0] && o.text === undefined) o.text = lines[0];
+    if (lines[1] && o.sub === undefined) o.sub = lines[1];
+    const next: Partial<PScene> = { module, ratio: sc.ratio, loop: sc.loop, params: { ...sc.params, ...o }, images: [] };
+    if (o.bg === 'none') next.bg = 'transparent';
+    else if (o.c1 && /^#[0-9a-fA-F]{6}$/.test(o.c1)) next.bg = o.c1;
+    else next.bg = sc.bg;
+    return normalizePhotoScene(next, module);
+  }
   if (sc.caption) sc.caption.text = w.filter((x) => x && !x.startsWith('{')).join('\n');
   return sc;
 };
@@ -426,10 +474,10 @@ export const photoSceneFromWords = (w: string[], module: PModule): PScene => {
 export const RATIO_PX: Record<PScene['ratio'], [number, number]> = { '9:16': [1080, 1920], '16:9': [1920, 1080], '1:1': [1080, 1080] };
 
 export const defaultPhotoScene = (module: PModule = 'kenburns'): PScene => ({
-  ratio: '9:16',
-  loop: 6,
+  ratio: module === 'textmatte' ? '16:9' : '9:16',
+  loop: module === 'textmatte' ? 4 : 6,
   module,
-  bg: module === 'wordcollapse' ? '#F1EBDD' : '#151515',
+  bg: module === 'wordcollapse' ? '#F1EBDD' : module === 'textmatte' ? '#12161E' : '#151515',
   images: [],
   params: { ...MODULE_DEFAULTS[module] },
   caption: { text: '', x: 0.5, y: 0.86, size: 1, style: 'pill', color: '#ffd23f', delay: 1 },

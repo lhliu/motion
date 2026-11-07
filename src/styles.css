@@ -2157,6 +2157,20 @@ pre.code {
   container-type: size;
   overflow: hidden;
 }
+.ps-tap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  z-index: 2;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: #8f1d1d;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
 .st-stage canvas {
   position: absolute;
   left: 50%;

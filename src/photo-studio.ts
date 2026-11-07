@@ -1,4 +1,6 @@
-import { pngSequence, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
+import { pngSequence, pngSequenceAsync, recordWebm, saveBlob, stamp, canvasOf } from './export-kit';
+import { buildStillPreviewHtml, codecMessage, fontExportGate, htmlExportDecision, matteMediaTime, mimeOf, stillNotice } from './textmatte';
+import { seekVideoFrame } from './textmatte-media';
 import { coverParams, drawPhoto, placeholder } from './render/photo';
 import {
   defaultPhotoScene,
@@ -40,6 +42,9 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   /** 圖片插槽：srcs 為工作用 data URL（長邊 2048），imgs 為已載入的圖 */
   let srcs: string[] = [];
   const imgs: (Img | undefined)[] = [];
+  /** 字內實拍的影片只活在這個分頁，不寫進場景或瀏覽器儲存。 */
+  type Clip = { name: string; url: string; mime: string; video: HTMLVideoElement; error: string; width: number; height: number; duration: number };
+  let clip: Clip | null = null;
   /** 切換模組時記住各模組調過的參數 */
   const memo: Partial<Record<PModule, Record<string, number | string>>> = deps.store.get('photomemo', {});
   let playing = false;
@@ -56,7 +61,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   };
   const persistImgs = () => {
     try {
-      localStorage.setItem('ma-photoimg', JSON.stringify(srcs));
+      localStorage.setItem('ma-photoimg', JSON.stringify(srcs.map((s) => (s.startsWith('blob:') ? '' : s))));
     } catch {
       try {
         localStorage.removeItem('ma-photoimg');
@@ -84,7 +89,17 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     im.onerror = () => deps.toast(`圖片 ${i + 1} 無法載入（網址可能不允許跨站讀取）`);
     im.src = src;
   };
-  deps.store.get<string[]>('photoimg', []).forEach((s, i) => s && loadImg(i, s));
+  const revokeClip = () => {
+    if (!clip) return;
+    clip.video.pause();
+    clip.video.removeAttribute('src');
+    clip.video.load();
+    if (clip.url.startsWith('blob:')) URL.revokeObjectURL(clip.url);
+    clip = null;
+  };
+  const sources = (): (Img | undefined)[] => (sc.module === 'textmatte' && clip ? [clip.video as unknown as Img] : imgs);
+  const matteText = () => `${sc.params.text ?? ''}${sc.params.sub ?? ''}`;
+  deps.store.get<string[]>('photoimg', []).forEach((s, i) => s && !s.startsWith('blob:') && loadImg(i, s));
 
   /* ───────── 繪製 ───────── */
   const size = () => {
@@ -143,7 +158,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
       handles = {};
       return;
     }
-    handles = drawPhoto(ctx, cv.width, cv.height, sc, t ?? tView, imgs);
+    handles = drawPhoto(ctx, cv.width, cv.height, sc, t ?? tView, sources());
     if (t !== undefined || playing) return;
     const u = k();
     ctx.save();
@@ -174,6 +189,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     if (t > sc.loop + 0.6) {
       playing = false;
       playBtn.textContent = '▶ 播放';
+      clip?.video.pause();
       tView = sc.loop;
       timeEl.value = String(tView);
       redraw();
@@ -181,22 +197,65 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     }
     raf = requestAnimationFrame(loop);
   };
+  const tapBtn = $<HTMLButtonElement>('#psTap');
+  const showTap = (on: boolean) => {
+    tapBtn.hidden = !on;
+  };
   const playBtn = $('#psPlay');
-  playBtn.addEventListener('click', () => {
-    playing = !playing;
+  const setPlaying = (on: boolean) => {
+    playing = on;
     playBtn.textContent = playing ? '■ 停止' : '▶ 播放';
     if (playing) {
       t0 = performance.now();
       raf = requestAnimationFrame(loop);
     } else {
       cancelAnimationFrame(raf);
+      clip?.video.pause();
       redraw();
     }
+  };
+  const startClip = async () => {
+    const video = clip?.video;
+    if (!video || sc.module !== 'textmatte') return true;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.volume = 0;
+    video.playsInline = true;
+    video.loop = true;
+    try {
+      video.currentTime = matteMediaTime(Number(sc.params.in) || 0, 0, video.duration);
+    } catch { /* 還沒有時長 */ }
+    try {
+      await video.play();
+      showTap(false);
+      return true;
+    } catch {
+      showTap(true);
+      deps.toast('點一下播放');
+      return false;
+    }
+  };
+  playBtn.addEventListener('click', async () => {
+    if (playing) {
+      setPlaying(false);
+      return;
+    }
+    if (sc.module === 'textmatte' && clip && !(await startClip())) return;
+    setPlaying(true);
+  });
+  tapBtn.addEventListener('click', async () => {
+    if (await startClip()) setPlaying(true);
   });
   const timeEl = $<HTMLInputElement>('#psTime');
   timeEl.addEventListener('input', () => {
     tView = parseFloat(timeEl.value);
-    redraw();
+    const video = sc.module === 'textmatte' ? clip?.video : undefined;
+    if (video && video.readyState >= 1 && !video.dataset.maFail) {
+      const target = matteMediaTime(Number(sc.params.in) || 0, Math.min(tView, sc.loop), video.duration);
+      const paint = () => redraw();
+      video.addEventListener('seeked', paint, { once: true });
+      try { video.currentTime = target; } catch { redraw(); }
+    } else redraw();
   });
 
   /* ───────── 拖曳 ───────── */
@@ -296,8 +355,11 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-m]');
     if (!b || b.dataset.m === sc.module) return;
     memo[sc.module] = { ...sc.params };
+    clip?.video.pause();
+    showTap(false);
     const m = b.dataset.m as PModule;
     sc = { ...sc, module: m, params: { ...MODULE_DEFAULTS[m], ...(memo[m] ?? {}) } };
+    if (m === 'textmatte') sc.bg = String(sc.params.bg) === 'none' ? 'transparent' : String(sc.params.c1 || '#12161E');
     persist();
     renderAll();
   });
@@ -309,11 +371,19 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     const info = MODULE_INFO[sc.module];
     const names = info.names;
     const n = names.length;
+    file.accept = sc.module === 'textmatte' ? 'video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,image/*' : 'image/*';
     slotsEl.classList.toggle('many', n > 3);
+    if (sc.module === 'textmatte' && clip) {
+      const meta = clip.error ? clip.error : `${clip.width || '…'}×${clip.height || '…'}${clip.duration ? `　${clip.duration.toFixed(1)} 秒` : ''}`;
+      slotsEl.innerHTML = `<div class="ps-slot" data-i="0"><div class="ps-thumb"><span>影片<br>僅此分頁</span></div><div class="ps-slot-b"><b>${esc(names[0])}</b><small>${esc(clip.name)}　${esc(meta)}</small><div class="st-presets"><button type="button" class="btn-ghost" data-op="up">換檔</button><button type="button" class="btn-ghost" data-op="rm">移除</button></div><p class="ms-hint">影片不寫進場景。重新整理後要重選。HTML 不會把這支影片包進去。</p></div></div>`;
+      return;
+    }
     slotsEl.innerHTML = Array.from({ length: n }, (_, i) => {
       const has = !!imgs[i];
-      const empty = info.optional?.includes(i) ? '可留空' : n > 3 ? '未放圖' : '未放圖<br>顯示示意圖';
-      return `<div class="ps-slot" data-i="${i}"><div class="ps-thumb">${has ? `<img src="${esc(srcs[i])}" alt="">` : `<span>${empty}</span>`}</div><div class="ps-slot-b"><b>${names[i]}</b>${has ? `<small>${imgs[i]!.naturalWidth}×${imgs[i]!.naturalHeight}</small>` : ''}<div class="st-presets"><button type="button" class="btn-ghost" data-op="up">${has ? '換圖' : '放入圖片'}</button>${has ? '<button type="button" class="btn-ghost" data-op="rm">移除</button>' : ''}</div></div></div>`;
+      const empty = sc.module === 'textmatte' ? '未放檔<br>顯示客廳示意' : info.optional?.includes(i) ? '可留空' : n > 3 ? '未放圖' : '未放圖<br>顯示示意圖';
+      const put = sc.module === 'textmatte' ? (has ? '換照片' : '放入影片或照片') : has ? '換圖' : '放入圖片';
+      const note = sc.module === 'textmatte' && has ? '<p class="ms-hint">目前是照片靜態版，不是影片。</p>' : '';
+      return `<div class="ps-slot" data-i="${i}"><div class="ps-thumb">${has ? `<img src="${esc(srcs[i])}" alt="">` : `<span>${empty}</span>`}</div><div class="ps-slot-b"><b>${names[i]}</b>${has ? `<small>${imgs[i]!.naturalWidth}×${imgs[i]!.naturalHeight}</small>` : ''}<div class="st-presets"><button type="button" class="btn-ghost" data-op="up">${put}</button>${has ? '<button type="button" class="btn-ghost" data-op="rm">移除</button>' : ''}</div>${note}</div></div>`;
     }).join('');
   };
   slotsEl.addEventListener('click', (e) => {
@@ -322,8 +392,10 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     if (!b || !slot) return;
     const i = Number(slot.dataset.i);
     if (b.dataset.op === 'rm') {
+      if (sc.module === 'textmatte' && i === 0) revokeClip();
       loadImg(i, '');
       persistImgs();
+      if (sc.module === 'textmatte') renderSlots();
     } else {
       slotTarget = i;
       file.click();
@@ -338,6 +410,53 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     return c.toDataURL('image/webp', q);
   };
   const readFile = (f: File, i: number) => {
+    if (sc.module === 'textmatte' && i === 0) {
+      const kind = mimeOf(f.name, f.type);
+      if (kind.kind === 'video') {
+        revokeClip();
+        loadImg(0, '');
+        const url = URL.createObjectURL(f);
+        const video = document.createElement('video');
+        video.muted = true;
+        video.defaultMuted = true;
+        video.volume = 0;
+        video.playsInline = true;
+        video.preload = 'auto';
+        video.loop = true;
+        video.src = url;
+        clip = { name: f.name, url, mime: kind.mime, video, error: '', width: 0, height: 0, duration: 0 };
+        const markFail = () => {
+          if (clip?.video !== video) return;
+          clip.error = codecMessage(kind.mime, f.name);
+          video.dataset.maFail = '1';
+          deps.toast(clip.error);
+          renderSlots();
+          redraw();
+        };
+        video.onerror = markFail;
+        video.onloadeddata = () => {
+          if (clip?.video !== video || video.dataset.maFail === '1') return;
+          clip.width = video.videoWidth;
+          clip.height = video.videoHeight;
+          clip.duration = Number.isFinite(video.duration) ? video.duration : 0;
+          if (!video.videoWidth) {
+            markFail();
+            return;
+          }
+          try { video.currentTime = Number(sc.params.in) || 0; } catch { /* 長度還沒好 */ }
+          renderSlots();
+          redraw();
+        };
+        renderSlots();
+        return;
+      }
+      if (kind.kind !== 'image') {
+        deps.toast('請放入 mp4、webm、mov 或照片。副檔名不能保證影片解得開。');
+        return;
+      }
+      revokeClip();
+      deps.toast('已放入照片，這是靜態版，不是影片');
+    }
     const url = URL.createObjectURL(f);
     const im = new Image();
     im.onload = () => {
@@ -357,7 +476,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   stage.addEventListener('dragover', (e) => e.preventDefault());
   stage.addEventListener('drop', (e) => {
     e.preventDefault();
-    const fs = [...(e.dataTransfer?.files ?? [])].filter((f) => f.type.startsWith('image/'));
+    const fs = [...(e.dataTransfer?.files ?? [])].filter((f) => (sc.module === 'textmatte' ? mimeOf(f.name, f.type).kind !== 'unknown' : f.type.startsWith('image/')));
     const n = slotsOf(sc.module);
     const empty = Math.max(0, Array.from({ length: n }, (_, i) => imgs[i]).findIndex((x) => !x));
     // 一次拖多張：從第一個空插槽開始依序放
@@ -375,11 +494,12 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   const paramsEl = $('#psParams');
   const renderParams = () => {
     paramsEl.innerHTML =
-      (sc.module === 'kenburns' ? '<p class="ms-hint">時間軸拉到最右是編輯視圖：拖藍框（起始）、橘框（結束）移動取景，拖框角縮放。</p>' :
+      (sc.module === 'textmatte' ? '<p class="ms-hint">字內播影片，字外可實色或透明。預覽不保證逐格。PNG 序列會等到每一格；WebM 是即時錄製，可能掉格。HTML 只存靜態預覽，不會把影片包進去。照片是另外選的靜態版。</p>' :
+        sc.module === 'kenburns' ? '<p class="ms-hint">時間軸拉到最右是編輯視圖：拖藍框（起始）、橘框（結束）移動取景，拖框角縮放。</p>' :
         sc.module === 'collage' ? '<p class="ms-hint">請放入已去背的 PNG／WebP；這裡不會自動去背。拖藍點調整每張剪報位置。</p>' :
         sc.module === 'occlude' ? '<p class="ms-hint">透明前景會疊在不透明底板上，確保換景接縫被完全遮住。</p>' :
         '<p class="ms-hint">按播放或拖時間軸預覽；有藍色圓點時可拖曳位置。</p>') +
-      (MODULE_INFO[sc.module].group === 'pcut' && sc.module !== 'mask' ? '<p class="ms-hint">動作總時間超過片段長度時會等比例加速，確保尾格完成。</p>' : '') +
+      (MODULE_INFO[sc.module].group === 'pcut' && sc.module !== 'mask' && sc.module !== 'textmatte' ? '<p class="ms-hint">動作總時間超過片段長度時會等比例加速，確保尾格完成。</p>' : '') +
       PARAMS[sc.module].map((f) => field(f, sc.params[f.k])).join('');
   };
   const onField = (host: HTMLElement, target: () => Record<string, unknown>, after: () => void) => {
@@ -388,6 +508,10 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
       const key = t.dataset.k;
       if (!key) return;
       target()[key] = t.type === 'range' ? parseFloat(t.value) : t.value;
+      if (sc.module === 'textmatte' && key === 'c1' && sc.params.bg !== 'none') {
+        sc.bg = String(t.value);
+        syncBg();
+      }
       const out = t.parentElement?.querySelector('output');
       if (out) out.textContent = t.value;
       persist();
@@ -398,6 +522,10 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
       if (!b) return;
       const key = b.closest<HTMLElement>('.st-seg')!.dataset.k!;
       target()[key] = /^\d+$/.test(b.dataset.v!) ? Number(b.dataset.v) : b.dataset.v;
+      if (sc.module === 'textmatte' && key === 'bg') {
+        sc.bg = String(target()[key]) === 'none' ? 'transparent' : String(sc.params.c1 || '#12161E');
+        syncBg();
+      }
       persist();
       after();
       redraw();
@@ -439,11 +567,21 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   bgC.addEventListener('input', () => {
     sc.bg = bgC.value;
     trans.checked = false;
+    if (sc.module === 'textmatte') {
+      sc.params.c1 = bgC.value;
+      sc.params.bg = 'solid';
+      renderParams();
+    }
     persist();
     redraw();
   });
   trans.addEventListener('change', () => {
     sc.bg = trans.checked ? 'transparent' : bgC.value;
+    if (sc.module === 'textmatte') {
+      sc.params.bg = trans.checked ? 'none' : 'solid';
+      if (!trans.checked) sc.params.c1 = bgC.value;
+      renderParams();
+    }
     persist();
     redraw();
   });
@@ -478,36 +616,122 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   };
   const fonts = async () => {
     try {
-      await preloadFonts(`${sc.caption?.text ?? ''}${sc.params.labelA ?? ''}${sc.params.labelB ?? ''}${sc.params.title ?? ''}${sc.params.labels ?? ''}${sc.params.label ?? ''}圖片`, sc.font);
+      const pack = sc.module === 'textmatte' && sc.params.font === 'serif' ? 'serif' : sc.font;
+      await preloadFonts(`${sc.caption?.text ?? ''}${sc.params.labelA ?? ''}${sc.params.labelB ?? ''}${sc.params.title ?? ''}${sc.params.labels ?? ''}${sc.params.label ?? ''}${matteText()}圖片`, pack);
+      await document.fonts?.ready;
+      if (sc.module === 'textmatte' && document.fonts) {
+        const fam = sc.params.font === 'serif' ? 'Noto Serif TC' : 'Chiron Hei HK';
+        const sample = String(sc.params.text || '這').slice(0, 1);
+        if (!document.fonts.check(`900 40px "${fam}"`, sample)) deps.toast('指定字型無法載入，這次改用系統字型。');
+      }
     } catch {
       /* ignore */
     }
   };
-  const drawAt = (c: CanvasRenderingContext2D, W: number, H: number, t: number) => drawPhoto(c, W, H, sc, t, imgs);
-  $('#psPng').addEventListener('click', async () => {
+  const prepareFonts = async () => {
+    busy('正在載入字型…');
     await fonts();
+    const ready = !document.fonts || document.fonts.status === 'loaded';
+    if (fontExportGate(ready) === 'wait') {
+      deps.toast('字型還在載入，請稍後再匯出');
+      busy('');
+      return false;
+    }
+    return true;
+  };
+  const drawAt = (c: CanvasRenderingContext2D, W: number, H: number, t: number) => drawPhoto(c, W, H, sc, t, sources());
+  const videoGate = () => htmlExportDecision({
+    hasVideo: !!clip && sc.module === 'textmatte',
+    videoReady: !!clip && !clip.error && clip.video.readyState >= 2 && clip.video.videoWidth > 0 && clip.video.dataset.maFail !== '1',
+    videoError: !!clip && (!!clip.error || clip.video.dataset.maFail === '1'),
+    hasPhoto: sc.module === 'textmatte' && !!imgs[0] && !clip,
+  });
+  $('#psPng').addEventListener('click', async () => {
+    if (!(await prepareFonts())) return;
+    if (clip && sc.module === 'textmatte') {
+      const gate = videoGate();
+      if (!gate.ok) return deps.toast(gate.reason), busy('');
+      try {
+        await seekVideoFrame(clip.video, matteMediaTime(Number(sc.params.in) || 0, Math.min(tView, sc.loop), clip.video.duration));
+      } catch {
+        busy('');
+        return deps.toast('影片沒有停在這個時間，已停止輸出，不會改用示意圖。');
+      }
+    }
     const [W, H] = RATIO_PX[sc.ratio];
     const c = canvasOf(W, H);
     drawAt(c.getContext('2d')!, W, H, Math.min(tView, sc.loop));
     c.toBlob((b) => b && saveBlob(b, `photo-${sc.module}-${stamp()}.png`), 'image/png');
+    busy('');
     deps.toast('已輸出目前時間點的 PNG');
   });
   $('#psSeq').addEventListener('click', async () => {
-    await fonts();
+    if (!(await prepareFonts())) return;
     const [W, H] = RATIO_PX[sc.ratio];
-    const blob = await pngSequence(W, H, sc.loop, (c, t) => drawAt(c, W, H, t), (i, n) => busy(`輸出 PNG 序列⋯ ${i}/${n}`));
-    saveBlob(blob, `photo-${sc.module}-${stamp()}-30fps.zip`);
-    busy('');
-    deps.toast('已輸出 PNG 序列');
+    try {
+      const blob = clip && sc.module === 'textmatte'
+        ? await (async () => {
+            const gate = videoGate();
+            if (!gate.ok) throw new Error(gate.reason);
+            return pngSequenceAsync(W, H, sc.loop, async (c, t) => {
+              await seekVideoFrame(clip!.video, matteMediaTime(Number(sc.params.in) || 0, t, clip!.video.duration));
+              drawAt(c, W, H, t);
+            }, (i, n) => busy(`輸出 PNG 序列⋯ ${i}/${n}（等待畫面）`));
+          })()
+        : await pngSequence(W, H, sc.loop, (c, t) => drawAt(c, W, H, t), (i, n) => busy(`輸出 PNG 序列⋯ ${i}/${n}`));
+      saveBlob(blob, `photo-${sc.module}-${stamp()}-30fps.zip`);
+      busy('');
+      deps.toast(clip && sc.module === 'textmatte' ? '已輸出 PNG 序列（每一格都等到畫面）' : '已輸出 PNG 序列');
+    } catch (err) {
+      busy('');
+      const msg = err instanceof Error ? err.message : '';
+      deps.toast(msg && !['seek', 'decode'].includes(msg) ? msg : '逐格輸出失敗，已停止，不會改用示意圖。');
+    }
   });
   $('#psWebm').addEventListener('click', async () => {
-    await fonts();
+    if (!(await prepareFonts())) return;
     const [W, H] = RATIO_PX[sc.ratio];
+    if (clip && sc.module === 'textmatte') {
+      const gate = videoGate();
+      if (!gate.ok) return deps.toast(gate.reason), busy('');
+      const started = await startClip();
+      if (!started) return deps.toast('請先點一下播放，再錄 WebM'), busy('');
+    }
     const p = recordWebm(W, H, sc.loop, (c, t) => drawAt(c, W, H, t), (x) => busy(`錄製中⋯ ${Math.round(x * 100)}%`));
-    if (!p) return deps.toast('這個瀏覽器不支援錄製 WebM，請改用 Chrome 或輸出 PNG 序列');
-    saveBlob(await p, `photo-${sc.module}-${stamp()}.webm`);
-    busy('');
-    deps.toast('已輸出 WebM');
+    if (!p) return deps.toast('這個瀏覽器不支援錄製 WebM，請改用 Chrome 或輸出 PNG 序列'), busy('');
+    try {
+      saveBlob(await p, `photo-${sc.module}-${stamp()}.webm`);
+      deps.toast(sc.module === 'textmatte' ? '已輸出 WebM。這是即時錄製，可能掉格；要逐格請用 PNG 序列。' : '已輸出 WebM');
+    } finally {
+      clip?.video.pause();
+      busy('');
+    }
+  });
+  $('#psHtml').addEventListener('click', async () => {
+    if (sc.module !== 'textmatte') return;
+    if (!(await prepareFonts())) return;
+    const gate = videoGate();
+    if (!gate.ok || !gate.kind) return deps.toast(gate.reason), busy('');
+    if (gate.kind === 'video-frame' && clip) {
+      try {
+        await seekVideoFrame(clip.video, matteMediaTime(Number(sc.params.in) || 0, Math.min(tView, sc.loop), clip.video.duration));
+      } catch {
+        busy('');
+        return deps.toast('影片沒有停在這個時間，已停止匯出，不會改放示意圖。');
+      }
+    }
+    const [W, H] = RATIO_PX[sc.ratio];
+    const c = canvasOf(W, H);
+    drawAt(c.getContext('2d')!, W, H, Math.min(tView, sc.loop));
+    const png = c.toDataURL('image/png');
+    const html = buildStillPreviewHtml({ kind: gate.kind, pngDataUrl: png, width: W, height: H });
+    if (/<video|data:video|octet-stream|blob:/i.test(html)) {
+      busy('');
+      return deps.toast('已中止：這份 HTML 不應該帶有影片。');
+    }
+    saveBlob(new Blob([html], { type: 'text/html' }), `photo-textmatte-still-${stamp()}.html`);
+    busy(stillNotice(gate.kind));
+    deps.toast('已匯出靜態預覽，檔案裡沒有影片');
   });
   /** 帶圖輸出時壓成長邊 1280 的 WebP，保留透明剪報並控制大小。 */
   const sceneOut = (withImages: boolean): PScene => {
@@ -519,6 +743,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
   };
   const keepImg = $<HTMLInputElement>('#psKeepImg');
   $('#psCombo').addEventListener('click', () => {
+    if (sc.module === 'textmatte' && clip) deps.toast('影片不會放進 Combo，也不會包進 HTML。要動態請輸出 PNG 序列或 WebM。');
     const out = sceneOut(true);
     deps.addScene({ effect: photoFxId(out.module), words: [JSON.stringify(out)], seconds: out.loop + 1, ratio: out.ratio, ...(out.font ? { font: out.font } : {}) });
   });
@@ -553,6 +778,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     syncMod();
     syncRatio();
     syncBg();
+    $<HTMLButtonElement>('#psHtml').hidden = sc.module !== 'textmatte';
     fontSel.value = sc.font ?? 'sharp';
     loopEl.value = String(sc.loop);
     $('#psLoopV').textContent = `${sc.loop}s`;
@@ -578,6 +804,8 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
     ro.disconnect();
     playing = false;
     cancelAnimationFrame(raf);
+    clip?.video.pause();
+    showTap(false);
     document.body.style.overflow = '';
     const u = new URL(location.href);
     if (u.searchParams.get('view') === 'photo' || u.searchParams.has('edit')) {
@@ -595,6 +823,7 @@ export const initPhotoStudio = (deps: PhotoStudioDeps) => {
       if (module && module !== sc.module) {
         memo[sc.module] = { ...sc.params };
         sc = { ...sc, module, params: { ...MODULE_DEFAULTS[module], ...(memo[module] ?? {}) } };
+        if (module === 'textmatte') sc.bg = String(sc.params.bg) === 'none' ? 'transparent' : String(sc.params.c1 || '#12161E');
         persist();
       }
       open();

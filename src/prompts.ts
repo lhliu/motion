@@ -19,6 +19,7 @@ const faceEn = (v: Vars) => {
   return f ? `${f.promptEn}${w ? ` weight ${w.w}` : ''} (Google Fonts)` : fontPack(v.font).promptEn;
 };
 import { MODULE_INFO, photoSceneFromWords, type PModule } from './photokit';
+import { renderTextMatteStillHtml } from './textmatte';
 import { objSceneFromWords } from './objkit';
 
 export type Ratio = '16:9' | '9:16' | '1:1';
@@ -61,6 +62,10 @@ export const buildPrompt = (fx: Fx, mode: PromptMode, words: string[], v: Vars, 
     const module = fx.id.slice(6) as PModule;
     const info = MODULE_INFO[module];
     const scene = photoSceneFromWords(words, module);
+    if (module === 'textmatte') {
+      if (mode === 'en' || mode === 'video') return `Still title card, ${ratioEn[ratio]}. The words “${scene.params.text}” are a window; a subtitle reads “${scene.params.sub}”. Inside the glyphs is the user’s own video, or a photo only when they explicitly choose a still. Do not invent footage. Do not embed video in HTML, do not use a base64 video, and do not present a poster as if the file contained the video. HTML is one still preview with a visible notice that the video is absent. Moving output is a PNG sequence (seek each frame) or realtime WebM from the photo studio.\n\n${fx.motionEn}\n\nSETTINGS\n${JSON.stringify(scene, null, 2)}`;
+      return `請製作「字內實拍」畫面，比例 ${ratioZh[ratio]}。大字「${scene.params.text}」，副標「${scene.params.sub}」。字內是使用者自己的影片；只有使用者明確選照片時才是靜態版。沒有檔案時用客廳示意，不要假裝是實拍。HTML 只要一張靜態預覽，並在畫面上寫明沒有影片。不要把影片嵌進 HTML，不要用 base64 影片，也不要拿靜圖假裝檔案裡有影片。動態請用圖片工作室的 PNG 序列（逐格等待畫面）或 WebM。\n\n【動態】\n${fx.motion}\n\n【場景設定】\n${JSON.stringify(scene, null, 2)}`;
+    }
     const settings = JSON.stringify({ ...scene, images: scene.images.map((_, i) => info.names[i]) }, null, 2);
     if (mode === 'en') return `Create a ${ratioEn[ratio]} image animation: ${info.en}.
 Use the supplied images in this slot order: ${info.names.join(' / ')}. Preserve transparent PNG/WebP alpha. Use placeholders when images are not supplied; do not invent or regenerate the user's images. No added title or text entrance animation.
@@ -142,6 +147,8 @@ const ratioCss: Record<Ratio, string> = {
 
 /** 產生單一 HTML 檔，內容與網站上看到的完全一致 */
 export const exportHtml = (fx: Fx, words: string[], v: Vars, ratio: Ratio): string => {
+  // #692：HTML 只留靜態預覽與說明，不序列化播放器、不內嵌影片。
+  if (fx.id === 'photo-textmatte') return renderTextMatteStillHtml(words, ratio);
   const css = scopeCss(fx).trim();
   const script = fx.run
     ? `\n<script>\n${fxGlobals(fx)}\n${fnSource(fx.run)}(document.querySelector('.fx'), ${JSON.stringify(words)});\n</script>`

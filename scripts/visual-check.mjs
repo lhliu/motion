@@ -53,11 +53,18 @@ const ORIGIN = `http://127.0.0.1:${server.address().port}`;
 
 // 3. 截圖
 const launch = async () => {
+  const candidates = [process.env.CHROME_PATH, '/opt/pw-browsers/chromium', '/opt/google/chrome/chrome', '/usr/bin/google-chrome'].filter(Boolean);
   try {
     return await chromium.launch();
   } catch (e) {
-    const fallback = '/opt/pw-browsers/chromium';
-    if (existsSync(fallback)) return chromium.launch({ executablePath: fallback });
+    for (const executablePath of candidates) {
+      if (!existsSync(executablePath)) continue;
+      try {
+        return await chromium.launch({ executablePath });
+      } catch {
+        /* 換下一個 */
+      }
+    }
     throw e;
   }
 };

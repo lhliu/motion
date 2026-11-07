@@ -41,7 +41,7 @@ const run: Fx['run'] = (root) => {
   return () => cancelAnimationFrame(raf);
 };
 
-const make = (module: PModule, o: Pick<Fx, 'no' | 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn' | 'added'>): Fx => ({
+const make = (module: PModule, o: Pick<Fx, 'no' | 'desc' | 'tags' | 'sample' | 'motion' | 'motionEn' | 'added'> & Partial<Pick<Fx, 'hint' | 'preferredRatio' | 'duration'>>): Fx => ({
   id: `photo-${module}`,
   cat: MODULE_INFO[module].group,
   zh: MODULE_INFO[module].zh,
@@ -225,5 +225,17 @@ export const photo: Fx[] = [
     sample: ['這間 [3 房] 1,288 萬', '林口 森之丘', '3 房 · 1,288 萬 · 新北林口'],
     motion: '米白底上一句話在畫面中央（[ ] 標出的重點詞用紅色），四周 3–6 張帶白邊的大照片（16:9 約畫面高 36%）一張張彈出、輕輕上下飄並微微擺動；接著重點詞淡出，照片往中間飛、縮成一排 2–4 張嵌進重點詞的位置，照片高度約字級的 1.8 倍，其餘照片疊到後面淡掉；9:16 改成三行：前半句／照片撐滿寬／後半句。停留後照片縮掉，大標題上下半截左右錯開再拼合，下方紅色小字淡入。沒放照片時用平塗房間佔位圖（客廳、廚房、陽台、臥室、景觀、書房）。',
     motionEn: 'A sentence sits centred on a cream background (the bracketed key word in red) while 3–6 large white-bordered photos (about 36% of the frame height in 16:9) pop in around it and gently bob and sway. The key word fades, the photos fly inwards and shrink into a row of 2–4 that takes the key word\'s place inside the sentence, each photo about 1.8× the type size, while extra photos tuck behind and fade; in 9:16 the sentence breaks into three lines with the photo row spanning the width. After a hold the photos shrink away and a big title assembles from upper and lower halves sliding in from opposite sides, with a small red subtitle below. Without uploads, flat illustrated room placeholders are used.',
+  }),
+  make('textmatte', {
+    no: 692,
+    added: '2026-11-07',
+    preferredRatio: '16:9',
+    duration: 4,
+    hint: '在圖片工作室放入影片或照片。影片只留在這個分頁，重新整理要重選。16:9 一行、9:16 自動兩行。動態請輸出 PNG 序列（會等到每一格畫面）或 WebM（即時錄，可能掉格）。下載的 HTML 只是靜態預覽，檔案裡沒有影片。',
+    desc: '超大粗體字當窗，窗內是影片或一張照片，字外可實色或透明',
+    tags: ['看屋', '實拍', '標題', '遮罩'],
+    sample: ['這間3房', '新店 · 客廳實拍'],
+    motion: '深色底上超大粗黑體（可改宋體）當成一扇窗。16:9 排成一行，9:16 自動拆成兩行，下方一行小字。窗裡是使用者放入的影片，由 1.00 緩推到結尾縮放（預設 1.06），可調填滿或完整、焦點、起始秒。字外可以是實色或透明。沒有放檔時用程序畫的客廳示意，不是實拍。照片是另外選的靜態版，不會在影片失敗時偷偷換上。預覽跟著影片自己的時鐘，不保證逐格；PNG 序列會先 seek 到每一格再畫，可透明。WebM 是即時錄製，可能掉格。HTML 只存目前這一格的靜態圖，並寫明檔案裡沒有影片。',
+    motionEn: 'Heavy type (or a serif) acts as a window on a dark field: one line in 16:9, two automatic lines in 9:16, with a small subtitle. The window shows the user\'s video, easing from 1.00 to an end zoom (default 1.06), with cover or contain, focal point and in-point. Outside the glyphs is a solid colour or transparent. With no file, a procedural living-room illustration is used, not real footage. A photo is an explicit still version and is never swapped in when a video fails to decode. Preview follows the video clock. PNG sequences seek each frame before drawing and can be transparent. WebM is a realtime capture and may drop frames. HTML export is one still frame plus a notice that the file does not contain the video.',
   }),
 ];
