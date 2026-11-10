@@ -1,3 +1,26 @@
+# HANDOFF：#693 交疊鏤空字＋#694 膠囊色條掃場＋斜紋字卡（feat/fx-693-694）
+
+## 狀態
+- PR 待審，**未 merge、未部署**。程式由內建 AI 撰寫，未使用 Codex、Claude Code、Antigravity。分支從 main 6f4aefa 切出。
+
+## 內容
+- `overlap-knockout`（#693）：src/effects/fx1110.ts，純 canvas。預設左右交錯疊放；透明背景留米色貼紙邊，不挖穿。交疊依實際筆畫寬（不是 advance），預設約 15–24%，長詞略減但仍明顯交疊。
+- `capsule-wipe`（#694）：同一檔，純 canvas，分類 twipe。獨立新效果。預設頻道藍橘。色條重疊排法蓋滿畫面後再掀開字卡。
+- 兩招都提供 `root.maDraw(t)` 供逐格截圖；常數全在 run 內。
+
+## 驗證
+- `npm run build` 通過、`npm test` 15/15 通過、`npm run check:visual` 678 招有問題 0（修正結尾淡出後重跑）。
+- 實機截圖（built app，16:9／9:16 關鍵格＋透明 PNG）：`/workspace/zikaji/overlap-knockout/real/`、`/workspace/zikaji/capsule-wipe/real/`。合圖：`/workspace/zikaji/fx-693-694-contact.jpg`。腳本 `/workspace/zikaji/shoot_693_694.py`。
+- 人工看過（修正後重拍）：#693 每一對相鄰字都有可見交疊與米色鏤空縫，左右交錯疊放清楚；六字「持家男子光俊」仍可讀；透明款四周 alpha=0，貼紙邊保留、不挖穿。#694 掃場中段色條蓋滿、邊角無接縫；9:16 標題已縮進畫面。
+- PNG 序列抽樣（30fps maDraw 整段）：畫格尺寸一致、無主控台錯誤、結尾畫面完整。#693 第 0 格尚未入場為空。#694 `bg=none` 只在色條還沒蓋滿時透明；字卡完成後斜紋鋪滿，整格不透明。
+
+## 限制
+- #693：筆畫很密的長詞若手動把 overlap 調很高仍可能不好認；9:16 超過 6 字只縮小、不拆行（拆行會打斷交疊）。第 0 格（t=0）字還沒滑入，畫面是空的。
+- #694：立體標題是平面疊層假厚度；透明 WebM 在剪映不一定穩，建議用 PNG 序列。`bg=none` 完成字卡是滿版斜紋，不再透明；要整段透明轉場請用 `card=0;bg=none`。
+- 舊版 Safari 對 variable／900 字重支援不一，跟全站一樣走 Chiron Hei HK／Noto Sans TC。
+
+---
+
 # HANDOFF：#692 字內實拍遮罩（cursor/fx692-textmatte-377c）
 
 ## 狀態
