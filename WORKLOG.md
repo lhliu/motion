@@ -4,6 +4,7 @@
 - 從 main（6f4aefa，#692 已上線）開分支；程式碼全部由內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/overlap-knockout/PLAN.md、/workspace/zikaji/capsule-wipe/PLAN.md 實作 #693、#694。KC 決定：#693 預設 stack=alt、透明留貼紙邊不挖穿；#694 做成獨立新效果、預設 pal=kc。
 - 新檔 src/effects/fx1110.ts（依日期命名，接在 fx1105 後）；常數與 helper 全部寫在 run 內，匯出 HTML 只帶 run。
 - 目錄 676→678、公開 620→622。第一次 check:visual 抓到 #693「段落結尾變空白」（結尾 0.3 秒淡出碰上 duration 的 99%），兩招改為停在完成畫面。實機截圖後 #694 9:16 五字標題幾乎貼邊，改依 measureText 縮到寬度 86%。
+- 審 PR 實機截圖：#693 交疊幾乎看不出來（林/口、劃/區只碰到邊）。原因是 overlap 用 advance 寬，Chiron Hei HK 部分字（尤其「口」）左右留白約 8–10%。改為依 actualBoundingBox 筆畫寬交疊 15–24%，長詞略減但仍明顯。已重拍 real/ 與合圖。
 - 驗證：`npm run build` 通過、`npm test` 15/15、`npm run check:visual` 678 招有問題 0。實機截圖（vite preview :4174 ＋ Playwright maDraw）與 contact sheet 在 /workspace/zikaji/overlap-knockout/real/、/workspace/zikaji/capsule-wipe/real/、/workspace/zikaji/fx-693-694-contact.jpg。PNG 序列抽樣：30fps 逐格 maDraw，畫格尺寸一致、結尾非空白；#693 t=0 尚未入場為空；#694 實色版片頭單色是底色不是故障。
 
 

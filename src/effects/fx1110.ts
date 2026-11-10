@@ -16,12 +16,12 @@ export const fx1110: Fx[] = [
     tags: ['標題', '片頭', '地名'],
     tone: 'paper',
     sample: ['新莊副都心', 'XINZHUANG', '@pal=orange;stack=alt;bg=solid'],
-    hint: '第一行＝大字（建議 2–8 字）／第二行＝小字（選填）／ @設定：pal（orange 橘字米底｜kc 藍字米底｜magenta 洋紅｜night 深底橘字）、c1／c2（自訂字色／縫與底色）、stack（alt 左右交錯，預設｜ltr 右壓左｜rtl 左壓右）、overlap（交疊比例，佔字寬；不填依字數自動）、gap（縫寬，字高倍數，預設 0.055）、speed、bg（solid｜none 透明：字外全透明，縫與外框留米色貼紙邊）。',
+    hint: '第一行＝大字（建議 2–8 字）／第二行＝小字（選填）／ @設定：pal（orange 橘字米底｜kc 藍字米底｜magenta 洋紅｜night 深底橘字）、c1／c2（自訂字色／縫與底色）、stack（alt 左右交錯，預設｜ltr 右壓左｜rtl 左壓右）、overlap（交疊比例，佔相鄰兩字實際筆畫寬；不填依字數自動，約 15–24%）、gap（縫寬，字高倍數，預設 0.055）、speed、bg（solid｜none 透明：字外全透明，縫與外框留米色貼紙邊）。',
     duration: 3.6,
     preferredRatio: '16:9',
     added: '2026-11-10',
-    motion: '粗黑體大字把字距縮緊，字一個個從右邊滑進來壓在前一個字上面，交疊處留下一道背景色（或米色貼紙邊）細縫，像貼紙疊在一起；到位時輕壓一下。預設左右交錯疊放（奇數字在上、偶數字在下）。2 字交疊較深，4 字以上自動略減，避免筆畫糊在一起。可改成右邊壓左邊或左邊壓右邊，也可換成透明背景（縫留貼紙邊，不挖穿）。16:9 與 9:16 都是單行置中。',
-    motionEn: 'Heavy type with tight tracking slides in from the right, one glyph at a time, each pressing onto the previous with a paper-coloured (or cream sticker) gap at the overlaps, like stacked stickers, and a slight squash on landing. Default stacking alternates front and back. Two-character titles overlap more deeply; four or more automatically overlap less so dense strokes stay legible. Left-to-right or right-to-left stacking and a transparent background (sticker-edge gap, not punched through) are available. One centered line in both 16:9 and 9:16.',
+    motion: '粗黑體大字把字距縮緊，字一個個從右邊滑進來壓在前一個字上面，交疊處留下一道背景色（或米色貼紙邊）細縫，像貼紙疊在一起；到位時輕壓一下。預設左右交錯疊放（奇數字在上、偶數字在下）。2 字交疊較深（約兩字筆畫寬的 24%），字數多會略減但仍明顯交疊，避免只碰到邊或筆畫糊在一起。可改成右邊壓左邊或左邊壓右邊，也可換成透明背景（縫留貼紙邊，不挖穿）。16:9 與 9:16 都是單行置中。',
+    motionEn: 'Heavy type with tight tracking slides in from the right, one glyph at a time, each pressing onto the previous with a paper-coloured (or cream sticker) gap at the overlaps, like stacked stickers, and a slight squash on landing. Default stacking alternates front and back. Two-character titles overlap more deeply (about 24% of ink width); longer titles ease off moderately but every pair still clearly overlaps. Left-to-right or right-to-left stacking and a transparent background (sticker-edge gap, not punched through) are available. One centered line in both 16:9 and 9:16.',
     css: CANVAS_CSS,
     html: () => `<canvas></canvas>`,
     run: (root, w) => {
@@ -60,25 +60,43 @@ export const fx1110: Fx[] = [
       const H = (cv.height = Math.max(1, Math.round(cv.clientHeight * dpr)));
       const chars = [...text];
       const n = chars.length || 1;
-      const autoOverlap = (k: number) => (k <= 2 ? 0.28 : k === 3 ? 0.24 : k === 4 ? 0.2 : 0.18);
+      // 交疊以實際筆畫（ink）寬度計，不用 advance：中文字左右各有約 8–10% 留白，用 advance 算會只剛好碰到。
+      // 預設交疊約為相鄰兩字「實際筆畫寬」的 15–24%（2 字較深，長詞略減但仍明顯交疊）。
+      const autoOverlap = (k: number) => (k <= 2 ? 0.24 : k === 3 ? 0.22 : k <= 5 ? 0.2 : k <= 7 ? 0.18 : 0.15);
       const overlap = Math.max(0, Math.min(0.4, userOverlap != null ? userOverlap : autoOverlap(n)));
       const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
       const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
-      const totalEm = 1 + (n - 1) * (1 - overlap);
-      let fs = Math.min((W * 0.86) / totalEm, H * (sub ? 0.52 : 0.6));
+      const layout = (size: number) => {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `900 ${size}px ${font}`;
+        const ink = chars.map((ch) => {
+          const m = ctx.measureText(ch);
+          const l = Number.isFinite(m.actualBoundingBoxLeft) ? m.actualBoundingBoxLeft : m.width / 2;
+          const r = Number.isFinite(m.actualBoundingBoxRight) ? m.actualBoundingBoxRight : m.width / 2;
+          const w = Math.max(1, l + r);
+          // 極端字型若沒給 ink box，退回 advance，避免排版崩潰
+          return w < m.width * 0.35 ? { l: m.width / 2, r: m.width / 2, w: Math.max(1, m.width) } : { l, r, w };
+        });
+        const cx: number[] = [];
+        let edge = 0;
+        for (let i = 0; i < n; i++) {
+          if (i === 0) cx.push(ink[0].l);
+          else {
+            const ov = overlap * Math.min(ink[i - 1].w, ink[i].w);
+            cx.push(edge - ov + ink[i].l);
+          }
+          edge = cx[i] + ink[i].r;
+        }
+        return { cx, span: edge, ink };
+      };
+      const probe = layout(100);
+      const gapPad = 2 * gapEm; // 外框貼紙邊
+      let fs = Math.min((W * 0.86) / (probe.span / 100 + gapPad), H * (sub ? 0.52 : 0.6));
       if (n <= 2) fs = Math.min(fs, H * 0.58);
-      if (n > 6) fs = Math.min(fs, (W * 0.9) / totalEm);
-      ctx.font = `900 ${fs}px ${font}`;
-      const widths = chars.map((ch) => ctx.measureText(ch).width);
-      const avg = widths.reduce((a, b) => a + b, 0) / n;
-      const step = avg * (1 - overlap);
-      const xs: number[] = [];
-      let x0 = 0;
-      for (let i = 0; i < n; i++) { xs.push(x0 + widths[i] / 2); x0 += step; }
-      const left = xs[0] - widths[0] / 2;
-      const right = xs[n - 1] + widths[n - 1] / 2;
-      const shift = (W - (right - left)) / 2 - left;
-      for (let i = 0; i < n; i++) xs[i] += shift;
+      const L = layout(fs);
+      const shift = (W - L.span) / 2;
+      const xs = L.cx.map((c) => c + shift);
       const y0 = H * (sub ? 0.48 : 0.5);
       const order = (() => {
         const idx = [...Array(n).keys()];
