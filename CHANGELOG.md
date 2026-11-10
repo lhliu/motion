@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-10（feat/fx-693-694，PR 待審，未 merge、未部署）
+### 新增
+- #693 交疊鏤空字 Overlapping Knockout Letters（kinetic，`overlap-knockout`，新檔 src/effects/fx1110.ts）：粗黑體字距縮緊，字從右邊一個個滑入壓在前一個字上，交疊處留細縫，像貼紙疊在一起。預設 `stack=alt` 左右交錯疊放（KC 決定）。`@pal(orange|kc|magenta|night);c1;c2;stack(alt|ltr|rtl);overlap;gap;speed;bg(solid|none)`。2 字交疊較深，4 字以上自動略減。`bg=none` 字外透明，縫與外框留米色貼紙邊，不挖穿。
+- #694 膠囊色條掃場＋斜紋字卡 Capsule Bar Sweep + Stripe Title Card（twipe，`capsule-wipe`，同一檔）：多條圓頭色條左右交錯掃過並蓋滿畫面，再掀開斜紋底＋大圓＋立體標題的綜藝字卡。獨立新效果，不是色塊推擠的新樣式（KC 決定）。預設 `pal=kc` 頻道藍橘。`@pal(kc|show);c1–c5;bars(3–8);angle;card(1|0);speed;bg(solid|none)`。`card=0` 且 `bg=none` 可當透明轉場疊在剪接點。
+### 變更
+- tests/catalog.test.ts：總數 676 → 678、公開 620 → 622。
+- 畫面檢查第一次抓到 #693 段落結尾淡成空白（loop 比 duration 短，99% 落在淡出），兩招結尾改停在完成畫面、不再淡出。#694 9:16 標題改依實測字寬縮到畫面 86% 內，避免貼邊。
+
+
 ## 2026-11-07（feat/fx692-textmatte，PR 待審，未 merge、未部署）
 ### 新增
 - #692 字內實拍遮罩 Video-in-Text Matte（photo 引擎新模組 `textmatte`，id `photo-textmatte`）：圖片工作室可放入影片（mp4／webm／mov）或照片。影片在這個分頁用暫存網址預覽，重新整理要重選，不寫進場景。超大粗體字當窗，16:9 一行、9:16 自動兩行，字外實色或透明；可調填滿／完整、焦點、結尾推近、起始秒。
