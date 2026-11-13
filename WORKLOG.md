@@ -1,5 +1,11 @@
 # WORKLOG
 
+## 2026-11-13（UTC+8）feat/fx-695-vivant-telop
+- 從 main（d51b4b8，#693／#694 已上線）開分支；程式碼全部由內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/vivant-telop/PLAN.md 實作 #695。KC 決定：打完停留約 2 秒後淡出；9:16 維持左下並沿用原型較高的底邊。
+- 新檔 src/effects/fx1112.ts；常數與 helper 全部寫在 run 內，匯出 HTML 只帶 run。預設 bg=none、pal=vivant、pos=bl。
+- 目錄 678→679、公開 622→623。畫面檢查若在 duration 結尾淡到空白會失敗：duration 4.8 秒讓 99% 取樣仍看得到字，完整淡出在迴圈結尾走完。
+- 驗證：`npm run build` 通過、`npm test` 15/15、`npm run check:visual` 679 招有問題 0。實機截圖（vite preview :4176 ＋ Playwright maDraw）與合圖在 /workspace/zikaji/vivant-telop/real/（含 contact-sheet.jpg）。人工看過無裁切、無貼邊，9:16 抬高底邊，淡出中段仍可讀。
+
 ## 2026-11-10（UTC+8）feat/fx-693-694
 - 從 main（6f4aefa，#692 已上線）開分支；程式碼全部由內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/overlap-knockout/PLAN.md、/workspace/zikaji/capsule-wipe/PLAN.md 實作 #693、#694。KC 決定：#693 預設 stack=alt、透明留貼紙邊不挖穿；#694 做成獨立新效果、預設 pal=kc。
 - 新檔 src/effects/fx1110.ts（依日期命名，接在 fx1105 後）；常數與 helper 全部寫在 run 內，匯出 HTML 只帶 run。
