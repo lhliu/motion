@@ -1,3 +1,27 @@
+# HANDOFF：#695 VIVANT風地名字幕（feat/fx-695-vivant-telop）
+
+## 狀態
+- PR 待審，**未 merge、未部署**。程式由內建 AI 撰寫，未使用 Codex、Claude Code、Antigravity。分支從 main d51b4b8 切出。
+
+## 內容
+- `vivant-telop`（#695）：src/effects/fx1112.ts，純 canvas，分類 caption。預設透明左下黃斜體雙語地名テロップ；打完停留約 2 秒後淡出。9:16 維持左下，底邊約 15%。CJK 斜體為 -12° skew。
+- 設定：`@pal(vivant|kc|white);c1;stroke;pos(bl|br|tl);speed;size;bg(none|solid)`。英文需自行輸入。
+
+## 驗證
+- `npm run build` 通過、`npm test` 15/15 通過、`npm run check:visual` 679 招有問題 0。
+- 畫面檢查處理：`duration` 4.8 秒，預設文案在 99%（約 4.75 秒）仍處於淡出中段（字還清楚）；迴圈 = 打完＋停留 2 秒＋0.8 秒淡出（預設文案約 5.085 秒），淡出會走完。不把結尾停在完成畫面，以符合 KC「要淡出」的決定。視覺檢查 45% 接近英文打完、90% 全字／剛開始淡、99% 淡出中但仍可讀。
+- 實機截圖（built app，vite preview :4176 ＋ Playwright maDraw）：`/workspace/zikaji/vivant-telop/real/`。合圖：`/workspace/zikaji/vivant-telop/real/contact-sheet.jpg`。腳本 `/workspace/zikaji/vivant-telop/shoot_real.py`。
+- 人工看過：無裁切、無貼邊；9:16 左下抬高底邊避開 Shorts UI；4.70s 淡出中仍可讀；淺色衣服對比足夠；`pos=br` 與圓角舞台有距離；透明 PNG 四角 alpha=0。
+
+## 限制
+- CJK 沒有真正斜體，直筆會微斜。
+- 亮部實拍若對比不夠，描邊再粗會像綜藝字；預設細黑邊在淺色衣服上可讀，極端亮部仍可能偏弱。
+- 9:16 左下仍可能被部分平台 UI 擋住（已加底邊）。
+- 未在 Safari／iPhone／剪映上實測。透明 WebM 在剪映不一定穩，建議 PNG 序列。
+- 舊版瀏覽器對字重 900 支援不一，跟全站一樣走 Chiron Hei HK／Noto Sans TC。
+
+---
+
 # HANDOFF：#693 交疊鏤空字＋#694 膠囊色條掃場＋斜紋字卡（feat/fx-693-694）
 
 ## 狀態

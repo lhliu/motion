@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-13（feat/fx-695-vivant-telop，PR 待審，未 merge、未部署）
+### 新增
+- #695 VIVANT風地名字幕 VIVANT-style Place Caption（caption，`vivant-telop`，新檔 src/effects/fx1112.ts）：實拍左下角黃色斜體雙語地名字幕，先逐字打出中文、再打英文，停約兩秒後淡出。預設 `bg=none` 透明，方便疊進剪映。`@pal(vivant|kc|white);c1;stroke;pos(bl|br|tl);speed;size;bg(none|solid)`。9:16 維持左下，底邊抬高約 15% 避開 Shorts 按鈕。CJK 斜體用 -12° skew。英文需自行輸入。
+### 變更
+- tests/catalog.test.ts：總數 678 → 679、公開 622 → 623。
+- 畫面檢查取 45%／90%／99%：若 duration 含完整淡出，99% 會幾乎空白而失敗。作法是 `duration` 設 4.8 秒（預設文案約在淡出前段，99% 字仍清楚），完整淡出走完迴圈（約打完＋停留 2 秒＋0.8 秒淡出）。Combo 預設段落會看到大部分淡出；把段落略加長可看到淡完。
+
+
+
 ## 2026-11-10（feat/fx-693-694，PR 待審，未 merge、未部署）
 ### 新增
 - #693 交疊鏤空字 Overlapping Knockout Letters（kinetic，`overlap-knockout`，新檔 src/effects/fx1110.ts）：粗黑體字距縮緊，字從右邊一個個滑入壓在前一個字上，交疊處留細縫，像貼紙疊在一起。預設 `stack=alt` 左右交錯疊放（KC 決定）。`@pal(orange|kc|magenta|night);c1;c2;stack(alt|ltr|rtl);overlap;gap;speed;bg(solid|none)`。2 字交疊較深，4 字以上自動略減。`bg=none` 字外透明，縫與外框留米色貼紙邊，不挖穿。
