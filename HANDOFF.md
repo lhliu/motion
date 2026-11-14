@@ -1,3 +1,24 @@
+# HANDOFF：#696 漢字變場景無限縮放（feat/fx-696-kanji-zoom）
+
+## 狀態
+- 場景模板版已實作，PR 待 KC 核准後再合併上線。未部署。程式由內建 AI 撰寫。
+- `kanji-zoom`（#696）：純 canvas，分類 kinetic，新檔 src/effects/fx1114.ts。常數全在 run 內。提供 `root.maDraw(t)`。
+- 預設 `台灣→新北→林口→你家` / `@pal=island;speed=1;loop=1`。模板：coast（台灣／海岸島形）、city（站牌街景）、hill（山坡社區門）、door（住家大門／門牌）、corridor（透視走廊，後備）。`scene=auto` 依關鍵字配對（台灣、新北／市／站、林口／山、你家／家／宅／屋），對不到就走走廊。`loop=0` 停在最後一站、不再推進去接回第一站。`bg=none` 實用性低（場景本身是滿版色塊）。
+- 每站約 2 秒（speed=1），4 站迴圈 8 秒；先定格 38% 再二次緩入推進。duration=8，畫面檢查 45%／90%／99% 都有畫面（99% 已接近你家→台灣接縫）。
+
+## 驗證
+- `npm run build` 通過、`npm test` 15/15 通過、`npm run check:visual` 680 招有問題 0。微調鏡頭與 16:9 招牌上邊後，再跑 `npm run check:visual -- kanji-zoom` 有問題 0。
+- 實機截圖（built app，vite preview :4174 ＋ Playwright 停 rAF 後 maDraw）：`/workspace/zikaji/kanji-zoom/real/`，合圖 `real/contact-sheet.jpg`。腳本 `/workspace/zikaji/kanji-zoom/shoot_real.py`。
+- 人工看過：16:9／9:16 定格站名清楚、沒有貼邊裁字；林口→你家過渡兩邊都讀得到；循環接縫你家→台灣看得到台灣島與招牌；kc 色票（海軍藍海＋頻道橘）對；「看→議→簽→貸→家」前四站是走廊後備，最後「家」走進大門模板並接回「看」。
+
+## 限制
+- 推進到很後面時，當站招牌會從畫面上方走出（這是往開口裡鑽的必然結果）；中段過渡仍以當站大字為主。16:9 寬招牌比 9:16 稍早碰到上緣。
+- 這招是滿版場景卡，`bg=none` 幾乎看不出透明。剪映當開頭／片尾用實色即可；若要疊在實拍上建議出 PNG 序列。
+- Safari、iPhone、剪映尚未實測。舊版 Safari 對 variable／900 字重支援不一，跟全站一樣走 Chiron Hei HK／Noto Sans TC。
+- 超長站名會自動縮進招牌寬度，不拆行。模板是固定的 5 套，不會依每個自訂詞手繪專屬場景。
+
+---
+
 # HANDOFF：#695 VIVANT風地名字幕（feat/fx-695-vivant-telop）
 
 ## 狀態
