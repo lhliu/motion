@@ -1,5 +1,12 @@
 # WORKLOG
 
+## 2026-11-14（UTC+8）feat/fx-696-kanji-zoom
+- 從 origin/main（dc41b28，#695 已上線）開分支；程式碼全部由內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/kanji-zoom/PLAN.md 實作 #696。KC 決定：場景模板版、預設 pal=island、預設 loop=1。
+- 新檔 src/effects/fx1114.ts；常數與 helper 全部寫在 run 內，匯出 HTML 只帶 run。預設 bg=solid、pal=island、loop=1、scene=auto。
+- 目錄 679→680、公開 623→624。針對計畫樣張「招牌偏小、9:16 與推進中較難讀」：16:9 招牌高約畫面 15%、寬 70%；9:16 高約 11～12%、寬 82%。鏡頭垂直對準招牌與開口中點，推進時當站站名會變大、較晚才被裁掉。
+- 驗證：`npm run build` 通過、`npm test` 15/15、`npm run check:visual` 680 招有問題 0（之後微調鏡頭與 16:9 上邊後，再跑 `check:visual -- kanji-zoom` 有問題 0）。實機截圖（vite preview :4174 ＋ Playwright maDraw）與合圖在 /workspace/zikaji/kanji-zoom/real/（含 contact-sheet.jpg）。人工看過：四站定格與 9:16 站名清楚；林口→你家、你家→台灣接縫可讀；自訂「看→議→簽→貸→家」前四站走走廊後備、最後「家」配到大門模板。
+
+
 ## 2026-11-13（UTC+8）feat/fx-695-vivant-telop
 - 從 main（d51b4b8，#693／#694 已上線）開分支；程式碼全部由內建 AI 撰寫（未使用 Codex、Claude Code、Antigravity）。依 /workspace/zikaji/vivant-telop/PLAN.md 實作 #695。KC 決定：打完停留約 2 秒後淡出；9:16 維持左下並沿用原型較高的底邊。
 - 新檔 src/effects/fx1112.ts；常數與 helper 全部寫在 run 內，匯出 HTML 只帶 run。預設 bg=none、pal=vivant、pos=bl。

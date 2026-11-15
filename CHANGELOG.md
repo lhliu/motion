@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-14（feat/fx-696-kanji-zoom，PR 待審，未 merge、未部署）
+### 新增
+- #696 漢字變場景無限縮放 Kanji-to-Scene Infinite Zoom（kinetic，`kanji-zoom`，新檔 src/effects/fx1114.ts）：鏡頭一路往前推，地名寫在場景裡的大招牌上，開口裡藏著下一站；預設最後一站無縫接回第一站。場景模板版：台灣／海岸島形、新北／月台站牌、林口／社區門額、你家／大門門牌，對不到關鍵字就用透視走廊＋招牌（`scene=auto`）。設定例：`台灣→新北→林口→你家` / `@pal=island;speed=1;loop=1`。`@pal(island|kc);speed;loop(1|0);scene(auto|coast|city|hill|door|corridor);bg(solid|none)`。預設 island 色票、loop=1。招牌已加大，尤其 9:16；推進過程中當站站名會變大，較晚才走出畫面。
+### 變更
+- tests/catalog.test.ts：總數 679 → 680、公開 623 → 624。
+
+
 ## 2026-11-13（feat/fx-695-vivant-telop，PR 待審，未 merge、未部署）
 ### 新增
 - #695 VIVANT風地名字幕 VIVANT-style Place Caption（caption，`vivant-telop`，新檔 src/effects/fx1112.ts）：實拍左下角黃色斜體雙語地名字幕，先逐字打出中文、再打英文，停約兩秒後淡出。預設 `bg=none` 透明，方便疊進剪映。`@pal(vivant|kc|white);c1;stroke;pos(bl|br|tl);speed;size;bg(none|solid)`。9:16 維持左下，底邊抬高約 15% 避開 Shorts 按鈕。CJK 斜體用 -12° skew。英文需自行輸入。
